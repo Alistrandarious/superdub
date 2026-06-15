@@ -31,7 +31,7 @@ app.get('/api/health', (_req, res) => res.json({ ok: true }));
 // Serve React build in production
 const buildDir = path.join(__dirname, '..', 'build');
 app.use(express.static(buildDir));
-app.get('*', (_req, res) => {
+app.get(/.*/, (_req, res) => {
   res.sendFile(path.join(buildDir, 'index.html'));
 });
 
