@@ -41,7 +41,8 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [dob, setDob] = useState('');
   const [sex, setSex] = useState<'male' | 'female'>('male');
   const [heightCm, setHeightCm] = useState('');
@@ -91,6 +92,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
     setError('');
     setLoading(true);
     try {
+      const name = [firstName.trim(), lastName.trim()].filter(Boolean).join(' ');
       const { token } = await api.signup({
         email, password, name, dob, sex, heightCm, weightKg,
         goalWeight, lossPerWeek, activityLevel, habits,
@@ -335,11 +337,19 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
               <h2 className="auth-step-title">About you</h2>
               <p className="auth-step-sub">Used to personalise your targets — you can edit these later.</p>
               <div className="auth-form">
-                <div className="auth-field">
-                  <label>Name (optional)</label>
-                  <input type="text" autoFocus
-                    value={name} onChange={e => setName(e.target.value)}
-                    placeholder="What should we call you?" />
+                <div className="auth-row">
+                  <div className="auth-field">
+                    <label>First name</label>
+                    <input type="text" autoFocus autoComplete="given-name"
+                      value={firstName} onChange={e => setFirstName(e.target.value)}
+                      placeholder="Ali" />
+                  </div>
+                  <div className="auth-field">
+                    <label>Last name</label>
+                    <input type="text" autoComplete="family-name"
+                      value={lastName} onChange={e => setLastName(e.target.value)}
+                      placeholder="Shah" />
+                  </div>
                 </div>
                 <div className="auth-row">
                   <div className="auth-field">
@@ -364,7 +374,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
                       placeholder="e.g. 175" />
                   </div>
                   <div className="auth-field">
-                    <label>Current weight (kg)</label>
+                    <label>Weight (kg)</label>
                     <input type="text" inputMode="decimal"
                       value={weightKg} onChange={e => setWeightKg(e.target.value)}
                       placeholder="e.g. 85" />
@@ -375,45 +385,64 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
           )}
 
           {/* Step 3 — Goals */}
-          {step === 3 && (
-            <>
-              <h2 className="auth-step-title">Your goals</h2>
-              <p className="auth-step-sub">These drive the prediction curve on your dashboard.</p>
-              <div className="auth-form">
-                <div className="auth-row">
-                  <div className="auth-field">
-                    <label>Goal weight (kg)</label>
-                    <input type="text" inputMode="decimal" autoFocus
-                      value={goalWeight} onChange={e => setGoalWeight(e.target.value)}
-                      placeholder="e.g. 75" />
+          {step === 3 && (() => {
+            const w = parseFloat(weightKg) || 0;
+            const h = parseFloat(heightCm) || 0;
+            const gw = parseFloat(goalWeight) || 0;
+            const lpw = parseFloat(lossPerWeek) || 0.5;
+            const act = parseFloat(activityLevel) || 1.55;
+            const dobAge = dob ? (() => { const b = new Date(dob); const t = new Date(); let a = t.getFullYear() - b.getFullYear(); if (t.getMonth() - b.getMonth() < 0 || (t.getMonth() === b.getMonth() && t.getDate() < b.getDate())) a--; return a; })() : 25;
+            const bmr = w && h ? (sex === 'male' ? 10*w + 6.25*h - 5*dobAge + 5 : 10*w + 6.25*h - 5*dobAge - 161) : 0;
+            const tdee = Math.round(bmr * act);
+            const deficitPerDay = Math.round(lpw * 7700 / 7);
+            const targetCals = tdee - deficitPerDay;
+            const weeks = w && gw && lpw ? Math.ceil((w - gw) / lpw) : 0;
+            return (
+              <>
+                <h2 className="auth-step-title">Your goals</h2>
+                <p className="auth-step-sub">These drive the prediction curve on your dashboard.</p>
+                <div className="auth-form">
+                  <div className="auth-row">
+                    <div className="auth-field">
+                      <label>Goal weight (kg)</label>
+                      <input type="text" inputMode="decimal" autoFocus
+                        value={goalWeight} onChange={e => setGoalWeight(e.target.value)}
+                        placeholder="e.g. 75" />
+                    </div>
+                    <div className="auth-field">
+                      <label>Loss per week</label>
+                      <select value={lossPerWeek} onChange={e => setLossPerWeek(e.target.value)}>
+                        <option value="0.25">0.25 kg/wk</option>
+                        <option value="0.5">0.5 kg/wk</option>
+                        <option value="0.75">0.75 kg/wk</option>
+                        <option value="1.0">1.0 kg/wk</option>
+                      </select>
+                    </div>
                   </div>
                   <div className="auth-field">
-                    <label>Loss per week (kg)</label>
-                    <select value={lossPerWeek} onChange={e => setLossPerWeek(e.target.value)}>
-                      <option value="0.25">0.25 kg/wk — very gradual</option>
-                      <option value="0.5">0.5 kg/wk — steady</option>
-                      <option value="0.75">0.75 kg/wk — moderate</option>
-                      <option value="1.0">1.0 kg/wk — aggressive</option>
+                    <label>Activity level</label>
+                    <select value={activityLevel} onChange={e => setActivityLevel(e.target.value)}>
+                      {ACTIVITY_OPTS.map(o => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
                     </select>
                   </div>
+                  {w > 0 && gw > 0 && (
+                    <div className="auth-hint-box">
+                      <div className="auth-hint-row">
+                        <span>Daily calories</span>
+                        <strong>{targetCals > 0 ? `${targetCals.toLocaleString()} kcal` : '—'}</strong>
+                      </div>
+                      <div className="auth-hint-row">
+                        <span>Time to goal</span>
+                        <strong>{weeks > 0 ? `${weeks} weeks` : '—'}</strong>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="auth-field">
-                  <label>Activity level</label>
-                  <select value={activityLevel} onChange={e => setActivityLevel(e.target.value)}>
-                    {ACTIVITY_OPTS.map(o => (
-                      <option key={o.value} value={o.value}>{o.label}</option>
-                    ))}
-                  </select>
-                </div>
-                {weightKg && goalWeight && lossPerWeek && (
-                  <div className="auth-hint-box">
-                    Estimated time to goal:{' '}
-                    <strong>{Math.ceil((parseFloat(weightKg) - parseFloat(goalWeight)) / parseFloat(lossPerWeek))} weeks</strong>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
+              </>
+            );
+          })()}
 
           {/* Step 4 — Habits */}
           {step === 4 && (
