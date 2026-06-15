@@ -6,7 +6,7 @@ interface AuthProps {
   onAuth: () => void;
 }
 
-type Mode = 'landing' | 'login' | 'signup';
+type Mode = 'landing' | 'login' | 'signup' | 'forgot' | 'reset';
 
 const DEFAULT_HABITS = ['Walking', 'Praying', 'Duolingo'];
 const EXTRA_HABITS = ['Reading', 'Meditation', 'Gym', 'Running', 'Cold shower', 'Journaling', 'No sugar', 'Sleep by 11pm'];
@@ -31,12 +31,18 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
 
+  // Forgot / reset fields
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetCode, setResetCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [resetSuccess, setResetSuccess] = useState(false);
+
   // Sign-up fields
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
-  const [age, setAge] = useState('');
+  const [dob, setDob] = useState('');
   const [sex, setSex] = useState<'male' | 'female'>('male');
   const [heightCm, setHeightCm] = useState('');
   const [weightKg, setWeightKg] = useState('');
@@ -45,6 +51,8 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
   const [activityLevel, setActivityLevel] = useState('1.55');
   const [habits, setHabits] = useState<string[]>([...DEFAULT_HABITS]);
   const [customHabit, setCustomHabit] = useState('');
+
+  const maxDob = new Date(new Date().setFullYear(new Date().getFullYear() - 10)).toISOString().split('T')[0];
 
   const TOTAL_STEPS = 4;
 
@@ -74,7 +82,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
       if (password !== confirmPassword) { setError('Passwords do not match'); return; }
     }
     if (step === 2) {
-      if (!age || isNaN(Number(age))) { setError('Enter your age'); return; }
+      if (!dob) { setError('Please enter your date of birth'); return; }
     }
     setStep(s => s + 1);
   };
@@ -84,7 +92,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
     setLoading(true);
     try {
       const { token } = await api.signup({
-        email, password, name, age, sex, heightCm, weightKg,
+        email, password, name, dob, sex, heightCm, weightKg,
         goalWeight, lossPerWeek, activityLevel, habits,
       });
       setToken(token);
@@ -92,6 +100,38 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
     } catch (err: any) {
       setError(err.message);
       setStep(1);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    if (!resetEmail.trim()) { setError('Please enter your email'); return; }
+    setLoading(true);
+    try {
+      await api.forgotPassword(resetEmail.trim());
+      setMode('reset');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    if (!resetCode.trim()) { setError('Please enter the code from your email'); return; }
+    if (newPassword.length < 6) { setError('Password must be at least 6 characters'); return; }
+    setLoading(true);
+    try {
+      const { token } = await api.resetPassword(resetEmail.trim(), resetCode.trim(), newPassword);
+      setToken(token);
+      onAuth();
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -164,6 +204,79 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
               </button>
             </form>
             <p className="auth-switch">No account? <button className="auth-link" onClick={() => { setMode('signup'); clearError(); }}>Sign up</button></p>
+            <p className="auth-switch"><button className="auth-link" onClick={() => { setResetEmail(loginEmail); setMode('forgot'); clearError(); }}>Forgot password?</button></p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Forgot password ───────────────────────────────────────────────────────
+  if (mode === 'forgot') {
+    return (
+      <div className="app auth-page" style={themeStyle}>
+        <div className="auth-center">
+          <div className="auth-card">
+            <button className="auth-back" onClick={() => { setMode('login'); clearError(); }}>← Back</button>
+            <h2 className="auth-step-title">Forgot password</h2>
+            <p className="auth-step-sub">Enter your email and we'll send you a reset code.</p>
+            <form onSubmit={handleForgot} className="auth-form">
+              <div className="auth-field">
+                <label>Email</label>
+                <input
+                  type="email" autoFocus autoComplete="email"
+                  value={resetEmail} onChange={e => setResetEmail(e.target.value)}
+                  placeholder="you@example.com"
+                />
+              </div>
+              {error && <p className="auth-error">{error}</p>}
+              <button type="submit" className="auth-btn-primary" disabled={loading}>
+                {loading ? 'Sending…' : 'Send reset code'}
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Reset password ────────────────────────────────────────────────────────
+  if (mode === 'reset') {
+    return (
+      <div className="app auth-page" style={themeStyle}>
+        <div className="auth-center">
+          <div className="auth-card">
+            <button className="auth-back" onClick={() => { setMode('forgot'); clearError(); }}>← Back</button>
+            <h2 className="auth-step-title">Reset password</h2>
+            <p className="auth-step-sub">Check your email for the 6-character code, then choose a new password.</p>
+            <form onSubmit={handleReset} className="auth-form">
+              <div className="auth-field">
+                <label>Reset code</label>
+                <input
+                  type="text" autoFocus autoComplete="off"
+                  value={resetCode} onChange={e => setResetCode(e.target.value.toUpperCase())}
+                  placeholder="e.g. A3F9B2"
+                  maxLength={6}
+                  style={{ letterSpacing: '4px', fontFamily: 'monospace', fontSize: '1.2rem' }}
+                />
+              </div>
+              <div className="auth-field">
+                <label>New password</label>
+                <input
+                  type="password" autoComplete="new-password"
+                  value={newPassword} onChange={e => setNewPassword(e.target.value)}
+                  placeholder="Min. 6 characters"
+                />
+              </div>
+              {error && <p className="auth-error">{error}</p>}
+              <button type="submit" className="auth-btn-primary" disabled={loading}>
+                {loading ? 'Resetting…' : 'Set new password'}
+              </button>
+            </form>
+            <p className="auth-switch">
+              Didn't get the email?{' '}
+              <button className="auth-link" onClick={() => { setMode('forgot'); clearError(); }}>Try again</button>
+            </p>
           </div>
         </div>
       </div>
@@ -230,10 +343,10 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
                 </div>
                 <div className="auth-row">
                   <div className="auth-field">
-                    <label>Age</label>
-                    <input type="text" inputMode="numeric"
-                      value={age} onChange={e => setAge(e.target.value)}
-                      placeholder="e.g. 25" />
+                    <label>Date of Birth</label>
+                    <input type="date"
+                      value={dob} onChange={e => setDob(e.target.value)}
+                      max={maxDob} />
                   </div>
                   <div className="auth-field">
                     <label>Sex</label>

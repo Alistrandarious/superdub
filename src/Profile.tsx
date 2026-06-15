@@ -4,13 +4,23 @@ import './App.css';
 import { api } from './api';
 
 interface ProfileData {
+  dob: string;
   heightCm: string;
   weightKg: string;
-  age: string;
   sex: 'male' | 'female';
   activity: string;
   steps: string;
   vestKg: string;
+}
+
+function ageFromDob(dob: string): number {
+  if (!dob) return 0;
+  const born = new Date(dob);
+  const today = new Date();
+  let age = today.getFullYear() - born.getFullYear();
+  const m = today.getMonth() - born.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < born.getDate())) age--;
+  return Math.max(0, age);
 }
 
 interface MacroSet {
@@ -21,7 +31,7 @@ interface MacroSet {
 }
 
 const DEFAULT_PROFILE: ProfileData = {
-  heightCm: '', weightKg: '', age: '', sex: 'male', activity: '1.55', steps: '', vestKg: '',
+  dob: '', heightCm: '', weightKg: '', sex: 'male', activity: '1.55', steps: '', vestKg: '',
 };
 
 const DEFAULT_TARGET: MacroSet = { calories: 2003, protein: 150, carbs: 200, fats: 67 };
@@ -62,9 +72,9 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
       const p = profileData as ProfileData & { name: string };
       setName(p.name ?? '');
       setProfile({
+        dob: p.dob ?? '',
         heightCm: p.heightCm ?? '',
         weightKg: p.weightKg ?? '',
-        age: p.age ?? '',
         sex: p.sex ?? 'male',
         activity: p.activity ?? '1.55',
         steps: p.steps ?? '',
@@ -217,8 +227,8 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
               <input type="text" inputMode="decimal" value={profile.weightKg} onChange={e => updateProfile('weightKg', e.target.value)} placeholder="e.g. 80" />
             </div>
             <div className="target-field">
-              <label>Age</label>
-              <input type="text" inputMode="numeric" value={profile.age} onChange={e => updateProfile('age', e.target.value)} placeholder="e.g. 28" />
+              <label>Date of Birth</label>
+              <input type="date" value={profile.dob} onChange={e => updateProfile('dob', e.target.value)} />
             </div>
             <div className="target-field">
               <label>Sex</label>

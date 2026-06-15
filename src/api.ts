@@ -36,6 +36,10 @@ export const api = {
   signup: (body: object) => request('/auth/signup', { method: 'POST', body: JSON.stringify(body) }),
   login: (body: object) => request('/auth/login', { method: 'POST', body: JSON.stringify(body) }),
   me: () => request('/auth/me'),
+  forgotPassword: (email: string) =>
+    request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
+  resetPassword: (email: string, code: string, newPassword: string) =>
+    request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ email, code, newPassword }) }),
 
   // profile
   getProfile: () => request('/profile'),

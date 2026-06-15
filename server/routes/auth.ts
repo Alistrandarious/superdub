@@ -1,8 +1,10 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { pool } from '../db';
 import { requireAuth, AuthRequest } from '../middleware/auth';
+import { sendWelcomeEmail, sendPasswordResetEmail } from '../email';
 
 const router = Router();
 
@@ -13,11 +15,21 @@ function makeToken(userId: number) {
   return jwt.sign({ userId }, process.env.JWT_SECRET!, { expiresIn: '90d' });
 }
 
+function ageFromDob(dob: string): string {
+  if (!dob) return '';
+  const born = new Date(dob);
+  const today = new Date();
+  let age = today.getFullYear() - born.getFullYear();
+  const m = today.getMonth() - born.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < born.getDate())) age--;
+  return String(Math.max(0, age));
+}
+
 // POST /api/auth/signup
 router.post('/signup', async (req: Request, res: Response) => {
   const {
     email, password,
-    name = '', age = '', sex = 'male', heightCm = '', weightKg = '',
+    name = '', dob = '', sex = 'male', heightCm = '', weightKg = '',
     goalWeight = '', lossPerWeek = '', activityLevel = '1.55',
     habits = DEFAULT_HABITS,
   } = req.body;
@@ -31,11 +43,12 @@ router.post('/signup', async (req: Request, res: Response) => {
     return;
   }
 
+  const age = ageFromDob(dob);
+
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
-    // Check duplicate email
     const existing = await client.query('SELECT id FROM users WHERE email = $1', [email.toLowerCase()]);
     if (existing.rows.length > 0) {
       res.status(409).json({ error: 'An account with that email already exists' });
@@ -49,25 +62,21 @@ router.post('/signup', async (req: Request, res: Response) => {
     );
     const userId = user.id;
 
-    // Profile
     await client.query(
-      `INSERT INTO profile (user_id, name, age, sex, height_cm, weight_kg, activity)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [userId, name, age, sex, heightCm, weightKg, activityLevel]
+      `INSERT INTO profile (user_id, name, dob, age, sex, height_cm, weight_kg, activity)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [userId, name, dob || null, age, sex, heightCm, weightKg, activityLevel]
     );
 
-    // Weight settings (goal)
     await client.query(
       `INSERT INTO weight_settings (user_id, current_weight, goal_weight, loss_per_week, height, age, activity_level)
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [userId, weightKg, goalWeight, lossPerWeek, heightCm, age, activityLevel]
     );
 
-    // Diet target & settings (defaults)
     await client.query('INSERT INTO diet_target (user_id) VALUES ($1)', [userId]);
     await client.query('INSERT INTO diet_settings (user_id) VALUES ($1)', [userId]);
 
-    // Habits
     const habitList: string[] = Array.isArray(habits) && habits.length > 0 ? habits : DEFAULT_HABITS;
     for (let i = 0; i < habitList.length; i++) {
       await client.query(
@@ -77,6 +86,11 @@ router.post('/signup', async (req: Request, res: Response) => {
     }
 
     await client.query('COMMIT');
+
+    // Fire-and-forget welcome email — don't block the signup response
+    sendWelcomeEmail(email.toLowerCase(), name).catch(err =>
+      console.error('[email] Failed to send welcome email:', err)
+    );
 
     res.json({ token: makeToken(userId), userId });
   } catch (err) {
@@ -114,7 +128,72 @@ router.post('/login', async (req: Request, res: Response) => {
   res.json({ token: makeToken(rows[0].id), userId: rows[0].id });
 });
 
-// GET /api/auth/me  — returns profile + habits for the logged-in user
+// POST /api/auth/forgot-password
+router.post('/forgot-password', async (req: Request, res: Response) => {
+  const { email } = req.body;
+  if (!email) { res.status(400).json({ error: 'Email is required' }); return; }
+
+  const { rows } = await pool.query(
+    'SELECT id FROM users WHERE email = $1',
+    [email.toLowerCase()]
+  );
+
+  // Always return 200 so we don't leak whether an account exists
+  if (rows.length === 0) { res.json({ ok: true }); return; }
+
+  const userId = rows[0].id;
+  const code = crypto.randomBytes(3).toString('hex').toUpperCase(); // 6-char hex e.g. A3F9B2
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+  await pool.query(
+    'INSERT INTO password_resets (user_id, token, expires_at) VALUES ($1, $2, $3)',
+    [userId, code, expiresAt]
+  );
+
+  sendPasswordResetEmail(email.toLowerCase(), code).catch(err =>
+    console.error('[email] Failed to send reset email:', err)
+  );
+
+  res.json({ ok: true });
+});
+
+// POST /api/auth/reset-password
+router.post('/reset-password', async (req: Request, res: Response) => {
+  const { email, code, newPassword } = req.body;
+  if (!email || !code || !newPassword) {
+    res.status(400).json({ error: 'Email, code, and new password are required' });
+    return;
+  }
+  if (newPassword.length < 6) {
+    res.status(400).json({ error: 'Password must be at least 6 characters' });
+    return;
+  }
+
+  const { rows: userRows } = await pool.query(
+    'SELECT id FROM users WHERE email = $1',
+    [email.toLowerCase()]
+  );
+  if (userRows.length === 0) { res.status(400).json({ error: 'Invalid or expired code' }); return; }
+  const userId = userRows[0].id;
+
+  const { rows: resetRows } = await pool.query(
+    `SELECT id FROM password_resets
+     WHERE user_id = $1 AND token = $2 AND used = FALSE AND expires_at > NOW()
+     ORDER BY id DESC LIMIT 1`,
+    [userId, code.toUpperCase()]
+  );
+  if (resetRows.length === 0) { res.status(400).json({ error: 'Invalid or expired code' }); return; }
+
+  const hash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+  await Promise.all([
+    pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, userId]),
+    pool.query('UPDATE password_resets SET used = TRUE WHERE id = $1', [resetRows[0].id]),
+  ]);
+
+  res.json({ token: makeToken(userId) });
+});
+
+// GET /api/auth/me
 router.get('/me', requireAuth, async (req: AuthRequest, res: Response) => {
   const userId = req.userId!;
   const [profileRes, habitsRes, wsRes] = await Promise.all([
