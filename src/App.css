@@ -1,21 +1,81 @@
+/* =====================================================================
+   SUPERDUB — App.css
+   Deep navy-black dark theme with per-page CSS variable theming,
+   glass morphism surfaces, and monospace fonts only in data grids.
+   ===================================================================== */
+
+/* CSS Custom Properties */
+:root {
+  --glass-bg: rgba(255,255,255,0.05);
+  --glass-bg-strong: rgba(255,255,255,0.08);
+  --glass-border: rgba(255,255,255,0.08);
+  --glass-border-strong: rgba(255,255,255,0.16);
+  --glass-shadow: 0 8px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.07);
+  --glass-blur: blur(16px) saturate(180%);
+}
+
+/* Animatable CSS custom property for the ring */
+@property --pct {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+/* =====================================================================
+   ENTRANCE ANIMATIONS
+   ===================================================================== */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.88); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes ringFill {
+  from { --pct: 0; }
+}
+@keyframes pillIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.93); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* =====================================================================
+   BASE APP SHELL
+   ===================================================================== */
 .app {
-  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  background: #0a0a0a;
   color: var(--theme, #00ff41);
+  background:
+    radial-gradient(1100px 760px at 8% -12%, var(--theme-glow, rgba(0,255,65,0.06)), transparent 60%),
+    radial-gradient(1000px 720px at 112% 6%, var(--theme-glow, rgba(0,255,65,0.06)), transparent 55%),
+    radial-gradient(900px 900px at 50% 124%, var(--theme-glow, rgba(0,255,65,0.06)), transparent 60%),
+    linear-gradient(165deg, #0c0f18 0%, #070810 55%, #06070d 100%);
+  background-attachment: fixed;
 }
 
-/* Header */
+/* =====================================================================
+   HEADER
+   ===================================================================== */
 .header {
   display: flex;
   align-items: center;
-  padding: 14px 24px;
-  border-bottom: 1px solid var(--theme-dim, rgba(0, 255, 65, 0.3));
+  padding: 0 20px;
+  height: 56px;
+  flex-shrink: 0;
   position: relative;
-  background: linear-gradient(180deg, #111 0%, #0a0a0a 100%);
-  box-shadow: 0 2px 12px var(--theme-glow, rgba(0, 255, 65, 0.05));
+  background: rgba(255,255,255,0.04);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid var(--glass-border);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.28);
 }
 
 .header-left {
@@ -32,8 +92,8 @@
   display: flex;
   flex-direction: column;
   gap: 5px;
-  padding: 6px;
-  border-radius: 4px;
+  padding: 7px;
+  border-radius: 8px;
   transition: background 0.2s;
 }
 
@@ -55,36 +115,44 @@
   left: 50%;
   transform: translateX(-50%);
   margin: 0;
-  font-size: 1.5rem;
-  letter-spacing: 0.2em;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   text-transform: capitalize;
-  text-shadow: 0 0 10px var(--theme-dim), 0 0 20px var(--theme-glow);
+  color: var(--theme);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  white-space: nowrap;
 }
 
-/* Calendar Picker */
+/* =====================================================================
+   CALENDAR PICKER
+   ===================================================================== */
 .calendar-picker {
   position: relative;
 }
 
 .calendar-btn {
-  background: none;
-  border: 1px solid var(--theme-dim);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border-strong);
   color: var(--theme);
-  font-family: inherit;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   font-size: 0.8rem;
-  padding: 6px 12px;
-  border-radius: 6px;
+  padding: 7px 13px;
+  border-radius: 10px;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: background 0.2s, border-color 0.2s;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
   white-space: nowrap;
 }
 
 .calendar-btn:hover {
   background: var(--theme-glow);
   border-color: var(--theme);
+  box-shadow: 0 0 16px var(--theme-glow);
 }
 
 .calendar-arrow {
@@ -96,12 +164,14 @@
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
-  background: #111;
-  border: 1px solid var(--theme-dim);
-  border-radius: 8px;
-  padding: 12px;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 14px;
   z-index: 50;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  box-shadow: var(--glass-shadow);
 }
 
 .calendar-grid {
@@ -112,22 +182,22 @@
 }
 
 .calendar-month {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
   color: #aaa;
-  font-family: inherit;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   font-size: 0.75rem;
   padding: 10px 14px;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.15s;
   text-align: center;
 }
 
 .calendar-month:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--month-color);
-  border-color: var(--month-color);
+  background: rgba(255,255,255,0.08);
+  color: var(--month-color, var(--theme));
+  border-color: var(--month-color, var(--theme));
 }
 
 .calendar-month.selected {
@@ -138,17 +208,19 @@
 }
 
 .calendar-month.current {
-  box-shadow: inset 0 0 0 1px var(--month-color);
+  box-shadow: inset 0 0 0 1px var(--month-color, var(--theme));
 }
 
-/* Week Bar */
+/* =====================================================================
+   WEEK BAR
+   ===================================================================== */
 .week-bar {
   display: flex;
   align-items: center;
   gap: 4px;
   padding: 8px 16px;
-  background: #0d0d0d;
-  border-bottom: 1px solid var(--theme-dim);
+  background: rgba(255,255,255,0.02);
+  border-bottom: 1px solid var(--glass-border);
   flex-shrink: 0;
 }
 
@@ -160,18 +232,19 @@
   background: none;
   border: 1px solid transparent;
   color: var(--theme-dim);
-  font-family: inherit;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   font-size: 0.75rem;
   padding: 5px 14px;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.15s;
   letter-spacing: 0.05em;
 }
 
 .week-btn:hover {
-  border-color: var(--theme-dim);
+  border-color: var(--glass-border-strong);
   color: var(--theme);
+  background: var(--glass-bg);
 }
 
 .week-btn.active {
@@ -181,22 +254,26 @@
 }
 
 .week-btn.current:not(.active) {
-  border-color: var(--theme-dim);
-  box-shadow: inset 0 0 0 1px var(--theme-dim);
+  border-color: var(--glass-border-strong);
+  box-shadow: inset 0 0 0 1px var(--glass-border-strong);
 }
 
-/* Side menu */
+/* =====================================================================
+   SIDE MENU
+   ===================================================================== */
 .menu-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0,0,0,0.4);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
   z-index: 1000;
   animation: menu-fade 0.2s ease;
 }
 
 @keyframes menu-fade {
   from { opacity: 0; }
-  to { opacity: 1; }
+  to   { opacity: 1; }
 }
 
 .menu {
@@ -209,30 +286,35 @@
   display: flex;
   flex-direction: column;
   gap: 0;
-  background: #0d0d0d;
-  border-right: 1px solid var(--theme-dim);
-  box-shadow: 4px 0 24px var(--theme-glow);
+  background: rgba(10,12,20,0.7);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border-right: 1px solid var(--glass-border);
+  box-shadow: 8px 0 48px rgba(0,0,0,0.55);
   animation: menu-slide 0.22s ease;
+  z-index: 1001;
 }
 
 @keyframes menu-slide {
   from { transform: translateX(-100%); }
-  to { transform: translateX(0); }
+  to   { transform: translateX(0); }
 }
 
 .menu-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 24px;
-  border-bottom: 1px solid var(--theme-dim);
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--glass-border);
 }
 
 .menu-title {
-  font-size: 1.1rem;
-  letter-spacing: 0.2em;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
   text-transform: lowercase;
   color: var(--theme);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
 .menu-close {
@@ -240,45 +322,53 @@
   border: none;
   color: var(--theme);
   cursor: pointer;
-  font-size: 1rem;
-  padding: 4px 8px;
-  border-radius: 4px;
+  font-size: 1.1rem;
+  padding: 5px 9px;
+  border-radius: 8px;
   transition: background 0.15s;
 }
 
 .menu-close:hover {
-  background: var(--theme-glow);
+  background: var(--glass-bg-strong);
 }
 
 .menu a,
 .menu button {
-  color: var(--theme);
+  display: block;
+  color: rgba(255,255,255,0.8);
   text-decoration: none;
   text-align: left;
   background: none;
   border: none;
   font: inherit;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   cursor: pointer;
   font-size: 0.9rem;
-  letter-spacing: 0.08em;
-  padding: 14px 24px;
-  transition: background 0.15s, padding-left 0.15s;
-  border-bottom: 1px solid var(--theme-glow);
+  letter-spacing: 0.04em;
+  padding: 12px 20px;
+  margin: 2px 10px;
+  border-radius: 10px;
+  transition: background 0.15s, color 0.15s;
+  width: calc(100% - 20px);
+  box-sizing: border-box;
 }
 
 .menu a:hover,
 .menu button:hover {
-  background: var(--theme-glow);
-  padding-left: 32px;
+  background: var(--glass-bg-strong);
+  color: var(--theme);
   text-decoration: none;
 }
 
-/* New page */
+/* =====================================================================
+   BACK LINK & PAGE CONTENT
+   ===================================================================== */
 .back-link {
   color: var(--theme);
   text-decoration: none;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   font-size: 0.9rem;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
   transition: opacity 0.15s;
 }
 
@@ -291,12 +381,9 @@
   min-height: 60vh;
 }
 
-/* Diet page */
-.diet .app,
-.diet {
-  overflow-y: auto;
-}
-
+/* =====================================================================
+   DIET PAGE
+   ===================================================================== */
 .diet-content {
   overflow-y: auto;
   display: flex;
@@ -306,18 +393,23 @@
 }
 
 .diet-section {
-  border: 1px solid var(--theme-dim);
-  border-radius: 10px;
-  padding: 18px 20px;
-  background: #0d0d0d;
+  border-radius: 18px;
+  padding: 22px 24px;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
 }
 
 .diet-heading {
-  margin: 0 0 14px;
-  font-size: 1rem;
-  letter-spacing: 0.12em;
+  margin: 0 0 16px;
+  font-size: 0.78rem;
+  font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: 0.12em;
   color: var(--theme);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
 .target-grid {
@@ -333,36 +425,43 @@
   font-size: 0.78rem;
   letter-spacing: 0.05em;
   color: #aaa;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
 .target-field input {
-  background: #111;
-  border: 1px solid var(--theme-dim);
-  border-radius: 6px;
-  color: var(--theme);
-  padding: 10px 12px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 11px;
+  color: #fff;
+  padding: 11px 14px;
   font-size: 0.95rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  outline: none;
 }
 
 .target-field input:focus {
-  outline: none;
   border-color: var(--theme);
   box-shadow: 0 0 0 2px var(--theme-glow);
+  background: rgba(255,255,255,0.08);
 }
 
 .target-field select {
-  background: #111;
-  border: 1px solid var(--theme-dim);
-  border-radius: 6px;
-  color: var(--theme);
-  padding: 10px 12px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 11px;
+  color: #fff;
+  padding: 11px 14px;
   font-size: 0.95rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  outline: none;
 }
 
 .target-field select:focus {
-  outline: none;
   border-color: var(--theme);
   box-shadow: 0 0 0 2px var(--theme-glow);
+  background: rgba(255,255,255,0.08);
 }
 
 .activity-field {
@@ -374,10 +473,14 @@
   align-items: center;
   justify-content: space-between;
   margin-top: 16px;
-  padding: 12px 16px;
-  border: 1px solid var(--theme-dim);
-  border-radius: 8px;
-  background: #111;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   font-size: 0.85rem;
   color: #ccc;
 }
@@ -397,6 +500,7 @@
   margin: 0 0 14px;
   font-size: 0.78rem;
   color: #888;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
 .macro-input-row {
@@ -433,9 +537,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--theme-glow);
-  border: 1px solid var(--theme-dim);
-  border-radius: 4px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 5px;
   color: var(--theme);
   font-size: 0.6rem;
   line-height: 1;
@@ -445,7 +549,7 @@
 }
 
 .stepper-btns button:hover:not(:disabled) {
-  background: var(--theme-dim);
+  background: var(--theme-glow);
   border-color: var(--theme);
 }
 
@@ -460,22 +564,26 @@
   font-size: 0.72rem;
   color: var(--theme);
   opacity: 0.8;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
 .macro-input-row input {
   flex: 1;
-  background: #111;
-  border: 1px solid var(--theme-dim);
-  border-radius: 6px;
-  color: var(--theme);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 11px;
+  color: #fff;
   padding: 10px 12px;
   font-size: 0.95rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
 .macro-input-row input:focus {
-  outline: none;
   border-color: var(--theme);
   box-shadow: 0 0 0 2px var(--theme-glow);
+  background: rgba(255,255,255,0.08);
 }
 
 .macro-input-row input:disabled {
@@ -488,17 +596,20 @@
 }
 
 .lock-btn {
-  background: #111;
-  border: 1px solid var(--theme-dim);
-  border-radius: 6px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 11px;
   cursor: pointer;
   width: 42px;
   font-size: 1rem;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   transition: background 0.15s, border-color 0.15s;
 }
 
 .lock-btn:hover {
   background: var(--theme-glow);
+  border-color: var(--theme);
 }
 
 .lock-btn.on {
@@ -535,6 +646,7 @@
   gap: 10px;
   font-size: 0.88rem;
   color: #ddd;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
 .legend-dot {
@@ -564,22 +676,35 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: 14px 16px;
-  border: 1px solid var(--theme-dim);
-  border-radius: 8px;
-  background: #111;
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+/* Nested cards sit on a slightly brighter pane */
+.diet-section .class-card,
+.diet-section .plan-card {
+  background: var(--glass-bg-strong);
 }
 
 .class-label {
   font-size: 0.72rem;
+  font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #888;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
 .class-value {
   font-size: 1.1rem;
   color: var(--theme);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-weight: 600;
 }
 
 .class-value.good {
@@ -589,6 +714,7 @@
 .class-sub {
   font-size: 0.75rem;
   color: #999;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
 /* Target action buttons + deficit */
@@ -597,6 +723,27 @@
   gap: 10px;
   margin-top: 16px;
   flex-wrap: wrap;
+}
+
+.plan-apply {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border-strong);
+  color: var(--theme);
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-size: 0.82rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  white-space: nowrap;
+}
+
+.plan-apply:hover {
+  background: var(--theme-glow);
+  border-color: var(--theme);
+  box-shadow: 0 0 16px var(--theme-glow);
 }
 
 .plan-apply:disabled {
@@ -648,6 +795,7 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #999;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
 /* Progress bars */
@@ -663,6 +811,7 @@
   font-size: 0.82rem;
   margin-bottom: 6px;
   color: #ccc;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
 .progress-labels .over {
@@ -670,16 +819,16 @@
 }
 
 .progress-track {
-  height: 8px;
-  background: #1a1a1a;
-  border-radius: 4px;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.08);
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
   background: var(--theme);
-  border-radius: 4px;
+  border-radius: 3px;
   transition: width 0.3s ease;
 }
 
@@ -696,18 +845,23 @@
 }
 
 .food-add input {
-  background: #111;
-  border: 1px solid var(--theme-dim);
-  border-radius: 6px;
-  color: var(--theme);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 11px;
+  color: #fff;
   padding: 10px 12px;
   font-size: 0.9rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
 
 .food-add input:focus {
-  outline: none;
   border-color: var(--theme);
   box-shadow: 0 0 0 2px var(--theme-glow);
+  background: rgba(255,255,255,0.08);
 }
 
 .food-name {
@@ -723,28 +877,32 @@
   background: var(--theme);
   color: #000;
   border: none;
-  border-radius: 6px;
-  width: 40px;
+  border-radius: 10px;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  width: 42px;
   font-size: 1.2rem;
   cursor: pointer;
-  transition: opacity 0.15s;
+  transition: opacity 0.15s, box-shadow 0.15s;
 }
 
 .food-add-btn:hover {
   opacity: 0.85;
+  box-shadow: 0 0 16px var(--theme-glow);
 }
 
 .food-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.85rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
 .food-table th,
 .food-table td {
   text-align: left;
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--theme-glow);
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--glass-border);
 }
 
 .food-table th:not(:first-child),
@@ -757,12 +915,13 @@
   text-transform: uppercase;
   font-size: 0.72rem;
   letter-spacing: 0.08em;
+  font-weight: 600;
 }
 
 .food-table tfoot td {
   color: var(--theme);
   font-weight: 600;
-  border-top: 1px solid var(--theme-dim);
+  border-top: 1px solid var(--glass-border-strong);
   border-bottom: none;
 }
 
@@ -773,17 +932,19 @@
   cursor: pointer;
   font-size: 0.8rem;
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: 5px;
+  font-family: inherit;
 }
 
 .food-remove:hover {
-  background: rgba(255, 69, 58, 0.15);
+  background: rgba(255,69,58,0.15);
 }
 
 .diet-empty {
   color: #888;
   font-size: 0.85rem;
   margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
 /* Meal plan cards */
@@ -794,10 +955,13 @@
 }
 
 .plan-card {
-  border: 1px solid var(--theme-dim);
-  border-radius: 8px;
-  padding: 16px;
-  background: #111;
+  border-radius: 16px;
+  padding: 18px 20px;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -814,28 +978,15 @@
   margin: 0;
   font-size: 0.95rem;
   color: var(--theme);
-}
-
-.plan-apply {
-  background: none;
-  border: 1px solid var(--theme);
-  color: var(--theme);
-  border-radius: 6px;
-  padding: 5px 12px;
-  font-size: 0.78rem;
-  cursor: pointer;
-  transition: background 0.15s;
-  white-space: nowrap;
-}
-
-.plan-apply:hover {
-  background: var(--theme-glow);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-weight: 600;
 }
 
 .plan-desc {
   margin: 0;
   font-size: 0.8rem;
   color: #999;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
 .plan-meals {
@@ -854,6 +1005,7 @@
   font-size: 0.78rem;
   color: #ccc;
   align-items: baseline;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
 .plan-meals li.plan-meal {
@@ -878,7 +1030,8 @@
   padding: 2px 0;
   font-size: 0.74rem;
   color: #aaa;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
 .meal-breakdown .mb-item {
@@ -909,14 +1062,17 @@
 
 .plan-total {
   margin-top: auto;
-  padding-top: 8px;
-  border-top: 1px solid var(--theme-glow);
+  padding-top: 10px;
+  border-top: 1px solid var(--glass-border);
   font-size: 0.82rem;
   color: var(--theme);
   font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
-/* Tasks page */
+/* =====================================================================
+   TASKS PAGE
+   ===================================================================== */
 .tasks-content {
   overflow-y: auto;
   padding-bottom: 48px;
@@ -936,10 +1092,20 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 10px 12px;
-  background: #111;
-  border: 1px solid var(--theme-dim);
-  border-radius: 6px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.task-item:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--glass-shadow), 0 4px 20px rgba(0,0,0,0.3);
+  background: var(--glass-bg-strong);
 }
 
 .task-label {
@@ -950,6 +1116,7 @@
   color: #ddd;
   cursor: pointer;
   flex: 1;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
 .task-label input[type="checkbox"] {
@@ -964,34 +1131,42 @@
   color: #777;
 }
 
-/* Weight Plan */
+/* =====================================================================
+   WEIGHT PLAN BAR
+   ===================================================================== */
 .weight-plan {
   padding: 12px 32px;
-  border-bottom: 1px solid rgba(0, 255, 65, 0.3);
-  background: #0d0d0d;
+  border-bottom: 1px solid var(--glass-border);
+  background: rgba(255,255,255,0.02);
   flex-shrink: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
-/* Modal */
+/* =====================================================================
+   MODAL
+   ===================================================================== */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0,0,0,0.7);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 100;
-  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
 }
 
 .modal {
-  background: #111;
-  border: 1px solid var(--theme-dim);
-  border-radius: 8px;
-  padding: 24px;
+  border-radius: 20px;
+  padding: 28px 32px;
+  background: var(--glass-bg-strong);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border-strong);
+  box-shadow: var(--glass-shadow), 0 0 60px -20px var(--theme-glow);
   width: 90%;
   max-width: 500px;
-  box-shadow: 0 0 30px var(--theme-glow);
 }
 
 .modal-header {
@@ -1005,7 +1180,9 @@
   font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  opacity: 0.8;
+  opacity: 0.85;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-weight: 600;
 }
 
 .modal-close {
@@ -1014,33 +1191,39 @@
   color: var(--theme);
   font-size: 1.2rem;
   cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: 5px 9px;
+  border-radius: 8px;
   font-family: inherit;
+  transition: background 0.15s;
 }
 
 .modal-close:hover {
-  background: var(--theme-glow);
+  background: var(--glass-bg-strong);
 }
 
 .header-btn {
-  background: none;
-  border: 1px solid var(--theme-dim);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border-strong);
   color: var(--theme);
   font-size: 1rem;
   cursor: pointer;
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-family: inherit;
-  transition: background 0.2s, border-color 0.2s;
+  padding: 7px 12px;
+  border-radius: 10px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 
 .header-btn:hover {
   background: var(--theme-glow);
   border-color: var(--theme);
+  box-shadow: 0 0 16px var(--theme-glow);
 }
 
-/* Habits Modal */
+/* =====================================================================
+   HABITS MODAL
+   ===================================================================== */
 .habits-list {
   display: flex;
   flex-direction: column;
@@ -1052,10 +1235,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
-  border: 1px solid var(--theme-glow);
-  border-radius: 4px;
+  padding: 10px 14px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
   font-size: 0.85rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  color: #ddd;
 }
 
 .habit-remove {
@@ -1065,12 +1251,13 @@
   font-size: 1rem;
   cursor: pointer;
   padding: 2px 6px;
-  border-radius: 3px;
+  border-radius: 5px;
   font-family: inherit;
+  transition: background 0.15s;
 }
 
 .habit-remove:hover {
-  background: rgba(255, 68, 68, 0.15);
+  background: rgba(255,68,68,0.15);
 }
 
 .habit-add-row {
@@ -1080,40 +1267,46 @@
 
 .habit-add-input {
   flex: 1;
-  background: var(--theme-glow);
-  border: 1px solid var(--theme-dim);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--glass-border);
   color: var(--theme);
-  font-family: inherit;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   font-size: 0.85rem;
-  padding: 8px 12px;
-  border-radius: 6px;
+  padding: 10px 14px;
+  border-radius: 11px;
   outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .habit-add-input:focus {
   border-color: var(--theme);
-  box-shadow: 0 0 8px var(--theme-dim);
+  box-shadow: 0 0 0 2px var(--theme-glow);
 }
 
 .habit-add-input::placeholder {
-  color: var(--theme-dim);
+  color: rgba(255,255,255,0.25);
 }
 
 .habit-add-btn {
-  background: var(--theme-glow);
-  border: 1px solid var(--theme-dim);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border-strong);
   color: var(--theme);
   font-size: 1.2rem;
   cursor: pointer;
-  padding: 6px 14px;
-  border-radius: 6px;
+  padding: 8px 16px;
+  border-radius: 11px;
   font-family: inherit;
+  transition: background 0.15s, border-color 0.15s;
 }
 
 .habit-add-btn:hover {
-  background: var(--theme-dim);
+  background: var(--theme-glow);
+  border-color: var(--theme);
 }
 
+/* =====================================================================
+   PLAN ROWS & SELECTS (Weight Plan modal)
+   ===================================================================== */
 .plan-row {
   display: flex;
   flex-wrap: wrap;
@@ -1126,6 +1319,7 @@
   gap: 6px;
   flex: 1;
   min-width: 140px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
 .plan-row label span {
@@ -1136,40 +1330,41 @@
 }
 
 .plan-row input {
-  background: var(--theme-glow);
-  border: 1px solid var(--theme-dim);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--glass-border);
   color: var(--theme);
-  font-family: inherit;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   font-size: 1rem;
-  padding: 10px 12px;
-  border-radius: 6px;
+  padding: 11px 14px;
+  border-radius: 11px;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
 .plan-row input:hover {
-  border-color: var(--theme);
+  border-color: var(--glass-border-strong);
 }
 
 .plan-row input::placeholder {
-  color: var(--theme-dim);
+  color: rgba(255,255,255,0.25);
 }
 
 .plan-row input:focus {
   border-color: var(--theme);
-  box-shadow: 0 0 8px var(--theme-dim);
-  background: var(--theme-glow);
+  box-shadow: 0 0 0 2px var(--theme-glow);
+  background: rgba(255,255,255,0.08);
 }
 
 .plan-select {
-  background: var(--theme-glow);
-  border: 1px solid var(--theme-dim);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--glass-border);
   color: var(--theme);
-  font-family: inherit;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   font-size: 0.85rem;
-  padding: 10px 12px;
-  border-radius: 6px;
+  padding: 11px 14px;
+  border-radius: 11px;
   outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .plan-select option {
@@ -1179,23 +1374,29 @@
 
 .macro-targets {
   margin-top: 16px;
-  padding: 12px;
-  border: 1px solid var(--theme-dim);
-  border-radius: 6px;
+  padding: 14px 16px;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
   font-size: 0.8rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
 .macro-targets strong {
   color: var(--theme);
 }
 
-/* Chart */
+/* =====================================================================
+   CHART SECTION
+   ===================================================================== */
 .chart-section {
   padding: 16px 16px 16px 0;
-  border-bottom: 1px solid var(--theme-glow);
+  border-bottom: 1px solid var(--glass-border);
   flex-shrink: 0;
   display: flex;
   align-items: stretch;
@@ -1205,7 +1406,7 @@
   width: 120px;
   min-width: 120px;
   flex-shrink: 0;
-  border-right: 2px solid var(--theme-dim);
+  border-right: 2px solid rgba(255,255,255,0.1);
 }
 
 .chart-container {
@@ -1215,21 +1416,23 @@
   overflow: visible;
 }
 
-/* Tracker */
+/* =====================================================================
+   TRACKER — TABS & GRID
+   ===================================================================== */
 .tracker {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  border-top: 1px solid var(--theme-glow);
+  border-top: 1px solid var(--glass-border);
 }
 
 .tracker-tabs {
   display: flex;
   align-items: center;
   flex-shrink: 0;
-  border-bottom: 1px solid var(--theme-glow);
-  background: #0d0d0d;
+  border-bottom: 1px solid var(--glass-border);
+  background: rgba(255,255,255,0.02);
   padding-right: 12px;
 }
 
@@ -1240,29 +1443,30 @@
 .tab-action-btn {
   background: none;
   border: none;
-  color: var(--theme-dim);
+  color: rgba(255,255,255,0.35);
   font-size: 0.85rem;
   cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-family: inherit;
+  padding: 5px 9px;
+  border-radius: 6px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   transition: color 0.2s, background 0.2s;
 }
 
 .tab-action-btn:hover {
   color: var(--theme);
-  background: var(--theme-glow);
+  background: var(--glass-bg);
 }
 
 .tracker-tab {
   background: none;
   border: none;
-  color: var(--theme-dim);
-  font-family: inherit;
-  font-size: 0.8rem;
-  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.4);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  padding: 10px 24px;
+  padding: 11px 22px;
   cursor: pointer;
   border-bottom: 2px solid transparent;
   transition: color 0.2s, border-color 0.2s;
@@ -1283,10 +1487,12 @@
   overflow: auto;
 }
 
+/* Data grid — monospace font only here */
 .tracker-grid {
   display: grid;
   grid-auto-rows: 36px;
   width: max-content;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
 }
 
 .tracker-label {
@@ -1298,29 +1504,33 @@
   font-size: 0.8rem;
   font-weight: 500;
   white-space: nowrap;
-  border-bottom: 1px solid var(--theme-glow);
-  border-right: 2px solid var(--theme-dim);
+  border-bottom: 1px solid var(--glass-border);
+  border-right: 2px solid rgba(255,255,255,0.12);
   box-sizing: border-box;
-  background: #0a0a0a;
+  background: rgba(7,8,16,0.92);
   position: sticky;
   left: 0;
   z-index: 3;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  color: rgba(255,255,255,0.7);
 }
 
 .tracker-header-cell {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.05em;
-  border-bottom: 1px solid var(--theme-glow);
-  border-right: 1px solid var(--theme-glow);
+  border-bottom: 1px solid var(--glass-border);
+  border-right: 1px solid var(--glass-border);
   box-sizing: border-box;
-  background: #0a0a0a;
+  background: rgba(7,8,16,0.92);
   position: sticky;
   top: 0;
   z-index: 2;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  color: rgba(255,255,255,0.6);
 }
 
 .tracker-corner {
@@ -1328,28 +1538,29 @@
   left: 0;
   top: 0;
   z-index: 4;
-  background: #0a0a0a;
-  border-bottom: 1px solid var(--theme-glow);
-  border-right: 2px solid var(--theme-dim);
+  background: rgba(7,8,16,0.96);
+  border-bottom: 1px solid var(--glass-border);
+  border-right: 2px solid rgba(255,255,255,0.12);
 }
 
 .tracker-cell {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-bottom: 1px solid var(--theme-glow);
-  border-right: 1px solid var(--theme-glow);
+  border-bottom: 1px solid var(--glass-border);
+  border-right: 1px solid var(--glass-border);
   box-sizing: border-box;
 }
 
+/* Tracker inputs — monospace */
 .weight-input {
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--theme-dim);
+  border-bottom: 1px solid rgba(255,255,255,0.12);
   color: var(--theme);
-  font-family: inherit;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
   font-size: 0.85rem;
-  width: 48px;
+  width: 56px;
   text-align: center;
   outline: none;
   padding: 4px 2px;
@@ -1361,15 +1572,15 @@
 }
 
 .weight-input::placeholder {
-  color: var(--theme-dim);
+  color: rgba(255,255,255,0.2);
 }
 
 .macro-input {
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--theme-dim);
+  border-bottom: 1px solid rgba(255,255,255,0.12);
   color: var(--theme);
-  font-family: inherit;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
   font-size: 0.7rem;
   width: 48px;
   text-align: center;
@@ -1383,33 +1594,57 @@
 }
 
 .macro-input::placeholder {
-  color: var(--theme-dim);
+  color: rgba(255,255,255,0.18);
   font-size: 0.65rem;
 }
 
+.steps-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+  color: var(--theme);
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  font-size: 0.8rem;
+  width: 64px;
+  text-align: center;
+  outline: none;
+  padding: 4px 2px;
+  transition: border-color 0.2s;
+}
+
+.steps-input:focus {
+  border-bottom-color: var(--theme);
+}
+
+.steps-input::placeholder {
+  color: rgba(255,255,255,0.18);
+}
+
+/* Cell state coloring */
 .cell-over {
-  background: rgba(255, 50, 50, 0.12);
+  background: rgba(255,50,50,0.12);
 }
 
 .cell-over .macro-input {
   color: #ff4444;
-  border-bottom-color: rgba(255, 68, 68, 0.5);
+  border-bottom-color: rgba(255,68,68,0.5);
 }
 
 .cell-under {
-  background: rgba(255, 165, 0, 0.1);
+  background: rgba(255,165,0,0.1);
 }
 
 .cell-under .macro-input {
   color: #ff9900;
-  border-bottom-color: rgba(255, 153, 0, 0.5);
+  border-bottom-color: rgba(255,153,0,0.5);
 }
 
+/* Habit checkbox */
 .habit-check {
   appearance: none;
   width: 20px;
   height: 20px;
-  border: 2px solid var(--theme-dim);
+  border: 2px solid rgba(255,255,255,0.2);
   border-radius: 50%;
   cursor: pointer;
   position: relative;
@@ -1419,13 +1654,13 @@
 
 .habit-check:hover {
   border-color: var(--theme);
-  box-shadow: 0 0 6px var(--theme-dim);
+  box-shadow: 0 0 8px var(--theme-glow);
 }
 
 .habit-check:checked {
   background: var(--theme);
   border-color: var(--theme);
-  box-shadow: 0 0 8px var(--theme-dim);
+  box-shadow: 0 0 10px var(--theme-glow);
 }
 
 .habit-check:checked::after {
@@ -1438,7 +1673,9 @@
   font-weight: bold;
 }
 
-/* Chart Legend Info */
+/* =====================================================================
+   CHART LEGEND INFO
+   ===================================================================== */
 .chart-legend-wrapper {
   display: flex;
   justify-content: flex-end;
@@ -1452,21 +1689,22 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  border: 1px solid var(--theme-dim);
+  border: 1px solid var(--glass-border-strong);
   background: transparent;
   color: var(--theme);
   font-size: 0.75rem;
   font-weight: 700;
   font-style: italic;
-  font-family: inherit;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background 0.15s;
 }
 
 .legend-info-btn:hover {
-  background: var(--theme-glow);
+  background: var(--glass-bg-strong);
 }
 
 .legend-tooltip {
@@ -1475,12 +1713,15 @@
   top: 100%;
   right: 0;
   margin-top: 6px;
-  background: #111;
-  border: 1px solid var(--theme-dim);
-  border-radius: 4px;
-  padding: 8px 12px;
+  background: var(--glass-bg-strong);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border-strong);
+  border-radius: 12px;
+  padding: 10px 14px;
   white-space: nowrap;
   z-index: 20;
+  box-shadow: var(--glass-shadow);
 }
 
 .legend-info-btn:hover .legend-tooltip {
@@ -1494,6 +1735,8 @@
   font-size: 0.75rem;
   padding: 3px 0;
   font-style: normal;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  color: #ccc;
 }
 
 .legend-swatch {
@@ -1522,187 +1765,23 @@
   border-style: dashed;
 }
 
-/* Scrollbar */
-.tracker-body::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-.tracker-body::-webkit-scrollbar-track {
-  background: #0a0a0a;
-}
-
-.tracker-body::-webkit-scrollbar-thumb {
-  background: var(--theme-dim);
-  border-radius: 4px;
-  border: 2px solid #0a0a0a;
-}
-
-.tracker-body::-webkit-scrollbar-thumb:hover {
-  background: var(--theme);
-}
-
-.tracker-body::-webkit-scrollbar-corner {
-  background: #0a0a0a;
-}
-
 /* =====================================================================
-   GLASSMORPHIC THEME LAYER
-   Appended last so it overrides the flat surfaces above via cascade.
-   Each page sets --theme / --theme-dim / --theme-glow, so the ambient
-   glow is tinted per page automatically.
+   PLAN TOGGLE / TARGET NOTE
    ===================================================================== */
-
-:root {
-  --glass-bg: rgba(255, 255, 255, 0.055);
-  --glass-bg-strong: rgba(255, 255, 255, 0.09);
-  --glass-border: rgba(255, 255, 255, 0.12);
-  --glass-border-strong: rgba(255, 255, 255, 0.2);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  --glass-blur: blur(16px) saturate(150%);
-}
-
-/* Ambient gradient backdrop, tinted by the active page theme. */
-.app {
-  height: 100dvh;
-  background:
-    radial-gradient(1100px 760px at 8% -12%, var(--theme-glow), transparent 60%),
-    radial-gradient(1000px 720px at 112% 6%, var(--theme-glow), transparent 55%),
-    radial-gradient(900px 900px at 50% 124%, var(--theme-glow), transparent 60%),
-    linear-gradient(165deg, #0c0f15 0%, #070809 55%, #060708 100%);
-  background-attachment: fixed;
-}
-
-/* Header as a frosted bar */
-.header {
-  background: rgba(255, 255, 255, 0.045);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-  border-bottom: 1px solid var(--glass-border);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
-}
-
-/* Slide-out menu as a deep glass panel */
-.menu {
-  background: rgba(16, 18, 24, 0.6);
-  -webkit-backdrop-filter: blur(24px) saturate(150%);
-  backdrop-filter: blur(24px) saturate(150%);
-  border-right: 1px solid var(--glass-border);
-  box-shadow: 8px 0 40px rgba(0, 0, 0, 0.45);
-}
-
-.menu-overlay {
-  background: rgba(0, 0, 0, 0.4);
-  -webkit-backdrop-filter: blur(3px);
-  backdrop-filter: blur(3px);
-}
-
-/* Generic frosted surfaces */
-.diet-section,
-.plan-card,
-.class-card,
-.maintenance-box,
-.task-item,
-.modal,
-.calendar-dropdown,
-.legend-tooltip,
-.macro-targets {
-  background: var(--glass-bg);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
-}
-
-.diet-section {
-  border-radius: 18px;
-  padding: 22px 24px;
-}
-
-.plan-card,
-.modal,
-.calendar-dropdown {
-  border-radius: 16px;
-}
-
-.class-card,
-.maintenance-box,
-.task-item {
-  border-radius: 14px;
-}
-
-/* Nested cards sit on a slightly brighter pane so they read as layered glass */
-.diet-section .class-card,
-.diet-section .plan-card {
-  background: var(--glass-bg-strong);
-}
-
-/* Frosted inputs & selects */
-.target-field input,
-.target-field select,
-.macro-input-row input,
-.calorie-goal input,
-.food-add input,
-.habit-add input,
-.habit-add-input,
-.plan-row input,
-.plan-select,
-.lock-btn {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--glass-border);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  border-radius: 11px;
-  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-}
-
-.target-field input:focus,
-.target-field select:focus,
-.macro-input-row input:focus,
-.food-add input:focus {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-/* Frosted pill buttons */
-.plan-apply,
-.header-btn,
-.calendar-btn,
-.lock-btn,
-.week-btn,
-.plan-toggle,
-.food-add-btn {
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  border-radius: 11px;
-}
-
-.plan-apply,
-.header-btn,
-.calendar-btn {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border-strong);
-}
-
-.plan-apply:hover,
-.header-btn:hover,
-.calendar-btn:hover,
-.lock-btn:hover {
-  background: var(--theme-glow);
-  border-color: var(--theme);
-  box-shadow: 0 0 16px var(--theme-glow);
-}
-
-/* View-meals toggle */
 .plan-toggle {
   align-self: flex-start;
   background: var(--glass-bg);
   border: 1px solid var(--glass-border-strong);
   color: var(--theme);
   font: inherit;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   font-size: 0.78rem;
   letter-spacing: 0.04em;
   padding: 7px 14px;
+  border-radius: 11px;
   cursor: pointer;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
 }
 
@@ -1716,9 +1795,12 @@
   color: #8a8a8a;
   font-weight: 400;
   font-size: 0.74rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
-/* Profile page: reuse the diet content scroll + habit editor */
+/* =====================================================================
+   PROFILE PAGE
+   ===================================================================== */
 .profile-content {
   overflow-y: auto;
   display: flex;
@@ -1740,7 +1822,7 @@
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   border-radius: 12px;
-  padding: 10px 14px;
+  padding: 11px 16px;
   color: #ddd;
 }
 
@@ -1751,10 +1833,15 @@
 
 .habit-add input {
   flex: 1;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 11px;
   color: var(--theme);
-  padding: 10px 12px;
+  padding: 10px 14px;
   font-size: 0.9rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .habit-add input:focus {
@@ -1762,26 +1849,50 @@
   box-shadow: 0 0 0 2px var(--theme-glow);
 }
 
-/* Glass scrollbars for the scrolling pages */
+/* =====================================================================
+   SCROLLBARS
+   ===================================================================== */
+.tracker-body::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.tracker-body::-webkit-scrollbar-track {
+  background: rgba(7,8,16,0.8);
+}
+
+.tracker-body::-webkit-scrollbar-thumb {
+  background: var(--glass-border-strong);
+  border-radius: 4px;
+  border: 2px solid rgba(7,8,16,0.8);
+}
+
+.tracker-body::-webkit-scrollbar-thumb:hover {
+  background: var(--theme-dim);
+}
+
+.tracker-body::-webkit-scrollbar-corner {
+  background: rgba(7,8,16,0.8);
+}
+
 .diet-content::-webkit-scrollbar,
 .tasks-content::-webkit-scrollbar,
 .profile-content::-webkit-scrollbar {
-  width: 10px;
+  width: 8px;
 }
 
 .diet-content::-webkit-scrollbar-thumb,
 .tasks-content::-webkit-scrollbar-thumb,
 .profile-content::-webkit-scrollbar-thumb {
-  background: var(--theme-dim);
+  background: var(--glass-border-strong);
   border-radius: 6px;
-  border: 3px solid transparent;
+  border: 2px solid transparent;
   background-clip: padding-box;
 }
 
 /* =====================================================================
-   DAILY CHECK-IN / WELCOME HERO (home dashboard)
+   HOME DASHBOARD — CHECK-IN HERO
    ===================================================================== */
-/* Home becomes a vertical scroll region: full-screen hero, then dashboard. */
 .home-scroll {
   flex: 1;
   min-height: 0;
@@ -1834,6 +1945,7 @@
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
   box-shadow: var(--glass-shadow), 0 0 80px -30px var(--theme-glow);
+  animation: fadeUp 0.55s cubic-bezier(0.22,1,0.36,1) both;
 }
 
 .checkin-head {
@@ -1850,6 +1962,9 @@
   letter-spacing: 0.18em;
   color: var(--theme);
   opacity: 0.85;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-weight: 500;
+  animation: fadeUp 0.45s cubic-bezier(0.22,1,0.36,1) 0.1s both;
 }
 
 .checkin-greeting {
@@ -1859,6 +1974,8 @@
   color: #fff;
   letter-spacing: -0.01em;
   line-height: 1.1;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  animation: fadeUp 0.5s cubic-bezier(0.22,1,0.36,1) 0.18s both;
 }
 
 .checkin-wave {
@@ -1869,17 +1986,19 @@
 
 @keyframes checkin-wave {
   0%, 60%, 100% { transform: rotate(0deg); }
-  10% { transform: rotate(14deg); }
-  20% { transform: rotate(-8deg); }
-  30% { transform: rotate(14deg); }
-  40% { transform: rotate(-4deg); }
-  50% { transform: rotate(10deg); }
+  10%  { transform: rotate(14deg); }
+  20%  { transform: rotate(-8deg); }
+  30%  { transform: rotate(14deg); }
+  40%  { transform: rotate(-4deg); }
+  50%  { transform: rotate(10deg); }
 }
 
 .checkin-sub {
   margin: 10px 0 0;
   font-size: 0.95rem;
   color: #9aa0a6;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  animation: fadeUp 0.45s cubic-bezier(0.22,1,0.36,1) 0.28s both;
 }
 
 /* Circular progress ring */
@@ -1891,16 +2010,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: conic-gradient(var(--theme) calc(var(--pct) * 1%), rgba(255, 255, 255, 0.08) 0);
+  background: conic-gradient(var(--theme) calc(var(--pct) * 1%), rgba(255,255,255,0.08) 0);
   box-shadow: 0 0 28px -6px var(--theme-glow);
-  transition: background 0.4s ease;
+  animation: scaleIn 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.22s both,
+             ringFill 1.1s cubic-bezier(0.22,1,0.36,1) 0.35s both;
 }
 
 .checkin-ring-inner {
   width: 84px;
   height: 84px;
   border-radius: 50%;
-  background: rgba(12, 15, 21, 0.82);
+  background: rgba(10,12,22,0.85);
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   display: flex;
@@ -1914,12 +2034,14 @@
   font-weight: 800;
   color: var(--theme);
   line-height: 1;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
 .checkin-count-total {
   font-size: 0.95rem;
   font-weight: 600;
   opacity: 0.6;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
 .checkin-progress-label {
@@ -1928,9 +2050,10 @@
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: #9aa0a6;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
-/* Habit pills — wrap freely and scroll if there are very many */
+/* Habit pills */
 .checkin-habits {
   display: flex;
   flex-wrap: wrap;
@@ -1947,15 +2070,28 @@
   gap: 10px;
   padding: 12px 18px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255,255,255,0.05);
   border: 1px solid var(--glass-border);
   color: #e6e9ec;
   font-size: 0.98rem;
   cursor: pointer;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
-  transition: background 0.18s, border-color 0.18s, color 0.18s, box-shadow 0.18s, transform 0.06s;
+  transition: background 0.18s, border-color 0.18s, color 0.18s, box-shadow 0.18s, transform 0.1s;
+  animation: pillIn 0.4s cubic-bezier(0.22,1,0.36,1) both;
 }
+
+.checkin-habit:nth-child(1)  { animation-delay: 0.38s; }
+.checkin-habit:nth-child(2)  { animation-delay: 0.44s; }
+.checkin-habit:nth-child(3)  { animation-delay: 0.50s; }
+.checkin-habit:nth-child(4)  { animation-delay: 0.56s; }
+.checkin-habit:nth-child(5)  { animation-delay: 0.62s; }
+.checkin-habit:nth-child(6)  { animation-delay: 0.68s; }
+.checkin-habit:nth-child(7)  { animation-delay: 0.74s; }
+.checkin-habit:nth-child(8)  { animation-delay: 0.80s; }
+.checkin-habit:nth-child(9)  { animation-delay: 0.86s; }
+.checkin-habit:nth-child(10) { animation-delay: 0.92s; }
 
 .checkin-habit:hover {
   border-color: var(--theme);
@@ -1980,7 +2116,7 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255,255,255,0.08);
   border: 1px solid var(--glass-border-strong);
   font-size: 0.82rem;
   font-weight: 700;
@@ -2000,6 +2136,7 @@
   flex-wrap: wrap;
   gap: 12px;
   margin-top: 26px;
+  animation: fadeUp 0.4s cubic-bezier(0.22,1,0.36,1) 0.7s both;
 }
 
 .checkin-done-msg {
@@ -2007,18 +2144,21 @@
   font-size: 0.95rem;
   color: var(--theme);
   font-weight: 700;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
 .checkin-hint-msg {
   margin: 0;
   font-size: 0.85rem;
   color: #9aa0a6;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
 .checkin-empty {
   margin: 24px 0 0;
   font-size: 0.9rem;
   color: #9aa0a6;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
 .checkin-scroll-hint {
@@ -2027,19 +2167,21 @@
   gap: 6px;
   padding: 9px 18px;
   border-radius: 999px;
-  background: var(--theme-glow);
-  border: 1px solid var(--theme-dim);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border-strong);
   color: var(--theme);
-  font-family: inherit;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   font-size: 0.82rem;
   font-weight: 600;
   letter-spacing: 0.03em;
   cursor: pointer;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   transition: background 0.18s, border-color 0.18s, box-shadow 0.18s;
 }
 
 .checkin-scroll-hint:hover {
-  background: var(--theme-dim);
+  background: var(--theme-glow);
   border-color: var(--theme);
   box-shadow: 0 0 16px var(--theme-glow);
 }
@@ -2051,20 +2193,429 @@
 
 @keyframes checkin-bounce {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(3px); }
+  50%       { transform: translateY(3px); }
 }
 
 /* =====================================================================
-   MOBILE / RESPONSIVE
+   AUTH SCREENS
+   ===================================================================== */
+.auth-page {
+  height: 100dvh;
+  overflow-y: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-center {
+  width: 100%;
+  max-width: 480px;
+  padding: 24px 16px;
+  margin: auto;
+}
+
+.auth-card {
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border-strong);
+  border-radius: 24px;
+  padding: 36px 32px;
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow), 0 0 80px -30px var(--theme-glow);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.auth-logo {
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: capitalize;
+  color: var(--theme);
+  text-shadow: 0 0 20px var(--theme-dim);
+  margin: 0;
+  text-align: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.auth-tagline {
+  text-align: center;
+  color: #9aa0a6;
+  font-size: 0.9rem;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.auth-landing-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.auth-btn-primary {
+  background: var(--theme);
+  color: #07080b;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: opacity 0.15s, box-shadow 0.15s;
+}
+
+.auth-btn-primary:hover:not(:disabled) {
+  opacity: 0.88;
+  box-shadow: 0 0 20px var(--theme-glow);
+}
+
+.auth-btn-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.auth-btn-ghost {
+  background: var(--glass-bg);
+  color: var(--theme);
+  border: 1px solid var(--glass-border-strong);
+  border-radius: 12px;
+  padding: 13px 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.auth-btn-ghost:hover {
+  background: var(--theme-glow);
+  border-color: var(--theme);
+}
+
+.auth-back {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.4);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.82rem;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  letter-spacing: 0.05em;
+  transition: color 0.15s;
+  width: fit-content;
+}
+
+.auth-back:hover {
+  color: var(--theme);
+}
+
+.auth-progress {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 4px 0;
+}
+
+.auth-progress-dot {
+  width: 28px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.1);
+  transition: background 0.3s;
+}
+
+.auth-progress-dot.done {
+  background: var(--theme);
+  box-shadow: 0 0 8px var(--theme-glow);
+}
+
+.auth-step-title {
+  margin: 0;
+  font-size: 1.4rem;
+  color: #fff;
+  font-weight: 700;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.auth-step-sub {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #9aa0a6;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.auth-field label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--theme);
+  opacity: 0.8;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-weight: 500;
+}
+
+.auth-field input,
+.auth-field select {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.95rem;
+  padding: 12px 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.auth-field input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.75);
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+
+.auth-field input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+.auth-field input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+  color: #fff;
+}
+
+.auth-field input[type="date"]::-webkit-datetime-edit-text {
+  color: rgba(255,255,255,0.35);
+}
+
+.auth-field input:focus,
+.auth-field select:focus {
+  border-color: var(--theme);
+  box-shadow: 0 0 0 2px var(--theme-glow);
+  background: rgba(255,255,255,0.08);
+}
+
+.auth-field input::placeholder {
+  color: rgba(255,255,255,0.25);
+}
+
+.auth-field select option {
+  background: #111;
+  color: #fff;
+}
+
+.auth-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.auth-hint-box {
+  padding: 12px 16px;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  font-size: 0.85rem;
+  color: #9aa0a6;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.auth-hint-box strong {
+  color: var(--theme);
+}
+
+.auth-hint-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.auth-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.auth-unit-toggle {
+  display: flex;
+  gap: 2px;
+}
+
+.auth-unit-btn {
+  background: none;
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+  color: rgba(255,255,255,0.35);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.68rem;
+  padding: 2px 7px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.auth-unit-btn.active {
+  background: var(--theme-glow);
+  border-color: var(--theme);
+  color: var(--theme);
+}
+
+.auth-habits-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.auth-habit-pill {
+  padding: 9px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255,255,255,0.05);
+  color: #ccc;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.85rem;
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.auth-habit-pill:hover {
+  border-color: var(--theme);
+  color: var(--theme);
+}
+
+.auth-habit-pill.selected {
+  background: var(--theme-glow);
+  border-color: var(--theme);
+  color: var(--theme);
+  box-shadow: 0 0 12px var(--theme-glow);
+}
+
+.auth-custom-habit {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.auth-custom-habit input {
+  flex: 1;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.88rem;
+  padding: 10px 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.auth-custom-habit input:focus {
+  border-color: var(--theme);
+}
+
+.auth-custom-habit input::placeholder {
+  color: rgba(255,255,255,0.25);
+}
+
+.auth-add-btn {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border-strong);
+  color: var(--theme);
+  border-radius: 10px;
+  width: 42px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  font-family: inherit;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.auth-add-btn:hover {
+  background: var(--theme-glow);
+  border-color: var(--theme);
+}
+
+.auth-error {
+  color: #ff453a;
+  font-size: 0.82rem;
+  margin: 0;
+  padding: 9px 13px;
+  background: rgba(255,69,58,0.1);
+  border: 1px solid rgba(255,69,58,0.3);
+  border-radius: 10px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.auth-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.auth-switch {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #777;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.auth-link {
+  background: none;
+  border: none;
+  color: var(--theme);
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+/* =====================================================================
+   RESPONSIVE — MOBILE
    ===================================================================== */
 @media (max-width: 640px) {
   .header {
-    padding: 12px 16px;
+    padding: 0 14px;
+    height: 52px;
   }
 
   .title {
-    font-size: 1.15rem;
-    letter-spacing: 0.12em;
+    font-size: 1rem;
+    letter-spacing: 0.03em;
   }
 
   .checkin-card.hero {
@@ -2127,7 +2678,7 @@
   }
 
   .diet-section {
-    padding: 16px 16px;
+    padding: 16px;
     border-radius: 16px;
   }
 
@@ -2173,7 +2724,6 @@
     padding-left: 6px;
   }
 
-  /* Home page: let the chart + tracker breathe on small screens */
   .chart-labels-spacer {
     width: 64px;
     min-width: 64px;
@@ -2185,7 +2735,8 @@
   }
 
   .modal {
-    padding: 18px;
+    padding: 20px;
+    border-radius: 18px;
   }
 }
 
@@ -2205,373 +2756,13 @@
   }
 }
 
-/* =====================================================================
-   AUTH SCREENS
-   ===================================================================== */
-.auth-page {
-  height: 100dvh;
-  overflow-y: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.auth-center {
-  width: 100%;
-  max-width: 480px;
-  padding: 24px 16px;
-  margin: auto;
-}
-
-.auth-card {
-  background: var(--glass-bg-strong);
-  border: 1px solid var(--glass-border-strong);
-  border-radius: 24px;
-  padding: 36px 32px;
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-  box-shadow: var(--glass-shadow), 0 0 80px -30px var(--theme-glow);
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-}
-
-.auth-logo {
-  font-size: 2.2rem;
-  letter-spacing: 0.2em;
-  text-transform: capitalize;
-  color: var(--theme);
-  text-shadow: 0 0 20px var(--theme-dim);
-  margin: 0;
-  text-align: center;
-}
-
-.auth-tagline {
-  text-align: center;
-  color: #9aa0a6;
-  font-size: 0.9rem;
-  margin: 0;
-}
-
-.auth-landing-btns {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 8px;
-}
-
-.auth-btn-primary {
-  background: var(--theme);
-  color: #07080b;
-  border: none;
-  border-radius: 12px;
-  padding: 14px 20px;
-  font-family: inherit;
-  font-size: 0.95rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  cursor: pointer;
-  transition: opacity 0.15s, box-shadow 0.15s;
-}
-
-.auth-btn-primary:hover:not(:disabled) {
-  opacity: 0.88;
-  box-shadow: 0 0 20px var(--theme-glow);
-}
-
-.auth-btn-primary:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.auth-btn-ghost {
-  background: var(--glass-bg);
-  color: var(--theme);
-  border: 1px solid var(--glass-border-strong);
-  border-radius: 12px;
-  padding: 13px 20px;
-  font-family: inherit;
-  font-size: 0.95rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-}
-
-.auth-btn-ghost:hover {
-  background: var(--theme-glow);
-  border-color: var(--theme);
-}
-
-.auth-back {
-  background: none;
-  border: none;
-  color: var(--theme-dim);
-  font-family: inherit;
-  font-size: 0.82rem;
-  cursor: pointer;
-  padding: 0;
-  text-align: left;
-  letter-spacing: 0.05em;
-  transition: color 0.15s;
-  width: fit-content;
-}
-
-.auth-back:hover { color: var(--theme); }
-
-.auth-progress {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  margin: 4px 0;
-}
-
-.auth-progress-dot {
-  width: 28px;
-  height: 4px;
-  border-radius: 2px;
-  background: rgba(255,255,255,0.1);
-  transition: background 0.3s;
-}
-
-.auth-progress-dot.done {
-  background: var(--theme);
-  box-shadow: 0 0 8px var(--theme-glow);
-}
-
-.auth-step-title {
-  margin: 0;
-  font-size: 1.4rem;
-  color: #fff;
-  font-weight: 700;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-}
-
-.auth-step-sub {
-  margin: 0;
-  font-size: 0.82rem;
-  color: #9aa0a6;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-}
-
-.auth-form {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.auth-field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  flex: 1;
-  min-width: 0;
-}
-
-.auth-field label {
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--theme);
-  opacity: 0.8;
-}
-
-.auth-field input,
-.auth-field select {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid var(--glass-border);
-  border-radius: 10px;
-  color: #fff;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  font-size: 0.95rem;
-  padding: 12px 14px;
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  width: 100%;
-  box-sizing: border-box;
-  min-width: 0;
-}
-
-.auth-field input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(0.75);
-  cursor: pointer;
-  opacity: 0.6;
-  transition: opacity 0.15s;
-}
-.auth-field input[type="date"]::-webkit-calendar-picker-indicator:hover {
-  opacity: 1;
-}
-.auth-field input[type="date"]::-webkit-datetime-edit-fields-wrapper { color: #fff; }
-.auth-field input[type="date"]::-webkit-datetime-edit-text { color: rgba(255,255,255,0.35); }
-
-.auth-field input:focus,
-.auth-field select:focus {
-  border-color: var(--theme);
-  box-shadow: 0 0 0 2px var(--theme-glow);
-  background: rgba(255,255,255,0.08);
-}
-
-.auth-field input::placeholder { color: rgba(255,255,255,0.25); }
-
-.auth-field select option { background: #111; color: #fff; }
-
-.auth-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.auth-hint-box {
-  padding: 12px 16px;
-  border: 1px solid var(--theme-dim);
-  border-radius: 10px;
-  font-size: 0.85rem;
-  color: #9aa0a6;
-  background: var(--glass-bg);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.auth-hint-box strong { color: var(--theme); }
-
-.auth-hint-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.auth-label-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.auth-unit-toggle {
-  display: flex;
-  gap: 2px;
-}
-
-.auth-unit-btn {
-  background: none;
-  border: 1px solid var(--glass-border);
-  border-radius: 6px;
-  color: #666;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  font-size: 0.68rem;
-  padding: 2px 7px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.auth-unit-btn.active {
-  background: var(--theme-glow);
-  border-color: var(--theme);
-  color: var(--theme);
-}
-
-.auth-habits-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.auth-habit-pill {
-  padding: 9px 16px;
-  border-radius: 999px;
-  border: 1px solid var(--glass-border);
-  background: rgba(255,255,255,0.05);
-  color: #ccc;
-  font-family: inherit;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-}
-
-.auth-habit-pill:hover { border-color: var(--theme); color: var(--theme); }
-
-.auth-habit-pill.selected {
-  background: var(--theme-glow);
-  border-color: var(--theme);
-  color: var(--theme);
-  box-shadow: 0 0 12px var(--theme-glow);
-}
-
-.auth-custom-habit {
-  display: flex;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-.auth-custom-habit input {
-  flex: 1;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid var(--glass-border);
-  border-radius: 10px;
-  color: #fff;
-  font-family: inherit;
-  font-size: 0.88rem;
-  padding: 10px 14px;
-  outline: none;
-  transition: border-color 0.2s;
-}
-
-.auth-custom-habit input:focus { border-color: var(--theme); }
-.auth-custom-habit input::placeholder { color: rgba(255,255,255,0.25); }
-
-.auth-add-btn {
-  background: var(--theme-glow);
-  border: 1px solid var(--theme-dim);
-  color: var(--theme);
-  border-radius: 10px;
-  width: 40px;
-  font-size: 1.2rem;
-  cursor: pointer;
-  font-family: inherit;
-  transition: background 0.15s;
-}
-
-.auth-add-btn:hover { background: var(--theme-dim); }
-
-.auth-error {
-  color: #ff453a;
-  font-size: 0.82rem;
-  margin: 0;
-  padding: 8px 12px;
-  background: rgba(255,69,58,0.1);
-  border: 1px solid rgba(255,69,58,0.3);
-  border-radius: 8px;
-}
-
-.auth-actions { display: flex; flex-direction: column; gap: 10px; }
-
-.auth-switch {
-  text-align: center;
-  font-size: 0.8rem;
-  color: #777;
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-}
-
-.auth-link {
-  background: none;
-  border: none;
-  color: var(--theme);
-  font-family: inherit;
-  font-size: inherit;
-  cursor: pointer;
-  padding: 0;
-  text-decoration: underline;
-}
-
 @media (max-width: 480px) {
-  .auth-card { padding: 28px 20px; border-radius: 20px; }
-  .auth-row { grid-template-columns: 1fr; }
+  .auth-card {
+    padding: 28px 20px;
+    border-radius: 20px;
+  }
+
+  .auth-row {
+    grid-template-columns: 1fr;
+  }
 }
