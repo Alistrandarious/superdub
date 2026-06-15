@@ -94,10 +94,10 @@ router.post('/signup', async (req: Request, res: Response) => {
     );
 
     res.json({ token: makeToken(userId), userId });
-  } catch (err) {
+  } catch (err: any) {
     if (client) await client.query('ROLLBACK').catch(() => {});
     console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: err?.message ?? 'Server error' });
   } finally {
     if (client) client.release();
   }
