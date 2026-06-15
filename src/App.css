@@ -2446,6 +2446,35 @@
   align-items: center;
 }
 
+.auth-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.auth-unit-toggle {
+  display: flex;
+  gap: 2px;
+}
+
+.auth-unit-btn {
+  background: none;
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+  color: #666;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.68rem;
+  padding: 2px 7px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.auth-unit-btn.active {
+  background: var(--theme-glow);
+  border-color: var(--theme);
+  color: var(--theme);
+}
+
 .auth-habits-grid {
   display: flex;
   flex-wrap: wrap;

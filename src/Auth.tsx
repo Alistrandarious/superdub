@@ -53,6 +53,66 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
   const [habits, setHabits] = useState<string[]>([...DEFAULT_HABITS]);
   const [customHabit, setCustomHabit] = useState('');
 
+  // Unit preferences
+  const [heightUnit, setHeightUnit] = useState<'cm' | 'ft'>('cm');
+  const [weightUnit, setWeightUnit] = useState<'kg' | 'lb' | 'st'>('kg');
+  // Display values (in chosen units)
+  const [heightDisplay, setHeightDisplay] = useState('');
+  const [weightDisplay, setWeightDisplay] = useState('');
+  const [goalWeightDisplay, setGoalWeightDisplay] = useState('');
+
+  const toCm = (val: string, unit: 'cm' | 'ft') => {
+    if (!val) return '';
+    if (unit === 'cm') return val;
+    // ft format: 5.11 = 5ft 11in, or plain 5.9
+    const parts = val.split('.');
+    const ft = parseFloat(parts[0]) || 0;
+    const inches = parseFloat(parts[1] || '0');
+    return String(Math.round(ft * 30.48 + inches * 2.54));
+  };
+
+  const toKg = (val: string, unit: 'kg' | 'lb' | 'st') => {
+    if (!val) return '';
+    const n = parseFloat(val);
+    if (isNaN(n)) return '';
+    if (unit === 'kg') return val;
+    if (unit === 'lb') return String(Math.round(n * 0.453592 * 10) / 10);
+    // stone: e.g. 13.7 = 13st 7lb
+    const parts = val.split('.');
+    const st = parseFloat(parts[0]) || 0;
+    const lb = parseFloat(parts[1] || '0');
+    return String(Math.round((st * 6.35029 + lb * 0.453592) * 10) / 10);
+  };
+
+  const onHeightChange = (val: string) => {
+    setHeightDisplay(val);
+    setHeightCm(toCm(val, heightUnit));
+  };
+
+  const onWeightChange = (val: string) => {
+    setWeightDisplay(val);
+    setWeightKg(toKg(val, weightUnit));
+  };
+
+  const onGoalWeightChange = (val: string) => {
+    setGoalWeightDisplay(val);
+    setGoalWeight(toKg(val, weightUnit));
+  };
+
+  const switchHeightUnit = (unit: 'cm' | 'ft') => {
+    setHeightUnit(unit);
+    setHeightDisplay('');
+    setHeightCm('');
+  };
+
+  const switchWeightUnit = (unit: 'kg' | 'lb' | 'st') => {
+    setWeightUnit(unit);
+    setWeightDisplay('');
+    setWeightKg('');
+    setGoalWeightDisplay('');
+    setGoalWeight('');
+  };
+
   const maxDob = new Date(new Date().setFullYear(new Date().getFullYear() - 10)).toISOString().split('T')[0];
 
   const TOTAL_STEPS = 4;
@@ -366,19 +426,33 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
                     </select>
                   </div>
                 </div>
-                <div className="auth-row">
-                  <div className="auth-field">
-                    <label>Height (cm)</label>
-                    <input type="text" inputMode="decimal"
-                      value={heightCm} onChange={e => setHeightCm(e.target.value)}
-                      placeholder="e.g. 175" />
+                <div className="auth-field">
+                  <div className="auth-label-row">
+                    <label>Height</label>
+                    <div className="auth-unit-toggle">
+                      {(['cm','ft'] as const).map(u => (
+                        <button key={u} type="button" className={`auth-unit-btn ${heightUnit===u?'active':''}`} onClick={() => switchHeightUnit(u)}>{u}</button>
+                      ))}
+                    </div>
                   </div>
-                  <div className="auth-field">
-                    <label>Weight (kg)</label>
-                    <input type="text" inputMode="decimal"
-                      value={weightKg} onChange={e => setWeightKg(e.target.value)}
-                      placeholder="e.g. 85" />
+                  <input type="text" inputMode="decimal"
+                    value={heightDisplay}
+                    onChange={e => onHeightChange(e.target.value)}
+                    placeholder={heightUnit === 'cm' ? 'e.g. 175' : 'e.g. 5.11 (5ft 11in)'} />
+                </div>
+                <div className="auth-field">
+                  <div className="auth-label-row">
+                    <label>Weight</label>
+                    <div className="auth-unit-toggle">
+                      {(['kg','lb','st'] as const).map(u => (
+                        <button key={u} type="button" className={`auth-unit-btn ${weightUnit===u?'active':''}`} onClick={() => switchWeightUnit(u)}>{u}</button>
+                      ))}
+                    </div>
                   </div>
+                  <input type="text" inputMode="decimal"
+                    value={weightDisplay}
+                    onChange={e => onWeightChange(e.target.value)}
+                    placeholder={weightUnit === 'kg' ? 'e.g. 85' : weightUnit === 'lb' ? 'e.g. 187' : 'e.g. 13.7 (13st 7lb)'} />
                 </div>
               </div>
             </>
@@ -404,10 +478,10 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
                 <div className="auth-form">
                   <div className="auth-row">
                     <div className="auth-field">
-                      <label>Goal weight (kg)</label>
+                      <label>Goal weight ({weightUnit})</label>
                       <input type="text" inputMode="decimal" autoFocus
-                        value={goalWeight} onChange={e => setGoalWeight(e.target.value)}
-                        placeholder="e.g. 75" />
+                        value={goalWeightDisplay} onChange={e => onGoalWeightChange(e.target.value)}
+                        placeholder={weightUnit === 'kg' ? 'e.g. 75' : weightUnit === 'lb' ? 'e.g. 165' : 'e.g. 11.7'} />
                     </div>
                     <div className="auth-field">
                       <label>Loss per week</label>
