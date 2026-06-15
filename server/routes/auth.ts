@@ -45,8 +45,9 @@ router.post('/signup', async (req: Request, res: Response) => {
 
   const age = ageFromDob(dob);
 
-  const client = await pool.connect();
+  let client: any;
   try {
+    client = await pool.connect();
     await client.query('BEGIN');
 
     const existing = await client.query('SELECT id FROM users WHERE email = $1', [email.toLowerCase()]);
@@ -94,11 +95,11 @@ router.post('/signup', async (req: Request, res: Response) => {
 
     res.json({ token: makeToken(userId), userId });
   } catch (err) {
-    await client.query('ROLLBACK');
+    if (client) await client.query('ROLLBACK').catch(() => {});
     console.error(err);
     res.status(500).json({ error: 'Server error' });
   } finally {
-    client.release();
+    if (client) client.release();
   }
 });
 
@@ -110,22 +111,27 @@ router.post('/login', async (req: Request, res: Response) => {
     return;
   }
 
-  const { rows } = await pool.query(
-    'SELECT id, password_hash FROM users WHERE email = $1',
-    [email.toLowerCase()]
-  );
-  if (rows.length === 0) {
-    res.status(401).json({ error: 'Invalid email or password' });
-    return;
-  }
+  try {
+    const { rows } = await pool.query(
+      'SELECT id, password_hash FROM users WHERE email = $1',
+      [email.toLowerCase()]
+    );
+    if (rows.length === 0) {
+      res.status(401).json({ error: 'Invalid email or password' });
+      return;
+    }
 
-  const match = await bcrypt.compare(password, rows[0].password_hash);
-  if (!match) {
-    res.status(401).json({ error: 'Invalid email or password' });
-    return;
-  }
+    const match = await bcrypt.compare(password, rows[0].password_hash);
+    if (!match) {
+      res.status(401).json({ error: 'Invalid email or password' });
+      return;
+    }
 
-  res.json({ token: makeToken(rows[0].id), userId: rows[0].id });
+    res.json({ token: makeToken(rows[0].id), userId: rows[0].id });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
 // POST /api/auth/forgot-password

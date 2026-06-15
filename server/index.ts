@@ -35,6 +35,12 @@ app.get(/.*/, (_req, res) => {
   res.sendFile(path.join(buildDir, 'index.html'));
 });
 
+// Global JSON error handler — must be last
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error('[error]', err?.message ?? err);
+  res.status(err?.status ?? 500).json({ error: err?.message ?? 'Server error' });
+});
+
 app.listen(PORT, () => {
   console.log(`Superdub running on http://localhost:${PORT}`);
 });
