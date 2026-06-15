@@ -33,7 +33,9 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "server": "tsx watch server/index.ts",
-    "server:start": "tsx server/index.ts"
+    "server:start": "tsx server/index.ts",
+    "render:build": "npm run build",
+    "render:start": "tsx server/index.ts"
   },
   "eslintConfig": {
     "extends": [

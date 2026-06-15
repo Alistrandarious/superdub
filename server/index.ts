@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 import authRoutes from './routes/auth';
 import profileRoutes from './routes/profile';
 import habitsRoutes from './routes/habits';
@@ -14,7 +15,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
+app.use(cors());
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
@@ -27,6 +28,13 @@ app.use('/api/weight-settings', weightSettingsRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
+// Serve React build in production
+const buildDir = path.join(__dirname, '..', 'build');
+app.use(express.static(buildDir));
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(buildDir, 'index.html'));
+});
+
 app.listen(PORT, () => {
-  console.log(`Superdub API running on http://localhost:${PORT}`);
+  console.log(`Superdub running on http://localhost:${PORT}`);
 });
