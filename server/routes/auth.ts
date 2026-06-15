@@ -97,7 +97,7 @@ router.post('/signup', async (req: Request, res: Response) => {
   } catch (err: any) {
     if (client) await client.query('ROLLBACK').catch(() => {});
     console.error(err);
-    res.status(500).json({ error: err?.message ?? 'Server error' });
+    res.status(500).json({ error: err?.message || err?.code || String(err) || 'Server error' });
   } finally {
     if (client) client.release();
   }
