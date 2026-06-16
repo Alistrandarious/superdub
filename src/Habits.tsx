@@ -400,19 +400,17 @@ const HabitCard: React.FC<{
       <div className="hcard-week">
         {weekDays.map(({ key, label, isFuture, isToday }) => {
           const state = ht[key]?.[habit] ?? null;
-          const dayIdx = ALL_DAYS.indexOf(key);
-          const isBeforeStart = startDayIdx >= 0 && dayIdx < startDayIdx;
-          const disabled = isFuture || isBeforeStart;
+          const disabled = isFuture;
           return (
-            <div key={key} className={`hcard-day ${state === 'done' && !isBeforeStart ? 'done' : ''} ${state === 'failed' && !isBeforeStart ? 'failed' : ''} ${isFuture ? 'future' : ''} ${isToday ? 'is-today' : ''} ${isBeforeStart ? 'before-start' : ''}`}>
+            <div key={key} className={`hcard-day ${state === 'done' ? 'done' : ''} ${state === 'failed' ? 'failed' : ''} ${isFuture ? 'future' : ''} ${isToday ? 'is-today' : ''}`}>
               <button
                 className="hcard-day-circle"
                 disabled={disabled}
                 onClick={() => !disabled && onToggleDay(habit, key, cycleState(state))}
                 aria-label={`${label}: ${state ?? 'blank'}`}
               >
-                {state === 'done' && !disabled && <span className="hcard-day-tick">{isFlame ? '🔥' : '✓'}</span>}
-                {state === 'failed' && !disabled && <span className="hcard-day-tick hcard-day-fail">✗</span>}
+                {state === 'done' && <span className="hcard-day-tick">{isFlame ? '🔥' : '✓'}</span>}
+                {state === 'failed' && <span className="hcard-day-tick hcard-day-fail">✗</span>}
               </button>
               <span className="hcard-day-label">{label}</span>
             </div>
