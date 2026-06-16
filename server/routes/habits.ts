@@ -53,7 +53,9 @@ router.put('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
       [req.userId]
     );
     for (let i = 0; i < habits.length; i++) {
-      const startDate = existingMap.get(habits[i]) ?? today;
+      // Preserve whatever start_date was stored (including null) for existing habits.
+      // Only assign today for genuinely new habits not previously in the DB.
+      const startDate = existingMap.has(habits[i]) ? existingMap.get(habits[i]) : today;
       await pool.query(
         'INSERT INTO habits (user_id, name, position, start_date, archived) VALUES ($1, $2, $3, $4, FALSE)',
         [req.userId, habits[i], i, startDate]

@@ -75,9 +75,11 @@ function getWeekOfMonth(dayStr: string): number {
 
 const DEFAULT_HABITS = ['Walking', 'Praying', 'Duolingo'];
 
+type HabitState = true | 'failed' | false;
+
 interface DayData {
   weight: string;
-  habits: Record<string, boolean>;
+  habits: Record<string, HabitState>;
   calories: string;
   protein: string;
   carbs: string;
@@ -196,7 +198,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       });
       (trackerData.habits as any[]).forEach(row => {
         if (merged[row.day]) {
-          merged[row.day].habits[row.habit_name] = row.state === 'done';
+          merged[row.day].habits[row.habit_name] =
+            row.state === 'done' ? true : row.state === 'failed' ? 'failed' : false;
         }
       });
       setTracker(merged);
@@ -391,7 +394,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
   const chartData = chartDayRange.map(({ ddmm, date }, i) => {
     const d = tracker[ddmm] ?? { weight: '', habits: {}, calories: '', protein: '', carbs: '', fats: '', steps: '' };
-    const completed = habits.filter(h => d.habits[h]).length;
+    const completed = habits.filter(h => d.habits[h] === true).length;
+    const failed = habits.filter(h => d.habits[h] === 'failed').length;
 
     // Days since account creation → drives the linear goal curve
     const daysSinceStart = Math.round((date.getTime() - accountCreatedDate.getTime()) / 86400000);
@@ -404,7 +408,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       ? +(trendIntercept + trendSlope * i).toFixed(1)
       : null;
 
-    return { day: ddmm, completed, weight: d.weight ? Number(d.weight) : null, prediction, trend };
+    return { day: ddmm, completed, failed, weight: d.weight ? Number(d.weight) : null, prediction, trend };
   });
 
   const handleWeight = (day: string, value: string) => {
@@ -686,7 +690,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       {/* ── Daily check-in overlay (once per day, waits for habits to load) ── */}
       {checkinOpen && loaded && (() => {
         const todayEntry = tracker[todayKey];
-        const doneCount = todayEntry ? habits.filter(h => todayEntry.habits[h]).length : 0;
+        const doneCount = todayEntry ? habits.filter(h => todayEntry.habits[h] === true).length : 0;
         const total = habits.length;
         const allDone = total > 0 && doneCount === total;
         const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
@@ -721,7 +725,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               ) : (
                 <div className="checkin-habits">
                   {habits.map(h => {
-                    const done = !!todayEntry.habits[h];
+                    const done = todayEntry.habits[h] === true;
                     return (
                       <button
                         key={h}
@@ -774,7 +778,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         <button className="legend-info-btn" aria-label="Chart legend">
           i
           <div className="legend-tooltip">
-            <div className="legend-item"><span className="legend-swatch legend-bar"></span>Habits Completed</div>
+            <div className="legend-item"><span className="legend-swatch legend-bar"></span>Habits Done</div>
+            <div className="legend-item"><span className="legend-swatch" style={{background:'rgba(255,69,58,0.75)'}}></span>Habits Failed</div>
             <div className="legend-item"><span className="legend-swatch legend-weight"></span>Weight (kg)</div>
             <div className="legend-item"><span className="legend-swatch legend-prediction"></span>Goal Curve</div>
             <div className="legend-item"><span className="legend-swatch legend-trend"></span>Trend</div>
@@ -836,7 +841,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 label={{ value: `🎯 ${goalDayVisible}`, fill: '#ff00ff', fontSize: 11, position: 'top' }}
               />
             )}
-            <Bar yAxisId="left" dataKey="completed" fill="url(#barGradient)" name="Habits Completed" />
+            <Bar yAxisId="left" dataKey="completed" stackId="habits" fill="url(#barGradient)" name="Done" />
+            <Bar yAxisId="left" dataKey="failed" stackId="habits" fill="rgba(255,69,58,0.75)" name="Failed" radius={[3,3,0,0]} />
             <Line
               yAxisId="right"
               type="monotone"
@@ -1027,7 +1033,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                   <input
                     type="checkbox"
                     className="habit-check"
-                    checked={tracker[day]?.habits[habit] || false}
+                    checked={tracker[day]?.habits[habit] === true}
                     onChange={() => handleCheck(day, habit)}
                   />
                 </div>

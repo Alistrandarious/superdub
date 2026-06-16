@@ -109,7 +109,7 @@ router.post('/signup', async (req: Request, res: Response) => {
     const habitList: string[] = Array.isArray(habits) && habits.length > 0 ? habits : DEFAULT_HABITS;
     for (let i = 0; i < habitList.length; i++) {
       await client.query(
-        'INSERT INTO habits (user_id, name, position) VALUES ($1, $2, $3)',
+        'INSERT INTO habits (user_id, name, position, start_date) VALUES ($1, $2, $3, CURRENT_DATE)',
         [userId, habitList[i], i]
       );
     }
