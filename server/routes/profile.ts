@@ -17,7 +17,7 @@ function ageFromDob(dob: string | null): string {
 router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
     const { rows } = await pool.query(
-      'SELECT name, dob, height_cm, weight_kg, age, sex, activity, steps, vest_kg FROM profile WHERE user_id = $1',
+      'SELECT name, dob, height_cm, weight_kg, age, sex, activity, steps, vest_kg, job_type, gym_freq, walk_freq FROM profile WHERE user_id = $1',
       [req.userId]
     );
     if (!rows[0]) return res.json({});
@@ -32,6 +32,9 @@ router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
       activity: r.activity ?? '1.55',
       steps: r.steps ?? '',
       vestKg: r.vest_kg ?? '',
+      jobType: r.job_type ?? 'desk',
+      gymFreq: r.gym_freq ?? '3-4',
+      walkFreq: r.walk_freq ?? 'moderate',
     });
   } catch {
     res.status(500).json({ error: 'Server error' });
@@ -40,12 +43,14 @@ router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
 
 router.put('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
-    const { name, dob, heightCm, weightKg, sex, activity, steps, vestKg } = req.body;
+    const { name, dob, heightCm, weightKg, sex, activity, steps, vestKg, jobType, gymFreq, walkFreq } = req.body;
     const age = ageFromDob(dob || null);
     await pool.query(
-      `UPDATE profile SET name=$2, dob=$3, height_cm=$4, weight_kg=$5, age=$6, sex=$7, activity=$8, steps=$9, vest_kg=$10
+      `UPDATE profile SET name=$2, dob=$3, height_cm=$4, weight_kg=$5, age=$6, sex=$7, activity=$8, steps=$9, vest_kg=$10,
+         job_type=$11, gym_freq=$12, walk_freq=$13
        WHERE user_id=$1`,
-      [req.userId, name ?? '', dob || null, heightCm ?? '', weightKg ?? '', age, sex ?? 'male', activity ?? '1.55', steps ?? '', vestKg ?? '']
+      [req.userId, name ?? '', dob || null, heightCm ?? '', weightKg ?? '', age, sex ?? 'male', activity ?? '1.55', steps ?? '', vestKg ?? '',
+       jobType ?? 'desk', gymFreq ?? '3-4', walkFreq ?? 'moderate']
     );
     res.json({ ok: true });
   } catch {

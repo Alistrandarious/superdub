@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './App.css';
 import { api, clearToken } from './api';
+import { computeActivity, JOB_OPTS, GYM_OPTS, WALK_OPTS } from './Auth';
 
 interface ProfileData {
   dob: string;
@@ -95,6 +96,9 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
   const [target, setTarget] = useState<MacroSet>(DEFAULT_TARGET);
   const [habits, setHabits] = useState<string[]>(DEFAULT_HABITS);
   const [newHabit, setNewHabit] = useState('');
+  const [jobType, setJobType] = useState('desk');
+  const [gymFreq, setGymFreq] = useState('3-4');
+  const [walkFreq, setWalkFreq] = useState('moderate');
   const [loaded, setLoaded] = useState(false);
   const [aiKeyInput, setAiKeyInput] = useState('');
   const [aiKeyMasked, setAiKeyMasked] = useState<string | null>(null);
@@ -125,6 +129,10 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
         steps: p.steps ?? '',
         vestKg: p.vestKg ?? '',
       });
+      const pa = p as any;
+      if (pa.jobType) setJobType(pa.jobType);
+      if (pa.gymFreq) setGymFreq(pa.gymFreq);
+      if (pa.walkFreq) setWalkFreq(pa.walkFreq);
       const t = targetData as MacroSet;
       setTarget(t);
       setDraft({
@@ -194,6 +202,15 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
   const updateProfile = (field: keyof ProfileData, value: string) => {
     setProfile(prev => ({ ...prev, [field]: value }));
     scheduleProfileSave();
+  };
+
+  const updateActivityPicker = (job: string, gym: string, walk: string) => {
+    const computed = String(computeActivity(job, gym, walk));
+    setProfile(prev => ({ ...prev, activity: computed }));
+    clearTimeout(profileSaveTimer.current);
+    profileSaveTimer.current = setTimeout(() => {
+      api.updateProfile({ ...profileRef.current, activity: computed, name: nameRef.current, jobType: job, gymFreq: gym, walkFreq: walk }).catch(() => {});
+    }, 600);
   };
 
   const updateName = (value: string) => {
@@ -293,13 +310,38 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
                 <option value="female">Female</option>
               </select>
             </div>
-            <div className="target-field activity-field">
-              <label>Activity Level</label>
-              <select value={profile.activity} onChange={e => updateProfile('activity', e.target.value)}>
-                {ACTIVITY_LEVELS.map(l => (
-                  <option key={l.value} value={l.value}>{l.label}</option>
+            <div className="target-field" style={{ gridColumn: '1 / -1' }}>
+              <label>Job type</label>
+              <div className="activity-picker">
+                {JOB_OPTS.map((o: any) => (
+                  <button key={o.id} type="button" className={`activity-pick-btn${jobType === o.id ? ' active' : ''}`}
+                    onClick={() => { setJobType(o.id); updateActivityPicker(o.id, gymFreq, walkFreq); }}>
+                    <span className="apb-label">{o.label}</span>
+                    <span className="apb-desc">{o.desc}</span>
+                  </button>
                 ))}
-              </select>
+              </div>
+            </div>
+            <div className="target-field" style={{ gridColumn: '1 / -1' }}>
+              <label>Gym / training</label>
+              <div className="activity-picker activity-picker--row">
+                {GYM_OPTS.map((o: any) => (
+                  <button key={o.id} type="button" className={`activity-pick-chip${gymFreq === o.id ? ' active' : ''}`}
+                    onClick={() => { setGymFreq(o.id); updateActivityPicker(jobType, o.id, walkFreq); }}>{o.label}</button>
+                ))}
+              </div>
+            </div>
+            <div className="target-field" style={{ gridColumn: '1 / -1' }}>
+              <label>Walking / steps</label>
+              <div className="activity-picker">
+                {WALK_OPTS.map((o: any) => (
+                  <button key={o.id} type="button" className={`activity-pick-btn${walkFreq === o.id ? ' active' : ''}`}
+                    onClick={() => { setWalkFreq(o.id); updateActivityPicker(jobType, gymFreq, o.id); }}>
+                    <span className="apb-label">{o.label}</span>
+                    <span className="apb-desc">{o.desc}</span>
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="target-field">
               <label>Daily Steps</label>

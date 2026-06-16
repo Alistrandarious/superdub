@@ -32,6 +32,7 @@ router.post('/signup', async (req: Request, res: Response) => {
     name = '', dob = '', sex = 'male', heightCm = '', weightKg = '',
     goalWeight = '', lossPerWeek = '0.5', gainPerWeek = '0.25',
     activityLevel = '1.55', dietGoal = 'cut',
+    jobType = 'desk', gymFreq = '3-4', walkFreq = 'moderate',
     habits = DEFAULT_HABITS,
   } = req.body;
 
@@ -65,9 +66,9 @@ router.post('/signup', async (req: Request, res: Response) => {
     const userId = user.id;
 
     await client.query(
-      `INSERT INTO profile (user_id, name, dob, age, sex, height_cm, weight_kg, activity)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [userId, name, dob || null, age, sex, heightCm, weightKg, activityLevel]
+      `INSERT INTO profile (user_id, name, dob, age, sex, height_cm, weight_kg, activity, job_type, gym_freq, walk_freq)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+      [userId, name, dob || null, age, sex, heightCm, weightKg, activityLevel, jobType, gymFreq, walkFreq]
     );
 
     await client.query(

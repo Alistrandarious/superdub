@@ -11,13 +11,31 @@ type Mode = 'landing' | 'login' | 'signup' | 'forgot' | 'reset';
 const DEFAULT_HABITS = ['Walking', 'Praying', 'Duolingo'];
 const EXTRA_HABITS = ['Reading', 'Meditation', 'Gym', 'Running', 'Cold shower', 'Journaling', 'No sugar', 'Sleep by 11pm'];
 
-const ACTIVITY_OPTS = [
-  { value: '1.2',   label: 'Sedentary — desk job, car commute, barely move outside work' },
-  { value: '1.375', label: 'Lightly active — walking most days, gym 1–2×/week or light sport' },
-  { value: '1.55',  label: 'Moderately active — gym or sport 3–4×/week, on your feet during the day' },
-  { value: '1.725', label: 'Very active — hard training 5–6×/week, manual labour, or two-a-days' },
-  { value: '1.9',   label: 'Extremely active — elite athlete, construction worker, training twice daily' },
+export const JOB_OPTS = [
+  { id: 'desk',     label: '🪑 Desk',      desc: 'Sitting most of the day' },
+  { id: 'mixed',    label: '🚶 Mixed',     desc: 'Sit and move around' },
+  { id: 'standing', label: '🏪 On feet',   desc: 'Retail, teaching, waiting' },
+  { id: 'physical', label: '🔨 Physical',  desc: 'Labour, construction, farming' },
 ];
+export const GYM_OPTS = [
+  { id: 'never', label: 'Never' },
+  { id: '1-2',   label: '1–2×/wk' },
+  { id: '3-4',   label: '3–4×/wk' },
+  { id: '5-6',   label: '5–6×/wk' },
+  { id: 'daily', label: 'Daily+' },
+];
+export const WALK_OPTS = [
+  { id: 'barely',   label: '🚗 Barely',   desc: 'Drive everywhere, <3k steps' },
+  { id: 'little',   label: '🦶 A little', desc: 'Short walks, ~3–5k steps' },
+  { id: 'moderate', label: '🚶 Moderate', desc: '5–10k steps/day' },
+  { id: 'alot',     label: '🏃 A lot',    desc: '10k+ steps, very active' },
+];
+const JOB_FACTOR:  Record<string, number> = { desk: 0, mixed: 0.05, standing: 0.1, physical: 0.3 };
+const GYM_FACTOR:  Record<string, number> = { never: 0, '1-2': 0.1, '3-4': 0.175, '5-6': 0.25, daily: 0.35 };
+const WALK_FACTOR: Record<string, number> = { barely: 0, little: 0.05, moderate: 0.1, alot: 0.175 };
+export function computeActivity(job: string, gym: string, walk: string): number {
+  return Math.min(1.9, parseFloat((1.2 + (JOB_FACTOR[job] ?? 0) + (GYM_FACTOR[gym] ?? 0) + (WALK_FACTOR[walk] ?? 0)).toFixed(4)));
+}
 
 const THEME = '#00e5ff';
 
@@ -51,7 +69,10 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
   const [goalWeight, setGoalWeight] = useState('');
   const [lossPerWeek, setLossPerWeek] = useState('0.5');
   const [gainPerWeek, setGainPerWeek] = useState('0.25');
-  const [activityLevel, setActivityLevel] = useState('1.55');
+  const [jobType, setJobType] = useState('desk');
+  const [gymFreq, setGymFreq] = useState('3-4');
+  const [walkFreq, setWalkFreq] = useState('moderate');
+  const activityLevel = String(computeActivity(jobType, gymFreq, walkFreq));
   const [habits, setHabits] = useState<string[]>([...DEFAULT_HABITS]);
   const [customHabit, setCustomHabit] = useState('');
 
@@ -158,6 +179,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
       const { token } = await api.signup({
         email, password, name, dob, sex, heightCm, weightKg,
         goalWeight, lossPerWeek, gainPerWeek, activityLevel, dietGoal, habits,
+        jobType, gymFreq, walkFreq,
       });
       setToken(token);
       onAuth();
@@ -541,12 +563,34 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
                     </div>
                   )}
                   <div className="auth-field">
-                    <label>Activity level</label>
-                    <select value={activityLevel} onChange={e => setActivityLevel(e.target.value)}>
-                      {ACTIVITY_OPTS.map(o => (
-                        <option key={o.value} value={o.value}>{o.label}</option>
+                    <label>Job type</label>
+                    <div className="activity-picker">
+                      {JOB_OPTS.map(o => (
+                        <button key={o.id} type="button" className={`activity-pick-btn${jobType === o.id ? ' active' : ''}`} onClick={() => setJobType(o.id)}>
+                          <span className="apb-label">{o.label}</span>
+                          <span className="apb-desc">{o.desc}</span>
+                        </button>
                       ))}
-                    </select>
+                    </div>
+                  </div>
+                  <div className="auth-field">
+                    <label>Gym / training</label>
+                    <div className="activity-picker activity-picker--row">
+                      {GYM_OPTS.map(o => (
+                        <button key={o.id} type="button" className={`activity-pick-chip${gymFreq === o.id ? ' active' : ''}`} onClick={() => setGymFreq(o.id)}>{o.label}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="auth-field">
+                    <label>Walking / steps</label>
+                    <div className="activity-picker">
+                      {WALK_OPTS.map(o => (
+                        <button key={o.id} type="button" className={`activity-pick-btn${walkFreq === o.id ? ' active' : ''}`} onClick={() => setWalkFreq(o.id)}>
+                          <span className="apb-label">{o.label}</span>
+                          <span className="apb-desc">{o.desc}</span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   {targetCals > 0 && (
                     <div className="auth-hint-box">
