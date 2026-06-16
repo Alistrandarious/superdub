@@ -36,7 +36,7 @@ const About: React.FC = () => {
         <div className="diet-section" style={{ marginBottom: 20 }}>
           <h2 className="diet-heading">Who made this?</h2>
           <p className="about-text">
-            Superdub was built by <strong>Ali Shah</strong> — a builder who wanted one clean place to track habits, nutrition, and weight without subscriptions, dark patterns, or bloat.
+            Superdub was built by <a href="https://linkedin.com/in/alis" target="_blank" rel="noreferrer" className="about-name-link">Ali Shah</a> — a builder who wanted one clean place to track habits, nutrition, and weight without subscriptions, dark patterns, or bloat.
           </p>
           <p className="about-text">
             Everything runs on your data. No ads. No algorithms trying to keep you addicted. Just the tools you need.

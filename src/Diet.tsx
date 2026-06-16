@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import './App.css';
 import { api } from './api';
 
@@ -201,6 +200,7 @@ function generateMealPlan(targets: MacroSet): SavedPlan {
 
 const Diet: React.FC = () => {
   const [profile, setProfile] = useState<ProfileData>(DEFAULT_PROFILE);
+  const [profileName, setProfileName] = useState('');
   const [target, setTarget] = useState<MacroSet>(DEFAULT_TARGET);
   const [locks, setLocks] = useState<Locks>({ protein: false, carbs: false, fats: false });
   const [calorieLock, setCalorieLock] = useState(false);
@@ -216,6 +216,7 @@ const Diet: React.FC = () => {
       api.getDietPlans(),
     ]).then(([profileData, targetData, settingsData, plansData]) => {
       const p = profileData as ProfileData & { name: string };
+      setProfileName(p.name ?? '');
       setProfile({
         dob: p.dob ?? '',
         heightCm: p.heightCm ?? '',
@@ -249,18 +250,6 @@ const Diet: React.FC = () => {
     targetSaveTimer.current = setTimeout(() => {
       api.updateDietTarget(targetRef.current).catch(() => {});
     }, 600);
-  };
-
-  // Debounced profile save
-  const profileSaveTimer = useRef<ReturnType<typeof setTimeout>>();
-  const profileRef = useRef(profile);
-  useEffect(() => { profileRef.current = profile; }, [profile]);
-
-  const scheduleProfileSave = () => {
-    clearTimeout(profileSaveTimer.current);
-    profileSaveTimer.current = setTimeout(() => {
-      api.updateProfile(profileRef.current).catch(() => {});
-    }, 800);
   };
 
   // Derived
@@ -360,11 +349,6 @@ const Diet: React.FC = () => {
     });
   };
 
-  const updateProfile = (field: keyof ProfileData, value: string) => {
-    setProfile(prev => ({ ...prev, [field]: value }));
-    scheduleProfileSave();
-  };
-
   const toggleLock = (key: MacroKey) => {
     setLocks(prev => {
       const next = { ...prev, [key]: !prev[key] };
@@ -447,7 +431,7 @@ const Diet: React.FC = () => {
       <div className="app" style={{ '--theme': '#00e5ff', '--theme-dim': '#00e5ff66', '--theme-glow': '#00e5ff33' } as React.CSSProperties}>
         <header className="header">
           <div className="header-left"><Link to="/" className="back-link">← Back</Link></div>
-          <h1 className="title">Diet</h1>
+          <h1 className="title">Diet Maker</h1>
         </header>
         <div className="page-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '4rem', color: '#00e5ff' }}>
           Loading…
@@ -462,65 +446,33 @@ const Diet: React.FC = () => {
         <div className="header-left">
           <Link to="/" className="back-link">← Back</Link>
         </div>
-        <h1 className="title">Diet</h1>
+        <h1 className="title">Diet Maker</h1>
       </header>
 
       <div className="diet-content page-content">
 
-        {/* 1. User Profile */}
-        <div className="diet-section">
-          <h2 className="diet-heading">User Profile</h2>
-          <div className="target-grid">
-            <div className="target-field">
-              <label>Height (cm)</label>
-              <input type="text" inputMode="decimal" value={profile.heightCm} onChange={e => updateProfile('heightCm', e.target.value)} placeholder="e.g. 175" />
-            </div>
-            <div className="target-field">
-              <label>Weight (kg)</label>
-              <input type="text" inputMode="decimal" value={profile.weightKg} onChange={e => updateProfile('weightKg', e.target.value)} placeholder="e.g. 80" />
-            </div>
-            <div className="target-field">
-              <label>Date of Birth</label>
-              <input type="date" value={profile.dob} onChange={e => updateProfile('dob', e.target.value)} />
-            </div>
-            <div className="target-field">
-              <label>Sex</label>
-              <select value={profile.sex} onChange={e => updateProfile('sex', e.target.value as 'male' | 'female')}>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-              </select>
-            </div>
-            <div className="target-field activity-field">
-              <label>Activity Level</label>
-              <select value={profile.activity} onChange={e => updateProfile('activity', e.target.value)}>
-                <option value="1.2">Sedentary (1.2)</option>
-                <option value="1.4">Light / walking (1.4)</option>
-                <option value="1.55">Moderate (1.55)</option>
-                <option value="1.7">Active (1.7)</option>
-                <option value="1.9">Very Active (1.9)</option>
-              </select>
-            </div>
-            <div className="target-field">
-              <label>Daily Steps</label>
-              <input type="text" inputMode="numeric" value={profile.steps} onChange={e => updateProfile('steps', e.target.value)} placeholder="e.g. 10000" />
-            </div>
-            <div className="target-field">
-              <label>Vest Weight (kg)</label>
-              <input type="text" inputMode="decimal" value={profile.vestKg} onChange={e => updateProfile('vestKg', e.target.value)} placeholder="0" />
-            </div>
+        {/* Greeting + maintenance */}
+        <div className="diet-maintenance-card">
+          <div className="diet-greeting">
+            {profileName ? `Hi ${profileName} 👋` : 'Hi there 👋'}
           </div>
-          {maintenance > 0 && (
-            <div className="maintenance-box">
-              <span>Maintenance calories</span>
-              <span>
-                <strong>{maintenance} kcal</strong>
-                {walkBurn > 0 && <span style={{ opacity: 0.6, fontSize: '0.8rem' }}> (TDEE {tdee} + walk {walkBurn})</span>}
-              </span>
+          {maintenance > 0 ? (
+            <div className="diet-maintenance-info">
+              <span className="diet-maintenance-label">Predicted maintenance</span>
+              <span className="diet-maintenance-kcal">{maintenance} kcal/day</span>
+              {walkBurn > 0 && (
+                <span className="diet-maintenance-breakdown">TDEE {tdee} + {walkBurn} from steps</span>
+              )}
+            </div>
+          ) : (
+            <div className="diet-maintenance-info">
+              <span className="diet-maintenance-label">Update your profile to see maintenance calories</span>
+              <Link to="/profile" className="diet-profile-link">Go to Profile →</Link>
             </div>
           )}
         </div>
 
-        {/* 2. Daily Targets */}
+        {/* Daily Targets */}
         <div className="diet-section">
           <h2 className="diet-heading">Daily Targets</h2>
           <div className="calorie-goal target-field">
@@ -577,83 +529,14 @@ const Diet: React.FC = () => {
           </div>
         </div>
 
-        {/* 3 & 4: Macro Split + Diet Classification side by side */}
-        <div className="split-row">
-          <div className="diet-section">
-            <h2 className="diet-heading">Macro Split</h2>
-            <div className="macro-split">
-              <div className="pie-wrap">
-                <ResponsiveContainer width="100%" height={180}>
-                  <PieChart>
-                    <Pie
-                      data={pieData}
-                      dataKey="value"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={50}
-                      outerRadius={80}
-                      paddingAngle={2}
-                    >
-                      {pieData.map((entry, i) => (
-                        <Cell key={i} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(val) => [`${val} kcal`, '']}
-                      contentStyle={{ background: '#111', border: '1px solid #00e5ff33', color: '#00e5ff' }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <ul className="macro-legend">
-                {([['protein', 'Protein'], ['carbs', 'Carbs'], ['fats', 'Fats']] as [MacroKey, string][]).map(([k, label]) => (
-                  <li key={k}>
-                    <span className="legend-dot" style={{ background: MACRO_COLORS[k] }} />
-                    <span className="legend-name">{label}</span>
-                    <span className="legend-val">{target[k]}g</span>
-                    <span style={{ opacity: 0.5, fontSize: '0.78rem', marginLeft: 4 }}>
-                      ({totalKcal > 0 ? Math.round(target[k] * CAL_PER[k] / totalKcal * 100) : 0}%)
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+        {/* Macro Analysis link */}
+        <Link to="/diet/macro" className="diet-macro-link-card">
+          <div className="diet-macro-link-left">
+            <span className="diet-macro-link-title">Macro Analysis</span>
+            <span className="diet-macro-link-sub">Split · Classification · Balance</span>
           </div>
-
-          <div className="diet-section">
-            <h2 className="diet-heading">Diet Classification</h2>
-            <div className="class-grid">
-              <div className="class-card">
-                <span className="class-label">Macro Style</span>
-                <span className="class-value">{macroStyle}</span>
-                <span className="class-sub">{Math.round(proteinPct)}% P / {Math.round(carbsPct)}% C / {Math.round(fatsPct)}% F</span>
-              </div>
-              <div className="class-card">
-                <span className="class-label">Energy Balance</span>
-                <span className={`class-value${energyBalance.includes('Cut') ? '' : energyBalance === 'Maintenance' ? ' good' : ''}`}>
-                  {energyBalance}
-                </span>
-                {maintenance > 0 && (
-                  <span className="class-sub">
-                    {macroCalories > maintenance ? '+' : ''}{macroCalories - maintenance} kcal vs maint.
-                  </span>
-                )}
-              </div>
-              <div className="class-card">
-                <span className="class-label">Protein / kg</span>
-                <span className={`class-value${parseFloat(proteinPerKg) >= 1.6 ? ' good' : ''}`}>
-                  {proteinPerKg} g/kg
-                </span>
-                <span className="class-sub">{parseFloat(proteinPerKg) >= 2.0 ? 'High — optimal' : parseFloat(proteinPerKg) >= 1.6 ? 'Adequate' : 'Low for fat loss'}</span>
-              </div>
-              <div className="class-card">
-                <span className="class-label">Total Calories</span>
-                <span className="class-value">{macroCalories} kcal</span>
-                {maintenance > 0 && <span className="class-sub">Maint: {maintenance} kcal</span>}
-              </div>
-            </div>
-          </div>
-        </div>
+          <span className="diet-macro-link-arrow">→</span>
+        </Link>
 
         {/* 5. Meal Plans */}
         <div className="diet-section">

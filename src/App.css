@@ -6,12 +6,12 @@
 
 /* CSS Custom Properties */
 :root {
-  --glass-bg: rgba(255,255,255,0.05);
-  --glass-bg-strong: rgba(255,255,255,0.08);
-  --glass-border: rgba(255,255,255,0.08);
-  --glass-border-strong: rgba(255,255,255,0.16);
-  --glass-shadow: 0 8px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.07);
-  --glass-blur: blur(16px) saturate(180%);
+  --glass-bg: #0e1022;
+  --glass-bg-strong: #141730;
+  --glass-border: #1e2245;
+  --glass-border-strong: #2a2f60;
+  --glass-shadow: 0 4px 24px rgba(0,0,0,0.5);
+  --glass-blur: none;
 }
 
 /* Animatable CSS custom property for the ring */
@@ -54,10 +54,10 @@
   flex-direction: column;
   color: var(--theme, #00ff41);
   background:
-    radial-gradient(1100px 760px at 8% -12%, var(--theme-glow, rgba(0,255,65,0.06)), transparent 60%),
-    radial-gradient(1000px 720px at 112% 6%, var(--theme-glow, rgba(0,255,65,0.06)), transparent 55%),
-    radial-gradient(900px 900px at 50% 124%, var(--theme-glow, rgba(0,255,65,0.06)), transparent 60%),
-    linear-gradient(165deg, #0c0f18 0%, #070810 55%, #06070d 100%);
+    radial-gradient(900px 600px at 5% -5%, var(--theme-glow, rgba(0,255,65,0.1)), transparent 55%),
+    radial-gradient(800px 600px at 105% 5%, var(--theme-glow, rgba(0,255,65,0.08)), transparent 50%),
+    radial-gradient(700px 700px at 50% 110%, var(--theme-glow, rgba(0,255,65,0.07)), transparent 55%),
+    linear-gradient(160deg, #0b0d1a 0%, #080a15 50%, #060710 100%);
   background-attachment: fixed;
 }
 
@@ -71,11 +71,11 @@
   height: 64px;
   flex-shrink: 0;
   position: relative;
-  background: rgba(255,255,255,0.04);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
+  background: rgba(8,10,20,0.85);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
   border-bottom: 1px solid var(--glass-border);
-  box-shadow: 0 4px 24px rgba(0,0,0,0.28);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4);
 }
 
 .header-left {
@@ -286,7 +286,7 @@
   display: flex;
   flex-direction: column;
   gap: 0;
-  background: rgba(10,12,20,0.7);
+  background: rgba(8,10,20,0.92);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   backdrop-filter: blur(24px) saturate(180%);
   border-right: 1px solid var(--glass-border);
@@ -396,8 +396,6 @@
   border-radius: 18px;
   padding: 22px 24px;
   background: var(--glass-bg);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
 }
@@ -2905,8 +2903,137 @@
 }
 
 /* =====================================================================
+   DIET — MAINTENANCE CARD & MACRO LINK
+   ===================================================================== */
+.diet-maintenance-card {
+  background: linear-gradient(135deg, var(--glass-bg) 0%, rgba(0,229,255,0.06) 100%);
+  border: 1px solid var(--glass-border);
+  border-left: 3px solid var(--theme);
+  border-radius: 18px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  box-shadow: var(--glass-shadow);
+}
+
+.diet-greeting {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  flex-shrink: 0;
+}
+
+.diet-maintenance-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.diet-maintenance-label {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.diet-maintenance-kcal {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--theme);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  line-height: 1;
+}
+
+.diet-maintenance-breakdown {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.4);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  margin-top: 2px;
+}
+
+.diet-profile-link {
+  font-size: 0.82rem;
+  color: var(--theme);
+  text-decoration: none;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  margin-top: 4px;
+}
+
+.diet-macro-link-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-left: 3px solid var(--theme-dim);
+  border-radius: 16px;
+  text-decoration: none;
+  transition: border-color 0.15s, border-left-color 0.15s, background 0.15s;
+  box-shadow: var(--glass-shadow);
+}
+
+.diet-macro-link-card:hover {
+  background: var(--glass-bg-strong);
+  border-left-color: var(--theme);
+}
+
+.diet-macro-link-left {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.diet-macro-link-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.diet-macro-link-sub {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.45);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.diet-macro-link-arrow {
+  font-size: 1.2rem;
+  color: var(--theme);
+  opacity: 0.7;
+}
+
+/* =====================================================================
    DELETE ACCOUNT
    ===================================================================== */
+.profile-danger-link {
+  font-size: 0.72rem;
+  color: rgba(255, 69, 58, 0.7);
+  text-decoration: none;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  letter-spacing: 0.03em;
+  transition: color 0.15s;
+}
+
+.profile-danger-link:hover {
+  color: #ff453a;
+}
+
+.about-name-link {
+  color: var(--theme);
+  text-decoration: none;
+  font-weight: 600;
+  border-bottom: 1px solid var(--theme-dim);
+  transition: border-color 0.15s;
+}
+
+.about-name-link:hover {
+  border-color: var(--theme);
+}
+
 .delete-account-section {
   border-color: rgba(255, 69, 58, 0.25) !important;
 }
@@ -3356,17 +3483,17 @@
   gap: 12px;
   padding: 20px;
   border-radius: 22px;
-  background: rgba(255,255,255,0.05);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-left: 3px solid var(--theme-dim);
   box-shadow: var(--glass-shadow);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s, border-left-color 0.2s, box-shadow 0.2s;
   animation: pillIn 0.35s cubic-bezier(0.22,1,0.36,1) both;
 }
 
 .hcard:hover {
-  border-color: rgba(191,90,242,0.3);
+  border-color: var(--theme-dim);
+  border-left-color: var(--theme);
   box-shadow: var(--glass-shadow), 0 0 28px -8px var(--theme-glow);
 }
 

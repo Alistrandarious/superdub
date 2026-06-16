@@ -7,6 +7,7 @@ import Tasks from './Tasks';
 import Profile from './Profile';
 import Habits from './Habits';
 import About from './About';
+import MacroAnalysis from './MacroAnalysis';
 import PrivacyPolicy from './PrivacyPolicy';
 import { Auth } from './Auth';
 import { isLoggedIn, clearToken } from './api';
@@ -37,6 +38,7 @@ function AppRouter() {
       <Route path="/tasks" element={<Tasks />} />
       <Route path="/profile" element={<Profile onLogout={handleLogout} />} />
       <Route path="/about" element={<About />} />
+      <Route path="/diet/macro" element={<MacroAnalysis />} />
     </Routes>
   );
 }

@@ -437,7 +437,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             )}
           </div>
         </div>
-        <h1 className="title">Superdub</h1>
       </header>
 
       {menuOpen && (

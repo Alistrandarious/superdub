@@ -213,11 +213,10 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
           <Link to="/" className="back-link">← Back</Link>
         </div>
         <h1 className="title">{title}</h1>
-        {onLogout && (
-          <div style={{ marginLeft: 'auto' }}>
-            <button className="header-btn" onClick={onLogout} style={{ fontSize: '0.75rem' }}>Log out</button>
-          </div>
-        )}
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+          <a href="#danger-zone" className="profile-danger-link">Delete account</a>
+          {onLogout && <button className="header-btn" onClick={onLogout} style={{ fontSize: '0.75rem' }}>Log out</button>}
+        </div>
       </header>
 
       <div className="profile-content page-content">
@@ -354,7 +353,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
         </div>
 
         {/* Delete account */}
-        <div className="diet-section delete-account-section">
+        <div id="danger-zone" className="diet-section delete-account-section">
           <h2 className="diet-heading" style={{ color: '#ff453a' }}>Danger Zone</h2>
           {deleteAccount.step === 'idle' && (
             <>
