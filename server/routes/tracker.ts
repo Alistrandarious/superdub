@@ -4,11 +4,28 @@ import { requireAuth, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 
+// Normalise any day format to ISO "YYYY-MM-DD" for DB storage.
+// Accepts "DD/MM" (client key) or "YYYY-MM-DD" (ISO).
+function dayToIso(day: string): string {
+  if (/^\d{2}\/\d{2}$/.test(day)) {
+    return `2026-${day.slice(3, 5)}-${day.slice(0, 2)}`;
+  }
+  return day.slice(0, 10); // already ISO or ISO+time, take date part
+}
+
 router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
     const [daysRes, habitsRes] = await Promise.all([
-      pool.query('SELECT day, weight, calories, protein, carbs, fats, steps FROM tracker WHERE user_id = $1', [req.userId]),
-      pool.query('SELECT day, habit_name, done FROM tracker_habits WHERE user_id = $1', [req.userId]),
+      pool.query(
+        `SELECT TO_CHAR(day, 'DD/MM') as day, weight, calories, protein, carbs, fats, steps
+         FROM tracker WHERE user_id = $1`,
+        [req.userId]
+      ),
+      pool.query(
+        `SELECT TO_CHAR(day, 'DD/MM') as day, habit_name, done
+         FROM tracker_habits WHERE user_id = $1`,
+        [req.userId]
+      ),
     ]);
     res.json({ days: daysRes.rows, habits: habitsRes.rows });
   } catch {
@@ -18,8 +35,9 @@ router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
 
 router.patch('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
-    const { day, weight, calories, protein, carbs, fats, steps } = req.body;
-    if (!day) return res.status(400).json({ error: 'day required' });
+    const { day: rawDay, weight, calories, protein, carbs, fats, steps } = req.body;
+    if (!rawDay) return res.status(400).json({ error: 'day required' });
+    const day = dayToIso(rawDay);
     // Upsert row, then only SET the fields that were actually sent
     await pool.query(
       `INSERT INTO tracker (user_id, day, weight, calories, protein, carbs, fats, steps)
@@ -47,8 +65,9 @@ router.patch('/', requireAuth as any, async (req: AuthRequest, res: Response) =>
 
 router.patch('/habit', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
-    const { day, habitName, done } = req.body;
-    if (!day || !habitName) return res.status(400).json({ error: 'day and habitName required' });
+    const { day: rawDay, habitName, done } = req.body;
+    if (!rawDay || !habitName) return res.status(400).json({ error: 'day and habitName required' });
+    const day = dayToIso(rawDay);
     await pool.query(
       `INSERT INTO tracker_habits (user_id, day, habit_name, done)
        VALUES ($1, $2, $3, $4)

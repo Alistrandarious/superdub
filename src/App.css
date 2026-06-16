@@ -5321,3 +5321,83 @@
   text-decoration: none; transition: opacity 0.15s;
 }
 .fl-console-btn:hover { opacity: 0.85; }
+
+/* ── Biographics redesign ── */
+.bio-field {
+  display: flex; flex-direction: column; gap: 7px; margin-bottom: 20px;
+}
+.bio-label {
+  font-size: 0.69rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.07em; color: #666;
+}
+.bio-pair {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+}
+.bio-field input[type="text"],
+.bio-field input[type="date"] {
+  width: 100%; background: #111; border: 1px solid #2a2a2a; border-radius: 10px;
+  padding: 10px 12px; color: #e0e0e0; font-size: 0.92rem; font-family: inherit;
+  outline: none; box-sizing: border-box; transition: border-color 0.2s;
+  -webkit-appearance: none; appearance: none;
+}
+.bio-field input[type="text"]:focus,
+.bio-field input[type="date"]:focus { border-color: var(--theme, #ff9f0a); }
+.bio-field input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.5); }
+.bio-input-unit {
+  display: flex; align-items: center; background: #111; border: 1px solid #2a2a2a;
+  border-radius: 10px; overflow: hidden; transition: border-color 0.2s;
+}
+.bio-input-unit:focus-within { border-color: var(--theme, #ff9f0a); }
+.bio-input-unit input {
+  flex: 1; background: transparent; border: none; padding: 10px 12px;
+  color: #e0e0e0; font-size: 0.92rem; font-family: inherit; outline: none;
+}
+.bio-unit {
+  padding: 0 12px 0 4px; color: #555; font-size: 0.78rem; white-space: nowrap;
+}
+.bio-pills { display: flex; gap: 8px; }
+.bio-pill {
+  flex: 1; padding: 10px 0; background: #111; border: 1px solid #2a2a2a;
+  border-radius: 10px; color: #666; font-size: 0.85rem; font-family: inherit;
+  cursor: pointer; transition: all 0.15s; font-weight: 500;
+}
+.bio-pill.active {
+  background: var(--theme, #ff9f0a); border-color: var(--theme, #ff9f0a);
+  color: #000; font-weight: 700;
+}
+
+/* ── Biographics — loss per week row ── */
+.bio-loss-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 14px; padding-top: 14px; border-top: 1px solid #1e1e1e;
+}
+.bio-loss-label {
+  font-size: 0.78rem; color: #888; font-weight: 500;
+}
+.bio-loss-right {
+  display: flex; align-items: center; gap: 6px;
+}
+.bio-loss-input {
+  width: 54px; background: #111; border: 1px solid #2a2a2a; border-radius: 8px;
+  padding: 7px 8px; color: #e0e0e0; font-size: 0.88rem; font-family: inherit;
+  outline: none; text-align: center; transition: border-color 0.2s;
+}
+.bio-loss-input:focus { border-color: var(--theme, #ff9f0a); }
+.bio-loss-unit { font-size: 0.75rem; color: #666; white-space: nowrap; }
+
+/* ── Mandatory (pinned) habits section ── */
+.habits-pinned-section {
+  padding: 0 16px; margin-bottom: 4px;
+}
+.habits-pinned-head {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+}
+.habits-pinned-title {
+  font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; color: #555;
+}
+.hcard-mandatory-badge {
+  font-size: 0.6rem; font-weight: 700; background: #1a1a1a; border: 1px solid #2a2a2a;
+  border-radius: 5px; padding: 2px 6px; color: #555; text-transform: uppercase;
+  letter-spacing: 0.05em; margin-left: auto;
+}

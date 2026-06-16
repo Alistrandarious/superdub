@@ -155,6 +155,7 @@ router.post('/login', async (req: Request, res: Response) => {
       return;
     }
 
+    pool.query('UPDATE users SET last_login_at = NOW() WHERE id = $1', [rows[0].id]).catch(() => {});
     res.json({ token: makeToken(rows[0].id), userId: rows[0].id });
   } catch (err) {
     console.error(err);

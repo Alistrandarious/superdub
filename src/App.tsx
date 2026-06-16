@@ -204,7 +204,15 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         const next = { ...prev };
         (trackerData.days as any[]).forEach(row => {
           if (next[row.day]) {
-            next[row.day] = { ...next[row.day], weight: row.weight ?? next[row.day].weight };
+            next[row.day] = {
+              ...next[row.day],
+              weight:   row.weight   ?? next[row.day].weight,
+              calories: row.calories ?? next[row.day].calories,
+              protein:  row.protein  ?? next[row.day].protein,
+              carbs:    row.carbs    ?? next[row.day].carbs,
+              fats:     row.fats     ?? next[row.day].fats,
+              steps:    row.steps    ?? next[row.day].steps,
+            };
           }
         });
         return next;

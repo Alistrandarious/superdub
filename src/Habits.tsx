@@ -338,7 +338,8 @@ const HabitCard: React.FC<{
   today: string;
   onToggleDay: (habit: string, dayKey: string, done: boolean) => void;
   onRequestRemove: (habit: string) => void;
-}> = ({ habit, startDate, stats, weekDays, ht, today, onToggleDay, onRequestRemove }) => {
+  isMandatory?: boolean;
+}> = ({ habit, startDate, stats, weekDays, ht, today, onToggleDay, onRequestRemove, isMandatory }) => {
   const rank = getRank(stats.totalDays, startDate);
   const todayDone = !!ht[today]?.[habit];
   const isFlame = stats.streak >= 7;
@@ -360,7 +361,10 @@ const HabitCard: React.FC<{
         <span className="hcard-icon">{isFlame ? '🔥' : '✓'}</span>
         <span className="hcard-name">{habit}</span>
         <span className="hcard-streak">{stats.streak}d</span>
-        <button className="hcard-remove" onClick={() => onRequestRemove(habit)} aria-label="Remove habit">✕</button>
+        {isMandatory
+          ? <span className="hcard-mandatory-badge">Pinned</span>
+          : <button className="hcard-remove" onClick={() => onRequestRemove(habit)} aria-label="Remove habit">✕</button>
+        }
       </div>
 
       <div className="hcard-exp-area">
@@ -434,6 +438,7 @@ const HabitCard: React.FC<{
 /* ── main page ───────────────────────────────────────────── */
 
 const FEATURED_NAMES = new Set(FEATURED.map(f => f.name));
+const MANDATORY_HABIT = 'Logging into Superdub';
 
 const Habits: React.FC = () => {
   const navigate = useNavigate();
@@ -481,19 +486,32 @@ const Habits: React.FC = () => {
 
   useEffect(() => {
     Promise.all([api.getHabits(), api.getTracker(), api.getGraveyard()]).then(([loadedHabits, trackerData, graveyardData]) => {
-      const names = loadedHabits.map(h => h.name);
+      let names = loadedHabits.map(h => h.name);
       const dates: Record<string, string | null> = {};
       loadedHabits.forEach(h => { dates[h.name] = h.startDate; });
+
+      // Mandatory habit is always present, never in graveyard
+      if (!names.includes(MANDATORY_HABIT)) {
+        names = [MANDATORY_HABIT, ...names];
+        dates[MANDATORY_HABIT] = new Date().toISOString().slice(0, 10);
+        api.updateHabits(names).catch(() => {});
+      }
+
       setHabits(names);
       setStartDates(dates);
       setGraveyard(graveyardData);
 
+      const tod = todayKey();
       const map: Record<string, Record<string, boolean>> = {};
       ALL_DAYS.forEach(d => { map[d] = {}; });
       names.forEach(name => ALL_DAYS.forEach(d => { map[d][name] = false; }));
       (trackerData.habits as any[]).forEach(row => {
         if (map[row.day]) map[row.day][row.habit_name] = row.done;
       });
+      // Auto-mark mandatory habit done for today (logging in = doing the habit)
+      map[tod] = { ...map[tod], [MANDATORY_HABIT]: true };
+      api.toggleTrackerHabit(tod, MANDATORY_HABIT, true).catch(() => {});
+
       setHt(map);
       setLoaded(true);
     }).catch(() => setLoaded(true));
@@ -555,6 +573,7 @@ const Habits: React.FC = () => {
   };
 
   const confirmRemove = (name: string) => {
+    if (name === MANDATORY_HABIT) { setPendingRemove(null); return; }
     setPendingRemove(null);
     const updated = habits.filter(h => h !== name);
     setHabits(updated);
@@ -593,8 +612,8 @@ const Habits: React.FC = () => {
     );
   }
 
-  const featuredHabits = habits.filter(h => FEATURED_NAMES.has(h));
-  const otherHabits = habits.filter(h => !FEATURED_NAMES.has(h));
+  const featuredHabits = habits.filter(h => FEATURED_NAMES.has(h) && h !== MANDATORY_HABIT);
+  const otherHabits = habits.filter(h => !FEATURED_NAMES.has(h) && h !== MANDATORY_HABIT);
 
   return (
     <div className="app" style={{ '--theme': '#0a84ff', '--theme-dim': '#0a84ff66', '--theme-glow': '#0a84ff22' } as React.CSSProperties}>
@@ -673,6 +692,32 @@ const Habits: React.FC = () => {
             <button className="pwa-banner-never" onClick={neverShowInstall}>Don't show again</button>
           </div>
         )}
+
+        {/* Pinned / Mandatory habits */}
+        <div className="habits-pinned-section">
+          <div className="habits-pinned-head">
+            <span className="habits-pinned-title">Pinned</span>
+          </div>
+          <div className="habits-grid">
+            {(() => {
+              const stats = computeHabitStats(MANDATORY_HABIT, ht, today, startDates[MANDATORY_HABIT]);
+              return (
+                <HabitCard
+                  key={MANDATORY_HABIT}
+                  habit={MANDATORY_HABIT}
+                  startDate={startDates[MANDATORY_HABIT] ?? null}
+                  stats={stats}
+                  weekDays={weekDays}
+                  ht={ht}
+                  today={today}
+                  onToggleDay={handleToggleDay}
+                  onRequestRemove={() => {}}
+                  isMandatory={true}
+                />
+              );
+            })()}
+          </div>
+        </div>
 
         <FeaturedCarousel userHabits={habits} onAdd={handleAddFeatured} />
 

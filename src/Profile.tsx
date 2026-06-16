@@ -8,7 +8,7 @@ interface ProfileData {
   dob: string;
   heightCm: string;
   weightKg: string;
-  sex: 'male' | 'female';
+  sex: 'male' | 'female' | 'other';
   activity: string;
   steps: string;
   vestKg: string;
@@ -103,6 +103,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
   const [wsRef, setWsRef] = useState<any>({});
   const [stepTarget, setStepTarget] = useState('10000');
   const [dietGoal, setDietGoal] = useState<'cut' | 'maintain' | 'bulk'>('cut');
+  const [lossPerWeek, setLossPerWeek] = useState('');
   const [loaded, setLoaded] = useState(false);
   const [aiKeyInput, setAiKeyInput] = useState('');
   const [aiKeyMasked, setAiKeyMasked] = useState<string | null>(null);
@@ -127,6 +128,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
       const ws = wsData as any;
       setWsRef(ws);
       if (ws.goalWeight) setGoalWeight(ws.goalWeight);
+      if (ws.lossPerWeek) setLossPerWeek(ws.lossPerWeek);
       const s = settingsData as any;
       if (s.goal) setDietGoal(s.goal as 'cut' | 'maintain' | 'bulk');
       const p = profileData as ProfileData & { name: string };
@@ -307,66 +309,81 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
         {/* Biographics */}
         <div className="diet-section">
           <h2 className="diet-heading">Biographics</h2>
-          <div className="target-grid">
-            <div className="target-field">
-              <label>Height (cm)</label>
-              <input type="text" inputMode="decimal" value={profile.heightCm} onChange={e => updateProfile('heightCm', e.target.value)} placeholder="e.g. 175" />
+
+          <div className="bio-pair">
+            <div className="bio-field">
+              <label className="bio-label">Height</label>
+              <div className="bio-input-unit">
+                <input type="text" inputMode="decimal" value={profile.heightCm} onChange={e => updateProfile('heightCm', e.target.value)} placeholder="175" />
+                <span className="bio-unit">cm</span>
+              </div>
             </div>
-            <div className="target-field">
-              <label>Weight (kg)</label>
-              <input type="text" inputMode="decimal" value={profile.weightKg} onChange={e => updateProfile('weightKg', e.target.value)} placeholder="e.g. 80" />
-            </div>
-            <div className="target-field">
-              <label>Date of Birth</label>
+            <div className="bio-field">
+              <label className="bio-label">Date of Birth</label>
               <input type="date" value={profile.dob} onChange={e => updateProfile('dob', e.target.value)} />
             </div>
-            <div className="target-field">
-              <label>Sex</label>
-              <select value={profile.sex} onChange={e => updateProfile('sex', e.target.value as 'male' | 'female')}>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-              </select>
+          </div>
+
+          <div className="bio-field">
+            <label className="bio-label">Sex</label>
+            <div className="bio-pills">
+              {(['male', 'female', 'other'] as const).map(s => (
+                <button key={s} type="button"
+                  className={`bio-pill${profile.sex === s ? ' active' : ''}`}
+                  onClick={() => updateProfile('sex', s)}>
+                  {s === 'male' ? 'Male' : s === 'female' ? 'Female' : 'Other'}
+                </button>
+              ))}
             </div>
-            <div className="target-field" style={{ gridColumn: '1 / -1' }}>
-              <label>Job type</label>
-              <div className="activity-picker">
-                {JOB_OPTS.map((o: any) => (
-                  <button key={o.id} type="button" className={`activity-pick-btn${jobType === o.id ? ' active' : ''}`}
-                    onClick={() => { setJobType(o.id); updateActivityPicker(o.id, gymFreq, walkFreq); }}>
-                    <span className="apb-label">{o.label}</span>
-                    <span className="apb-desc">{o.desc}</span>
-                  </button>
-                ))}
-              </div>
+          </div>
+
+          <div className="bio-field">
+            <label className="bio-label">Job type</label>
+            <div className="activity-picker">
+              {JOB_OPTS.map((o: any) => (
+                <button key={o.id} type="button" className={`activity-pick-btn${jobType === o.id ? ' active' : ''}`}
+                  onClick={() => { setJobType(o.id); updateActivityPicker(o.id, gymFreq, walkFreq); }}>
+                  <span className="apb-label">{o.label}</span>
+                  <span className="apb-desc">{o.desc}</span>
+                </button>
+              ))}
             </div>
-            <div className="target-field" style={{ gridColumn: '1 / -1' }}>
-              <label>Gym / training</label>
-              <div className="activity-picker activity-picker--row">
-                {GYM_OPTS.map((o: any) => (
-                  <button key={o.id} type="button" className={`activity-pick-chip${gymFreq === o.id ? ' active' : ''}`}
-                    onClick={() => { setGymFreq(o.id); updateActivityPicker(jobType, o.id, walkFreq); }}>{o.label}</button>
-                ))}
-              </div>
+          </div>
+
+          <div className="bio-field">
+            <label className="bio-label">Gym / Training / Climbing</label>
+            <div className="activity-picker activity-picker--row">
+              {GYM_OPTS.map((o: any) => (
+                <button key={o.id} type="button" className={`activity-pick-chip${gymFreq === o.id ? ' active' : ''}`}
+                  onClick={() => { setGymFreq(o.id); updateActivityPicker(jobType, o.id, walkFreq); }}>{o.label}</button>
+              ))}
             </div>
-            <div className="target-field" style={{ gridColumn: '1 / -1' }}>
-              <label>Walking / steps</label>
-              <div className="activity-picker">
-                {WALK_OPTS.map((o: any) => (
-                  <button key={o.id} type="button" className={`activity-pick-btn${walkFreq === o.id ? ' active' : ''}`}
-                    onClick={() => { setWalkFreq(o.id); updateActivityPicker(jobType, gymFreq, o.id); }}>
-                    <span className="apb-label">{o.label}</span>
-                    <span className="apb-desc">{o.desc}</span>
-                  </button>
-                ))}
-              </div>
+          </div>
+
+          <div className="bio-field">
+            <label className="bio-label">Walking / Steps</label>
+            <div className="activity-picker">
+              {WALK_OPTS.map((o: any) => (
+                <button key={o.id} type="button" className={`activity-pick-btn${walkFreq === o.id ? ' active' : ''}`}
+                  onClick={() => { setWalkFreq(o.id); updateActivityPicker(jobType, gymFreq, o.id); }}>
+                  <span className="apb-label">{o.label}</span>
+                  <span className="apb-desc">{o.desc}</span>
+                </button>
+              ))}
             </div>
-            <div className="target-field">
-              <label>Daily Steps</label>
+          </div>
+
+          <div className="bio-pair">
+            <div className="bio-field">
+              <label className="bio-label">Daily Steps</label>
               <input type="text" inputMode="numeric" value={profile.steps} onChange={e => updateProfile('steps', e.target.value)} placeholder="e.g. 10000" />
             </div>
-            <div className="target-field">
-              <label>Vest Weight (kg)</label>
-              <input type="text" inputMode="decimal" value={profile.vestKg} onChange={e => updateProfile('vestKg', e.target.value)} placeholder="0" />
+            <div className="bio-field">
+              <label className="bio-label">Vest Weight</label>
+              <div className="bio-input-unit">
+                <input type="text" inputMode="decimal" value={profile.vestKg} onChange={e => updateProfile('vestKg', e.target.value)} placeholder="0" />
+                <span className="bio-unit">kg</span>
+              </div>
             </div>
           </div>
         </div>
@@ -445,6 +462,31 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
                     <span className="pbg-diff">{cur > goal ? `${(cur - goal).toFixed(1)} kg to go` : cur < goal ? `${(goal - cur).toFixed(1)} kg to gain` : 'At goal!'}</span>
                   </div>
                 )}
+                <div className="bio-loss-row">
+                  <span className="bio-loss-label">Lose per week</span>
+                  <div className="bio-loss-right">
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      className="bio-loss-input"
+                      value={lossPerWeek}
+                      placeholder="0.5"
+                      onChange={e => setLossPerWeek(e.target.value)}
+                      onBlur={() => {
+                        const lpw = parseFloat(lossPerWeek);
+                        const val = isNaN(lpw) || lpw < 0 ? '' : String(Math.min(2, lpw));
+                        setLossPerWeek(val);
+                        if (val) {
+                          const updated = { ...wsRef, lossPerWeek: val };
+                          api.updateWeightSettings(updated).catch(() => {});
+                          setWsRef(updated);
+                        }
+                      }}
+                      onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                    />
+                    <span className="bio-loss-unit">kg / week</span>
+                  </div>
+                </div>
               </div>
             );
           })()}
