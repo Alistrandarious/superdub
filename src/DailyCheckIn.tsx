@@ -6,7 +6,8 @@ import WheelPicker from './WheelPicker';
 const CHECKIN_KEY = 'superdub.weight.checkin';
 
 function todayStr() {
-  return new Date().toISOString().split('T')[0];
+  const n = new Date();
+  return `${String(n.getDate()).padStart(2, '0')}/${String(n.getMonth() + 1).padStart(2, '0')}`;
 }
 
 const KG_VALUES    = Array.from({ length: 161 }, (_, i) => 40 + i);           // 40–200

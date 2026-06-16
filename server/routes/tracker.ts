@@ -4,30 +4,27 @@ import { requireAuth, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 
-// Normalise any day format to ISO "YYYY-MM-DD" for DB storage.
-// Accepts "DD/MM" (client key) or "YYYY-MM-DD" (ISO).
-function dayToIso(day: string): string {
-  if (/^\d{2}\/\d{2}$/.test(day)) {
-    return `2026-${day.slice(3, 5)}-${day.slice(0, 2)}`;
+// Normalise any day value to DD/MM — the format used as tracker state keys.
+// DailyCheckIn sends ISO "YYYY-MM-DD"; everything else sends "DD/MM".
+function dayToDDMM(day: string): string {
+  if (/^\d{4}-\d{2}-\d{2}/.test(day)) {
+    // ISO "2026-06-16" → "16/06"
+    const parts = day.slice(0, 10).split('-');
+    return `${parts[2]}/${parts[1]}`;
   }
-  return day.slice(0, 10); // already ISO or ISO+time, take date part
+  return day.slice(0, 5); // already "DD/MM"
 }
 
 router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
     const [daysRes, habitsRes] = await Promise.all([
-      pool.query(
-        `SELECT TO_CHAR(day, 'DD/MM') as day, weight, calories, protein, carbs, fats, steps
-         FROM tracker WHERE user_id = $1`,
-        [req.userId]
-      ),
-      pool.query(
-        `SELECT TO_CHAR(day, 'DD/MM') as day, habit_name, done
-         FROM tracker_habits WHERE user_id = $1`,
-        [req.userId]
-      ),
+      pool.query('SELECT day, weight, calories, protein, carbs, fats, steps FROM tracker WHERE user_id = $1', [req.userId]),
+      pool.query('SELECT day, habit_name, done FROM tracker_habits WHERE user_id = $1', [req.userId]),
     ]);
-    res.json({ days: daysRes.rows, habits: habitsRes.rows });
+    // Normalise any ISO-stored days to DD/MM so they match client state keys
+    const days = daysRes.rows.map((r: any) => ({ ...r, day: dayToDDMM(String(r.day)) }));
+    const habits = habitsRes.rows.map((r: any) => ({ ...r, day: dayToDDMM(String(r.day)) }));
+    res.json({ days, habits });
   } catch {
     res.status(500).json({ error: 'Server error' });
   }
@@ -37,7 +34,7 @@ router.patch('/', requireAuth as any, async (req: AuthRequest, res: Response) =>
   try {
     const { day: rawDay, weight, calories, protein, carbs, fats, steps } = req.body;
     if (!rawDay) return res.status(400).json({ error: 'day required' });
-    const day = dayToIso(rawDay);
+    const day = dayToDDMM(rawDay);
     // Upsert row, then only SET the fields that were actually sent
     await pool.query(
       `INSERT INTO tracker (user_id, day, weight, calories, protein, carbs, fats, steps)
@@ -67,7 +64,7 @@ router.patch('/habit', requireAuth as any, async (req: AuthRequest, res: Respons
   try {
     const { day: rawDay, habitName, done } = req.body;
     if (!rawDay || !habitName) return res.status(400).json({ error: 'day and habitName required' });
-    const day = dayToIso(rawDay);
+    const day = dayToDDMM(rawDay);
     await pool.query(
       `INSERT INTO tracker_habits (user_id, day, habit_name, done)
        VALUES ($1, $2, $3, $4)

@@ -5058,19 +5058,22 @@
   width: 1px; background: var(--glass-border, rgba(255,255,255,0.08)); align-self: stretch;
 }
 .checkin-actions {
-  display: flex; gap: 10px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
 }
-.checkin-actions button {
-  flex: 1; padding: 14px; border-radius: 14px; border: none; font-size: 0.9rem; font-weight: 700;
-  cursor: pointer; transition: opacity 0.15s;
-}
-.checkin-actions button:first-child {
-  background: var(--glass-bg, rgba(255,255,255,0.06)); color: #888;
-}
-.checkin-actions button:last-child {
+.checkin-save-btn {
+  width: 100%; padding: 17px; border-radius: 14px; border: none;
+  font-size: 1.1rem; font-weight: 800; font-family: inherit;
   background: var(--theme, #00e5ff); color: #000;
+  cursor: pointer; transition: opacity 0.15s; letter-spacing: 0.01em;
 }
-.checkin-actions button:active { opacity: 0.8; }
+.checkin-save-btn:active { opacity: 0.75; }
+.checkin-save-btn:disabled { opacity: 0.5; cursor: default; }
+.checkin-skip-btn {
+  background: none; border: none; color: #444; font-size: 0.75rem;
+  font-family: inherit; cursor: pointer; padding: 6px 12px;
+  transition: color 0.15s;
+}
+.checkin-skip-btn:hover { color: #666; }
 
 /* ── Wheel Picker ── */
 .wheel-picker-wrap {

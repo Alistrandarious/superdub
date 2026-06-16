@@ -490,11 +490,15 @@ const Habits: React.FC = () => {
       const dates: Record<string, string | null> = {};
       loadedHabits.forEach(h => { dates[h.name] = h.startDate; });
 
-      // Mandatory habit is always present, never in graveyard
+      // Mandatory habit is always present in state.
+      // Only write to DB if getHabits returned a real response — guards against
+      // a cold-start empty response wiping existing habits via updateHabits.
       if (!names.includes(MANDATORY_HABIT)) {
         names = [MANDATORY_HABIT, ...names];
         dates[MANDATORY_HABIT] = new Date().toISOString().slice(0, 10);
-        api.updateHabits(names).catch(() => {});
+        if (loadedHabits.length > 0) {
+          api.updateHabits(names).catch(() => {});
+        }
       }
 
       setHabits(names);
