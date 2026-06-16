@@ -5155,3 +5155,37 @@
 }
 .step-perf-badge.hit  { background: rgba(48,209,88,0.15); color: #30d158; }
 .step-perf-badge.miss { background: rgba(255,159,10,0.15); color: #ff9f0a; }
+
+/* ── Habits header cog ── */
+.habits-header-actions {
+  display: flex; align-items: center; gap: 8px; margin-left: auto;
+}
+.habits-cog-btn {
+  background: none; border: none; color: #888; cursor: pointer; padding: 6px;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  transition: color 0.15s, background 0.15s;
+}
+.habits-cog-btn:hover, .habits-cog-btn:active { color: #e0e0e0; background: rgba(255,255,255,0.08); }
+.cog-menu-overlay { position: fixed; inset: 0; z-index: 90; }
+.cog-menu {
+  position: absolute; top: calc(100% + 6px); right: 0;
+  background: #1c1c2e; border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px; padding: 6px; min-width: 170px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5); z-index: 100;
+}
+.cog-menu-item {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  background: none; border: none; color: #ccc; font-size: 0.88rem;
+  padding: 10px 12px; border-radius: 8px; cursor: pointer; text-align: left;
+  transition: background 0.12s, color 0.12s;
+}
+.cog-menu-item:hover { background: rgba(255,255,255,0.07); color: #fff; }
+
+/* ── Add Habits section (bottom) ── */
+.habit-add-section {
+  margin: 24px 16px 0;
+  padding: 20px;
+  background: var(--glass-bg, rgba(255,255,255,0.04));
+  border: 1px solid var(--glass-border, rgba(255,255,255,0.08));
+  border-radius: 18px;
+}

@@ -433,6 +433,8 @@ const HabitCard: React.FC<{
 
 /* ── main page ───────────────────────────────────────────── */
 
+const FEATURED_NAMES = new Set(FEATURED.map(f => f.name));
+
 const Habits: React.FC = () => {
   const navigate = useNavigate();
   const [habits, setHabits] = useState<string[]>([]);
@@ -445,6 +447,8 @@ const Habits: React.FC = () => {
   const [graveyard, setGraveyard] = useState<{ name: string; startDate: string | null }[]>([]);
   const [graveyardOpen, setGraveyardOpen] = useState(false);
   const [restoringHabit, setRestoringHabit] = useState<string | null>(null);
+  const [showCogMenu, setShowCogMenu] = useState(false);
+  const addRef = useRef<HTMLDivElement>(null);
 
   const pwaKey = `superdub.pwa.${PWA_PROMPT_VERSION}`;
   const pwaDayKey = `superdub.pwa.day.${PWA_PROMPT_VERSION}`;
@@ -589,6 +593,9 @@ const Habits: React.FC = () => {
     );
   }
 
+  const featuredHabits = habits.filter(h => FEATURED_NAMES.has(h));
+  const otherHabits = habits.filter(h => !FEATURED_NAMES.has(h));
+
   return (
     <div className="app" style={{ '--theme': '#0a84ff', '--theme-dim': '#0a84ff66', '--theme-glow': '#0a84ff22' } as React.CSSProperties}>
       <header className="header">
@@ -605,6 +612,33 @@ const Habits: React.FC = () => {
               <div className="player-level-fill" style={{ width: `${playerLevel.progress * 100}%` }} />
             </div>
           </button>
+        </div>
+        <div className="habits-header-actions">
+          <div style={{ position: 'relative' }}>
+            <button
+              className="habits-cog-btn"
+              onClick={() => setShowCogMenu(o => !o)}
+              aria-label="Habits settings"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
+            </button>
+            {showCogMenu && (
+              <>
+                <div className="cog-menu-overlay" onClick={() => setShowCogMenu(false)} />
+                <div className="cog-menu">
+                  <button className="cog-menu-item" onClick={() => { setShowCogMenu(false); setTimeout(() => addRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50); }}>
+                    <span>＋</span> Add Habit
+                  </button>
+                  <button className="cog-menu-item" onClick={() => { setShowCogMenu(false); setGraveyardOpen(true); }}>
+                    <span>📦</span> Archived Habits
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </header>
 
@@ -642,31 +676,15 @@ const Habits: React.FC = () => {
 
         <FeaturedCarousel userHabits={habits} onAdd={handleAddFeatured} />
 
-        <div className="habits-section">
-          <div className="habits-section-head">
-            <h2 className="habits-section-title">Your Habits</h2>
-            <span className="habits-count">{habits.length} active</span>
-          </div>
-
-          <div className="habit-add-row" style={{ marginBottom: 20 }}>
-            <input
-              type="text"
-              className="habit-add-input"
-              value={newHabit}
-              onChange={e => setNewHabit(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && addHabit()}
-              placeholder="Add a new habit…"
-            />
-            <button className="habit-add-btn" onClick={addHabit}>+</button>
-          </div>
-
-          {habits.length === 0 ? (
-            <div className="habits-empty">
-              <p>No habits yet. Add one above or join a featured habit.</p>
+        {/* Featured Habits — ones the user has added from the carousel */}
+        {featuredHabits.length > 0 && (
+          <div className="habits-section">
+            <div className="habits-section-head">
+              <h2 className="habits-section-title">Featured Habits</h2>
+              <span className="habits-count">{featuredHabits.length}</span>
             </div>
-          ) : (
             <div className="habits-grid">
-              {habits.map(habit => {
+              {featuredHabits.map(habit => {
                 const stats = computeHabitStats(habit, ht, today, startDates[habit]);
                 return (
                   <HabitCard
@@ -683,32 +701,66 @@ const Habits: React.FC = () => {
                 );
               })}
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Graveyard */}
+        {/* Your own habits */}
+        {otherHabits.length > 0 && (
+          <div className="habits-section">
+            <div className="habits-section-head">
+              <h2 className="habits-section-title">Your Habits</h2>
+              <span className="habits-count">{otherHabits.length}</span>
+            </div>
+            <div className="habits-grid">
+              {otherHabits.map(habit => {
+                const stats = computeHabitStats(habit, ht, today, startDates[habit]);
+                return (
+                  <HabitCard
+                    key={habit}
+                    habit={habit}
+                    startDate={startDates[habit] ?? null}
+                    stats={stats}
+                    weekDays={weekDays}
+                    ht={ht}
+                    today={today}
+                    onToggleDay={handleToggleDay}
+                    onRequestRemove={setPendingRemove}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {habits.length === 0 && (
+          <div className="habits-empty">
+            <p>No habits yet. Add one below or join a featured habit above.</p>
+          </div>
+        )}
+
+        {/* Archived Habits */}
         {graveyard.length > 0 && (
           <div className="graveyard-section">
             <button className="graveyard-toggle" onClick={() => setGraveyardOpen(g => !g)}>
-              <span>🪦 Graveyard</span>
+              <span>📦 Archived Habits</span>
               <span className="graveyard-count">{graveyard.length}</span>
               <span className="graveyard-arrow">{graveyardOpen ? '▲' : '▼'}</span>
             </button>
             {graveyardOpen && (
               <div className="graveyard-list">
-                <p className="graveyard-hint">Restore a habit and it'll rise again — starting fresh from today.</p>
+                <p className="graveyard-hint">Restore a habit and it'll start fresh from today.</p>
                 {graveyard.map(h => (
                   <div
                     key={h.name}
                     className={`graveyard-card ${restoringHabit === h.name ? 'rising' : ''}`}
                   >
-                    <span className="graveyard-card-name">💀 {h.name}</span>
+                    <span className="graveyard-card-name">📁 {h.name}</span>
                     <button
                       className="graveyard-restore-btn"
                       onClick={() => restoreHabit(h.name)}
                       disabled={restoringHabit !== null}
                     >
-                      {restoringHabit === h.name ? '✨ Rising…' : 'Resurrect'}
+                      {restoringHabit === h.name ? '✨ Restoring…' : 'Restore'}
                     </button>
                   </div>
                 ))}
@@ -716,6 +768,22 @@ const Habits: React.FC = () => {
             )}
           </div>
         )}
+
+        {/* Add Habits */}
+        <div className="habit-add-section" ref={addRef}>
+          <h2 className="habits-section-title" style={{ marginBottom: 14 }}>Add Habits</h2>
+          <div className="habit-add-row">
+            <input
+              type="text"
+              className="habit-add-input"
+              value={newHabit}
+              onChange={e => setNewHabit(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && addHabit()}
+              placeholder="Name your new habit…"
+            />
+            <button className="habit-add-btn" onClick={addHabit}>+</button>
+          </div>
+        </div>
 
         <div style={{ height: 100 }} />
       </div>
