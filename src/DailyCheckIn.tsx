@@ -45,7 +45,9 @@ const DailyCheckIn: React.FC = () => {
     setSaving(true);
     const weight = Math.round((wholeKg + decKg) * 100) / 100;
     try {
-      await api.updateTrackerDay(todayStr(), { weightKg: weight });
+      await api.updateTrackerDay(todayStr(), { weight });
+      // Also update profile weight_kg so Biographics reflects the new value
+      await api.updateProfile({ weightKg: weight }).catch(() => {});
       window.dispatchEvent(new CustomEvent('superdub:tracker-updated'));
       setDone(true);
       setTimeout(dismiss, 900);

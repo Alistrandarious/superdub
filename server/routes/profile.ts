@@ -45,13 +45,38 @@ router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
 router.put('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
     const { name, dob, heightCm, weightKg, sex, activity, steps, vestKg, jobType, gymFreq, walkFreq, stepTarget } = req.body;
-    const age = ageFromDob(dob || null);
+    const age = dob != null ? ageFromDob(dob || null) : undefined;
+    // Only update fields that were explicitly provided — preserve everything else
     await pool.query(
-      `UPDATE profile SET name=$2, dob=$3, height_cm=$4, weight_kg=$5, age=$6, sex=$7, activity=$8, steps=$9, vest_kg=$10,
-         job_type=$11, gym_freq=$12, walk_freq=$13, step_target=$14
+      `UPDATE profile SET
+         name       = CASE WHEN $2::text IS NOT NULL THEN $2 ELSE name END,
+         dob        = CASE WHEN $3::text IS NOT NULL THEN $3::date ELSE dob END,
+         height_cm  = CASE WHEN $4::text IS NOT NULL THEN $4 ELSE height_cm END,
+         weight_kg  = CASE WHEN $5::text IS NOT NULL THEN $5 ELSE weight_kg END,
+         age        = CASE WHEN $6::text IS NOT NULL THEN $6 ELSE age END,
+         sex        = CASE WHEN $7::text IS NOT NULL THEN $7 ELSE sex END,
+         activity   = CASE WHEN $8::text IS NOT NULL THEN $8 ELSE activity END,
+         steps      = CASE WHEN $9::text IS NOT NULL THEN $9 ELSE steps END,
+         vest_kg    = CASE WHEN $10::text IS NOT NULL THEN $10 ELSE vest_kg END,
+         job_type   = CASE WHEN $11::text IS NOT NULL THEN $11 ELSE job_type END,
+         gym_freq   = CASE WHEN $12::text IS NOT NULL THEN $12 ELSE gym_freq END,
+         walk_freq  = CASE WHEN $13::text IS NOT NULL THEN $13 ELSE walk_freq END,
+         step_target = CASE WHEN $14::int IS NOT NULL THEN $14 ELSE step_target END
        WHERE user_id=$1`,
-      [req.userId, name ?? '', dob || null, heightCm ?? '', weightKg ?? '', age, sex ?? 'male', activity ?? '1.55', steps ?? '', vestKg ?? '',
-       jobType ?? 'desk', gymFreq ?? '3-4', walkFreq ?? 'moderate', stepTarget ?? 10000]
+      [req.userId,
+       name     != null ? String(name)     : null,
+       dob      != null ? (dob || null)    : null,
+       heightCm != null ? String(heightCm) : null,
+       weightKg != null ? String(weightKg) : null,
+       age      != null ? String(age)      : null,
+       sex      != null ? String(sex)      : null,
+       activity != null ? String(activity) : null,
+       steps    != null ? String(steps)    : null,
+       vestKg   != null ? String(vestKg)   : null,
+       jobType  != null ? String(jobType)  : null,
+       gymFreq  != null ? String(gymFreq)  : null,
+       walkFreq != null ? String(walkFreq) : null,
+       stepTarget != null ? Number(stepTarget) : null]
     );
     res.json({ ok: true });
   } catch {

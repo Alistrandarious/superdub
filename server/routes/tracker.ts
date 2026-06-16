@@ -20,14 +20,24 @@ router.patch('/', requireAuth as any, async (req: AuthRequest, res: Response) =>
   try {
     const { day, weight, calories, protein, carbs, fats, steps } = req.body;
     if (!day) return res.status(400).json({ error: 'day required' });
+    // Upsert row, then only SET the fields that were actually sent
     await pool.query(
       `INSERT INTO tracker (user_id, day, weight, calories, protein, carbs, fats, steps)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        ON CONFLICT (user_id, day) DO UPDATE SET
-         weight = EXCLUDED.weight, calories = EXCLUDED.calories,
-         protein = EXCLUDED.protein, carbs = EXCLUDED.carbs,
-         fats = EXCLUDED.fats, steps = EXCLUDED.steps`,
-      [req.userId, day, weight ?? '', calories ?? '', protein ?? '', carbs ?? '', fats ?? '', steps ?? '']
+         weight    = CASE WHEN $3::text IS NOT NULL THEN $3 ELSE tracker.weight END,
+         calories  = CASE WHEN $4::text IS NOT NULL THEN $4 ELSE tracker.calories END,
+         protein   = CASE WHEN $5::text IS NOT NULL THEN $5 ELSE tracker.protein END,
+         carbs     = CASE WHEN $6::text IS NOT NULL THEN $6 ELSE tracker.carbs END,
+         fats      = CASE WHEN $7::text IS NOT NULL THEN $7 ELSE tracker.fats END,
+         steps     = CASE WHEN $8::text IS NOT NULL THEN $8 ELSE tracker.steps END`,
+      [req.userId, day,
+       weight    != null ? String(weight)    : null,
+       calories  != null ? String(calories)  : null,
+       protein   != null ? String(protein)   : null,
+       carbs     != null ? String(carbs)     : null,
+       fats      != null ? String(fats)      : null,
+       steps     != null ? String(steps)     : null]
     );
     res.json({ ok: true });
   } catch {
