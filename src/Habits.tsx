@@ -144,7 +144,9 @@ function computeHabitStats(
     return { streak: 0, totalDays: 0, totalXP: 0, currentGateIndex: 0, xpPerDay: 10, nextGateAt: 7, gateProgress: 0, misses: 0 };
   }
 
-  // Determine where this habit's history starts
+  // Determine where this habit's history starts.
+  // If no start_date, anchor at the first day it was ever done (prevents treating
+  // all past un-done days as misses for habits added before start_date tracking).
   let startIdx = 0;
   if (startDate) {
     const key = startDateToKey(startDate);
@@ -152,6 +154,9 @@ function computeHabitStats(
       const si = ALL_DAYS.indexOf(key);
       if (si >= 0) startIdx = si;
     }
+  } else {
+    const firstDone = ALL_DAYS.findIndex(d => !!ht[d]?.[habit]);
+    startIdx = firstDone >= 0 ? firstDone : todayIdx;
   }
 
   let totalXP = 0;
@@ -172,10 +177,10 @@ function computeHabitStats(
     }
   }
 
-  // Consecutive misses before today (only from startIdx onwards)
+  // Consecutive misses before today — only days strictly after the start day
   let misses = 0;
   if (totalDays > 0) {
-    for (let i = todayIdx - 1; i >= startIdx && i >= todayIdx - 4; i--) {
+    for (let i = todayIdx - 1; i > startIdx && i >= todayIdx - 4; i--) {
       if (!ht[ALL_DAYS[i]]?.[habit]) misses++;
       else break;
     }
