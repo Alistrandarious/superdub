@@ -426,9 +426,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     if (htVal === 0 || agVal === 0 || startWeight === 0) return null;
 
     const day = visibleDays[dayIndex];
-    const globalIdx = ALL_DAYS.indexOf(day);
 
-    let dayWeight = (kRate > 0) ? goal + (startWeight - goal) * Math.exp(-kRate * globalIdx) : startWeight;
+    let dayWeight = startWeight;
     for (let d = dayIndex - 1; d >= 0; d--) {
       const w = parseFloat(tracker[visibleDays[d]]?.weight ?? '');
       if (w > 0) { dayWeight = w; break; }
@@ -436,7 +435,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
     const dayBmr = (10 * dayWeight) + (6.25 * htVal) - (5 * agVal) + 5;
     const dayTdee = Math.round(dayBmr * alVal);
-    const daysRemaining = Math.max(goalDayIndex - globalIdx, 7);
+    const daysRemaining = daysToGoal ? Math.max(daysToGoal, 7) : 90;
     const weightToLose = Math.max(dayWeight - goal, 0);
     const requiredLossPerWeek = (weightToLose / daysRemaining) * 7;
     const safeLossPerWeek = Math.min(requiredLossPerWeek, 1.0);
