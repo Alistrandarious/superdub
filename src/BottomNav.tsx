@@ -34,7 +34,7 @@ const BottomNav: React.FC = () => {
               <span className="diet-sub-desc">Build targets &amp; macro split</span>
             </div>
           </button>
-          <button className="diet-sub-item" onClick={() => goTo('/diet')}>
+          <button className="diet-sub-item" onClick={() => goTo('/diet?tab=meals')}>
             <span className="diet-sub-icon">📋</span>
             <div className="diet-sub-text">
               <span className="diet-sub-label">Meal Plans</span>

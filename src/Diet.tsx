@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import './App.css';
 import { api } from './api';
 
@@ -221,6 +221,53 @@ const FILTER_EXCLUDED: Record<string, string[]> = {
   no_seafood: ['salmon', 'whitefish'],
 };
 
+interface MacroFieldProps {
+  label: string;
+  mkey: MacroKey;
+  val: number;
+  isLocked: boolean;
+  max: number | null;
+  onChangeMacro: (key: MacroKey, newVal: number) => void;
+  onToggleLock: (key: MacroKey) => void;
+}
+
+const MacroField: React.FC<MacroFieldProps> = ({ label, mkey, val, isLocked, max, onChangeMacro, onToggleLock }) => (
+  <div className={`target-field macro-field${isLocked ? ' locked' : ''}`}>
+    <label>{label}{max !== null && <span className="plan-target-note"> (max {max}g)</span>}</label>
+    <div className="macro-input-row">
+      <div className="stepper">
+        <input
+          type="text"
+          inputMode="numeric"
+          value={val}
+          disabled={isLocked}
+          onChange={e => {
+            const n = parseInt(e.target.value);
+            if (!isNaN(n)) onChangeMacro(mkey, n);
+            else if (e.target.value === '') onChangeMacro(mkey, 0);
+          }}
+          onKeyDown={e => {
+            if (e.key === 'ArrowUp') { e.preventDefault(); onChangeMacro(mkey, val + MACRO_STEP); }
+            if (e.key === 'ArrowDown') { e.preventDefault(); onChangeMacro(mkey, Math.max(0, val - MACRO_STEP)); }
+          }}
+        />
+        <div className="stepper-btns">
+          <button type="button" disabled={isLocked} onClick={() => onChangeMacro(mkey, val + MACRO_STEP)}>▲</button>
+          <button type="button" disabled={isLocked || val <= 0} onClick={() => onChangeMacro(mkey, Math.max(0, val - MACRO_STEP))}>▼</button>
+        </div>
+      </div>
+      <button
+        type="button"
+        className={`lock-btn${isLocked ? ' on' : ''}`}
+        onClick={() => onToggleLock(mkey)}
+        title={isLocked ? 'Unlock' : 'Lock'}
+      >
+        {isLocked ? '🔒' : '🔓'}
+      </button>
+    </div>
+  </div>
+);
+
 function getFood(name: string): Food {
   return FOODS.find(f => f.name === name)!;
 }
@@ -305,6 +352,9 @@ function generateMealPlan(targets: MacroSet, activeFilters: string[] = []): Save
 }
 
 const Diet: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') === 'meals' ? 'meals' : 'targets';
+  const [activeTab, setActiveTab] = useState<'targets' | 'meals'>(initialTab);
   const [profile, setProfile] = useState<ProfileData>(DEFAULT_PROFILE);
   const [profileName, setProfileName] = useState('');
   const [target, setTarget] = useState<MacroSet>(DEFAULT_TARGET);
@@ -525,48 +575,6 @@ const Diet: React.FC = () => {
     { name: 'Fats', value: target.fats * 9, color: MACRO_COLORS.fats },
   ].filter(d => d.value > 0);
 
-  const MacroField = ({ label, mkey }: { label: string; mkey: MacroKey }) => {
-    const val = target[mkey];
-    const isLocked = locks[mkey];
-    const max = getMax(mkey);
-    return (
-      <div className={`target-field macro-field${isLocked ? ' locked' : ''}`}>
-        <label>{label}{max !== null && <span className="plan-target-note"> (max {max}g)</span>}</label>
-        <div className="macro-input-row">
-          <div className="stepper">
-            <input
-              type="text"
-              inputMode="numeric"
-              value={val}
-              disabled={isLocked}
-              onChange={e => {
-                const n = parseInt(e.target.value);
-                if (!isNaN(n)) changeMacro(mkey, n);
-                else if (e.target.value === '') changeMacro(mkey, 0);
-              }}
-              onKeyDown={e => {
-                if (e.key === 'ArrowUp') { e.preventDefault(); changeMacro(mkey, val + MACRO_STEP); }
-                if (e.key === 'ArrowDown') { e.preventDefault(); changeMacro(mkey, Math.max(0, val - MACRO_STEP)); }
-              }}
-            />
-            <div className="stepper-btns">
-              <button type="button" disabled={isLocked} onClick={() => changeMacro(mkey, val + MACRO_STEP)}>▲</button>
-              <button type="button" disabled={isLocked || val <= 0} onClick={() => changeMacro(mkey, Math.max(0, val - MACRO_STEP))}>▼</button>
-            </div>
-          </div>
-          <button
-            type="button"
-            className={`lock-btn${isLocked ? ' on' : ''}`}
-            onClick={() => toggleLock(mkey)}
-            title={isLocked ? 'Unlock' : 'Lock'}
-          >
-            {isLocked ? '🔒' : '🔓'}
-          </button>
-        </div>
-      </div>
-    );
-  };
-
   if (!loaded) {
     return (
       <div className="app" style={{ '--theme': '#00e5ff', '--theme-dim': '#00e5ff66', '--theme-glow': '#00e5ff33' } as React.CSSProperties}>
@@ -592,26 +600,47 @@ const Diet: React.FC = () => {
 
       <div className="diet-content page-content">
 
-        {/* Greeting + maintenance */}
+        {/* Tab switcher */}
+        <div className="diet-tabs">
+          <button className={`diet-tab${activeTab === 'targets' ? ' active' : ''}`} onClick={() => setActiveTab('targets')}>Diet Maker</button>
+          <button className={`diet-tab${activeTab === 'meals' ? ' active' : ''}`} onClick={() => setActiveTab('meals')}>Meal Plans</button>
+        </div>
+
+        {/* Maintenance card */}
         <div className="diet-maintenance-card">
-          <div className="diet-greeting">
-            {profileName ? `Hi ${profileName} 👋` : 'Hi there 👋'}
-          </div>
           {maintenance > 0 ? (
-            <div className="diet-maintenance-info">
-              <span className="diet-maintenance-label">Predicted maintenance</span>
-              <span className="diet-maintenance-kcal">{maintenance} kcal/day</span>
+            <>
+              <div className="diet-maint-top">
+                <span className="diet-maint-label">Predicted Maintenance</span>
+                <span className="diet-maint-badge">{energyBalance}</span>
+              </div>
+              <div className="diet-maint-kcal">{maintenance.toLocaleString()} <span className="diet-maint-unit">kcal / day</span></div>
+              <div className="diet-maint-bar-wrap">
+                <div className="diet-maint-bar">
+                  <div
+                    className="diet-maint-fill"
+                    style={{ width: `${Math.min(100, (macroCalories / maintenance) * 100)}%` }}
+                  />
+                  <div className="diet-maint-marker" />
+                </div>
+                <div className="diet-maint-labels">
+                  <span>0</span>
+                  <span style={{ marginLeft: 'auto' }}>Target: {macroCalories} kcal</span>
+                </div>
+              </div>
               {walkBurn > 0 && (
-                <span className="diet-maintenance-breakdown">TDEE {tdee} + {walkBurn} from steps</span>
+                <div className="diet-maint-breakdown">TDEE {tdee} kcal + {walkBurn} kcal from steps</div>
               )}
-            </div>
+            </>
           ) : (
-            <div className="diet-maintenance-info">
-              <span className="diet-maintenance-label">Update your profile to see maintenance calories</span>
+            <div className="diet-maint-empty">
+              <span>Set up your profile to unlock calorie predictions</span>
               <Link to="/profile" className="diet-profile-link">Go to Profile →</Link>
             </div>
           )}
         </div>
+
+        {activeTab === 'targets' && (<>
 
         {/* Daily Targets */}
         <div className="diet-section">
@@ -664,9 +693,9 @@ const Diet: React.FC = () => {
           </div>
           <p className="diet-hint">P×4 + C×4 + F×9 = {macroCalories} kcal</p>
           <div className="target-cascade">
-            <MacroField label="Protein (g)" mkey="protein" />
-            <MacroField label="Carbs (g)" mkey="carbs" />
-            <MacroField label="Fats (g)" mkey="fats" />
+            <MacroField label="Protein (g)" mkey="protein" val={target.protein} isLocked={locks.protein} max={getMax('protein')} onChangeMacro={changeMacro} onToggleLock={toggleLock} />
+            <MacroField label="Carbs (g)" mkey="carbs" val={target.carbs} isLocked={locks.carbs} max={getMax('carbs')} onChangeMacro={changeMacro} onToggleLock={toggleLock} />
+            <MacroField label="Fats (g)" mkey="fats" val={target.fats} isLocked={locks.fats} max={getMax('fats')} onChangeMacro={changeMacro} onToggleLock={toggleLock} />
           </div>
         </div>
 
@@ -678,6 +707,10 @@ const Diet: React.FC = () => {
           </div>
           <span className="diet-macro-link-arrow">→</span>
         </Link>
+
+        </>)}
+
+        {activeTab === 'meals' && (<>
 
         {/* Diet Filters */}
         <div className="diet-section">
@@ -773,6 +806,8 @@ const Diet: React.FC = () => {
             </div>
           )}
         </div>
+
+        </>)}
 
       </div>
     </div>
