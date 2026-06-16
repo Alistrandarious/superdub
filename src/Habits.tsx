@@ -485,16 +485,6 @@ const Habits: React.FC = () => {
     api.updateHabits(updated).catch(() => {});
   }, [habits]);
 
-  if (!loaded) {
-    return (
-      <div className="app" style={{ '--theme': '#bf5af2', '--theme-dim': '#bf5af266', '--theme-glow': '#bf5af233' } as React.CSSProperties}>
-        <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', color: '#bf5af2', fontSize: '1.2rem' }}>
-          Loading…
-        </div>
-      </div>
-    );
-  }
-
   const [newHabit, setNewHabit] = useState('');
 
   const addHabit = () => {
@@ -516,6 +506,16 @@ const Habits: React.FC = () => {
     setHabits(updated);
     api.updateHabits(updated).catch(() => {});
   };
+
+  if (!loaded) {
+    return (
+      <div className="app" style={{ '--theme': '#bf5af2', '--theme-dim': '#bf5af266', '--theme-glow': '#bf5af233' } as React.CSSProperties}>
+        <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', color: '#bf5af2', fontSize: '1.2rem' }}>
+          Loading…
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="app" style={{ '--theme': '#bf5af2', '--theme-dim': '#bf5af266', '--theme-glow': '#bf5af233' } as React.CSSProperties}>
