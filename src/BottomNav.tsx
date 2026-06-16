@@ -41,11 +41,11 @@ const BottomNav: React.FC = () => {
               <span className="diet-sub-desc">Your saved meal plans</span>
             </div>
           </button>
-          <button className="diet-sub-item diet-sub-item--soon" disabled>
+          <button className="diet-sub-item" onClick={() => goTo('/food-log')}>
             <span className="diet-sub-icon">📊</span>
             <div className="diet-sub-text">
               <span className="diet-sub-label">Food Logging</span>
-              <span className="diet-sub-desc">Coming soon</span>
+              <span className="diet-sub-desc">Log today's meals by voice</span>
             </div>
           </button>
         </div>

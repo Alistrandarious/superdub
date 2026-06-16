@@ -96,6 +96,10 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
   const [habits, setHabits] = useState<string[]>(DEFAULT_HABITS);
   const [newHabit, setNewHabit] = useState('');
   const [loaded, setLoaded] = useState(false);
+  const [aiKeyInput, setAiKeyInput] = useState('');
+  const [aiKeyMasked, setAiKeyMasked] = useState<string | null>(null);
+  const [aiKeySaving, setAiKeySaving] = useState(false);
+  const [aiKeyDone, setAiKeyDone] = useState(false);
 
   const [draft, setDraft] = useState({
     calories: String(DEFAULT_TARGET.calories),
@@ -133,6 +137,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
       setHabits(habitObjs.length > 0 ? habitObjs.map(h => h.name) : DEFAULT_HABITS);
       setLoaded(true);
     }).catch(() => setLoaded(true));
+    api.getAiKeyStatus().then((d: any) => { if (d.masked) setAiKeyMasked(d.masked); }).catch(() => {});
   }, []);
 
   // Debounced profile save
@@ -379,6 +384,46 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
             />
             <button className="habit-add-btn" onClick={addHabit}>+</button>
           </div>
+        </div>
+
+        {/* AI Key */}
+        <div className="diet-section">
+          <h2 className="diet-heading">AI Key</h2>
+          <p className="diet-hint">Your personal Anthropic API key is stored securely on our server and used only to power food logging. We never see the key in plaintext responses.</p>
+          {aiKeyMasked && !aiKeyInput && (
+            <div className="ai-key-connected">
+              <span className="ai-key-badge">Connected: {aiKeyMasked}</span>
+              <button className="ai-key-remove-btn" onClick={async () => {
+                await api.saveAiKey('').catch(() => {});
+                setAiKeyMasked(null);
+              }}>Remove</button>
+            </div>
+          )}
+          <div className="ai-key-row">
+            <input
+              className="ai-key-input"
+              type="password"
+              placeholder={aiKeyMasked ? 'Enter new key to replace…' : 'sk-ant-…'}
+              value={aiKeyInput}
+              onChange={e => { setAiKeyInput(e.target.value); setAiKeyDone(false); }}
+              autoComplete="off"
+            />
+            <button
+              className="ai-key-save-btn"
+              disabled={!aiKeyInput.trim() || aiKeySaving}
+              onClick={async () => {
+                setAiKeySaving(true);
+                try {
+                  await api.saveAiKey(aiKeyInput.trim());
+                  const d = await api.getAiKeyStatus() as any;
+                  setAiKeyMasked(d.masked ?? null);
+                  setAiKeyInput('');
+                  setAiKeyDone(true);
+                } catch { /* ignore */ } finally { setAiKeySaving(false); }
+              }}
+            >{aiKeySaving ? '…' : aiKeyDone ? '✓' : 'Save'}</button>
+          </div>
+          <p className="diet-hint" style={{ marginTop: 6 }}>Get your key at <span style={{ color: '#0a84ff' }}>console.anthropic.com</span></p>
         </div>
 
         {/* Delete account */}

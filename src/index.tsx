@@ -10,6 +10,7 @@ import About from './About';
 import MacroAnalysis from './MacroAnalysis';
 import PrivacyPolicy from './PrivacyPolicy';
 import LevelPage from './LevelPage';
+import FoodLog from './FoodLog';
 import BottomNav from './BottomNav';
 import { Auth } from './Auth';
 import { isLoggedIn, clearToken } from './api';
@@ -45,6 +46,7 @@ function AppRouter() {
         <Route path="/about" element={<About />} />
         <Route path="/diet/macro" element={<MacroAnalysis />} />
         <Route path="/level" element={<LevelPage />} />
+        <Route path="/food-log" element={<FoodLog />} />
       </Routes>
       <BottomNav />
     </>

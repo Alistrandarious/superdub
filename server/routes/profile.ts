@@ -63,4 +63,26 @@ router.delete('/', requireAuth as any, async (req: AuthRequest, res: Response) =
   }
 });
 
+// GET /ai-key — returns whether key is set + masked value
+router.get('/ai-key', requireAuth as any, async (req: AuthRequest, res: Response) => {
+  try {
+    const { rows } = await pool.query('SELECT anthropic_api_key FROM profile WHERE user_id = $1', [req.userId]);
+    const key: string | null = rows[0]?.anthropic_api_key ?? null;
+    res.json({ hasKey: !!key, masked: key ? `sk-ant-…${key.slice(-4)}` : null });
+  } catch {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// PUT /ai-key — store or clear the user's Anthropic API key
+router.put('/ai-key', requireAuth as any, async (req: AuthRequest, res: Response) => {
+  try {
+    const { key } = req.body as { key: string };
+    await pool.query('UPDATE profile SET anthropic_api_key = $1 WHERE user_id = $2', [key?.trim() || null, req.userId]);
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 export default router;

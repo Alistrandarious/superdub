@@ -86,4 +86,15 @@ export const api = {
   getWeightSettings: () => request('/weight-settings'),
   updateWeightSettings: (data: object) =>
     request('/weight-settings', { method: 'PUT', body: JSON.stringify(data) }),
+
+  // AI key
+  getAiKeyStatus: () => request('/profile/ai-key'),
+  saveAiKey: (key: string) => request('/profile/ai-key', { method: 'PUT', body: JSON.stringify({ key }) }),
+
+  // food log
+  parseFoodLog: (transcript: string) =>
+    request('/food-log/parse', { method: 'POST', body: JSON.stringify({ transcript }) }),
+  getFoodLogsToday: () => request('/food-log/today'),
+  saveFoodLog: (data: object) => request('/food-log', { method: 'POST', body: JSON.stringify(data) }),
+  deleteFoodLog: (id: string) => request(`/food-log/${id}`, { method: 'DELETE' }),
 };
