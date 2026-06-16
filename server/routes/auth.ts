@@ -30,7 +30,8 @@ router.post('/signup', async (req: Request, res: Response) => {
   const {
     email, password,
     name = '', dob = '', sex = 'male', heightCm = '', weightKg = '',
-    goalWeight = '', lossPerWeek = '', activityLevel = '1.55',
+    goalWeight = '', lossPerWeek = '0.5', gainPerWeek = '0.25',
+    activityLevel = '1.55', dietGoal = 'cut',
     habits = DEFAULT_HABITS,
   } = req.body;
 
@@ -75,8 +76,34 @@ router.post('/signup', async (req: Request, res: Response) => {
       [userId, weightKg, goalWeight, lossPerWeek, heightCm, age, activityLevel]
     );
 
-    await client.query('INSERT INTO diet_target (user_id) VALUES ($1)', [userId]);
-    await client.query('INSERT INTO diet_settings (user_id) VALUES ($1)', [userId]);
+    // Compute personalised initial diet targets from profile + goal
+    const w = parseFloat(weightKg) || 0;
+    const h = parseFloat(heightCm) || 0;
+    const ageNum = parseFloat(age) || 25;
+    const act = parseFloat(activityLevel) || 1.55;
+    let initCals = 2000;
+    if (w > 0 && h > 0) {
+      const bmr = sex === 'male' ? 10*w + 6.25*h - 5*ageNum + 5 : 10*w + 6.25*h - 5*ageNum - 161;
+      const tdee = Math.round(bmr * act);
+      const lpw = parseFloat(lossPerWeek) || 0.5;
+      const gpw = parseFloat(gainPerWeek) || 0.25;
+      const delta = dietGoal === 'cut' ? -Math.round(lpw * 7700 / 7)
+                  : dietGoal === 'bulk' ? Math.round(gpw * 7700 / 7)
+                  : 0;
+      initCals = Math.max(1200, tdee + delta);
+    }
+    const initProtein = w > 0 ? Math.round(w * 2) : 150;
+    const initFats = w > 0 ? Math.round(w * 0.8) : 55;
+    const initCarbs = Math.max(50, Math.round((initCals - initProtein * 4 - initFats * 9) / 4));
+
+    await client.query(
+      `INSERT INTO diet_target (user_id, calories, protein, carbs, fats) VALUES ($1, $2, $3, $4, $5)`,
+      [userId, initCals, initProtein, initCarbs, initFats]
+    );
+    await client.query(
+      `INSERT INTO diet_settings (user_id, goal) VALUES ($1, $2)`,
+      [userId, dietGoal]
+    );
 
     const habitList: string[] = Array.isArray(habits) && habits.length > 0 ? habits : DEFAULT_HABITS;
     for (let i = 0; i < habitList.length; i++) {

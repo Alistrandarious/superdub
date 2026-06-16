@@ -4951,3 +4951,44 @@
   padding: 10px 18px; font-size: 0.85rem; font-weight: 700; cursor: pointer; white-space: nowrap;
 }
 .ai-key-save-btn:disabled { opacity: 0.4; cursor: default; }
+
+/* =====================================================================
+   GOAL PICKER — Auth signup step 3
+   ===================================================================== */
+.auth-goal-picker { display: flex; flex-direction: column; gap: 10px; }
+.auth-goal-card {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--glass-bg-strong); border: 1px solid var(--glass-border);
+  border-radius: 14px; padding: 14px 16px; cursor: pointer; text-align: left;
+  transition: border-color 0.2s, background 0.2s;
+}
+.auth-goal-card.selected {
+  border-color: #00e5ff; background: rgba(0,229,255,0.07);
+}
+.auth-goal-icon { font-size: 1.4rem; flex-shrink: 0; }
+.auth-goal-label { font-size: 0.92rem; font-weight: 700; color: #fff; display: block; }
+.auth-goal-desc { font-size: 0.76rem; color: #888; display: block; margin-top: 1px; }
+.auth-goal-card.selected .auth-goal-label { color: #00e5ff; }
+
+/* =====================================================================
+   GOAL SELECTOR — Diet Maker tab
+   ===================================================================== */
+.diet-goal-card {
+  display: flex; gap: 8px;
+  background: var(--glass-bg-strong); border: 1px solid var(--glass-border);
+  border-radius: 16px; padding: 10px;
+}
+.diet-goal-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  background: transparent; border: 1px solid transparent; border-radius: 10px;
+  padding: 10px 6px; cursor: pointer; transition: background 0.2s, border-color 0.2s;
+}
+.diet-goal-btn.active {
+  background: rgba(var(--theme-rgb, 0,229,255), 0.1);
+  border-color: var(--theme, #00e5ff);
+}
+.diet-goal-icon { font-size: 1.3rem; }
+.diet-goal-label { font-size: 0.78rem; font-weight: 700; color: #e0e0e0; }
+.diet-goal-btn.active .diet-goal-label { color: var(--theme, #00e5ff); }
+.diet-goal-delta { font-size: 0.66rem; color: #666; text-align: center; line-height: 1.2; }
+.diet-goal-btn.active .diet-goal-delta { color: var(--theme, #00e5ff); opacity: 0.8; }

@@ -33,6 +33,7 @@ app.get('/api/health', (_req, res) => res.json({ ok: true }));
 // DB migrations — safe to run on every startup
 pool.query(`
   ALTER TABLE profile ADD COLUMN IF NOT EXISTS anthropic_api_key TEXT;
+  ALTER TABLE diet_settings ADD COLUMN IF NOT EXISTS goal TEXT DEFAULT 'cut';
   CREATE TABLE IF NOT EXISTS food_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,

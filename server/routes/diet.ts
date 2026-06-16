@@ -38,12 +38,12 @@ router.put('/target', requireAuth as any, async (req: AuthRequest, res: Response
 router.get('/settings', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
     const { rows } = await pool.query(
-      'SELECT lock_protein, lock_carbs, lock_fats, calorie_lock FROM diet_settings WHERE user_id = $1',
+      'SELECT lock_protein, lock_carbs, lock_fats, calorie_lock, goal FROM diet_settings WHERE user_id = $1',
       [req.userId]
     );
-    if (!rows[0]) return res.json({ lockProtein: false, lockCarbs: false, lockFats: false, calorieLock: false });
+    if (!rows[0]) return res.json({ lockProtein: false, lockCarbs: false, lockFats: false, calorieLock: false, goal: 'cut' });
     const r = rows[0];
-    res.json({ lockProtein: r.lock_protein, lockCarbs: r.lock_carbs, lockFats: r.lock_fats, calorieLock: r.calorie_lock });
+    res.json({ lockProtein: r.lock_protein, lockCarbs: r.lock_carbs, lockFats: r.lock_fats, calorieLock: r.calorie_lock, goal: r.goal ?? 'cut' });
   } catch {
     res.status(500).json({ error: 'Server error' });
   }
@@ -51,14 +51,15 @@ router.get('/settings', requireAuth as any, async (req: AuthRequest, res: Respon
 
 router.put('/settings', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
-    const { lockProtein, lockCarbs, lockFats, calorieLock } = req.body;
+    const { lockProtein, lockCarbs, lockFats, calorieLock, goal } = req.body;
     await pool.query(
-      `INSERT INTO diet_settings (user_id, lock_protein, lock_carbs, lock_fats, calorie_lock)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO diet_settings (user_id, lock_protein, lock_carbs, lock_fats, calorie_lock, goal)
+       VALUES ($1, $2, $3, $4, $5, $6)
        ON CONFLICT (user_id) DO UPDATE SET
          lock_protein = EXCLUDED.lock_protein, lock_carbs = EXCLUDED.lock_carbs,
-         lock_fats = EXCLUDED.lock_fats, calorie_lock = EXCLUDED.calorie_lock`,
-      [req.userId, !!lockProtein, !!lockCarbs, !!lockFats, !!calorieLock]
+         lock_fats = EXCLUDED.lock_fats, calorie_lock = EXCLUDED.calorie_lock,
+         goal = EXCLUDED.goal`,
+      [req.userId, !!lockProtein, !!lockCarbs, !!lockFats, !!calorieLock, goal ?? 'cut']
     );
     res.json({ ok: true });
   } catch {

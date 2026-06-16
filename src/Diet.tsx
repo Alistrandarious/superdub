@@ -373,6 +373,7 @@ const Diet: React.FC = () => {
   const [editingPlanId, setEditingPlanId] = useState<string | null>(null);
   const [editingPlanLabel, setEditingPlanLabel] = useState('');
   const [dietFilters, setDietFilters] = useState<string[]>([]);
+  const [goal, setGoal] = useState<'cut' | 'maintain' | 'bulk'>('cut');
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -397,6 +398,7 @@ const Diet: React.FC = () => {
       const s = settingsData as any;
       setLocks({ protein: !!s.lockProtein, carbs: !!s.lockCarbs, fats: !!s.lockFats });
       setCalorieLock(!!s.calorieLock);
+      setGoal((s.goal as 'cut' | 'maintain' | 'bulk') ?? 'cut');
       setPlans((plansData as any[]).map(r => ({
         id: r.id,
         label: r.label,
@@ -519,7 +521,7 @@ const Diet: React.FC = () => {
   const toggleLock = (key: MacroKey) => {
     setLocks(prev => {
       const next = { ...prev, [key]: !prev[key] };
-      api.updateDietSettings({ lockProtein: next.protein, lockCarbs: next.carbs, lockFats: next.fats, calorieLock }).catch(() => {});
+      api.updateDietSettings({ lockProtein: next.protein, lockCarbs: next.carbs, lockFats: next.fats, calorieLock, goal }).catch(() => {});
       return next;
     });
   };
@@ -527,7 +529,27 @@ const Diet: React.FC = () => {
   const toggleCalorieLock = () => {
     setCalorieLock(prev => {
       const next = !prev;
-      api.updateDietSettings({ lockProtein: locks.protein, lockCarbs: locks.carbs, lockFats: locks.fats, calorieLock: next }).catch(() => {});
+      api.updateDietSettings({ lockProtein: locks.protein, lockCarbs: locks.carbs, lockFats: locks.fats, calorieLock: next, goal }).catch(() => {});
+      return next;
+    });
+  };
+
+  const applyGoal = (newGoal: 'cut' | 'maintain' | 'bulk') => {
+    setGoal(newGoal);
+    api.updateDietSettings({ lockProtein: locks.protein, lockCarbs: locks.carbs, lockFats: locks.fats, calorieLock, goal: newGoal }).catch(() => {});
+    if (maintenance <= 0) return;
+    const delta = newGoal === 'cut' ? -400 : newGoal === 'bulk' ? 300 : 0;
+    const newCals = Math.max(1200, maintenance + delta);
+    const curCals = macroCalories > 0 ? macroCalories : newCals;
+    const ratio = newCals / curCals;
+    setTarget(prev => {
+      const next = {
+        calories: newCals,
+        protein: Math.round(prev.protein * ratio),
+        carbs: Math.max(0, Math.round(prev.carbs * ratio)),
+        fats: Math.max(0, Math.round(prev.fats * ratio)),
+      };
+      api.updateDietTarget(next).catch(() => {});
       return next;
     });
   };
@@ -649,6 +671,28 @@ const Diet: React.FC = () => {
         </div>
 
         {activeTab === 'targets' && (<>
+
+        {/* Goal selector */}
+        <div className="diet-goal-card">
+          {(['cut', 'maintain', 'bulk'] as const).map(g => {
+            const meta = {
+              cut:      { icon: '🔥', label: 'Cut',      delta: maintenance > 0 ? `−400 kcal` : 'Calorie deficit' },
+              maintain: { icon: '⚖️', label: 'Maintain', delta: maintenance > 0 ? `${maintenance.toLocaleString()} kcal` : 'Match maintenance' },
+              bulk:     { icon: '💪', label: 'Bulk',     delta: maintenance > 0 ? `+300 kcal` : 'Calorie surplus' },
+            }[g];
+            return (
+              <button
+                key={g}
+                className={`diet-goal-btn${goal === g ? ' active' : ''}`}
+                onClick={() => applyGoal(g)}
+              >
+                <span className="diet-goal-icon">{meta.icon}</span>
+                <span className="diet-goal-label">{meta.label}</span>
+                <span className="diet-goal-delta">{meta.delta}</span>
+              </button>
+            );
+          })}
+        </div>
 
         {/* Daily Targets */}
         <div className="diet-section">

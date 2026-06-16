@@ -47,8 +47,10 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
   const [sex, setSex] = useState<'male' | 'female'>('male');
   const [heightCm, setHeightCm] = useState('');
   const [weightKg, setWeightKg] = useState('');
+  const [dietGoal, setDietGoal] = useState<'cut' | 'maintain' | 'bulk'>('cut');
   const [goalWeight, setGoalWeight] = useState('');
   const [lossPerWeek, setLossPerWeek] = useState('0.5');
+  const [gainPerWeek, setGainPerWeek] = useState('0.25');
   const [activityLevel, setActivityLevel] = useState('1.55');
   const [habits, setHabits] = useState<string[]>([...DEFAULT_HABITS]);
   const [customHabit, setCustomHabit] = useState('');
@@ -155,7 +157,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
       const name = [firstName.trim(), lastName.trim()].filter(Boolean).join(' ');
       const { token } = await api.signup({
         email, password, name, dob, sex, heightCm, weightKg,
-        goalWeight, lossPerWeek, activityLevel, habits,
+        goalWeight, lossPerWeek, gainPerWeek, activityLevel, dietGoal, habits,
       });
       setToken(token);
       onAuth();
@@ -462,37 +464,82 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
           {step === 3 && (() => {
             const w = parseFloat(weightKg) || 0;
             const h = parseFloat(heightCm) || 0;
-            const gw = parseFloat(goalWeight) || 0;
-            const lpw = parseFloat(lossPerWeek) || 0.5;
             const act = parseFloat(activityLevel) || 1.55;
             const dobAge = dob ? (() => { const b = new Date(dob); const t = new Date(); let a = t.getFullYear() - b.getFullYear(); if (t.getMonth() - b.getMonth() < 0 || (t.getMonth() === b.getMonth() && t.getDate() < b.getDate())) a--; return a; })() : 25;
             const bmr = w && h ? (sex === 'male' ? 10*w + 6.25*h - 5*dobAge + 5 : 10*w + 6.25*h - 5*dobAge - 161) : 0;
             const tdee = Math.round(bmr * act);
-            const deficitPerDay = Math.round(lpw * 7700 / 7);
-            const targetCals = tdee - deficitPerDay;
-            const weeks = w && gw && lpw ? Math.ceil((w - gw) / lpw) : 0;
+            const lpw = parseFloat(lossPerWeek) || 0.5;
+            const gpw = parseFloat(gainPerWeek) || 0.25;
+            const delta = dietGoal === 'cut' ? -Math.round(lpw * 7700 / 7)
+                        : dietGoal === 'bulk' ? Math.round(gpw * 7700 / 7)
+                        : 0;
+            const targetCals = tdee > 0 ? Math.max(1200, tdee + delta) : 0;
+            const gw = parseFloat(goalWeight) || 0;
+            const weeksToGoal = dietGoal === 'cut' && w > 0 && gw > 0 && gw < w && lpw > 0
+              ? Math.ceil((w - gw) / lpw) : 0;
+            const weeksToGain = dietGoal === 'bulk' && w > 0 && gw > 0 && gw > w && gpw > 0
+              ? Math.ceil((gw - w) / gpw) : 0;
+            const GOAL_OPTIONS = [
+              { id: 'cut' as const, icon: '🔥', label: 'Lose weight', desc: 'Eat in a calorie deficit to lean down' },
+              { id: 'maintain' as const, icon: '⚖️', label: 'Stay healthy', desc: 'Maintain current weight and feel great' },
+              { id: 'bulk' as const, icon: '💪', label: 'Build & Grow', desc: 'Gain muscle with a calorie surplus' },
+            ];
             return (
               <>
-                <h2 className="auth-step-title">Your goals</h2>
-                <p className="auth-step-sub">These drive the prediction curve on your dashboard.</p>
-                <div className="auth-form">
-                  <div className="auth-row">
-                    <div className="auth-field">
-                      <label>Goal weight ({weightUnit})</label>
-                      <input type="text" inputMode="decimal" autoFocus
-                        value={goalWeightDisplay} onChange={e => onGoalWeightChange(e.target.value)}
-                        placeholder={weightUnit === 'kg' ? 'e.g. 75' : weightUnit === 'lb' ? 'e.g. 165' : 'e.g. 11.7'} />
+                <h2 className="auth-step-title">What's your goal?</h2>
+                <p className="auth-step-sub">This sets your starting calorie target — you can change it any time.</p>
+                <div className="auth-goal-picker">
+                  {GOAL_OPTIONS.map(g => (
+                    <button
+                      key={g.id}
+                      type="button"
+                      className={`auth-goal-card${dietGoal === g.id ? ' selected' : ''}`}
+                      onClick={() => setDietGoal(g.id)}
+                    >
+                      <span className="auth-goal-icon">{g.icon}</span>
+                      <span className="auth-goal-label">{g.label}</span>
+                      <span className="auth-goal-desc">{g.desc}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="auth-form" style={{ marginTop: 16 }}>
+                  {dietGoal === 'cut' && (
+                    <div className="auth-row">
+                      <div className="auth-field">
+                        <label>Goal weight ({weightUnit})</label>
+                        <input type="text" inputMode="decimal"
+                          value={goalWeightDisplay} onChange={e => onGoalWeightChange(e.target.value)}
+                          placeholder={weightUnit === 'kg' ? 'e.g. 75' : weightUnit === 'lb' ? 'e.g. 165' : 'e.g. 11.7'} />
+                      </div>
+                      <div className="auth-field">
+                        <label>Loss per week</label>
+                        <select value={lossPerWeek} onChange={e => setLossPerWeek(e.target.value)}>
+                          <option value="0.25">0.25 kg/wk — gentle</option>
+                          <option value="0.5">0.5 kg/wk — steady</option>
+                          <option value="0.75">0.75 kg/wk — fast</option>
+                          <option value="1.0">1.0 kg/wk — aggressive</option>
+                        </select>
+                      </div>
                     </div>
-                    <div className="auth-field">
-                      <label>Loss per week</label>
-                      <select value={lossPerWeek} onChange={e => setLossPerWeek(e.target.value)}>
-                        <option value="0.25">0.25 kg/wk</option>
-                        <option value="0.5">0.5 kg/wk</option>
-                        <option value="0.75">0.75 kg/wk</option>
-                        <option value="1.0">1.0 kg/wk</option>
-                      </select>
+                  )}
+                  {dietGoal === 'bulk' && (
+                    <div className="auth-row">
+                      <div className="auth-field">
+                        <label>Target weight ({weightUnit})</label>
+                        <input type="text" inputMode="decimal"
+                          value={goalWeightDisplay} onChange={e => onGoalWeightChange(e.target.value)}
+                          placeholder={weightUnit === 'kg' ? 'e.g. 85' : weightUnit === 'lb' ? 'e.g. 185' : 'e.g. 13.5'} />
+                      </div>
+                      <div className="auth-field">
+                        <label>Gain per week</label>
+                        <select value={gainPerWeek} onChange={e => setGainPerWeek(e.target.value)}>
+                          <option value="0.125">0.1 kg/wk — lean</option>
+                          <option value="0.25">0.25 kg/wk — steady</option>
+                          <option value="0.5">0.5 kg/wk — fast</option>
+                        </select>
+                      </div>
                     </div>
-                  </div>
+                  )}
                   <div className="auth-field">
                     <label>Activity level</label>
                     <select value={activityLevel} onChange={e => setActivityLevel(e.target.value)}>
@@ -501,16 +548,24 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
                       ))}
                     </select>
                   </div>
-                  {w > 0 && gw > 0 && (
+                  {targetCals > 0 && (
                     <div className="auth-hint-box">
                       <div className="auth-hint-row">
                         <span>Daily calories</span>
-                        <strong>{targetCals > 0 ? `${targetCals.toLocaleString()} kcal` : '—'}</strong>
+                        <strong>{targetCals.toLocaleString()} kcal</strong>
                       </div>
-                      <div className="auth-hint-row">
-                        <span>Time to goal</span>
-                        <strong>{weeks > 0 ? `${weeks} weeks` : '—'}</strong>
-                      </div>
+                      {weeksToGoal > 0 && (
+                        <div className="auth-hint-row">
+                          <span>Time to goal</span>
+                          <strong>{weeksToGoal} weeks</strong>
+                        </div>
+                      )}
+                      {weeksToGain > 0 && (
+                        <div className="auth-hint-row">
+                          <span>Time to target</span>
+                          <strong>{weeksToGain} weeks</strong>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
