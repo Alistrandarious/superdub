@@ -59,14 +59,14 @@ router.patch('/', requireAuth as any, async (req: AuthRequest, res: Response) =>
     if ((upd.rowCount ?? 0) === 0) {
       await pool.query(
         `INSERT INTO tracker (user_id, day, weight, calories, protein, carbs, fats, steps)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+         VALUES ($1, $2, COALESCE($3,''), COALESCE($4,''), COALESCE($5,''), COALESCE($6,''), COALESCE($7,''), COALESCE($8,''))`,
         [req.userId, day, w, c, p, ca, f, s]
       );
     }
     res.json({ ok: true });
   } catch (err: any) {
     console.error('[tracker PATCH]', err?.message);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: err?.message ?? 'Server error' });
   }
 });
 
