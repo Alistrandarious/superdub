@@ -52,6 +52,7 @@ interface MealResult {
   name: string;
   items: MealItem[];
   totals: { p: number; c: number; f: number; kcal: number };
+  flavor?: string;
 }
 
 const DEFAULT_PROFILE: ProfileData = {
@@ -118,10 +119,85 @@ const FOODS: Food[] = [
   { name: 'cheese', display: 'cheese', measure: 'g', base: 100, p: 25, c: 0.1, f: 33, step: 10, min: 20, max: 100 },
 ];
 
-const MEAL_TEMPLATES = {
-  protein: ['chicken', 'turkey', 'salmon', 'whitefish', 'steak', 'tofu', 'yoghurt', 'cottage', 'eggs', 'whey', 'beef'],
-  carb: ['oats', 'rice', 'pasta', 'quinoa', 'sweetpotato', 'potato', 'noodles', 'banana', 'bread', 'tortilla'],
-  fat: ['peanutbutter', 'almonds', 'oliveoil', 'avocado', 'seeds', 'cheese'],
+interface SlotTemplate { protein: string; carb: string; fat: string; flavor: string; }
+
+const MEAL_TEMPLATES: Record<string, SlotTemplate[]> = {
+  Breakfast: [
+    { protein: 'eggs', carb: 'oats', fat: 'almonds',
+      flavor: 'Scramble the eggs with smoked paprika and black pepper. Stir the almonds and a pinch of cinnamon into warm oats — add a splash of milk to make it creamy.' },
+    { protein: 'eggs', carb: 'bread', fat: 'avocado',
+      flavor: 'Poached or fried eggs on toast with smashed avocado. Season the avocado with lemon juice, chilli flakes, and flaky sea salt.' },
+    { protein: 'eggs', carb: 'tortilla', fat: 'cheese',
+      flavor: 'Breakfast wrap with scrambled eggs and melted cheese. Add a spoonful of salsa, a pinch of cumin, and a dash of hot sauce.' },
+    { protein: 'whey', carb: 'oats', fat: 'peanutbutter',
+      flavor: 'Mix vanilla protein powder into warm oats, then swirl in peanut butter. Top with a sliced banana and a pinch of sea salt — it brings out the sweetness.' },
+    { protein: 'yoghurt', carb: 'oats', fat: 'almonds',
+      flavor: 'Layer Greek yoghurt over oats with crushed almonds. Add honey, a drop of vanilla extract, and a generous pinch of cinnamon.' },
+    { protein: 'yoghurt', carb: 'banana', fat: 'seeds',
+      flavor: 'Greek yoghurt bowl with sliced banana and mixed seeds. Drizzle honey over the top and add a pinch of nutmeg or cardamom.' },
+    { protein: 'yoghurt', carb: 'bread', fat: 'peanutbutter',
+      flavor: 'Peanut butter on toast alongside a bowl of Greek yoghurt. Add banana slices and a sprinkle of cinnamon sugar on the toast.' },
+    { protein: 'cottage', carb: 'oats', fat: 'almonds',
+      flavor: 'Stir cottage cheese into warm oats — creamier than you\'d expect. Top with crushed almonds, berries if you have them, and a drizzle of honey.' },
+  ],
+  Lunch: [
+    { protein: 'chicken', carb: 'rice', fat: 'oliveoil',
+      flavor: 'Pan-fry chicken in olive oil with garlic, rosemary, and thyme. Rest before slicing and serve over fluffy rice with a squeeze of lemon.' },
+    { protein: 'chicken', carb: 'sweetpotato', fat: 'avocado',
+      flavor: 'Paprika and garlic-roasted chicken with sweet potato wedges. Smash the avocado with lime juice, coriander, and a pinch of salt.' },
+    { protein: 'chicken', carb: 'pasta', fat: 'oliveoil',
+      flavor: 'Chicken pasta with olive oil, garlic, and sun-dried tomatoes. Finish with fresh basil, chilli flakes, and a grating of parmesan.' },
+    { protein: 'chicken', carb: 'tortilla', fat: 'avocado',
+      flavor: 'Grilled chicken wrap with guacamole. Season the chicken with cumin, smoked paprika, lime, and a touch of chilli.' },
+    { protein: 'salmon', carb: 'quinoa', fat: 'oliveoil',
+      flavor: 'Pan-seared salmon on quinoa. Drizzle with olive oil, season with dill, lemon zest, and cracked black pepper. A caper or two doesn\'t hurt.' },
+    { protein: 'turkey', carb: 'rice', fat: 'oliveoil',
+      flavor: 'Turkey mince fried rice cooked in a splash of soy sauce with ginger, garlic, and sesame oil. Finish with spring onion and a dash of oyster sauce.' },
+    { protein: 'beef', carb: 'pasta', fat: 'oliveoil',
+      flavor: 'Lean beef bolognese. Fry with garlic, onion, tomato paste, dried oregano, and basil. A splash of red wine while it simmers makes all the difference.' },
+    { protein: 'steak', carb: 'potato', fat: 'oliveoil',
+      flavor: 'Pan-sear the steak 2 min per side, then rest it. Crush the potatoes with olive oil, rosemary, and garlic. Finish with flaky salt and cracked pepper.' },
+    { protein: 'tofu', carb: 'noodles', fat: 'seeds',
+      flavor: 'Crispy tofu noodle bowl. Press and marinate tofu in soy, ginger, and garlic. Pan-fry until golden. Top with sesame seeds and chilli oil.' },
+    { protein: 'whitefish', carb: 'rice', fat: 'oliveoil',
+      flavor: 'Baked white fish over rice. Season with cumin, coriander, garlic, and lemon. Drizzle olive oil and roast at 200°C for 15 min.' },
+  ],
+  Snack: [
+    { protein: 'yoghurt', carb: 'banana', fat: 'peanutbutter',
+      flavor: 'Slice the banana and dip into peanut butter. Serve with a bowl of Greek yoghurt. A pinch of cinnamon and a flake of sea salt makes it feel indulgent.' },
+    { protein: 'cottage', carb: 'bread', fat: 'almonds',
+      flavor: 'Cottage cheese on wholegrain toast with a handful of almonds. Season with black pepper and a light drizzle of honey.' },
+    { protein: 'whey', carb: 'banana', fat: 'peanutbutter',
+      flavor: 'Blend protein powder with banana, peanut butter, ice, and a splash of milk. Add a pinch of sea salt — it balances the sweetness perfectly.' },
+    { protein: 'eggs', carb: 'bread', fat: 'avocado',
+      flavor: 'Hard-boiled egg on toast with smashed avocado. Sprinkle with everything bagel seasoning, or keep it simple with sea salt and cracked pepper.' },
+    { protein: 'yoghurt', carb: 'oats', fat: 'seeds',
+      flavor: 'Bircher-style: mix yoghurt and oats overnight. Top with mixed seeds, a drizzle of honey, and a drop of vanilla. Eat cold — it\'s great.' },
+    { protein: 'cottage', carb: 'banana', fat: 'almonds',
+      flavor: 'Cottage cheese bowl with sliced banana and almonds. Add a drizzle of honey and a pinch of cinnamon. Quick, high-protein, naturally sweet.' },
+  ],
+  Dinner: [
+    { protein: 'salmon', carb: 'sweetpotato', fat: 'oliveoil',
+      flavor: 'Oven-baked salmon with roasted sweet potato. Rub with smoked paprika, garlic, olive oil, and lemon zest. Roast at 200°C for 18 min.' },
+    { protein: 'chicken', carb: 'rice', fat: 'avocado',
+      flavor: 'Teriyaki chicken over jasmine rice with sliced avocado. Glaze the chicken with soy, honey, garlic, and ginger. Broil for the last 2 min to caramelise.' },
+    { protein: 'beef', carb: 'rice', fat: 'oliveoil',
+      flavor: 'Korean-style beef mince bowl. Fry with soy sauce, sesame oil, garlic, ginger, and a little brown sugar. Top with spring onion and a fried egg if possible.' },
+    { protein: 'turkey', carb: 'sweetpotato', fat: 'oliveoil',
+      flavor: 'Turkey mince stuffed sweet potato. Roast the potato at 200°C for 45 min. Fill with turkey cooked in cumin, smoked chilli, garlic, and a splash of tomato.' },
+    { protein: 'whitefish', carb: 'quinoa', fat: 'oliveoil',
+      flavor: 'Lemon and herb white fish on quinoa. Bake at 200°C with olive oil, lemon slices, capers, and fresh parsley. Simple, light, and genuinely delicious.' },
+    { protein: 'steak', carb: 'sweetpotato', fat: 'avocado',
+      flavor: 'Grilled steak with roasted sweet potato wedges and guacamole. Season the steak with smoked salt, garlic powder, and pepper. Rest before slicing.' },
+    { protein: 'tofu', carb: 'rice', fat: 'oliveoil',
+      flavor: 'Crispy tofu stir-fry over rice. Fry in sesame oil with garlic, chilli paste, and soy sauce. Add any greens you have — broccoli or spinach work brilliantly.' },
+    { protein: 'chicken', carb: 'pasta', fat: 'cheese',
+      flavor: 'Chicken pasta bake. Toss pasta with chicken, passata, garlic, dried basil, and chilli. Top with cheese and grill until golden. Comfort food, done well.' },
+    { protein: 'salmon', carb: 'noodles', fat: 'seeds',
+      flavor: 'Miso-glazed salmon on soba noodles. Mix miso paste, mirin, soy, and honey for the glaze. Broil the salmon for 8 min. Finish with sesame seeds and spring onion.' },
+    { protein: 'turkey', carb: 'pasta', fat: 'oliveoil',
+      flavor: 'Turkey and tomato pasta. Brown the turkey with garlic, fennel seeds, and chilli. Add tomatoes and simmer. Finish with olive oil and fresh basil.' },
+  ],
 };
 
 const MEAL_SLOTS = [
@@ -153,16 +229,20 @@ function portionLabel(food: Food, qty: number): string {
 }
 
 function generateMealPlan(targets: MacroSet): SavedPlan {
-  const pick = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
+  const pickTemplate = (slotName: string): SlotTemplate => {
+    const options = MEAL_TEMPLATES[slotName] ?? MEAL_TEMPLATES['Lunch'];
+    return options[Math.floor(Math.random() * options.length)];
+  };
 
   const meals: MealResult[] = MEAL_SLOTS.map(slot => {
     const slotP = targets.protein * slot.pct;
     const slotC = targets.carbs * slot.pct;
     const slotF = targets.fats * slot.pct;
 
-    const pFood = getFood(pick(MEAL_TEMPLATES.protein));
-    const cFood = getFood(pick(MEAL_TEMPLATES.carb));
-    const fFood = getFood(pick(MEAL_TEMPLATES.fat));
+    const tpl = pickTemplate(slot.name);
+    const pFood = getFood(tpl.protein);
+    const cFood = getFood(tpl.carb);
+    const fFood = getFood(tpl.fat);
 
     // Pass 1 — estimate carb and fat quantities using their primary macro targets,
     // so we know how much protein they'll contribute before sizing the protein food.
@@ -198,7 +278,7 @@ function generateMealPlan(targets: MacroSet): SavedPlan {
     const tp = items.reduce((s, i) => s + i.p, 0);
     const tc = items.reduce((s, i) => s + i.c, 0);
     const tf = items.reduce((s, i) => s + i.f, 0);
-    return { name: slot.name, items, totals: { p: tp, c: tc, f: tf, kcal: Math.round(tp * 4 + tc * 4 + tf * 9) } };
+    return { name: slot.name, items, totals: { p: tp, c: tc, f: tf, kcal: Math.round(tp * 4 + tc * 4 + tf * 9) }, flavor: tpl.flavor };
   });
 
   const tp = meals.reduce((s, m) => s + m.totals.p, 0);
@@ -594,6 +674,7 @@ const Diet: React.FC = () => {
                             </tbody>
                           </table>
                           <p className="plan-desc">P{meal.totals.p}g · C{meal.totals.c}g · F{meal.totals.f}g</p>
+                          {meal.flavor && <p className="plan-flavor">💡 {meal.flavor}</p>}
                         </li>
                       ))}
                     </ul>
