@@ -164,13 +164,27 @@ function generateMealPlan(targets: MacroSet): SavedPlan {
     const cFood = getFood(pick(MEAL_TEMPLATES.carb));
     const fFood = getFood(pick(MEAL_TEMPLATES.fat));
 
-    const pQty = roundQty(pFood, (slotP / pFood.p) * pFood.base);
+    // Pass 1 — estimate carb and fat quantities using their primary macro targets,
+    // so we know how much protein they'll contribute before sizing the protein food.
+    const cQtyEst = cFood.c > 0 ? roundQty(cFood, (slotC / cFood.c) * cFood.base) : cFood.min;
+    const cMEst = macrosFor(cFood, cQtyEst);
+
+    const remFEst = Math.max(0, slotF - cMEst.f);
+    const fQtyEst = fFood.f > 0 ? roundQty(fFood, (remFEst / fFood.f) * fFood.base) : fFood.min;
+    const fMEst = macrosFor(fFood, fQtyEst);
+
+    // Pass 2 — size the protein food to only cover protein not already provided by
+    // the carb and fat foods.
+    const remP = Math.max(0, slotP - cMEst.p - fMEst.p);
+    const pQty = pFood.p > 0 ? roundQty(pFood, (remP / pFood.p) * pFood.base) : pFood.min;
     const pM = macrosFor(pFood, pQty);
 
-    const remC = Math.max(0, slotC - pM.c);
+    // Recalculate carb quantity accounting for protein food's carb contribution.
+    const remC = Math.max(0, slotC - pM.c - fMEst.c);
     const cQty = cFood.c > 0 ? roundQty(cFood, (remC / cFood.c) * cFood.base) : cFood.min;
     const cM = macrosFor(cFood, cQty);
 
+    // Recalculate fat quantity with final carb/protein contributions.
     const remF = Math.max(0, slotF - pM.f - cM.f);
     const fQty = fFood.f > 0 ? roundQty(fFood, (remF / fFood.f) * fFood.base) : fFood.min;
     const fM = macrosFor(fFood, fQty);

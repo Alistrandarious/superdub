@@ -30,7 +30,7 @@ const About: React.FC = () => {
         <h1 className="title">About</h1>
       </header>
 
-      <div className="page-content" style={{ maxWidth: 680, margin: '0 auto' }}>
+      <div className="page-content" style={{ maxWidth: 680, margin: '0 auto', overflowY: 'auto', flex: 1, paddingBottom: 60 }}>
 
         {/* Who made it */}
         <div className="diet-section" style={{ marginBottom: 20 }}>
