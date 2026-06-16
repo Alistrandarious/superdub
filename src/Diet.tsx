@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import './App.css';
 import { api } from './api';
 
@@ -353,13 +353,8 @@ function generateMealPlan(targets: MacroSet, activeFilters: string[] = []): Save
 
 const Diet: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState<'targets' | 'meals'>(
-    searchParams.get('tab') === 'meals' ? 'meals' : 'targets'
-  );
-
-  useEffect(() => {
-    setActiveTab(searchParams.get('tab') === 'meals' ? 'meals' : 'targets');
-  }, [searchParams]);
+  const navigate = useNavigate();
+  const activeTab = searchParams.get('tab') === 'meals' ? 'meals' : 'targets';
   const [profile, setProfile] = useState<ProfileData>(DEFAULT_PROFILE);
   const [profileName, setProfileName] = useState('');
   const [target, setTarget] = useState<MacroSet>(DEFAULT_TARGET);
@@ -607,8 +602,8 @@ const Diet: React.FC = () => {
 
         {/* Tab switcher */}
         <div className="diet-tabs">
-          <button className={`diet-tab${activeTab === 'targets' ? ' active' : ''}`} onClick={() => setActiveTab('targets')}>Diet Maker</button>
-          <button className={`diet-tab${activeTab === 'meals' ? ' active' : ''}`} onClick={() => setActiveTab('meals')}>Meal Plans</button>
+          <button className={`diet-tab${activeTab === 'targets' ? ' active' : ''}`} onClick={() => navigate('/diet')}>Diet Maker</button>
+          <button className={`diet-tab${activeTab === 'meals' ? ' active' : ''}`} onClick={() => navigate('/diet?tab=meals')}>Meal Plans</button>
         </div>
 
         {/* Maintenance card */}
