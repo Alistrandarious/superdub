@@ -650,6 +650,9 @@ const Habits: React.FC = () => {
                   <button className="cog-menu-item" onClick={() => { setShowCogMenu(false); setTimeout(() => addRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50); }}>
                     <span>＋</span> Add Habit
                   </button>
+                  <button className="cog-menu-item" onClick={() => { setShowCogMenu(false); window.dispatchEvent(new CustomEvent('superdub:show-checkin')); }}>
+                    <span>⚖️</span> Log Weight
+                  </button>
                   <button className="cog-menu-item" onClick={() => { setShowCogMenu(false); setGraveyardOpen(true); setTimeout(() => graveyardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80); }}>
                     <span>📦</span> Archived Habits
                   </button>

@@ -28,6 +28,12 @@ const DailyCheckIn: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    const handler = () => { setDone(false); setError(null); setShow(true); };
+    window.addEventListener('superdub:show-checkin', handler);
+    return () => window.removeEventListener('superdub:show-checkin', handler);
+  }, []);
+
+  useEffect(() => {
     if (!show) return;
     api.getProfile().then((p: any) => {
       const w = parseFloat(p.weightKg);
