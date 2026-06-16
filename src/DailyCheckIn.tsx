@@ -8,34 +8,31 @@ const CHECKIN_KEY = 'superdub.weight.checkin';
 function todayStr() {
   return new Date().toISOString().split('T')[0];
 }
-function yesterdayStr() {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  return d.toISOString().split('T')[0];
-}
 
-// 40–200 kg in 0.1 steps = 1601 values
-const WEIGHT_VALUES = Array.from({ length: 1601 }, (_, i) => Math.round((40 + i * 0.1) * 10) / 10);
+const KG_VALUES    = Array.from({ length: 161 }, (_, i) => 40 + i);           // 40–200
+const DEC_VALUES   = Array.from({ length: 20  }, (_, i) => Math.round(i * 0.05 * 100) / 100); // 0.00–0.95
 
 const DailyCheckIn: React.FC = () => {
   const [show, setShow] = useState(false);
-  const [weight, setWeight] = useState(75);
+  const [wholeKg, setWholeKg] = useState(75);
+  const [decKg, setDecKg] = useState(0);
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
 
   useEffect(() => {
     if (localStorage.getItem(CHECKIN_KEY) === todayStr()) return;
-    // Small delay so it doesn't flash on first render
     const t = setTimeout(() => setShow(true), 800);
     return () => clearTimeout(t);
   }, []);
 
-  // Pre-fill weight from profile if available
   useEffect(() => {
     if (!show) return;
     api.getProfile().then((p: any) => {
       const w = parseFloat(p.weightKg);
-      if (w > 0) setWeight(Math.round(w * 10) / 10); // snap to 0.1
+      if (w > 0) {
+        setWholeKg(Math.floor(w));
+        setDecKg(Math.round((w % 1) / 0.05) * 0.05);
+      }
     }).catch(() => {});
   }, [show]);
 
@@ -46,6 +43,7 @@ const DailyCheckIn: React.FC = () => {
 
   const save = async () => {
     setSaving(true);
+    const weight = Math.round((wholeKg + decKg) * 100) / 100;
     try {
       await api.updateTrackerDay(todayStr(), { weightKg: weight });
       setDone(true);
@@ -59,20 +57,34 @@ const DailyCheckIn: React.FC = () => {
 
   if (!show) return null;
 
+  const displayWeight = (wholeKg + decKg).toFixed(2);
+
   return (
     <div className="checkin-overlay">
       <div className="checkin-modal">
         <h2 className="checkin-title">Morning Check-in</h2>
         <p className="checkin-subtitle">Log your weight — steps can be added later.</p>
 
-        <div className="checkin-wheels checkin-wheels-single">
+        <div className="checkin-weight-display">{displayWeight} <span>kg</span></div>
+
+        <div className="checkin-wheels">
           <div className="checkin-wheel-col">
-            <label>Today's weight</label>
+            <label>kg</label>
             <WheelPicker
-              values={WEIGHT_VALUES}
-              selected={weight}
-              onSelect={setWeight}
-              format={v => `${v} kg`}
+              values={KG_VALUES}
+              selected={wholeKg}
+              onSelect={setWholeKg}
+              format={v => String(v)}
+            />
+          </div>
+          <div className="checkin-weight-dot">.</div>
+          <div className="checkin-wheel-col">
+            <label>+kg</label>
+            <WheelPicker
+              values={DEC_VALUES}
+              selected={decKg}
+              onSelect={setDecKg}
+              format={v => v.toFixed(2).slice(1)}
             />
           </div>
         </div>

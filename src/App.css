@@ -5270,3 +5270,14 @@
 .pbg-label { font-size: 0.7rem; color: #666; }
 .pbg-arrow { color: #555; font-size: 1.1rem; align-self: center; }
 .pbg-diff  { font-size: 0.72rem; color: #888; margin-top: 6px; text-align: right; }
+
+/* ── Two-wheel weight picker ── */
+.checkin-weight-display {
+  text-align: center; font-size: 2rem; font-weight: 700; color: #e0e0e0;
+  margin-bottom: 16px; letter-spacing: 0.02em;
+}
+.checkin-weight-display span { font-size: 1rem; color: #666; margin-left: 4px; }
+.checkin-weight-dot {
+  font-size: 2rem; font-weight: 700; color: #555;
+  align-self: center; padding-bottom: 4px;
+}
