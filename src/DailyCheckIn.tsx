@@ -10,15 +10,16 @@ function todayStr() {
   return `${String(n.getDate()).padStart(2, '0')}/${String(n.getMonth() + 1).padStart(2, '0')}`;
 }
 
-const KG_VALUES    = Array.from({ length: 161 }, (_, i) => 40 + i);           // 40–200
-const DEC_VALUES   = Array.from({ length: 20  }, (_, i) => Math.round(i * 0.05 * 100) / 100); // 0.00–0.95
+const KG_VALUES  = Array.from({ length: 161 }, (_, i) => 40 + i);
+const DEC_VALUES = Array.from({ length: 20  }, (_, i) => Math.round(i * 0.05 * 100) / 100);
 
 const DailyCheckIn: React.FC = () => {
   const [show, setShow] = useState(false);
   const [wholeKg, setWholeKg] = useState(75);
-  const [decKg, setDecKg] = useState(0);
+  const [decKg, setDecKg]   = useState(0);
   const [saving, setSaving] = useState(false);
-  const [done, setDone] = useState(false);
+  const [done, setDone]     = useState(false);
+  const [error, setError]   = useState<string | null>(null);
 
   useEffect(() => {
     if (localStorage.getItem(CHECKIN_KEY) === todayStr()) return;
@@ -44,16 +45,18 @@ const DailyCheckIn: React.FC = () => {
 
   const save = async () => {
     setSaving(true);
+    setError(null);
     const weight = Math.round((wholeKg + decKg) * 100) / 100;
     try {
       await api.updateTrackerDay(todayStr(), { weight });
-      // Also update profile weight_kg so Biographics reflects the new value
       await api.updateProfile({ weightKg: weight }).catch(() => {});
       window.dispatchEvent(new CustomEvent('superdub:tracker-updated'));
       setDone(true);
       setTimeout(dismiss, 900);
-    } catch {
-      dismiss();
+    } catch (err: any) {
+      // Don't dismiss — let user see the error and retry
+      console.error('[DailyCheckIn] weight save failed:', err?.message ?? err);
+      setError(err?.message ?? 'Could not save. Tap to retry.');
     } finally {
       setSaving(false);
     }
@@ -98,8 +101,11 @@ const DailyCheckIn: React.FC = () => {
             <div className="checkin-done">✓ Logged!</div>
           ) : (
             <>
+              {error && (
+                <p className="checkin-error">{error}</p>
+              )}
               <button className="checkin-save-btn" onClick={save} disabled={saving}>
-                {saving ? 'Saving…' : 'Log it'}
+                {saving ? 'Saving…' : error ? 'Retry' : 'Log it'}
               </button>
               <button className="checkin-skip-btn" onClick={dismiss}>Skip for today</button>
             </>
