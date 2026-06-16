@@ -633,6 +633,17 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
                     {habits.includes(h) ? '✓ ' : '+ '}{h}
                   </button>
                 ))}
+                {habits.filter(h => !DEFAULT_HABITS.includes(h) && !EXTRA_HABITS.includes(h)).map(h => (
+                  <button
+                    key={h}
+                    type="button"
+                    className="auth-habit-pill selected"
+                    onClick={() => toggleHabit(h)}
+                    title="Tap to remove"
+                  >
+                    ✓ {h}
+                  </button>
+                ))}
               </div>
               <div className="auth-custom-habit">
                 <input

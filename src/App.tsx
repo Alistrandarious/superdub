@@ -48,6 +48,21 @@ function getYearDays(year: number): string[] {
 const YEAR = 2026;
 const ALL_DAYS = getYearDays(YEAR);
 
+function getChartDayRange(from: Date, to: Date): Array<{ ddmm: string; date: Date }> {
+  const result: Array<{ ddmm: string; date: Date }> = [];
+  const cur = new Date(from);
+  cur.setHours(0, 0, 0, 0);
+  const end = new Date(to);
+  end.setHours(23, 59, 59, 999);
+  while (cur <= end) {
+    const dd = String(cur.getDate()).padStart(2, '0');
+    const mm = String(cur.getMonth() + 1).padStart(2, '0');
+    result.push({ ddmm: `${dd}/${mm}`, date: new Date(cur) });
+    cur.setDate(cur.getDate() + 1);
+  }
+  return result;
+}
+
 function getMonthDays(month: number): string[] {
   const mm = String(month + 1).padStart(2, '0');
   return ALL_DAYS.filter(d => d.slice(3) === mm);
@@ -136,6 +151,10 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     : hour < 21 ? 'Good evening'
     : 'Good night';
 
+  // Chart state
+  const [chartRange, setChartRange] = useState<'7d' | '1m' | '3m' | 'all'>('all');
+  const [accountCreatedAt, setAccountCreatedAt] = useState<string>('');
+
   // Weight plan state
   const [currentWeight, setCurrentWeight] = useState('');
   const [goalWeight, setGoalWeight] = useState('');
@@ -154,6 +173,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       api.getWeightSettings(),
     ]).then(([profile, loadedHabits, trackerData, ws]) => {
       setName(profile.name ?? '');
+      if (profile.accountCreatedAt) setAccountCreatedAt(profile.accountCreatedAt);
 
       const habitObjs = loadedHabits as { name: string }[];
       const activeHabits = habitObjs.length > 0 ? habitObjs.map(h => h.name) : (currentHabits ?? DEFAULT_HABITS);
@@ -305,20 +325,48 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const targetCarbCals = targetCalories - (targetProtein * 4) - (targetFats * 9);
   const targetCarbs = targetCalories > 0 ? Math.max(Math.round(targetCarbCals / 4), 50) : 0;
 
-  const kRate = (startWeight > goal && activeLoss > 0) ? (activeLoss / 7) / (startWeight - goal) : 0;
+  // Account creation date — fallback to 30 days ago if not loaded yet
+  const accountCreatedDate = useMemo(() => {
+    if (accountCreatedAt) return new Date(accountCreatedAt);
+    const d = new Date(now);
+    d.setDate(d.getDate() - 30);
+    return d;
+  }, [accountCreatedAt]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  let goalDayIndex = ALL_DAYS.length;
-  if (startWeight > 0 && goal > 0 && kRate > 0) {
-    goalDayIndex = Math.ceil(-Math.log(0.5 / (startWeight - goal)) / kRate);
-    if (goalDayIndex >= ALL_DAYS.length) goalDayIndex = ALL_DAYS.length;
-  }
+  // Chart day range based on selected range tab
+  const chartDayRange = useMemo(() => {
+    let from: Date;
+    if (chartRange === '7d') { from = new Date(now); from.setDate(now.getDate() - 6); }
+    else if (chartRange === '1m') { from = new Date(now); from.setDate(now.getDate() - 29); }
+    else if (chartRange === '3m') { from = new Date(now); from.setDate(now.getDate() - 89); }
+    else { from = new Date(accountCreatedDate); } // 'all' — from day 1
+    // Never start before account creation
+    if (from < accountCreatedDate) from = new Date(accountCreatedDate);
+    return getChartDayRange(from, now);
+  }, [chartRange, accountCreatedDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const goalDayStr = goalDayIndex < ALL_DAYS.length ? ALL_DAYS[goalDayIndex] : null;
-  const goalDayVisible = goalDayStr && visibleDays.includes(goalDayStr) ? goalDayStr : null;
+  // Days to reach goal (for goal reference line)
+  const daysToGoal = activeLoss > 0 && startWeight > goal && goal > 0
+    ? Math.ceil((startWeight - goal) / (activeLoss / 7))
+    : null;
 
+  // Goal date DD/MM — shown on chart if within current range
+  const goalDateDDMM = useMemo(() => {
+    if (!daysToGoal || !accountCreatedAt) return null;
+    const d = new Date(accountCreatedDate);
+    d.setDate(d.getDate() + daysToGoal);
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    return `${dd}/${mm}`;
+  }, [daysToGoal, accountCreatedDate, accountCreatedAt]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const goalDayVisible = goalDateDDMM && chartDayRange.some(d => d.ddmm === goalDateDDMM)
+    ? goalDateDDMM : null;
+
+  // Trend (linear regression on actual logged weights within the chart range)
   const weightPoints: { i: number; w: number }[] = [];
-  visibleDays.forEach((day, i) => {
-    const w = parseFloat(tracker[day]?.weight ?? '');
+  chartDayRange.forEach(({ ddmm }, i) => {
+    const w = parseFloat(tracker[ddmm]?.weight ?? '');
     if (w > 0) weightPoints.push({ i, w });
   });
 
@@ -335,18 +383,28 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     trendIntercept = (sumY - trendSlope * sumX) / n;
   }
 
-  const chartData = visibleDays.map((day, i) => {
-    const d = tracker[day] ?? { weight: '', habits: {}, calories: '', protein: '', carbs: '', fats: '', steps: '' };
+  // XAxis tick density based on how many days are visible
+  const xAxisInterval = chartDayRange.length <= 10 ? 0
+    : chartDayRange.length <= 35 ? 6
+    : chartDayRange.length <= 100 ? 13
+    : 29;
+
+  const chartData = chartDayRange.map(({ ddmm, date }, i) => {
+    const d = tracker[ddmm] ?? { weight: '', habits: {}, calories: '', protein: '', carbs: '', fats: '', steps: '' };
     const completed = habits.filter(h => d.habits[h]).length;
-    const globalIdx = ALL_DAYS.indexOf(day);
-    const prediction = (startWeight > 0 && kRate > 0)
-      ? +(goal + (startWeight - goal) * Math.exp(-kRate * globalIdx)).toFixed(1)
+
+    // Days since account creation → drives the linear goal curve
+    const daysSinceStart = Math.round((date.getTime() - accountCreatedDate.getTime()) / 86400000);
+    const prediction = (startWeight > 0 && activeLoss > 0 && daysSinceStart >= 0)
+      ? +Math.max(startWeight - (activeLoss / 7) * daysSinceStart, goal > 0 ? goal : 0).toFixed(1)
       : null;
+
     const lastDataIndex = hasTrend ? weightPoints[weightPoints.length - 1].i : 0;
     const trend = hasTrend && i >= weightPoints[0].i && i <= lastDataIndex + 7
       ? +(trendIntercept + trendSlope * i).toFixed(1)
       : null;
-    return { day, completed, weight: d.weight ? Number(d.weight) : null, prediction, trend };
+
+    return { day: ddmm, completed, weight: d.weight ? Number(d.weight) : null, prediction, trend };
   });
 
   const handleWeight = (day: string, value: string) => {
@@ -727,6 +785,18 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       </div>
 
       <section className="chart-section">
+        <div className="chart-range-tabs">
+          {(['7d', '1m', '3m', 'all'] as const).map(r => (
+            <button
+              key={r}
+              className={`chart-range-btn ${chartRange === r ? 'active' : ''}`}
+              onClick={() => setChartRange(r)}
+            >
+              {r === '7d' ? '7D' : r === '1m' ? '1M' : r === '3m' ? '3M' : 'All'}
+            </button>
+          ))}
+        </div>
+        <div className="chart-section-inner">
         <div className="chart-labels-spacer"></div>
         <div className="chart-container">
         <ResponsiveContainer width="100%" height={300}>
@@ -739,7 +809,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               </linearGradient>
             </defs>
             <CartesianGrid stroke={themeColor + '1a'} strokeDasharray="3 3" />
-            <XAxis dataKey="day" stroke={themeColor} tick={{ fill: themeColor, fontSize: 10 }} interval={6} tickLine={false} padding={{ left: 10 }} />
+            <XAxis dataKey="day" stroke={themeColor} tick={{ fill: themeColor, fontSize: 10 }} interval={xAxisInterval} tickLine={false} padding={{ left: 10 }} />
             <YAxis yAxisId="left" stroke={themeColor} tick={{ fill: themeColor, fontSize: 10 }} allowDecimals={false} width={30} axisLine={false} tickLine={false} domain={[0, habits.length]} />
             <YAxis yAxisId="right" orientation="right" stroke="#ccff00" tick={{ fill: '#ccff00', fontSize: 10 }} domain={[60, 'auto']} width={50} axisLine={false} tickLine={false} />
             <Tooltip
@@ -822,6 +892,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           </ComposedChart>
         </ResponsiveContainer>
         </div>
+        </div>{/* /chart-section-inner */}
       </section>
 
       <section className="tracker">

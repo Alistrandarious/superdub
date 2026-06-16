@@ -16,12 +16,16 @@ function ageFromDob(dob: string | null): string {
 
 router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
-    const { rows } = await pool.query(
-      'SELECT name, dob, height_cm, weight_kg, age, sex, activity, steps, vest_kg, job_type, gym_freq, walk_freq, step_target FROM profile WHERE user_id = $1',
-      [req.userId]
-    );
-    if (!rows[0]) return res.json({});
-    const r = rows[0];
+    const [profileRes, userRes] = await Promise.all([
+      pool.query(
+        'SELECT name, dob, height_cm, weight_kg, age, sex, activity, steps, vest_kg, job_type, gym_freq, walk_freq, step_target FROM profile WHERE user_id = $1',
+        [req.userId]
+      ),
+      pool.query('SELECT created_at FROM users WHERE id = $1', [req.userId]),
+    ]);
+    const accountCreatedAt = userRes.rows[0]?.created_at ?? null;
+    if (!profileRes.rows[0]) return res.json({ accountCreatedAt });
+    const r = profileRes.rows[0];
     const dobStr = r.dob ? new Date(r.dob).toISOString().split('T')[0] : '';
     res.json({
       name: r.name ?? '',
@@ -36,6 +40,7 @@ router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
       gymFreq: r.gym_freq ?? '3-4',
       walkFreq: r.walk_freq ?? 'moderate',
       stepTarget: r.step_target ?? 10000,
+      accountCreatedAt,
     });
   } catch {
     res.status(500).json({ error: 'Server error' });

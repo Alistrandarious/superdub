@@ -1407,11 +1407,43 @@
    CHART SECTION
    ===================================================================== */
 .chart-section {
-  padding: 16px 16px 16px 0;
+  padding: 0 0 0 0;
   border-bottom: 1px solid var(--glass-border);
   flex-shrink: 0;
   display: flex;
+  flex-direction: column;
+}
+
+.chart-range-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 10px 16px 6px;
+  justify-content: flex-end;
+}
+
+.chart-range-btn {
+  background: transparent;
+  border: 1px solid var(--theme-dim);
+  color: var(--theme-dim);
+  border-radius: 20px;
+  padding: 3px 14px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.chart-range-btn.active {
+  background: var(--theme);
+  border-color: var(--theme);
+  color: #000;
+}
+
+.chart-section-inner {
+  display: flex;
   align-items: stretch;
+  padding: 0 16px 16px 0;
 }
 
 .chart-labels-spacer {

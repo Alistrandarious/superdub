@@ -76,7 +76,7 @@ const DailyCheckIn: React.FC = () => {
     <div className="checkin-overlay">
       <div className="checkin-modal">
         <h2 className="checkin-title">Morning Check-in</h2>
-        <p className="checkin-subtitle">Log your weight — steps can be added later.</p>
+        <p className="checkin-subtitle">Weigh yourself first thing in the morning, after using the bathroom and before eating — this gives you the most consistent reading. Daily fluctuations of 0.5–2 kg are completely normal.</p>
 
         <div className="checkin-weight-display">{displayWeight} <span>kg</span></div>
 

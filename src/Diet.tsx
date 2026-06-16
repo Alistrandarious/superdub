@@ -765,7 +765,7 @@ const Diet: React.FC = () => {
         <div className="header-left">
           <Link to="/" className="back-link">← Back</Link>
         </div>
-        <h1 className="title">Diet Maker</h1>
+        <h1 className="title">Training Plan</h1>
       </header>
 
       <div className="diet-content page-content">
@@ -781,10 +781,10 @@ const Diet: React.FC = () => {
           {maintenance > 0 ? (
             <>
               <div className="diet-maint-top">
-                <span className="diet-maint-label">Predicted Maintenance</span>
+                <span className="diet-maint-label">Daily Calorie Target</span>
                 <span className="diet-maint-badge">{energyBalance}</span>
               </div>
-              <div className="diet-maint-kcal">{maintenance.toLocaleString()} <span className="diet-maint-unit">kcal / day</span></div>
+              <div className="diet-maint-kcal">{macroCalories.toLocaleString()} <span className="diet-maint-unit">kcal / day</span></div>
               <div className="diet-maint-bar-wrap">
                 <div className="diet-maint-bar">
                   <div
@@ -795,12 +795,18 @@ const Diet: React.FC = () => {
                 </div>
                 <div className="diet-maint-labels">
                   <span>0</span>
-                  <span style={{ marginLeft: 'auto' }}>Target: {macroCalories} kcal</span>
+                  <span style={{ marginLeft: 'auto' }}>Maintenance: {maintenance.toLocaleString()} kcal</span>
                 </div>
               </div>
-              {walkBurn > 0 && (
-                <div className="diet-maint-breakdown">TDEE {tdee} kcal + {walkBurn} kcal from steps</div>
-              )}
+              <div className="diet-maint-breakdown">
+                Your body burns ~{maintenance.toLocaleString()} kcal/day
+                {macroCalories < maintenance
+                  ? ` — eating ${(maintenance - macroCalories).toLocaleString()} kcal less creates your deficit`
+                  : macroCalories > maintenance
+                  ? ` — eating ${(macroCalories - maintenance).toLocaleString()} kcal more builds a surplus`
+                  : ' — you are eating at maintenance'}
+                {walkBurn > 0 && ` (includes ${walkBurn} kcal from steps)`}
+              </div>
             </>
           ) : (
             <div className="diet-maint-empty">

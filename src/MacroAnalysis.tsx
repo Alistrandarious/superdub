@@ -97,7 +97,7 @@ const MacroAnalysis: React.FC = () => {
   return (
     <div className="app" style={{ '--theme': '#00e5ff', '--theme-dim': '#00e5ff66', '--theme-glow': '#00e5ff33' } as React.CSSProperties}>
       <header className="header">
-        <div className="header-left"><Link to="/diet" className="back-link">← Diet Maker</Link></div>
+        <div className="header-left"><Link to="/diet" className="back-link">← Training Plan</Link></div>
         <h1 className="title">Macro Analysis</h1>
       </header>
 
