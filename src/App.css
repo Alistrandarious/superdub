@@ -5018,3 +5018,140 @@
 .activity-pick-chip.active {
   border-color: var(--theme, #00e5ff); background: rgba(0,229,255,0.1); color: var(--theme, #00e5ff);
 }
+
+/* ── Daily Check-In Modal ── */
+.checkin-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1200;
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.checkin-modal {
+  background: var(--glass-bg-strong, #1a1a2e); border: 1px solid var(--glass-border, rgba(255,255,255,0.1));
+  border-radius: 24px 24px 0 0; width: 100%; max-width: 480px;
+  padding: 28px 24px 40px; box-shadow: 0 -8px 40px rgba(0,0,0,0.5);
+  animation: slideUp 0.3s ease;
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.checkin-title {
+  font-size: 1.15rem; font-weight: 700; color: #e0e0e0;
+  text-align: center; margin-bottom: 4px;
+}
+.checkin-subtitle {
+  font-size: 0.78rem; color: #666; text-align: center; margin-bottom: 24px;
+}
+.checkin-wheels {
+  display: flex; gap: 16px; align-items: stretch; justify-content: center;
+  margin-bottom: 24px;
+}
+.checkin-wheel-col {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.checkin-wheel-col label {
+  font-size: 0.72rem; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em;
+}
+.checkin-divider {
+  width: 1px; background: var(--glass-border, rgba(255,255,255,0.08)); align-self: stretch;
+}
+.checkin-actions {
+  display: flex; gap: 10px;
+}
+.checkin-actions button {
+  flex: 1; padding: 14px; border-radius: 14px; border: none; font-size: 0.9rem; font-weight: 700;
+  cursor: pointer; transition: opacity 0.15s;
+}
+.checkin-actions button:first-child {
+  background: var(--glass-bg, rgba(255,255,255,0.06)); color: #888;
+}
+.checkin-actions button:last-child {
+  background: var(--theme, #00e5ff); color: #000;
+}
+.checkin-actions button:active { opacity: 0.8; }
+
+/* ── Wheel Picker ── */
+.wheel-picker-wrap {
+  position: relative; width: 100%; height: 240px; overflow: hidden; border-radius: 12px;
+}
+.wheel-picker-scroll {
+  height: 100%; overflow-y: scroll; scroll-snap-type: y mandatory;
+  scrollbar-width: none; -ms-overflow-style: none;
+  padding: calc(96px) 0;
+}
+.wheel-picker-scroll::-webkit-scrollbar { display: none; }
+.wheel-picker-item {
+  height: 48px; display: flex; align-items: center; justify-content: center;
+  scroll-snap-align: center; font-size: 1.05rem; color: #555; transition: color 0.1s;
+}
+.wheel-picker-item.selected { color: #e0e0e0; font-weight: 700; font-size: 1.15rem; }
+.wheel-picker-fade-top,
+.wheel-picker-fade-bot {
+  position: absolute; left: 0; right: 0; height: 96px; pointer-events: none; z-index: 2;
+}
+.wheel-picker-fade-top {
+  top: 0;
+  background: linear-gradient(to bottom, var(--glass-bg-strong, #1a1a2e) 20%, transparent);
+}
+.wheel-picker-fade-bot {
+  bottom: 0;
+  background: linear-gradient(to top, var(--glass-bg-strong, #1a1a2e) 20%, transparent);
+}
+.wheel-picker-rail {
+  position: absolute; left: 8px; right: 8px; top: calc(50% - 24px); height: 48px;
+  border-top: 1px solid var(--glass-border, rgba(255,255,255,0.12));
+  border-bottom: 1px solid var(--glass-border, rgba(255,255,255,0.12));
+  border-radius: 4px; pointer-events: none; z-index: 1;
+}
+
+/* ── Profile Body Goals ── */
+.profile-body-goals {
+  background: var(--glass-bg, rgba(255,255,255,0.04));
+  border: 1px solid var(--glass-border, rgba(255,255,255,0.08));
+  border-radius: 16px; padding: 18px 20px; margin-bottom: 20px;
+}
+.pbg-title {
+  font-size: 0.72rem; font-weight: 700; color: #888;
+  text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 14px;
+}
+.pbg-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+}
+.pbg-val {
+  font-size: 0.92rem; font-weight: 700; color: #e0e0e0; min-width: 52px;
+}
+.pbg-val.goal { color: var(--theme, #00e5ff); text-align: right; }
+.pbg-bar-wrap { flex: 1; height: 8px; background: rgba(255,255,255,0.07); border-radius: 4px; overflow: hidden; }
+.pbg-bar-fill { height: 100%; border-radius: 4px; background: var(--theme, #00e5ff); transition: width 0.4s ease; }
+.pbg-hint { font-size: 0.72rem; color: #555; text-align: center; margin-top: 4px; }
+
+/* ── Step Performance (Diet Targets Tab) ── */
+.step-perf-card {
+  background: var(--glass-bg, rgba(255,255,255,0.04));
+  border: 1px solid var(--glass-border, rgba(255,255,255,0.08));
+  border-radius: 16px; padding: 18px 20px; margin-top: 12px;
+}
+.step-perf-target-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+}
+.step-perf-label { font-size: 0.8rem; color: #888; min-width: 42px; }
+.step-perf-unit  { font-size: 0.78rem; color: #555; }
+.step-target-input {
+  flex: 1; background: var(--glass-bg-strong, rgba(255,255,255,0.07));
+  border: 1px solid var(--glass-border, rgba(255,255,255,0.1));
+  border-radius: 10px; padding: 8px 12px; color: #e0e0e0; font-size: 0.92rem;
+  font-weight: 700; text-align: center;
+}
+.step-perf-bar-wrap { margin-bottom: 10px; }
+.step-perf-bar {
+  height: 8px; background: rgba(255,255,255,0.07); border-radius: 4px; overflow: hidden;
+}
+.step-perf-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+.step-perf-row {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.step-perf-count { font-size: 0.82rem; color: #888; }
+.step-perf-badge {
+  font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 20px;
+}
+.step-perf-badge.hit  { background: rgba(48,209,88,0.15); color: #30d158; }
+.step-perf-badge.miss { background: rgba(255,159,10,0.15); color: #ff9f0a; }

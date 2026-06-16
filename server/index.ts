@@ -10,6 +10,7 @@ import tasksRoutes from './routes/tasks';
 import dietRoutes from './routes/diet';
 import weightSettingsRoutes from './routes/weightSettings';
 import foodlogRoutes from './routes/foodlog';
+import { pool } from './db';
 
 dotenv.config();
 
@@ -36,6 +37,7 @@ pool.query(`
   ALTER TABLE profile ADD COLUMN IF NOT EXISTS job_type TEXT DEFAULT 'desk';
   ALTER TABLE profile ADD COLUMN IF NOT EXISTS gym_freq TEXT DEFAULT '3-4';
   ALTER TABLE profile ADD COLUMN IF NOT EXISTS walk_freq TEXT DEFAULT 'moderate';
+  ALTER TABLE profile ADD COLUMN IF NOT EXISTS step_target INTEGER DEFAULT 10000;
   ALTER TABLE diet_settings ADD COLUMN IF NOT EXISTS goal TEXT DEFAULT 'cut';
   CREATE TABLE IF NOT EXISTS food_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

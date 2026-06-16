@@ -374,6 +374,8 @@ const Diet: React.FC = () => {
   const [editingPlanLabel, setEditingPlanLabel] = useState('');
   const [dietFilters, setDietFilters] = useState<string[]>([]);
   const [goal, setGoal] = useState<'cut' | 'maintain' | 'bulk'>('cut');
+  const [stepTarget, setStepTarget] = useState(10000);
+  const [yesterdaySteps, setYesterdaySteps] = useState<number | null>(null);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -382,7 +384,13 @@ const Diet: React.FC = () => {
       api.getDietTarget(),
       api.getDietSettings(),
       api.getDietPlans(),
-    ]).then(([profileData, targetData, settingsData, plansData]) => {
+      api.getTracker(),
+    ]).then(([profileData, targetData, settingsData, plansData, trackerData]) => {
+      const yest = new Date(); yest.setDate(yest.getDate() - 1);
+      const yestKey = yest.toISOString().split('T')[0];
+      const td = trackerData as any;
+      const yestDay = (td.days ?? []).find((d: any) => d.day === yestKey);
+      if (yestDay?.steps != null) setYesterdaySteps(Number(yestDay.steps));
       const p = profileData as ProfileData & { name: string };
       setProfileName(p.name ?? '');
       setProfile({
@@ -399,6 +407,8 @@ const Diet: React.FC = () => {
       setLocks({ protein: !!s.lockProtein, carbs: !!s.lockCarbs, fats: !!s.lockFats });
       setCalorieLock(!!s.calorieLock);
       setGoal((s.goal as 'cut' | 'maintain' | 'bulk') ?? 'cut');
+      const pa = profileData as any;
+      if (pa.stepTarget) setStepTarget(Number(pa.stepTarget));
       setPlans((plansData as any[]).map(r => ({
         id: r.id,
         label: r.label,
@@ -610,7 +620,7 @@ const Diet: React.FC = () => {
       <div className="app" style={{ '--theme': '#00e5ff', '--theme-dim': '#00e5ff66', '--theme-glow': '#00e5ff33' } as React.CSSProperties}>
         <header className="header">
           <div className="header-left"><Link to="/" className="back-link">← Back</Link></div>
-          <h1 className="title">Diet Maker</h1>
+          <h1 className="title">Macro Split & Performance</h1>
         </header>
         <div className="page-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '4rem', color: '#00e5ff' }}>
           Loading…
@@ -632,7 +642,7 @@ const Diet: React.FC = () => {
 
         {/* Tab switcher */}
         <div className="diet-tabs">
-          <button className={`diet-tab${activeTab === 'targets' ? ' active' : ''}`} onClick={() => setSearchParams({})}>Diet Maker</button>
+          <button className={`diet-tab${activeTab === 'targets' ? ' active' : ''}`} onClick={() => setSearchParams({})}>Targets</button>
           <button className={`diet-tab${activeTab === 'meals' ? ' active' : ''}`} onClick={() => setSearchParams({ tab: 'meals' })}>Meal Plans</button>
         </div>
 
@@ -748,6 +758,43 @@ const Diet: React.FC = () => {
             <MacroField label="Protein (g)" mkey="protein" val={target.protein} isLocked={locks.protein} max={getMax('protein')} onChangeMacro={changeMacro} onToggleLock={toggleLock} />
             <MacroField label="Carbs (g)" mkey="carbs" val={target.carbs} isLocked={locks.carbs} max={getMax('carbs')} onChangeMacro={changeMacro} onToggleLock={toggleLock} />
             <MacroField label="Fats (g)" mkey="fats" val={target.fats} isLocked={locks.fats} max={getMax('fats')} onChangeMacro={changeMacro} onToggleLock={toggleLock} />
+          </div>
+        </div>
+
+        {/* Step Performance */}
+        <div className="diet-section">
+          <h2 className="diet-heading">Daily Steps</h2>
+          <div className="step-perf-card">
+            <div className="step-perf-target-row">
+              <span className="step-perf-label">Target</span>
+              <input
+                className="step-target-input"
+                type="text"
+                inputMode="numeric"
+                value={stepTarget}
+                onChange={e => setStepTarget(parseInt(e.target.value) || stepTarget)}
+                onBlur={() => api.updateProfile({ stepTarget }).catch(() => {})}
+                onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+              />
+              <span className="step-perf-unit">steps / day</span>
+            </div>
+            {yesterdaySteps !== null ? (
+              <div className="step-perf-yesterday">
+                <div className="step-perf-bar-wrap">
+                  <div className="step-perf-bar">
+                    <div className="step-perf-fill" style={{ width: `${Math.min(100, (yesterdaySteps / stepTarget) * 100)}%`, background: yesterdaySteps >= stepTarget ? '#30d158' : '#ff9f0a' }} />
+                  </div>
+                </div>
+                <div className="step-perf-row">
+                  <span className="step-perf-count">{yesterdaySteps.toLocaleString()} yesterday</span>
+                  <span className={`step-perf-badge${yesterdaySteps >= stepTarget ? ' hit' : ' miss'}`}>
+                    {yesterdaySteps >= stepTarget ? '✓ Target hit' : `${(stepTarget - yesterdaySteps).toLocaleString()} short`}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <p className="diet-hint" style={{ marginTop: 8 }}>Log yesterday's steps in the daily check-in when you open the app.</p>
+            )}
           </div>
         </div>
 

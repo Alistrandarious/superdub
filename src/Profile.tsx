@@ -99,6 +99,8 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
   const [jobType, setJobType] = useState('desk');
   const [gymFreq, setGymFreq] = useState('3-4');
   const [walkFreq, setWalkFreq] = useState('moderate');
+  const [goalWeight, setGoalWeight] = useState('');
+  const [stepTarget, setStepTarget] = useState('10000');
   const [loaded, setLoaded] = useState(false);
   const [aiKeyInput, setAiKeyInput] = useState('');
   const [aiKeyMasked, setAiKeyMasked] = useState<string | null>(null);
@@ -117,7 +119,10 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
       api.getProfile(),
       api.getDietTarget(),
       api.getHabits(),
-    ]).then(([profileData, targetData, habitsData]) => {
+      api.getWeightSettings(),
+    ]).then(([profileData, targetData, habitsData, wsData]) => {
+      const ws = wsData as any;
+      if (ws.goalWeight) setGoalWeight(ws.goalWeight);
       const p = profileData as ProfileData & { name: string };
       setName(p.name ?? '');
       setProfile({
@@ -133,6 +138,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
       if (pa.jobType) setJobType(pa.jobType);
       if (pa.gymFreq) setGymFreq(pa.gymFreq);
       if (pa.walkFreq) setWalkFreq(pa.walkFreq);
+      if (pa.stepTarget) setStepTarget(String(pa.stepTarget));
       const t = targetData as MacroSet;
       setTarget(t);
       setDraft({
@@ -357,6 +363,41 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
         {/* Targets */}
         <div className="diet-section">
           <h2 className="diet-heading">Targets</h2>
+
+          {/* Body goals */}
+          {(profile.weightKg || goalWeight) && (() => {
+            const cur = parseFloat(profile.weightKg) || 0;
+            const goal = parseFloat(goalWeight) || 0;
+            const pct = cur > 0 && goal > 0 && cur !== goal
+              ? Math.max(0, Math.min(100, goal < cur
+                  ? ((cur - goal) / cur) * 100 // cutting: how much already lost (inverted)
+                  : ((cur / goal) * 100)))       // bulking: how close to goal
+              : 0;
+            return (
+              <div className="profile-body-goals">
+                <div className="pbg-row">
+                  <div className="pbg-col">
+                    <span className="pbg-label">Current weight</span>
+                    <span className="pbg-val">{cur > 0 ? `${cur} kg` : '—'}</span>
+                  </div>
+                  <div className="pbg-arrow">→</div>
+                  <div className="pbg-col">
+                    <span className="pbg-label">Goal weight</span>
+                    <span className="pbg-val">{goal > 0 ? `${goal} kg` : '—'}</span>
+                  </div>
+                </div>
+                {cur > 0 && goal > 0 && (
+                  <div className="pbg-bar-wrap">
+                    <div className="pbg-bar">
+                      <div className="pbg-fill" style={{ width: `${pct}%` }} />
+                    </div>
+                    <span className="pbg-diff">{cur > goal ? `${(cur - goal).toFixed(1)} kg to go` : cur < goal ? `${(goal - cur).toFixed(1)} kg to gain` : 'At goal!'}</span>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
           <div className="target-grid">
             <div className="target-field">
               <label>Calories (kcal)</label>
@@ -401,6 +442,21 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
           </div>
           <div className="target-actions">
             <button className="plan-apply" onClick={advisableSplit}>Advisable Split</button>
+          </div>
+          <div className="target-field" style={{ marginTop: 12 }}>
+            <label>Daily step target</label>
+            <input
+              type="text" inputMode="numeric"
+              value={stepTarget}
+              onChange={e => setStepTarget(e.target.value)}
+              onBlur={() => {
+                const n = parseInt(stepTarget) || 10000;
+                setStepTarget(String(n));
+                api.updateProfile({ ...profileRef.current, name: nameRef.current, stepTarget: n }).catch(() => {});
+              }}
+              onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+              placeholder="e.g. 10000"
+            />
           </div>
         </div>
 
