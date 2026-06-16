@@ -30,10 +30,10 @@ function AppRouter() {
 
   return (
     <Routes>
-      <Route path="/" element={<App onLogout={handleLogout} />} />
+      <Route path="/" element={<Habits />} />
+      <Route path="/dashboard" element={<App onLogout={handleLogout} />} />
       <Route path="/diet" element={<Diet />} />
       <Route path="/tasks" element={<Tasks />} />
-      <Route path="/habits" element={<Habits />} />
       <Route path="/profile" element={<Profile onLogout={handleLogout} />} />
     </Routes>
   );

@@ -452,9 +452,9 @@ const Habits: React.FC = () => {
     <div className="app" style={{ '--theme': '#bf5af2', '--theme-dim': '#bf5af266', '--theme-glow': '#bf5af233' } as React.CSSProperties}>
       <header className="header">
         <div className="header-left">
-          <Link to="/" className="back-link">← Back</Link>
+          <Link to="/dashboard" className="back-link">Dashboard</Link>
         </div>
-        <h1 className="title">Habits</h1>
+        <h1 className="title">Superdub</h1>
       </header>
 
       <div className="habits-page-scroll">
