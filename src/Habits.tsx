@@ -6,6 +6,9 @@ import { api, clearToken } from './api';
 /* bump this string on each major update to reset "don't show again" */
 const PWA_PROMPT_VERSION = '1.0';
 
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !(window as any).MSStream;
+const isInStandaloneMode = ('standalone' in window.navigator) && (window.navigator as any).standalone;
+
 /* ── helpers ─────────────────────────────────────────────── */
 
 const YEAR = 2026;
@@ -391,6 +394,7 @@ const Habits: React.FC = () => {
   const pwaDayKey = `superdub.pwa.day.${PWA_PROMPT_VERSION}`;
   const todayStr = new Date().toDateString();
   const [showInstall, setShowInstall] = useState(() => {
+    if (isInStandaloneMode) return false; // already installed
     if (localStorage.getItem(pwaKey) === 'dismissed') return false;
     if (localStorage.getItem(pwaDayKey) === todayStr) return false;
     return true;
@@ -553,9 +557,11 @@ const Habits: React.FC = () => {
             <span className="pwa-banner-icon">📲</span>
             <div className="pwa-banner-text">
               <strong>Add to Home Screen</strong>
-              <span>Get the full app experience</span>
+              {isIOS
+                ? <span>Tap <strong>Share</strong> then <strong>Add to Home Screen</strong></span>
+                : <span>Get the full app experience</span>}
             </div>
-            <button className="pwa-banner-btn" onClick={triggerInstall}>Install</button>
+            {!isIOS && <button className="pwa-banner-btn" onClick={triggerInstall}>Install</button>}
             <button className="pwa-banner-dismiss" onClick={dismissInstall} title="Hide for today">✕</button>
             <button className="pwa-banner-never" onClick={neverShowInstall}>Don't show again</button>
           </div>
