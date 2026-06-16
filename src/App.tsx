@@ -93,12 +93,21 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const [nutritionOpen, setNutritionOpen] = useState(false);
   const [trackerTab, setTrackerTab] = useState<'habits' | 'nutrition'>('habits');
 
+  // One-time daily check-in overlay
+  const todayStamp = `${new Date().getFullYear()}-${new Date().getMonth()}-${new Date().getDate()}`;
+  const [checkinOpen, setCheckinOpen] = useState(() => {
+    return localStorage.getItem('superdub.checkin') !== todayStamp;
+  });
+  const dismissCheckin = () => {
+    localStorage.setItem('superdub.checkin', todayStamp);
+    setCheckinOpen(false);
+  };
+
   const [name, setName] = useState('');
   const [habits, setHabits] = useState<string[]>(DEFAULT_HABITS);
   const [newHabit, setNewHabit] = useState('');
   const [tracker, setTracker] = useState<Record<string, DayData>>(INITIAL_TRACKER);
   const [loaded, setLoaded] = useState(false);
-  const dashboardRef = useRef<HTMLDivElement>(null);
 
   // Calendar state
   const now = new Date();
@@ -121,7 +130,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const todayKey = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}`;
   const todayLabel = `${WEEKDAYS[now.getDay()]}, ${now.getDate()} ${MONTH_NAMES[now.getMonth()]}`;
   const hour = now.getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const greeting = hour < 6 ? 'Good night'
+    : hour < 12 ? 'Good morning'
+    : hour < 18 ? 'Good afternoon'
+    : hour < 21 ? 'Good evening'
+    : 'Good night';
 
   // Weight plan state
   const [currentWeight, setCurrentWeight] = useState('');
@@ -580,23 +593,24 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </div>
       )}
 
-      <div className="home-scroll">
-      <section className="checkin-card hero">
-        {(() => {
-          const todayEntry = tracker[todayKey];
-          const doneCount = todayEntry ? habits.filter(h => todayEntry.habits[h]).length : 0;
-          const total = habits.length;
-          const allDone = total > 0 && doneCount === total;
-          const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
-          return (
-            <div className="checkin-inner">
+      {/* ── Daily check-in overlay (once per day) ── */}
+      {checkinOpen && (() => {
+        const todayEntry = tracker[todayKey];
+        const doneCount = todayEntry ? habits.filter(h => todayEntry.habits[h]).length : 0;
+        const total = habits.length;
+        const allDone = total > 0 && doneCount === total;
+        const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+        return (
+          <div className="checkin-overlay" onClick={dismissCheckin}>
+            <div className="checkin-inner" onClick={e => e.stopPropagation()}>
+              <button className="checkin-close" onClick={dismissCheckin} aria-label="Close">✕</button>
               <div className="checkin-head">
                 <div className="checkin-greet-wrap">
                   <p className="checkin-eyebrow">{todayLabel}</p>
                   <h2 className="checkin-greeting">
                     {greeting}{name.trim() ? `, ${name.trim()}` : ''} <span className="checkin-wave">👋</span>
                   </h2>
-                  <p className="checkin-sub">Welcome back — here's your check-in for today.</p>
+                  <p className="checkin-sub">Here's your check-in for today.</p>
                 </div>
                 <div
                   className="checkin-ring"
@@ -613,7 +627,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               {!todayEntry ? (
                 <p className="checkin-empty">Today isn't in this year's tracker.</p>
               ) : total === 0 ? (
-                <p className="checkin-empty">No habits yet — add some from the menu to start checking in.</p>
+                <p className="checkin-empty">No habits yet — add some from the menu.</p>
               ) : (
                 <div className="checkin-habits">
                   {habits.map(h => {
@@ -636,23 +650,19 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
               <div className="checkin-footer">
                 {allDone
-                  ? <p className="checkin-done-msg">All habits done for today — nice work! 🎉</p>
-                  : total > 0 && <p className="checkin-hint-msg">Tap a habit to check it off. It updates your dashboard below.</p>}
-                <button
-                  type="button"
-                  className="checkin-scroll-hint"
-                  onClick={() => dashboardRef.current?.scrollIntoView({ behavior: 'smooth' })}
-                >
-                  View dashboard <span className="checkin-chevron">▾</span>
+                  ? <p className="checkin-done-msg">All habits done — nice work! 🎉</p>
+                  : total > 0 && <p className="checkin-hint-msg">Tap to check off, then head to dashboard.</p>}
+                <button type="button" className="checkin-scroll-hint" onClick={dismissCheckin}>
+                  {allDone ? 'Let\'s go 🚀' : 'Go to dashboard'} <span className="checkin-chevron">▾</span>
                 </button>
               </div>
             </div>
-          );
-        })()}
-      </section>
+          </div>
+        );
+      })()}
 
       {/* Week selector bar */}
-      <div className="week-bar" ref={dashboardRef}>
+      <div className="week-bar">
         <button
           className={`week-btn ${selectedWeek === null ? 'active' : ''}`}
           onClick={() => setSelectedWeek(null)}
@@ -918,7 +928,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </div>
         </div>
       </section>
-      </div>
     </div>
   );
 };
