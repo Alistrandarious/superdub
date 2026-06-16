@@ -9,9 +9,13 @@ import Habits from './Habits';
 import About from './About';
 import MacroAnalysis from './MacroAnalysis';
 import PrivacyPolicy from './PrivacyPolicy';
+import LevelPage from './LevelPage';
+import BottomNav from './BottomNav';
 import { Auth } from './Auth';
 import { isLoggedIn, clearToken } from './api';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+
+const NO_NAV_PATHS = ['/privacy'];
 
 function AppRouter() {
   const [authed, setAuthed] = useState(isLoggedIn());
@@ -22,7 +26,7 @@ function AppRouter() {
     setAuthed(false);
   };
 
-  if (location.pathname === '/privacy') {
+  if (NO_NAV_PATHS.includes(location.pathname)) {
     return <PrivacyPolicy />;
   }
 
@@ -31,15 +35,19 @@ function AppRouter() {
   }
 
   return (
-    <Routes>
-      <Route path="/" element={<Habits />} />
-      <Route path="/dashboard" element={<App onLogout={handleLogout} />} />
-      <Route path="/diet" element={<Diet />} />
-      <Route path="/tasks" element={<Tasks />} />
-      <Route path="/profile" element={<Profile onLogout={handleLogout} />} />
-      <Route path="/about" element={<About />} />
-      <Route path="/diet/macro" element={<MacroAnalysis />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/" element={<Habits />} />
+        <Route path="/dashboard" element={<App onLogout={handleLogout} />} />
+        <Route path="/diet" element={<Diet />} />
+        <Route path="/tasks" element={<Tasks />} />
+        <Route path="/profile" element={<Profile onLogout={handleLogout} />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/diet/macro" element={<MacroAnalysis />} />
+        <Route path="/level" element={<LevelPage />} />
+      </Routes>
+      <BottomNav />
+    </>
   );
 }
 

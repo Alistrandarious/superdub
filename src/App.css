@@ -3843,3 +3843,498 @@
     height: 26px;
   }
 }
+
+/* =====================================================================
+   FEATURED — YOGA CARD
+   ===================================================================== */
+.featured-bg-yoga {
+  background: linear-gradient(135deg, #1a0a14 0%, #3d1028 60%, #1a0a14 100%);
+}
+
+/* =====================================================================
+   BOTTOM NAVIGATION BAR
+   ===================================================================== */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  display: flex;
+  align-items: stretch;
+  background: rgba(8,10,20,0.92);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border-top: 1px solid var(--glass-border);
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.4);
+  z-index: 500;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.bottom-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: rgba(255,255,255,0.35);
+  transition: color 0.15s;
+  padding: 6px 4px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bottom-nav-item.active {
+  color: var(--theme, #bf5af2);
+}
+
+.bottom-nav-item:hover {
+  color: rgba(255,255,255,0.7);
+}
+
+.bottom-nav-item.active:hover {
+  color: var(--theme, #bf5af2);
+}
+
+.bottom-nav-icon {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bottom-nav-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.bottom-nav-label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* =====================================================================
+   CONFIRM DIALOG (habit removal)
+   ===================================================================== */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 600;
+  animation: fadeIn 0.15s ease both;
+}
+
+.confirm-dialog {
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border-strong);
+  border-radius: 20px;
+  padding: 24px 20px;
+  width: 100%;
+  max-width: 320px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+  animation: fadeUp 0.2s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+.confirm-title {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.confirm-desc {
+  margin: 0 0 20px;
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.5;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.confirm-cancel {
+  flex: 1;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border-strong);
+  color: rgba(255,255,255,0.7);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 10px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.confirm-cancel:hover { background: var(--glass-bg-strong); }
+
+.confirm-ok {
+  flex: 1;
+  background: rgba(191,90,242,0.15);
+  border: 1px solid #bf5af2;
+  color: #bf5af2;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 10px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.confirm-ok:hover { background: rgba(191,90,242,0.28); }
+
+/* =====================================================================
+   GRAVEYARD SECTION
+   ===================================================================== */
+.graveyard-section {
+  margin: 24px 20px 0;
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.graveyard-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--glass-bg);
+  border: none;
+  color: rgba(255,255,255,0.5);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 14px 16px;
+  cursor: pointer;
+  text-align: left;
+  transition: color 0.15s, background 0.15s;
+}
+
+.graveyard-toggle:hover { color: rgba(255,255,255,0.75); background: var(--glass-bg-strong); }
+
+.graveyard-count {
+  background: rgba(255,255,255,0.1);
+  border-radius: 20px;
+  padding: 1px 8px;
+  font-size: 0.75rem;
+}
+
+.graveyard-arrow { margin-left: auto; font-size: 0.7rem; }
+
+.graveyard-list {
+  padding: 4px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid var(--glass-border);
+  background: rgba(0,0,0,0.15);
+}
+
+.graveyard-hint {
+  margin: 10px 0 4px;
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.35);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-style: italic;
+}
+
+.graveyard-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+  transition: all 0.4s ease;
+}
+
+.graveyard-card.rising {
+  animation: riseFromGrave 0.7s cubic-bezier(0.22,1,0.36,1) both;
+  border-color: #bf5af2;
+  background: rgba(191,90,242,0.1);
+}
+
+@keyframes riseFromGrave {
+  0%   { opacity: 0; transform: translateY(16px) scale(0.95); }
+  60%  { opacity: 1; transform: translateY(-6px) scale(1.02); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.graveyard-card-name {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.55);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.graveyard-restore-btn {
+  background: rgba(191,90,242,0.12);
+  border: 1px solid rgba(191,90,242,0.4);
+  color: #bf5af2;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.graveyard-restore-btn:hover:not(:disabled) { background: rgba(191,90,242,0.24); }
+.graveyard-restore-btn:disabled { opacity: 0.5; cursor: default; }
+
+/* =====================================================================
+   TODAY JUMP BUTTON (week bar)
+   ===================================================================== */
+.today-jump-btn {
+  background: rgba(255,255,255,0.05) !important;
+  border-color: var(--glass-border) !important;
+  color: rgba(255,255,255,0.6) !important;
+  font-weight: 700;
+  margin-right: 4px;
+}
+
+.today-jump-btn:hover {
+  background: var(--theme-glow) !important;
+  border-color: var(--theme) !important;
+  color: var(--theme) !important;
+}
+
+/* Highlight today's column in tracker */
+.tracker-header-cell.today-col {
+  color: var(--theme);
+  font-weight: 700;
+  background: var(--theme-glow);
+  border-radius: 4px;
+}
+
+/* =====================================================================
+   LEVEL PAGE
+   ===================================================================== */
+.level-page-content {
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  padding-bottom: 100px;
+}
+
+.level-hero-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: linear-gradient(135deg, #1a0a2e 0%, rgba(191,90,242,0.15) 100%);
+  border: 1px solid rgba(191,90,242,0.3);
+  border-radius: 20px;
+  padding: 24px 20px;
+  box-shadow: 0 0 40px -10px rgba(191,90,242,0.3);
+}
+
+.level-hero-badge {
+  font-size: 2.4rem;
+  font-weight: 900;
+  color: #bf5af2;
+  flex-shrink: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  line-height: 1;
+  text-shadow: 0 0 20px rgba(191,90,242,0.5);
+}
+
+.level-hero-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.level-hero-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.level-hero-xp {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.55);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.level-hero-bar-wrap {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.level-hero-bar {
+  height: 6px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.level-hero-fill {
+  height: 100%;
+  background: linear-gradient(90deg, rgba(191,90,242,0.6), #bf5af2);
+  border-radius: 3px;
+  transition: width 0.6s ease;
+  box-shadow: 0 0 8px rgba(191,90,242,0.5);
+}
+
+.level-hero-next {
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.4);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+/* Badges */
+.badges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.badge-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.badge-card.earned {
+  border-color: rgba(191,90,242,0.4);
+  background: linear-gradient(135deg, var(--glass-bg) 0%, rgba(191,90,242,0.07) 100%);
+  box-shadow: 0 0 16px -6px rgba(191,90,242,0.3);
+}
+
+.badge-card.locked {
+  opacity: 0.45;
+}
+
+.badge-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.badge-name {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.badge-desc {
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.4);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  line-height: 1.3;
+}
+
+/* Habit stats list */
+.habit-stats-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.habit-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+}
+
+.habit-stat-rank {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.3);
+  width: 24px;
+  flex-shrink: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.habit-stat-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.habit-stat-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.habit-stat-sub {
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.4);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.habit-stat-xp {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #bf5af2;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.current-level-row td {
+  color: #bf5af2;
+  font-weight: 700;
+  background: rgba(191,90,242,0.06);
+}
+
+/* About name link */
+.about-name-link {
+  color: var(--theme);
+  text-decoration: none;
+  font-weight: 600;
+  border-bottom: 1px solid var(--theme-dim);
+  transition: border-color 0.15s;
+}
+
+.about-name-link:hover { border-color: var(--theme); }

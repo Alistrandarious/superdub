@@ -155,7 +155,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     ]).then(([profile, loadedHabits, trackerData, ws]) => {
       setName(profile.name ?? '');
 
-      const activeHabits = loadedHabits.length > 0 ? loadedHabits : DEFAULT_HABITS;
+      const habitObjs = loadedHabits as { name: string }[];
+      const activeHabits = habitObjs.length > 0 ? habitObjs.map(h => h.name) : DEFAULT_HABITS;
       setHabits(activeHabits);
 
       // Merge DB data into full-year tracker structure
@@ -443,19 +444,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         <div className="menu-overlay" onClick={() => setMenuOpen(false)}>
           <nav className="menu" onClick={e => e.stopPropagation()}>
             <div className="menu-header">
-              <span className="menu-title">menu</span>
+              <span className="menu-title">Options</span>
               <button className="menu-close" onClick={() => setMenuOpen(false)} aria-label="Close menu">✕</button>
             </div>
-            <Link to="/" onClick={() => setMenuOpen(false)}>Habit Tracker</Link>
-            <Link to="/dashboard" onClick={() => setMenuOpen(false)}>Progress Overview</Link>
-            <Link to="/diet" onClick={() => setMenuOpen(false)}>Diet Maker</Link>
-            <Link to="/tasks" onClick={() => setMenuOpen(false)}>To Dos</Link>
-            <Link to="/about" onClick={() => setMenuOpen(false)}>About</Link>
             <button type="button" onClick={() => { setHabitsModalOpen(true); setMenuOpen(false); }}>Edit Habits</button>
-            <div className="menu-spacer" />
-            <Link to="/profile" onClick={() => setMenuOpen(false)}>Profile</Link>
-            <button type="button" onClick={() => { setWeightPlanOpen(true); setMenuOpen(false); }}>Settings</button>
-            {onLogout && <button type="button" onClick={onLogout}>Log out</button>}
+            <button type="button" onClick={() => { setWeightPlanOpen(true); setMenuOpen(false); }}>Weight Settings</button>
           </nav>
         </div>
       )}
@@ -665,6 +658,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       {/* Week selector bar */}
       <div className="week-bar">
         <button
+          className="week-btn today-jump-btn"
+          onClick={() => { setSelectedMonth(currentMonth); setSelectedWeek(currentWeek); }}
+          title="Jump to today"
+        >Today</button>
+        <button
           className={`week-btn ${selectedWeek === null ? 'active' : ''}`}
           onClick={() => setSelectedWeek(null)}
         >All</button>
@@ -803,7 +801,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           {/* Header row */}
           <div className="tracker-corner"></div>
           {visibleDays.map(day => (
-            <div key={day} className="tracker-header-cell">{day}</div>
+            <div key={day} className={`tracker-header-cell ${day === todayKey ? 'today-col' : ''}`}>{day}</div>
           ))}
           {/* Weight row (always visible) */}
           <div className="tracker-label">Weight (kg)</div>

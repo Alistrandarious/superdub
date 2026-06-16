@@ -4,13 +4,25 @@ import { requireAuth, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 
+router.get('/graveyard', requireAuth as any, async (req: AuthRequest, res: Response) => {
+  try {
+    const { rows } = await pool.query(
+      'SELECT name, start_date FROM habits WHERE user_id = $1 AND archived = TRUE ORDER BY name',
+      [req.userId]
+    );
+    res.json(rows.map((r: any) => ({ name: r.name, startDate: r.start_date })));
+  } catch {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
     const { rows } = await pool.query(
-      'SELECT name FROM habits WHERE user_id = $1 ORDER BY position',
+      'SELECT name, start_date FROM habits WHERE user_id = $1 AND (archived = FALSE OR archived IS NULL) ORDER BY position',
       [req.userId]
     );
-    res.json(rows.map((r: any) => r.name));
+    res.json(rows.map((r: any) => ({ name: r.name, startDate: r.start_date })));
   } catch {
     res.status(500).json({ error: 'Server error' });
   }
@@ -19,11 +31,16 @@ router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
 router.put('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
     const { habits } = req.body as { habits: string[] };
+    const today = new Date().toISOString().slice(0, 10);
 
-    // Clean up tracker_habits for removed habits
-    const currentRes = await pool.query('SELECT name FROM habits WHERE user_id = $1', [req.userId]);
-    const currentNames = new Set(currentRes.rows.map((r: any) => r.name));
-    const removed = [...currentNames].filter(n => !new Set(habits).has(n));
+    const currentRes = await pool.query(
+      'SELECT name, start_date FROM habits WHERE user_id = $1 AND (archived = FALSE OR archived IS NULL)',
+      [req.userId]
+    );
+    const existingMap = new Map<string, string | null>(currentRes.rows.map((r: any) => [r.name as string, r.start_date as string | null]));
+
+    const habitSet = new Set<string>(habits);
+    const removed = Array.from(existingMap.keys()).filter((n: string) => !habitSet.has(n));
     if (removed.length > 0) {
       await pool.query(
         'DELETE FROM tracker_habits WHERE user_id = $1 AND habit_name = ANY($2::text[])',
@@ -31,14 +48,50 @@ router.put('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
       );
     }
 
-    await pool.query('DELETE FROM habits WHERE user_id = $1', [req.userId]);
+    await pool.query(
+      'DELETE FROM habits WHERE user_id = $1 AND (archived = FALSE OR archived IS NULL)',
+      [req.userId]
+    );
     for (let i = 0; i < habits.length; i++) {
+      const startDate = existingMap.get(habits[i]) ?? today;
       await pool.query(
-        'INSERT INTO habits (user_id, name, position) VALUES ($1, $2, $3)',
-        [req.userId, habits[i], i]
+        'INSERT INTO habits (user_id, name, position, start_date, archived) VALUES ($1, $2, $3, $4, FALSE)',
+        [req.userId, habits[i], i, startDate]
       );
     }
 
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.delete('/:name', requireAuth as any, async (req: AuthRequest, res: Response) => {
+  try {
+    const { name } = req.params;
+    await pool.query(
+      'UPDATE habits SET archived = TRUE WHERE user_id = $1 AND name = $2',
+      [req.userId, name]
+    );
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.post('/:name/restore', requireAuth as any, async (req: AuthRequest, res: Response) => {
+  try {
+    const { name } = req.params;
+    const today = new Date().toISOString().slice(0, 10);
+    const posRes = await pool.query(
+      'SELECT COALESCE(MAX(position), -1) as maxpos FROM habits WHERE user_id = $1 AND (archived = FALSE OR archived IS NULL)',
+      [req.userId]
+    );
+    const nextPos = (posRes.rows[0].maxpos ?? -1) + 1;
+    await pool.query(
+      'UPDATE habits SET archived = FALSE, start_date = $3, position = $4 WHERE user_id = $1 AND name = $2',
+      [req.userId, name, today, nextPos]
+    );
     res.json({ ok: true });
   } catch {
     res.status(500).json({ error: 'Server error' });

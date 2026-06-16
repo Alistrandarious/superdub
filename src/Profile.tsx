@@ -111,7 +111,8 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
         carbs: String(t.carbs),
         fats: String(t.fats),
       });
-      setHabits((habitsData as string[]).length > 0 ? habitsData as string[] : DEFAULT_HABITS);
+      const habitObjs = habitsData as { name: string }[];
+      setHabits(habitObjs.length > 0 ? habitObjs.map(h => h.name) : DEFAULT_HABITS);
       setLoaded(true);
     }).catch(() => setLoaded(true));
   }, []);
@@ -142,7 +143,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
     }, 800);
   };
 
-  const title = name.trim() ? `Hello ${name.trim()}` : 'Profile';
+  const title = 'Profile';
 
   const commitDraft = () => {
     const cal = parseInt(draft.calories) || target.calories;
@@ -220,22 +221,6 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
       </header>
 
       <div className="profile-content page-content">
-        {/* Name */}
-        <div className="diet-section">
-          <h2 className="diet-heading">Name</h2>
-          <div className="target-grid">
-            <div className="target-field">
-              <label>Display Name</label>
-              <input
-                type="text"
-                value={name}
-                onChange={e => updateName(e.target.value)}
-                placeholder="Your name"
-              />
-            </div>
-          </div>
-        </div>
-
         {/* Biographics */}
         <div className="diet-section">
           <h2 className="diet-heading">Biographics</h2>
