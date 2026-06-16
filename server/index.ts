@@ -82,6 +82,16 @@ const migrations = [
    WHERE h.user_id = sub.user_id
      AND h.name = sub.habit_name
      AND (h.start_date IS NULL OR h.start_date > sub.min_date)`,
+  // For habits with no logged activity but whose start_date was clobbered to
+  // 1-2 days after account creation (the updateHabits race on first Habits page
+  // open), reset to account creation date. Skips habits added genuinely later.
+  `UPDATE habits h
+   SET start_date = u.created_at::DATE
+   FROM users u
+   WHERE h.user_id = u.id
+     AND h.start_date IS NOT NULL
+     AND h.start_date > u.created_at::DATE
+     AND h.start_date <= u.created_at::DATE + INTERVAL '3 days'`,
 ];
 (async () => {
   for (const sql of migrations) {
