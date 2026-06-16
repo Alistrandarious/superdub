@@ -119,7 +119,7 @@ const FOODS: Food[] = [
   { name: 'cheese', display: 'cheese', measure: 'g', base: 100, p: 25, c: 0.1, f: 33, step: 10, min: 20, max: 100 },
 ];
 
-interface SlotTemplate { protein: string; carb: string; fat: string; flavor: string; }
+interface SlotTemplate { protein: string; carb: string; fat: string; extras?: string[]; flavor: string; }
 
 const MEAL_TEMPLATES: Record<string, SlotTemplate[]> = {
   Breakfast: [
@@ -129,16 +129,16 @@ const MEAL_TEMPLATES: Record<string, SlotTemplate[]> = {
       flavor: 'Poached or fried eggs on toast with smashed avocado. Season the avocado with lemon juice, chilli flakes, and flaky sea salt.' },
     { protein: 'eggs', carb: 'tortilla', fat: 'cheese',
       flavor: 'Breakfast wrap with scrambled eggs and melted cheese. Add a spoonful of salsa, a pinch of cumin, and a dash of hot sauce.' },
-    { protein: 'whey', carb: 'oats', fat: 'peanutbutter',
+    { protein: 'whey', carb: 'oats', fat: 'peanutbutter', extras: ['banana'],
       flavor: 'Mix vanilla protein powder into warm oats, then swirl in peanut butter. Top with a sliced banana and a pinch of sea salt — it brings out the sweetness.' },
-    { protein: 'yoghurt', carb: 'oats', fat: 'almonds',
-      flavor: 'Layer Greek yoghurt over oats with crushed almonds. Add honey, a drop of vanilla extract, and a generous pinch of cinnamon.' },
-    { protein: 'yoghurt', carb: 'banana', fat: 'seeds',
-      flavor: 'Greek yoghurt bowl with sliced banana and mixed seeds. Drizzle honey over the top and add a pinch of nutmeg or cardamom.' },
-    { protein: 'yoghurt', carb: 'bread', fat: 'peanutbutter',
+    { protein: 'yoghurt', carb: 'oats', fat: 'almonds', extras: ['seeds'],
+      flavor: 'Layer Greek yoghurt over oats with crushed almonds. Add a drop of vanilla extract and a generous pinch of cinnamon. Scatter a few mixed seeds on top.' },
+    { protein: 'yoghurt', carb: 'banana', fat: 'seeds', extras: ['almonds'],
+      flavor: 'Greek yoghurt bowl with sliced banana and mixed seeds. Scatter crushed almonds for crunch and add a pinch of nutmeg or cardamom.' },
+    { protein: 'yoghurt', carb: 'bread', fat: 'peanutbutter', extras: ['banana'],
       flavor: 'Peanut butter on toast alongside a bowl of Greek yoghurt. Add banana slices and a sprinkle of cinnamon sugar on the toast.' },
-    { protein: 'cottage', carb: 'oats', fat: 'almonds',
-      flavor: 'Stir cottage cheese into warm oats — creamier than you\'d expect. Top with crushed almonds, berries if you have them, and a drizzle of honey.' },
+    { protein: 'cottage', carb: 'oats', fat: 'almonds', extras: ['seeds'],
+      flavor: 'Stir cottage cheese into warm oats — creamier than you\'d expect. Top with crushed almonds, mixed seeds, and a drizzle of honey.' },
   ],
   Lunch: [
     { protein: 'chicken', carb: 'rice', fat: 'oliveoil',
@@ -157,22 +157,22 @@ const MEAL_TEMPLATES: Record<string, SlotTemplate[]> = {
       flavor: 'Lean beef bolognese. Fry with garlic, onion, tomato paste, dried oregano, and basil. A splash of red wine while it simmers makes all the difference.' },
     { protein: 'steak', carb: 'potato', fat: 'oliveoil',
       flavor: 'Pan-sear the steak 2 min per side, then rest it. Crush the potatoes with olive oil, rosemary, and garlic. Finish with flaky salt and cracked pepper.' },
-    { protein: 'tofu', carb: 'noodles', fat: 'seeds',
-      flavor: 'Crispy tofu noodle bowl. Press and marinate tofu in soy, ginger, and garlic. Pan-fry until golden. Top with sesame seeds and chilli oil.' },
+    { protein: 'tofu', carb: 'noodles', fat: 'seeds', extras: ['avocado'],
+      flavor: 'Crispy tofu noodle bowl. Press and marinate tofu in soy, ginger, and garlic. Pan-fry until golden. Add sliced avocado and top with sesame seeds and chilli oil.' },
     { protein: 'whitefish', carb: 'rice', fat: 'oliveoil',
       flavor: 'Baked white fish over rice. Season with cumin, coriander, garlic, and lemon. Drizzle olive oil and roast at 200°C for 15 min.' },
   ],
   Snack: [
-    { protein: 'yoghurt', carb: 'banana', fat: 'peanutbutter',
-      flavor: 'Slice the banana and dip into peanut butter. Serve with a bowl of Greek yoghurt. A pinch of cinnamon and a flake of sea salt makes it feel indulgent.' },
+    { protein: 'yoghurt', carb: 'banana', fat: 'peanutbutter', extras: ['seeds'],
+      flavor: 'Slice the banana and dip into peanut butter. Serve with a bowl of Greek yoghurt and a sprinkle of seeds. A pinch of cinnamon and a flake of sea salt makes it feel indulgent.' },
     { protein: 'cottage', carb: 'bread', fat: 'almonds',
       flavor: 'Cottage cheese on wholegrain toast with a handful of almonds. Season with black pepper and a light drizzle of honey.' },
-    { protein: 'whey', carb: 'banana', fat: 'peanutbutter',
-      flavor: 'Blend protein powder with banana, peanut butter, ice, and a splash of milk. Add a pinch of sea salt — it balances the sweetness perfectly.' },
-    { protein: 'eggs', carb: 'bread', fat: 'avocado',
-      flavor: 'Hard-boiled egg on toast with smashed avocado. Sprinkle with everything bagel seasoning, or keep it simple with sea salt and cracked pepper.' },
-    { protein: 'yoghurt', carb: 'oats', fat: 'seeds',
-      flavor: 'Bircher-style: mix yoghurt and oats overnight. Top with mixed seeds, a drizzle of honey, and a drop of vanilla. Eat cold — it\'s great.' },
+    { protein: 'whey', carb: 'banana', fat: 'peanutbutter', extras: ['oats'],
+      flavor: 'Blend protein powder with banana, peanut butter, oats, ice, and a splash of milk. Add a pinch of sea salt — it balances the sweetness perfectly.' },
+    { protein: 'eggs', carb: 'bread', fat: 'avocado', extras: ['seeds'],
+      flavor: 'Hard-boiled egg on toast with smashed avocado and a scatter of mixed seeds. Keep it simple with sea salt and cracked pepper.' },
+    { protein: 'yoghurt', carb: 'oats', fat: 'seeds', extras: ['banana'],
+      flavor: 'Bircher-style: mix yoghurt and oats overnight with sliced banana. Top with mixed seeds and a drop of vanilla. Eat cold — it\'s great.' },
     { protein: 'cottage', carb: 'banana', fat: 'almonds',
       flavor: 'Cottage cheese bowl with sliced banana and almonds. Add a drizzle of honey and a pinch of cinnamon. Quick, high-protein, naturally sweet.' },
   ],
@@ -193,8 +193,8 @@ const MEAL_TEMPLATES: Record<string, SlotTemplate[]> = {
       flavor: 'Crispy tofu stir-fry over rice. Fry in sesame oil with garlic, chilli paste, and soy sauce. Add any greens you have — broccoli or spinach work brilliantly.' },
     { protein: 'chicken', carb: 'pasta', fat: 'cheese',
       flavor: 'Chicken pasta bake. Toss pasta with chicken, passata, garlic, dried basil, and chilli. Top with cheese and grill until golden. Comfort food, done well.' },
-    { protein: 'salmon', carb: 'noodles', fat: 'seeds',
-      flavor: 'Miso-glazed salmon on soba noodles. Mix miso paste, mirin, soy, and honey for the glaze. Broil the salmon for 8 min. Finish with sesame seeds and spring onion.' },
+    { protein: 'salmon', carb: 'noodles', fat: 'seeds', extras: ['avocado'],
+      flavor: 'Miso-glazed salmon on soba noodles. Mix miso paste, mirin, soy, and honey for the glaze. Broil the salmon for 8 min. Add sliced avocado and finish with sesame seeds.' },
     { protein: 'turkey', carb: 'pasta', fat: 'oliveoil',
       flavor: 'Turkey and tomato pasta. Brown the turkey with garlic, fennel seeds, and chilli. Add tomatoes and simmer. Finish with olive oil and fresh basil.' },
   ],
@@ -289,6 +289,13 @@ function portionLabel(food: Food, qty: number): string {
   return `${qty} ${unitLabel} (${gramsTotal}g)`;
 }
 
+function extraItem(foodName: string): MealItem {
+  const food = getFood(foodName);
+  const qty = food.min;
+  const m = macrosFor(food, qty);
+  return { label: portionLabel(food, qty), p: Math.round(m.p), c: Math.round(m.c), f: Math.round(m.f), kcal: Math.round(m.p * 4 + m.c * 4 + m.f * 9) };
+}
+
 function generateSingleMeal(targets: MacroSet, slot: { name: string; pct: number }, tpl: SlotTemplate): MealResult {
   const slotP = targets.protein * slot.pct;
   const slotC = targets.carbs * slot.pct;
@@ -320,6 +327,7 @@ function generateSingleMeal(targets: MacroSet, slot: { name: string; pct: number
     { label: portionLabel(pFood, pQty), p: Math.round(pM.p), c: Math.round(pM.c), f: Math.round(pM.f), kcal: Math.round(pM.p * 4 + pM.c * 4 + pM.f * 9) },
     { label: portionLabel(cFood, cQty), p: Math.round(cM.p), c: Math.round(cM.c), f: Math.round(cM.f), kcal: Math.round(cM.p * 4 + cM.c * 4 + cM.f * 9) },
     { label: portionLabel(fFood, fQty), p: Math.round(fM.p), c: Math.round(fM.c), f: Math.round(fM.f), kcal: Math.round(fM.p * 4 + fM.c * 4 + fM.f * 9) },
+    ...(tpl.extras ?? []).map(extraItem),
   ];
 
   const tp = items.reduce((s, i) => s + i.p, 0);
