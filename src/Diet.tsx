@@ -353,8 +353,13 @@ function generateMealPlan(targets: MacroSet, activeFilters: string[] = []): Save
 
 const Diet: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const initialTab = searchParams.get('tab') === 'meals' ? 'meals' : 'targets';
-  const [activeTab, setActiveTab] = useState<'targets' | 'meals'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'targets' | 'meals'>(
+    searchParams.get('tab') === 'meals' ? 'meals' : 'targets'
+  );
+
+  useEffect(() => {
+    setActiveTab(searchParams.get('tab') === 'meals' ? 'meals' : 'targets');
+  }, [searchParams]);
   const [profile, setProfile] = useState<ProfileData>(DEFAULT_PROFILE);
   const [profileName, setProfileName] = useState('');
   const [target, setTarget] = useState<MacroSet>(DEFAULT_TARGET);
