@@ -31,15 +31,15 @@ app.use('/api/food-log', foodlogRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
-// DB migrations — safe to run on every startup
-pool.query(`
-  ALTER TABLE profile ADD COLUMN IF NOT EXISTS anthropic_api_key TEXT;
-  ALTER TABLE profile ADD COLUMN IF NOT EXISTS job_type TEXT DEFAULT 'desk';
-  ALTER TABLE profile ADD COLUMN IF NOT EXISTS gym_freq TEXT DEFAULT '3-4';
-  ALTER TABLE profile ADD COLUMN IF NOT EXISTS walk_freq TEXT DEFAULT 'moderate';
-  ALTER TABLE profile ADD COLUMN IF NOT EXISTS step_target INTEGER DEFAULT 10000;
-  ALTER TABLE diet_settings ADD COLUMN IF NOT EXISTS goal TEXT DEFAULT 'cut';
-  CREATE TABLE IF NOT EXISTS food_logs (
+// DB migrations — each statement runs independently so a failure in one doesn't block others
+const migrations = [
+  `ALTER TABLE profile ADD COLUMN IF NOT EXISTS anthropic_api_key TEXT`,
+  `ALTER TABLE profile ADD COLUMN IF NOT EXISTS job_type TEXT DEFAULT 'desk'`,
+  `ALTER TABLE profile ADD COLUMN IF NOT EXISTS gym_freq TEXT DEFAULT '3-4'`,
+  `ALTER TABLE profile ADD COLUMN IF NOT EXISTS walk_freq TEXT DEFAULT 'moderate'`,
+  `ALTER TABLE profile ADD COLUMN IF NOT EXISTS step_target INTEGER DEFAULT 10000`,
+  `ALTER TABLE diet_settings ADD COLUMN IF NOT EXISTS goal TEXT DEFAULT 'cut'`,
+  `CREATE TABLE IF NOT EXISTS food_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     date DATE NOT NULL DEFAULT CURRENT_DATE,
@@ -47,19 +47,21 @@ pool.query(`
     totals JSONB NOT NULL DEFAULT '{}',
     transcript TEXT DEFAULT '',
     created_at TIMESTAMPTZ DEFAULT NOW()
-  );
-  DO $$ BEGIN
-    IF EXISTS (
-      SELECT 1 FROM information_schema.columns
-      WHERE table_name='profile' AND column_name='antophic_api_key'
-    ) AND NOT EXISTS (
-      SELECT 1 FROM information_schema.columns
-      WHERE table_name='profile' AND column_name='anthropic_api_key'
-    ) THEN
-      ALTER TABLE profile RENAME COLUMN antophic_api_key TO anthropic_api_key;
+  )`,
+  // Fix possible typo from old deployment (antophic_ instead of anthropic_)
+  `DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='profile' AND column_name='antophic_api_key')
+    AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='profile' AND column_name='anthropic_api_key')
+    THEN ALTER TABLE profile RENAME COLUMN antophic_api_key TO anthropic_api_key;
     END IF;
-  END $$;
-`).catch(err => console.error('[migrate]', err?.message));
+  END $$`,
+];
+(async () => {
+  for (const sql of migrations) {
+    await pool.query(sql).catch(err => console.error('[migrate]', err?.message, sql.slice(0, 60)));
+  }
+  console.log('[migrate] done');
+})();
 
 // Serve React build in production
 const buildDir = path.join(__dirname, '..', 'build');

@@ -359,6 +359,115 @@ function generateMealPlan(targets: MacroSet, activeFilters: string[] = []): Save
   };
 }
 
+function yesterdayIso() {
+  const d = new Date(); d.setDate(d.getDate() - 1);
+  return d.toISOString().split('T')[0];
+}
+
+const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+const WeeklyPerformance: React.FC<{
+  target: MacroSet;
+  stepTarget: number;
+  trackerDays: any[];
+}> = ({ target, stepTarget, trackerDays }) => {
+  const today = new Date().toISOString().split('T')[0];
+
+  return (
+    <div className="diet-section">
+      <h2 className="diet-heading">This Week</h2>
+      <div className="weekly-perf-grid">
+        {trackerDays.map((d, i) => {
+          const isPast = d.day < today;
+          const isToday = d.day === today;
+          const cal = Number(d?.calories) || 0;
+          const prot = Number(d?.protein) || 0;
+          const carbs = Number(d?.carbs) || 0;
+          const fats = Number(d?.fats) || 0;
+          const steps = Number(d?.steps) || 0;
+          const hasData = cal > 0 || prot > 0 || steps > 0;
+
+          const calPct = target.calories > 0 ? Math.min(100, (cal / target.calories) * 100) : 0;
+          const protPct = target.protein > 0 ? Math.min(100, (prot / target.protein) * 100) : 0;
+          const carbsPct = target.carbs > 0 ? Math.min(100, (carbs / target.carbs) * 100) : 0;
+          const fatsPct = target.fats > 0 ? Math.min(100, (fats / target.fats) * 100) : 0;
+          const stepPct = stepTarget > 0 ? Math.min(100, (steps / stepTarget) * 100) : 0;
+
+          return (
+            <div key={d.day} className={`weekly-day-card${isToday ? ' today' : ''}${!isPast && !isToday ? ' future' : ''}`}>
+              <span className="weekly-day-label">{DAY_LABELS[i]}</span>
+              {!hasData && !isPast && !isToday ? (
+                <span className="weekly-day-empty">—</span>
+              ) : !hasData && (isPast || isToday) ? (
+                <span className="weekly-day-empty">No log</span>
+              ) : (
+                <div className="weekly-day-bars">
+                  <div className="wdb" title={`Calories: ${cal}/${target.calories}`}>
+                    <div className="wdb-fill" style={{ height: `${calPct}%`, background: '#ff6ec7' }} />
+                  </div>
+                  <div className="wdb" title={`Protein: ${prot}g/${target.protein}g`}>
+                    <div className="wdb-fill" style={{ height: `${protPct}%`, background: '#0a84ff' }} />
+                  </div>
+                  <div className="wdb" title={`Carbs: ${carbs}g/${target.carbs}g`}>
+                    <div className="wdb-fill" style={{ height: `${carbsPct}%`, background: '#00e5ff' }} />
+                  </div>
+                  <div className="wdb" title={`Fats: ${fats}g/${target.fats}g`}>
+                    <div className="wdb-fill" style={{ height: `${fatsPct}%`, background: '#ffd60a' }} />
+                  </div>
+                  <div className="wdb" title={`Steps: ${steps}/${stepTarget}`}>
+                    <div className="wdb-fill" style={{ height: `${stepPct}%`, background: steps >= stepTarget ? '#30d158' : '#ff9f0a' }} />
+                  </div>
+                </div>
+              )}
+              {steps > 0 && <span className="weekly-day-steps">{(steps / 1000).toFixed(1)}k</span>}
+            </div>
+          );
+        })}
+      </div>
+      <div className="weekly-legend">
+        <span className="wl-dot" style={{ background: '#ff6ec7' }} />Cal
+        <span className="wl-dot" style={{ background: '#0a84ff' }} />Pro
+        <span className="wl-dot" style={{ background: '#00e5ff' }} />Carbs
+        <span className="wl-dot" style={{ background: '#ffd60a' }} />Fat
+        <span className="wl-dot" style={{ background: '#30d158' }} />Steps
+      </div>
+      <p className="diet-hint">Bar height = % of daily target. Log nutrition via Food Log or the tracker on Dashboard.</p>
+    </div>
+  );
+};
+
+const StepLogger: React.FC<{ onSaved: (steps: number) => void }> = ({ onSaved }) => {
+  const [val, setVal] = useState('');
+  const [saved, setSaved] = useState(false);
+
+  const submit = async () => {
+    const n = parseInt(val);
+    if (isNaN(n) || n < 0) return;
+    await api.updateTrackerDay(yesterdayIso(), { steps: n }).catch(() => {});
+    onSaved(n);
+    setSaved(true);
+    setTimeout(() => { setSaved(false); setVal(''); }, 2000);
+  };
+
+  return (
+    <div className="step-logger-row">
+      <input
+        className="step-logger-input"
+        type="text"
+        inputMode="numeric"
+        placeholder={saved ? '✓ Saved!' : "Yesterday's steps…"}
+        value={saved ? '' : val}
+        onChange={e => setVal(e.target.value)}
+        onKeyDown={e => e.key === 'Enter' && submit()}
+        disabled={saved}
+      />
+      {!saved && (
+        <button className="step-logger-btn" onClick={submit} disabled={!val}>Save</button>
+      )}
+    </div>
+  );
+};
+
 const Diet: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -376,6 +485,7 @@ const Diet: React.FC = () => {
   const [goal, setGoal] = useState<'cut' | 'maintain' | 'bulk'>('cut');
   const [stepTarget, setStepTarget] = useState(10000);
   const [yesterdaySteps, setYesterdaySteps] = useState<number | null>(null);
+  const [weekTrackerDays, setWeekTrackerDays] = useState<any[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -386,11 +496,31 @@ const Diet: React.FC = () => {
       api.getDietPlans(),
       api.getTracker(),
     ]).then(([profileData, targetData, settingsData, plansData, trackerData]) => {
+      const td = trackerData as any;
+      const allDays: any[] = td.days ?? [];
+
+      // Yesterday's steps
       const yest = new Date(); yest.setDate(yest.getDate() - 1);
       const yestKey = yest.toISOString().split('T')[0];
-      const td = trackerData as any;
-      const yestDay = (td.days ?? []).find((d: any) => d.day === yestKey);
+      const yestDay = allDays.find((d: any) => d.day === yestKey);
       if (yestDay?.steps != null) setYesterdaySteps(Number(yestDay.steps));
+
+      // Current week (Mon–Sun) for weekly performance
+      const now = new Date();
+      const dow = now.getDay(); // 0=Sun
+      const mon = new Date(now);
+      mon.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1));
+      mon.setHours(0, 0, 0, 0);
+      const weekDays = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(mon);
+        d.setDate(mon.getDate() + i);
+        return d.toISOString().split('T')[0];
+      });
+      const weekData = weekDays.map(day => {
+        const found = allDays.find((d: any) => d.day === day);
+        return { day, ...found };
+      });
+      setWeekTrackerDays(weekData);
       const p = profileData as ProfileData & { name: string };
       setProfileName(p.name ?? '');
       setProfile({
@@ -682,84 +812,8 @@ const Diet: React.FC = () => {
 
         {activeTab === 'targets' && (<>
 
-        {/* Goal selector */}
-        <div className="diet-goal-card">
-          {(['cut', 'maintain', 'bulk'] as const).map(g => {
-            const meta = {
-              cut:      { icon: '🔥', label: 'Cut',      delta: maintenance > 0 ? `−400 kcal` : 'Calorie deficit' },
-              maintain: { icon: '⚖️', label: 'Maintain', delta: maintenance > 0 ? `${maintenance.toLocaleString()} kcal` : 'Match maintenance' },
-              bulk:     { icon: '💪', label: 'Bulk',     delta: maintenance > 0 ? `+300 kcal` : 'Calorie surplus' },
-            }[g];
-            return (
-              <button
-                key={g}
-                className={`diet-goal-btn${goal === g ? ' active' : ''}`}
-                onClick={() => applyGoal(g)}
-              >
-                <span className="diet-goal-icon">{meta.icon}</span>
-                <span className="diet-goal-label">{meta.label}</span>
-                <span className="diet-goal-delta">{meta.delta}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Daily Targets */}
-        <div className="diet-section">
-          <h2 className="diet-heading">Daily Targets</h2>
-          <div className="calorie-goal target-field">
-            <label>
-              Calorie Total
-              <button
-                type="button"
-                className={`lock-btn${calorieLock ? ' on' : ''}`}
-                style={{ marginLeft: 8 }}
-                onClick={toggleCalorieLock}
-                title={calorieLock ? 'Unlock calorie total' : 'Lock calorie total'}
-              >
-                {calorieLock ? '🔒' : '🔓'}
-              </button>
-            </label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div className="stepper" style={{ maxWidth: 160 }}>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={macroCalories}
-                  readOnly
-                  style={{ cursor: 'default' }}
-                />
-                {calorieLock && (
-                  <div className="stepper-btns">
-                    <button type="button" onClick={() => {
-                      const bump = CAL_STEP;
-                      const unlocked = (['protein', 'carbs', 'fats'] as MacroKey[]).filter(k => !locks[k]);
-                      if (unlocked.length > 0) {
-                        const k = unlocked[0];
-                        changeMacro(k, target[k] + Math.round(bump / CAL_PER[k]));
-                      }
-                    }}>▲</button>
-                    <button type="button" onClick={() => {
-                      const bump = CAL_STEP;
-                      const unlocked = (['protein', 'carbs', 'fats'] as MacroKey[]).filter(k => !locks[k]);
-                      if (unlocked.length > 0) {
-                        const k = unlocked[0];
-                        changeMacro(k, Math.max(0, target[k] - Math.round(bump / CAL_PER[k])));
-                      }
-                    }}>▼</button>
-                  </div>
-                )}
-              </div>
-              <span style={{ fontSize: '0.8rem', opacity: 0.6 }}>kcal</span>
-            </div>
-          </div>
-          <p className="diet-hint">P×4 + C×4 + F×9 = {macroCalories} kcal</p>
-          <div className="target-cascade">
-            <MacroField label="Protein (g)" mkey="protein" val={target.protein} isLocked={locks.protein} max={getMax('protein')} onChangeMacro={changeMacro} onToggleLock={toggleLock} />
-            <MacroField label="Carbs (g)" mkey="carbs" val={target.carbs} isLocked={locks.carbs} max={getMax('carbs')} onChangeMacro={changeMacro} onToggleLock={toggleLock} />
-            <MacroField label="Fats (g)" mkey="fats" val={target.fats} isLocked={locks.fats} max={getMax('fats')} onChangeMacro={changeMacro} onToggleLock={toggleLock} />
-          </div>
-        </div>
+        {/* Weekly macro completion */}
+        <WeeklyPerformance target={target} stepTarget={stepTarget} trackerDays={weekTrackerDays} />
 
         {/* Step Performance */}
         <div className="diet-section">
@@ -778,7 +832,7 @@ const Diet: React.FC = () => {
               />
               <span className="step-perf-unit">steps / day</span>
             </div>
-            {yesterdaySteps !== null ? (
+            {yesterdaySteps !== null && (
               <div className="step-perf-yesterday">
                 <div className="step-perf-bar-wrap">
                   <div className="step-perf-bar">
@@ -792,9 +846,8 @@ const Diet: React.FC = () => {
                   </span>
                 </div>
               </div>
-            ) : (
-              <p className="diet-hint" style={{ marginTop: 8 }}>Log yesterday's steps in the daily check-in when you open the app.</p>
             )}
+            <StepLogger onSaved={steps => setYesterdaySteps(steps)} />
           </div>
         </div>
 

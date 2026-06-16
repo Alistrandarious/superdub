@@ -101,6 +101,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
   const [walkFreq, setWalkFreq] = useState('moderate');
   const [goalWeight, setGoalWeight] = useState('');
   const [stepTarget, setStepTarget] = useState('10000');
+  const [dietGoal, setDietGoal] = useState<'cut' | 'maintain' | 'bulk'>('cut');
   const [loaded, setLoaded] = useState(false);
   const [aiKeyInput, setAiKeyInput] = useState('');
   const [aiKeyMasked, setAiKeyMasked] = useState<string | null>(null);
@@ -120,9 +121,12 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
       api.getDietTarget(),
       api.getHabits(),
       api.getWeightSettings(),
-    ]).then(([profileData, targetData, habitsData, wsData]) => {
+      api.getDietSettings(),
+    ]).then(([profileData, targetData, habitsData, wsData, settingsData]) => {
       const ws = wsData as any;
       if (ws.goalWeight) setGoalWeight(ws.goalWeight);
+      const s = settingsData as any;
+      if (s.goal) setDietGoal(s.goal as 'cut' | 'maintain' | 'bulk');
       const p = profileData as ProfileData & { name: string };
       setName(p.name ?? '');
       setProfile({
@@ -182,13 +186,18 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
 
   const title = 'Profile';
 
+  const MIN_SAFE_CALORIES = 1200;
+  const MAX_SAFE_CALORIES = 6000;
+
   const commitDraft = () => {
-    const cal = parseInt(draft.calories) || target.calories;
-    const p = parseInt(draft.protein) || target.protein;
-    const c = parseInt(draft.carbs) || target.carbs;
-    const f = parseInt(draft.fats) || target.fats;
+    let cal = parseInt(draft.calories) || target.calories;
+    cal = Math.max(MIN_SAFE_CALORIES, Math.min(MAX_SAFE_CALORIES, cal));
+    const p = Math.max(0, parseInt(draft.protein) || target.protein);
+    const c = Math.max(0, parseInt(draft.carbs) || target.carbs);
+    const f = Math.max(0, parseInt(draft.fats) || target.fats);
     const newTarget = { calories: cal, protein: p, carbs: c, fats: f };
     setTarget(newTarget);
+    setDraft({ calories: String(cal), protein: String(p), carbs: String(c), fats: String(f) });
     scheduleTargetSave();
   };
 
@@ -362,7 +371,32 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
 
         {/* Targets */}
         <div className="diet-section">
-          <h2 className="diet-heading">Targets</h2>
+          <h2 className="diet-heading">Goal & Targets</h2>
+
+          {/* Goal selector */}
+          <div className="diet-goal-card" style={{ marginBottom: 20 }}>
+            {(['cut', 'maintain', 'bulk'] as const).map(g => {
+              const meta = {
+                cut:      { icon: '🔥', label: 'Cut',      desc: 'Calorie deficit' },
+                maintain: { icon: '⚖️', label: 'Maintain', desc: 'Match maintenance' },
+                bulk:     { icon: '💪', label: 'Bulk',     desc: 'Calorie surplus' },
+              }[g];
+              return (
+                <button
+                  key={g}
+                  className={`diet-goal-btn${dietGoal === g ? ' active' : ''}`}
+                  onClick={() => {
+                    setDietGoal(g);
+                    api.updateDietSettings({ goal: g }).catch(() => {});
+                  }}
+                >
+                  <span className="diet-goal-icon">{meta.icon}</span>
+                  <span className="diet-goal-label">{meta.label}</span>
+                  <span className="diet-goal-delta">{meta.desc}</span>
+                </button>
+              );
+            })}
+          </div>
 
           {/* Body goals */}
           {(profile.weightKg || goalWeight) && (() => {
@@ -408,6 +442,9 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
                 onBlur={commitDraft}
                 onKeyDown={e => e.key === 'Enter' && commitDraft()}
               />
+              {parseInt(draft.calories) > 0 && parseInt(draft.calories) < 1200 && (
+                <span className="profile-cal-warn">⚠ Min 1,200 kcal for safety</span>
+              )}
             </div>
             <div className="target-field">
               <label>Protein (g)</label>
