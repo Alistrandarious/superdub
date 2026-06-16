@@ -360,7 +360,7 @@ function generateMealPlan(targets: MacroSet, activeFilters: string[] = []): Save
 }
 
 const Diet: React.FC = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const activeTab = searchParams.get('tab') === 'meals' ? 'meals' : 'targets';
   const [profile, setProfile] = useState<ProfileData>(DEFAULT_PROFILE);
@@ -610,8 +610,8 @@ const Diet: React.FC = () => {
 
         {/* Tab switcher */}
         <div className="diet-tabs">
-          <button className={`diet-tab${activeTab === 'targets' ? ' active' : ''}`} onClick={() => navigate('/diet')}>Diet Maker</button>
-          <button className={`diet-tab${activeTab === 'meals' ? ' active' : ''}`} onClick={() => navigate('/diet?tab=meals')}>Meal Plans</button>
+          <button className={`diet-tab${activeTab === 'targets' ? ' active' : ''}`} onClick={() => setSearchParams({})}>Diet Maker</button>
+          <button className={`diet-tab${activeTab === 'meals' ? ' active' : ''}`} onClick={() => setSearchParams({ tab: 'meals' })}>Meal Plans</button>
         </div>
 
         {/* Maintenance card */}
