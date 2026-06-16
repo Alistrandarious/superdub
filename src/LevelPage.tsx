@@ -216,7 +216,7 @@ const LevelPage: React.FC = () => {
   const sortedByXP = [...allStats].sort((a, b) => b.totalXP - a.totalXP);
 
   return (
-    <div className="app" style={{ '--theme': '#bf5af2', '--theme-dim': '#bf5af266', '--theme-glow': '#bf5af233' } as React.CSSProperties}>
+    <div className="app" style={{ '--theme': '#0a84ff', '--theme-dim': '#0a84ff66', '--theme-glow': '#0a84ff22' } as React.CSSProperties}>
       <header className="header">
         <div className="header-left">
           <button className="back-link" onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--theme)', fontSize: '0.9rem', padding: 0 }}>← Back</button>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import './App.css';
 import { api, clearToken } from './api';
 
@@ -48,6 +48,22 @@ const ACTIVITY_LEVELS = [
 
 interface ProfileProps { onLogout?: () => void; }
 
+function useSettingsMenu(onLogout?: () => void) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return { open, setOpen, ref };
+}
+
 function useDeleteAccount(onLogout?: () => void) {
   const [step, setStep] = useState<'idle' | 'confirm' | 'deleting'>('idle');
   const [error, setError] = useState('');
@@ -71,7 +87,9 @@ function useDeleteAccount(onLogout?: () => void) {
 }
 
 const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
+  const navigate = useNavigate();
   const deleteAccount = useDeleteAccount(onLogout);
+  const settings = useSettingsMenu(onLogout);
   const [name, setName] = useState('');
   const [profile, setProfile] = useState<ProfileData>(DEFAULT_PROFILE);
   const [target, setTarget] = useState<MacroSet>(DEFAULT_TARGET);
@@ -214,9 +232,35 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
           <Link to="/" className="back-link">← Back</Link>
         </div>
         <h1 className="title">{title}</h1>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
-          <a href="#danger-zone" className="profile-danger-link">Delete account</a>
-          {onLogout && <button className="header-btn" onClick={onLogout} style={{ fontSize: '0.75rem' }}>Log out</button>}
+        <div className="settings-menu-wrap" ref={settings.ref} style={{ marginLeft: 'auto' }}>
+          <button
+            className="settings-gear-btn"
+            onClick={() => settings.setOpen(o => !o)}
+            aria-label="Settings"
+          >
+            ⚙
+          </button>
+          {settings.open && (
+            <div className="settings-dropdown">
+              <button className="settings-dropdown-item" onClick={() => { settings.setOpen(false); navigate('/about'); }}>
+                <span>📖</span> About
+              </button>
+              <button className="settings-dropdown-item" onClick={() => { settings.setOpen(false); navigate('/privacy'); }}>
+                <span>🔏</span> Privacy Policy
+              </button>
+              <div className="settings-dropdown-divider" />
+              {onLogout && (
+                <button className="settings-dropdown-item" onClick={() => { settings.setOpen(false); onLogout(); }}>
+                  <span>🚪</span> Log out
+                </button>
+              )}
+              <button className="settings-dropdown-item settings-dropdown-danger" onClick={() => { settings.setOpen(false); }}>
+                <a href="#danger-zone" style={{ color: 'inherit', textDecoration: 'none', display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <span>⚠️</span> Delete account
+                </a>
+              </button>
+            </div>
+          )}
         </div>
       </header>
 

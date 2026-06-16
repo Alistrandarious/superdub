@@ -207,6 +207,20 @@ const MEAL_SLOTS = [
   { name: 'Dinner', pct: 0.30 },
 ];
 
+const DIET_FILTER_OPTIONS = [
+  { id: 'halal', label: 'Halal' },
+  { id: 'vegetarian', label: 'Vegetarian' },
+  { id: 'vegan', label: 'Vegan' },
+  { id: 'no_seafood', label: 'No Seafood' },
+];
+
+const FILTER_EXCLUDED: Record<string, string[]> = {
+  halal: [],
+  vegetarian: ['chicken', 'turkey', 'salmon', 'whitefish', 'steak', 'beef'],
+  vegan: ['chicken', 'turkey', 'salmon', 'whitefish', 'steak', 'beef', 'eggs', 'whey', 'yoghurt', 'cottage', 'cheese'],
+  no_seafood: ['salmon', 'whitefish'],
+};
+
 function getFood(name: string): Food {
   return FOODS.find(f => f.name === name)!;
 }
@@ -228,59 +242,57 @@ function portionLabel(food: Food, qty: number): string {
   return `${qty} ${unitLabel} (${gramsTotal}g)`;
 }
 
-function generateMealPlan(targets: MacroSet): SavedPlan {
-  const pickTemplate = (slotName: string): SlotTemplate => {
-    const options = MEAL_TEMPLATES[slotName] ?? MEAL_TEMPLATES['Lunch'];
-    return options[Math.floor(Math.random() * options.length)];
-  };
+function generateSingleMeal(targets: MacroSet, slot: { name: string; pct: number }, tpl: SlotTemplate): MealResult {
+  const slotP = targets.protein * slot.pct;
+  const slotC = targets.carbs * slot.pct;
+  const slotF = targets.fats * slot.pct;
 
-  const meals: MealResult[] = MEAL_SLOTS.map(slot => {
-    const slotP = targets.protein * slot.pct;
-    const slotC = targets.carbs * slot.pct;
-    const slotF = targets.fats * slot.pct;
+  const pFood = getFood(tpl.protein);
+  const cFood = getFood(tpl.carb);
+  const fFood = getFood(tpl.fat);
 
-    const tpl = pickTemplate(slot.name);
-    const pFood = getFood(tpl.protein);
-    const cFood = getFood(tpl.carb);
-    const fFood = getFood(tpl.fat);
+  const cQtyEst = cFood.c > 0 ? roundQty(cFood, (slotC / cFood.c) * cFood.base) : cFood.min;
+  const cMEst = macrosFor(cFood, cQtyEst);
+  const remFEst = Math.max(0, slotF - cMEst.f);
+  const fQtyEst = fFood.f > 0 ? roundQty(fFood, (remFEst / fFood.f) * fFood.base) : fFood.min;
+  const fMEst = macrosFor(fFood, fQtyEst);
 
-    // Pass 1 — estimate carb and fat quantities using their primary macro targets,
-    // so we know how much protein they'll contribute before sizing the protein food.
-    const cQtyEst = cFood.c > 0 ? roundQty(cFood, (slotC / cFood.c) * cFood.base) : cFood.min;
-    const cMEst = macrosFor(cFood, cQtyEst);
+  const remP = Math.max(0, slotP - cMEst.p - fMEst.p);
+  const pQty = pFood.p > 0 ? roundQty(pFood, (remP / pFood.p) * pFood.base) : pFood.min;
+  const pM = macrosFor(pFood, pQty);
 
-    const remFEst = Math.max(0, slotF - cMEst.f);
-    const fQtyEst = fFood.f > 0 ? roundQty(fFood, (remFEst / fFood.f) * fFood.base) : fFood.min;
-    const fMEst = macrosFor(fFood, fQtyEst);
+  const remC = Math.max(0, slotC - pM.c - fMEst.c);
+  const cQty = cFood.c > 0 ? roundQty(cFood, (remC / cFood.c) * cFood.base) : cFood.min;
+  const cM = macrosFor(cFood, cQty);
 
-    // Pass 2 — size the protein food to only cover protein not already provided by
-    // the carb and fat foods.
-    const remP = Math.max(0, slotP - cMEst.p - fMEst.p);
-    const pQty = pFood.p > 0 ? roundQty(pFood, (remP / pFood.p) * pFood.base) : pFood.min;
-    const pM = macrosFor(pFood, pQty);
+  const remF = Math.max(0, slotF - pM.f - cM.f);
+  const fQty = fFood.f > 0 ? roundQty(fFood, (remF / fFood.f) * fFood.base) : fFood.min;
+  const fM = macrosFor(fFood, fQty);
 
-    // Recalculate carb quantity accounting for protein food's carb contribution.
-    const remC = Math.max(0, slotC - pM.c - fMEst.c);
-    const cQty = cFood.c > 0 ? roundQty(cFood, (remC / cFood.c) * cFood.base) : cFood.min;
-    const cM = macrosFor(cFood, cQty);
+  const items: MealItem[] = [
+    { label: portionLabel(pFood, pQty), p: Math.round(pM.p), c: Math.round(pM.c), f: Math.round(pM.f), kcal: Math.round(pM.p * 4 + pM.c * 4 + pM.f * 9) },
+    { label: portionLabel(cFood, cQty), p: Math.round(cM.p), c: Math.round(cM.c), f: Math.round(cM.f), kcal: Math.round(cM.p * 4 + cM.c * 4 + cM.f * 9) },
+    { label: portionLabel(fFood, fQty), p: Math.round(fM.p), c: Math.round(fM.c), f: Math.round(fM.f), kcal: Math.round(fM.p * 4 + fM.c * 4 + fM.f * 9) },
+  ];
 
-    // Recalculate fat quantity with final carb/protein contributions.
-    const remF = Math.max(0, slotF - pM.f - cM.f);
-    const fQty = fFood.f > 0 ? roundQty(fFood, (remF / fFood.f) * fFood.base) : fFood.min;
-    const fM = macrosFor(fFood, fQty);
+  const tp = items.reduce((s, i) => s + i.p, 0);
+  const tc = items.reduce((s, i) => s + i.c, 0);
+  const tf = items.reduce((s, i) => s + i.f, 0);
+  return { name: slot.name, items, totals: { p: tp, c: tc, f: tf, kcal: Math.round(tp * 4 + tc * 4 + tf * 9) }, flavor: tpl.flavor };
+}
 
-    const items: MealItem[] = [
-      { label: portionLabel(pFood, pQty), p: Math.round(pM.p), c: Math.round(pM.c), f: Math.round(pM.f), kcal: Math.round(pM.p * 4 + pM.c * 4 + pM.f * 9) },
-      { label: portionLabel(cFood, cQty), p: Math.round(cM.p), c: Math.round(cM.c), f: Math.round(cM.f), kcal: Math.round(cM.p * 4 + cM.c * 4 + cM.f * 9) },
-      { label: portionLabel(fFood, fQty), p: Math.round(fM.p), c: Math.round(fM.c), f: Math.round(fM.f), kcal: Math.round(fM.p * 4 + fM.c * 4 + fM.f * 9) },
-    ];
+function pickFilteredTemplate(slotName: string, activeFilters: string[]): SlotTemplate {
+  const excluded = new Set(activeFilters.flatMap(f => FILTER_EXCLUDED[f] ?? []));
+  const all = MEAL_TEMPLATES[slotName] ?? MEAL_TEMPLATES['Lunch'];
+  const filtered = all.filter(t => !excluded.has(t.protein) && !excluded.has(t.fat));
+  const pool = filtered.length > 0 ? filtered : all;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
 
-    const tp = items.reduce((s, i) => s + i.p, 0);
-    const tc = items.reduce((s, i) => s + i.c, 0);
-    const tf = items.reduce((s, i) => s + i.f, 0);
-    return { name: slot.name, items, totals: { p: tp, c: tc, f: tf, kcal: Math.round(tp * 4 + tc * 4 + tf * 9) }, flavor: tpl.flavor };
-  });
-
+function generateMealPlan(targets: MacroSet, activeFilters: string[] = []): SavedPlan {
+  const meals = MEAL_SLOTS.map(slot =>
+    generateSingleMeal(targets, slot, pickFilteredTemplate(slot.name, activeFilters))
+  );
   const tp = meals.reduce((s, m) => s + m.totals.p, 0);
   const tc = meals.reduce((s, m) => s + m.totals.c, 0);
   const tf = meals.reduce((s, m) => s + m.totals.f, 0);
@@ -300,6 +312,7 @@ const Diet: React.FC = () => {
   const [calorieLock, setCalorieLock] = useState(false);
   const [plans, setPlans] = useState<SavedPlan[]>([]);
   const [expandedPlan, setExpandedPlan] = useState<string | null>(null);
+  const [dietFilters, setDietFilters] = useState<string[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -460,10 +473,29 @@ const Diet: React.FC = () => {
   };
 
   const generatePlan = () => {
-    const plan = generateMealPlan(target);
+    const plan = generateMealPlan(target, dietFilters);
     setPlans(prev => [plan, ...prev].slice(0, 5));
     setExpandedPlan(plan.id);
     api.createDietPlan(plan).catch(() => {});
+  };
+
+  const regenerateMeal = (planId: string, slotIndex: number) => {
+    const slot = MEAL_SLOTS[slotIndex];
+    const tpl = pickFilteredTemplate(slot.name, dietFilters);
+    const newMeal = generateSingleMeal(target, slot, tpl);
+    setPlans(prev => prev.map(p => {
+      if (p.id !== planId) return p;
+      const newMeals = [...p.meals];
+      newMeals[slotIndex] = newMeal;
+      const tp = newMeals.reduce((s, m) => s + m.totals.p, 0);
+      const tc = newMeals.reduce((s, m) => s + m.totals.c, 0);
+      const tf = newMeals.reduce((s, m) => s + m.totals.f, 0);
+      return { ...p, meals: newMeals, totals: { p: tp, c: tc, f: tf, kcal: Math.round(tp * 4 + tc * 4 + tf * 9) } };
+    }));
+  };
+
+  const toggleFilter = (id: string) => {
+    setDietFilters(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
   const deletePlan = (id: string) => {
@@ -616,7 +648,7 @@ const Diet: React.FC = () => {
             </div>
           </div>
           <p className="diet-hint">P×4 + C×4 + F×9 = {macroCalories} kcal</p>
-          <div className="target-grid" style={{ marginTop: 8 }}>
+          <div className="target-cascade">
             <MacroField label="Protein (g)" mkey="protein" />
             <MacroField label="Carbs (g)" mkey="carbs" />
             <MacroField label="Fats (g)" mkey="fats" />
@@ -632,8 +664,24 @@ const Diet: React.FC = () => {
           <span className="diet-macro-link-arrow">→</span>
         </Link>
 
-        {/* 5. Meal Plans */}
+        {/* Diet Filters */}
         <div className="diet-section">
+          <h2 className="diet-heading">Diet Filters</h2>
+          <div className="diet-filter-chips">
+            {DIET_FILTER_OPTIONS.map(f => (
+              <button
+                key={f.id}
+                className={`diet-filter-chip${dietFilters.includes(f.id) ? ' active' : ''}`}
+                onClick={() => toggleFilter(f.id)}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Meal Plans */}
+        <div className="diet-section" id="meals">
           <div className="plan-head-row">
             <h2 className="diet-heading">Meal Plans</h2>
             <button className="plan-apply" onClick={generatePlan}>Generate Plan</button>
@@ -657,11 +705,18 @@ const Diet: React.FC = () => {
                   <p className="plan-total">{plan.totals.kcal} kcal · P{plan.totals.p}g · C{plan.totals.c}g · F{plan.totals.f}g</p>
                   {expandedPlan === plan.id && (
                     <ul className="plan-meals">
-                      {plan.meals.map(meal => (
+                      {plan.meals.map((meal, mealIdx) => (
                         <li key={meal.name} className="plan-meal">
                           <div className="plan-meal-head">
                             <span className="plan-meal-name">{meal.name}</span>
-                            <span className="plan-meal-kcal">{meal.totals.kcal} kcal</span>
+                            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                              <span className="plan-meal-kcal">{meal.totals.kcal} kcal</span>
+                              <button
+                                className="meal-regen-btn"
+                                onClick={() => regenerateMeal(plan.id, mealIdx)}
+                                title="Regenerate this meal"
+                              >↺</button>
+                            </div>
                           </div>
                           <table className="meal-breakdown">
                             <tbody>

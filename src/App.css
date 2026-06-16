@@ -3315,7 +3315,7 @@
 }
 
 .featured-card:hover {
-  box-shadow: 0 16px 60px rgba(0,0,0,0.65), 0 0 0 1px var(--featured-accent, #bf5af2), inset 0 1px 0 rgba(255,255,255,0.1);
+  box-shadow: 0 16px 60px rgba(0,0,0,0.65), 0 0 0 1px var(--featured-accent, #0a84ff), inset 0 1px 0 rgba(255,255,255,0.1);
 }
 
 /* Gradient backgrounds per featured habit */
@@ -3328,7 +3328,7 @@
 .featured-bg-gamble {
   background:
     linear-gradient(160deg, rgba(45,20,60,0.94) 0%, rgba(20,10,35,0.97) 55%, rgba(50,15,15,0.92) 100%),
-    radial-gradient(ellipse 200% 120% at 80% 40%, rgba(191,90,242,0.14) 0%, transparent 60%);
+    radial-gradient(ellipse 200% 120% at 80% 40%, rgba(10,132,255,0.14) 0%, transparent 60%);
 }
 
 .featured-bg-iggy {
@@ -3360,7 +3360,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.16em;
-  color: var(--featured-accent, #bf5af2);
+  color: var(--featured-accent, #0a84ff);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   opacity: 0.9;
 }
@@ -3388,9 +3388,9 @@
   gap: 6px;
   padding: 9px 20px;
   border-radius: 999px;
-  border: 1.5px solid var(--featured-accent, #bf5af2);
+  border: 1.5px solid var(--featured-accent, #0a84ff);
   background: rgba(0,0,0,0.35);
-  color: var(--featured-accent, #bf5af2);
+  color: var(--featured-accent, #0a84ff);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   font-size: 0.82rem;
   font-weight: 700;
@@ -3403,7 +3403,7 @@
 
 .featured-add-btn:hover:not(.added) {
   background: rgba(0,0,0,0.55);
-  box-shadow: 0 0 20px color-mix(in srgb, var(--featured-accent, #bf5af2) 40%, transparent);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--featured-accent, #0a84ff) 40%, transparent);
 }
 
 .featured-add-btn:active {
@@ -3436,7 +3436,7 @@
 }
 
 .featured-dot.active {
-  background: var(--featured-accent, #bf5af2);
+  background: var(--featured-accent, #0a84ff);
   transform: scale(1.3);
 }
 
@@ -3859,16 +3859,16 @@
   bottom: 0;
   left: 0;
   right: 0;
-  height: 64px;
+  height: calc(58px + env(safe-area-inset-bottom, 0px));
   display: flex;
-  align-items: stretch;
-  background: rgba(8,10,20,0.92);
+  align-items: flex-start;
+  background: rgba(8,10,20,0.95);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   backdrop-filter: blur(24px) saturate(180%);
   border-top: 1px solid var(--glass-border);
-  box-shadow: 0 -4px 24px rgba(0,0,0,0.4);
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.5);
   z-index: 500;
-  padding-bottom: env(safe-area-inset-bottom, 0);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .bottom-nav-item {
@@ -3883,20 +3883,21 @@
   cursor: pointer;
   color: rgba(255,255,255,0.35);
   transition: color 0.15s;
-  padding: 6px 4px;
+  padding: 8px 4px 6px;
+  height: 58px;
   -webkit-tap-highlight-color: transparent;
 }
 
 .bottom-nav-item.active {
-  color: var(--theme, #bf5af2);
+  color: #0a84ff;
 }
 
 .bottom-nav-item:hover {
-  color: rgba(255,255,255,0.7);
+  color: rgba(255,255,255,0.65);
 }
 
 .bottom-nav-item.active:hover {
-  color: var(--theme, #bf5af2);
+  color: #0a84ff;
 }
 
 .bottom-nav-icon {
@@ -3988,9 +3989,9 @@
 
 .confirm-ok {
   flex: 1;
-  background: rgba(191,90,242,0.15);
-  border: 1px solid #bf5af2;
-  color: #bf5af2;
+  background: rgba(10,132,255,0.15);
+  border: 1px solid #0a84ff;
+  color: #0a84ff;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   font-size: 0.85rem;
   font-weight: 700;
@@ -4000,7 +4001,7 @@
   transition: background 0.15s;
 }
 
-.confirm-ok:hover { background: rgba(191,90,242,0.28); }
+.confirm-ok:hover { background: rgba(10,132,255,0.28); }
 
 /* =====================================================================
    GRAVEYARD SECTION
@@ -4071,8 +4072,8 @@
 
 .graveyard-card.rising {
   animation: riseFromGrave 0.7s cubic-bezier(0.22,1,0.36,1) both;
-  border-color: #bf5af2;
-  background: rgba(191,90,242,0.1);
+  border-color: #0a84ff;
+  background: rgba(10,132,255,0.1);
 }
 
 @keyframes riseFromGrave {
@@ -4088,9 +4089,9 @@
 }
 
 .graveyard-restore-btn {
-  background: rgba(191,90,242,0.12);
-  border: 1px solid rgba(191,90,242,0.4);
-  color: #bf5af2;
+  background: rgba(10,132,255,0.12);
+  border: 1px solid rgba(10,132,255,0.4);
+  color: #0a84ff;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   font-size: 0.75rem;
   font-weight: 700;
@@ -4102,7 +4103,7 @@
   flex-shrink: 0;
 }
 
-.graveyard-restore-btn:hover:not(:disabled) { background: rgba(191,90,242,0.24); }
+.graveyard-restore-btn:hover:not(:disabled) { background: rgba(10,132,255,0.24); }
 .graveyard-restore-btn:disabled { opacity: 0.5; cursor: default; }
 
 /* =====================================================================
@@ -4147,21 +4148,21 @@
   display: flex;
   align-items: center;
   gap: 20px;
-  background: linear-gradient(135deg, #1a0a2e 0%, rgba(191,90,242,0.15) 100%);
-  border: 1px solid rgba(191,90,242,0.3);
+  background: linear-gradient(135deg, #1a0a2e 0%, rgba(10,132,255,0.15) 100%);
+  border: 1px solid rgba(10,132,255,0.3);
   border-radius: 20px;
   padding: 24px 20px;
-  box-shadow: 0 0 40px -10px rgba(191,90,242,0.3);
+  box-shadow: 0 0 40px -10px rgba(10,132,255,0.3);
 }
 
 .level-hero-badge {
   font-size: 2.4rem;
   font-weight: 900;
-  color: #bf5af2;
+  color: #0a84ff;
   flex-shrink: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   line-height: 1;
-  text-shadow: 0 0 20px rgba(191,90,242,0.5);
+  text-shadow: 0 0 20px rgba(10,132,255,0.5);
 }
 
 .level-hero-info {
@@ -4201,10 +4202,10 @@
 
 .level-hero-fill {
   height: 100%;
-  background: linear-gradient(90deg, rgba(191,90,242,0.6), #bf5af2);
+  background: linear-gradient(90deg, rgba(10,132,255,0.6), #0a84ff);
   border-radius: 3px;
   transition: width 0.6s ease;
-  box-shadow: 0 0 8px rgba(191,90,242,0.5);
+  box-shadow: 0 0 8px rgba(10,132,255,0.5);
 }
 
 .level-hero-next {
@@ -4235,9 +4236,9 @@
 }
 
 .badge-card.earned {
-  border-color: rgba(191,90,242,0.4);
-  background: linear-gradient(135deg, var(--glass-bg) 0%, rgba(191,90,242,0.07) 100%);
-  box-shadow: 0 0 16px -6px rgba(191,90,242,0.3);
+  border-color: rgba(10,132,255,0.4);
+  background: linear-gradient(135deg, var(--glass-bg) 0%, rgba(10,132,255,0.07) 100%);
+  box-shadow: 0 0 16px -6px rgba(10,132,255,0.3);
 }
 
 .badge-card.locked {
@@ -4316,16 +4317,16 @@
 .habit-stat-xp {
   font-size: 0.88rem;
   font-weight: 700;
-  color: #bf5af2;
+  color: #0a84ff;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   white-space: nowrap;
   flex-shrink: 0;
 }
 
 .current-level-row td {
-  color: #bf5af2;
+  color: #0a84ff;
   font-weight: 700;
-  background: rgba(191,90,242,0.06);
+  background: rgba(10,132,255,0.06);
 }
 
 /* About name link */
@@ -4338,3 +4339,336 @@
 }
 
 .about-name-link:hover { border-color: var(--theme); }
+
+/* =====================================================================
+   PAGE CONTENT — bottom padding to clear fixed nav
+   ===================================================================== */
+.page-content {
+  padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+/* =====================================================================
+   BOTTOM NAV — CENTRE CIRCLE BUTTON (Habits)
+   ===================================================================== */
+.bottom-nav-center {
+  position: relative;
+  overflow: visible;
+}
+
+.bottom-nav-center-btn {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0060df, #0a84ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(10,132,255,0.45), 0 0 0 1px rgba(10,132,255,0.2);
+  margin-top: -14px;
+  flex-shrink: 0;
+  transition: box-shadow 0.18s, transform 0.18s;
+}
+
+.bottom-nav-center-btn svg {
+  width: 22px;
+  height: 22px;
+  color: #fff;
+  stroke: #fff;
+}
+
+.bottom-nav-center:hover .bottom-nav-center-btn,
+.bottom-nav-center.active .bottom-nav-center-btn {
+  box-shadow: 0 6px 24px rgba(10,132,255,0.65), 0 0 0 1px rgba(10,132,255,0.4);
+  transform: translateY(-1px);
+}
+
+.bottom-nav-center .bottom-nav-label {
+  color: rgba(255,255,255,0.5);
+  margin-top: 1px;
+}
+
+.bottom-nav-center.active .bottom-nav-label {
+  color: #0a84ff;
+}
+
+/* =====================================================================
+   DIET SUB-MENU POPUP
+   ===================================================================== */
+.bottom-nav-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 490;
+}
+
+.diet-sub-menu {
+  position: fixed;
+  bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(320px, calc(100vw - 32px));
+  background: rgba(12,14,28,0.97);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-border-strong);
+  border-radius: 20px;
+  box-shadow: 0 -8px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(10,132,255,0.08);
+  z-index: 495;
+  padding: 8px;
+  animation: dietMenuIn 0.22s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+@keyframes dietMenuIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(12px) scale(0.96); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+.diet-sub-title {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  padding: 6px 12px 4px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.diet-sub-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: none;
+  border: none;
+  border-radius: 14px;
+  padding: 12px 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.diet-sub-item:hover:not(:disabled) {
+  background: rgba(10,132,255,0.1);
+}
+
+.diet-sub-item--soon {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.diet-sub-icon {
+  font-size: 1.3rem;
+  width: 32px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.diet-sub-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.diet-sub-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.diet-sub-desc {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.4);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+/* =====================================================================
+   PROFILE SETTINGS GEAR + DROPDOWN
+   ===================================================================== */
+.settings-menu-wrap {
+  position: relative;
+}
+
+.settings-gear-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: rgba(255,255,255,0.5);
+  padding: 6px 8px;
+  border-radius: 10px;
+  transition: color 0.15s, background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  line-height: 1;
+}
+
+.settings-gear-btn:hover {
+  color: var(--theme);
+  background: var(--theme-glow);
+}
+
+.settings-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 200px;
+  background: rgba(12,14,28,0.97);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-border-strong);
+  border-radius: 16px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+  z-index: 600;
+  padding: 6px;
+  animation: fadeUp 0.18s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+.settings-dropdown-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: none;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  color: rgba(255,255,255,0.8);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.88rem;
+  font-weight: 500;
+  text-align: left;
+  transition: background 0.12s, color 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.settings-dropdown-item:hover {
+  background: rgba(255,255,255,0.07);
+  color: #fff;
+}
+
+.settings-dropdown-divider {
+  height: 1px;
+  background: var(--glass-border);
+  margin: 4px 8px;
+}
+
+.settings-dropdown-danger {
+  color: rgba(255,69,58,0.85);
+}
+
+.settings-dropdown-danger:hover {
+  background: rgba(255,69,58,0.1);
+  color: #ff453a;
+}
+
+/* =====================================================================
+   DIET — CASCADE TARGETS LAYOUT
+   ===================================================================== */
+.target-cascade {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.target-cascade .target-field {
+  width: 100%;
+}
+
+/* =====================================================================
+   DIET — FILTER CHIPS
+   ===================================================================== */
+.diet-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.diet-filter-chip {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--glass-border-strong);
+  color: rgba(255,255,255,0.55);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.diet-filter-chip:hover {
+  border-color: rgba(0,229,255,0.4);
+  color: rgba(255,255,255,0.8);
+}
+
+.diet-filter-chip.active {
+  background: rgba(0,229,255,0.12);
+  border-color: #00e5ff;
+  color: #00e5ff;
+  box-shadow: 0 0 12px rgba(0,229,255,0.15);
+}
+
+/* =====================================================================
+   DIET — PER-MEAL REGENERATE BUTTON
+   ===================================================================== */
+.meal-regen-btn {
+  background: rgba(0,229,255,0.1);
+  border: 1px solid rgba(0,229,255,0.3);
+  color: #00e5ff;
+  font-size: 0.9rem;
+  line-height: 1;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, transform 0.15s;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.meal-regen-btn:hover {
+  background: rgba(0,229,255,0.2);
+  transform: rotate(45deg);
+}
+
+/* =====================================================================
+   LEVEL PAGE — fix blue gradients for hero card
+   ===================================================================== */
+.level-hero-card {
+  background: linear-gradient(135deg, #060e1e 0%, rgba(10,132,255,0.12) 100%) !important;
+  border-color: rgba(10,132,255,0.25) !important;
+  box-shadow: 0 0 40px -10px rgba(10,132,255,0.25) !important;
+}
+
+.level-hero-fill {
+  background: linear-gradient(90deg, rgba(10,132,255,0.5), #0a84ff) !important;
+  box-shadow: 0 0 8px rgba(10,132,255,0.4) !important;
+}
+
+.badge-card.earned {
+  border-color: rgba(10,132,255,0.35) !important;
+  background: linear-gradient(135deg, var(--glass-bg) 0%, rgba(10,132,255,0.06) 100%) !important;
+  box-shadow: 0 0 16px -6px rgba(10,132,255,0.2) !important;
+}
+
+.graveyard-card.rising {
+  border-color: #0a84ff !important;
+  background: rgba(10,132,255,0.08) !important;
+}
+
+.graveyard-restore-btn {
+  background: rgba(10,132,255,0.1) !important;
+  border-color: rgba(10,132,255,0.35) !important;
+  color: #0a84ff !important;
+}
+
+.graveyard-restore-btn:hover:not(:disabled) {
+  background: rgba(10,132,255,0.2) !important;
+}

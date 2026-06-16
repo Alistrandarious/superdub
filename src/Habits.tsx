@@ -102,7 +102,7 @@ function getRank(totalDays: number, startDate?: string | null): { title: string;
     }
   }
   if (totalDays >= 365) return { title: 'Master', color: '#ffd700' };
-  if (totalDays >= 100) return { title: 'In the Hundreds', color: '#bf5af2' };
+  if (totalDays >= 100) return { title: 'In the Hundreds', color: '#0a84ff' };
   if (totalDays >= 50)  return { title: 'Habit Tracking Superstar', color: '#ff9500' };
   if (totalDays >= 30)  return { title: 'Rising Star', color: '#ff6ec7' };
   if (totalDays >= 10)  return { title: 'Gathering Momentum', color: '#00e5ff' };
@@ -229,7 +229,7 @@ const FEATURED = [
     name: '0 Gambling',
     tagline: 'Take back control. Every day counts.',
     icon: '🎯',
-    accent: '#bf5af2',
+    accent: '#0a84ff',
     bgClass: 'featured-bg-gamble',
   },
   {
@@ -569,8 +569,8 @@ const Habits: React.FC = () => {
 
   if (!loaded) {
     return (
-      <div className="app" style={{ '--theme': '#bf5af2', '--theme-dim': '#bf5af266', '--theme-glow': '#bf5af233' } as React.CSSProperties}>
-        <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', color: '#bf5af2', fontSize: '1.2rem' }}>
+      <div className="app" style={{ '--theme': '#0a84ff', '--theme-dim': '#0a84ff66', '--theme-glow': '#0a84ff22' } as React.CSSProperties}>
+        <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', color: '#0a84ff', fontSize: '1.2rem' }}>
           Loading…
         </div>
       </div>
@@ -578,7 +578,7 @@ const Habits: React.FC = () => {
   }
 
   return (
-    <div className="app" style={{ '--theme': '#bf5af2', '--theme-dim': '#bf5af266', '--theme-glow': '#bf5af233' } as React.CSSProperties}>
+    <div className="app" style={{ '--theme': '#0a84ff', '--theme-dim': '#0a84ff66', '--theme-glow': '#0a84ff22' } as React.CSSProperties}>
       <header className="header">
         <div className="title-group">
           <h1 className="title" style={{ position: 'relative', transform: 'none', left: 'auto' }}>Superdub</h1>

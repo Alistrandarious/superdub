@@ -24,7 +24,7 @@ const MONTH_COLORS: Record<number, string> = {
   3: '#ff9500',  // Apr - amber
   4: '#b4ff00',  // May - lime
   5: '#ff2d55',  // Jun - coral red
-  6: '#bf5af2',  // Jul - purple
+  6: '#0a84ff',  // Jul - blue
   7: '#64d2ff',  // Aug - sky blue
   8: '#ffd60a',  // Sep - gold
   9: '#ff453a',  // Oct - red

@@ -46,7 +46,7 @@ const Tasks: React.FC = () => {
   };
 
   return (
-    <div className="app" style={{ '--theme': '#bf5af2', '--theme-dim': '#bf5af266', '--theme-glow': '#bf5af233' } as React.CSSProperties}>
+    <div className="app" style={{ '--theme': '#30d158', '--theme-dim': '#30d15866', '--theme-glow': '#30d15822' } as React.CSSProperties}>
       <header className="header">
         <div className="header-left">
           <Link to="/" className="back-link">← Back</Link>

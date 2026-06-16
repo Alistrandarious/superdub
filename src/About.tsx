@@ -22,7 +22,7 @@ const XP_GATES = [
 
 const About: React.FC = () => {
   return (
-    <div className="app" style={{ '--theme': '#bf5af2', '--theme-dim': '#bf5af266', '--theme-glow': '#bf5af233' } as React.CSSProperties}>
+    <div className="app" style={{ '--theme': '#0a84ff', '--theme-dim': '#0a84ff66', '--theme-glow': '#0a84ff22' } as React.CSSProperties}>
       <header className="header">
         <div className="header-left">
           <Link to="/" className="back-link">← Back</Link>
