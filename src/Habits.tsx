@@ -176,8 +176,8 @@ const FEATURED = [
   {
     id: 'pet-iggy',
     name: 'Petting Iggy',
-    tagline: 'Daily love for your favourite reptile.',
-    icon: '🦎',
+    tagline: 'Daily love for your sweet fury baby girl.',
+    icon: '🐶',
     accent: '#30d158',
     bgClass: 'featured-bg-iggy',
   },
