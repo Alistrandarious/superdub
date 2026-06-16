@@ -176,7 +176,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       });
       (trackerData.habits as any[]).forEach(row => {
         if (merged[row.day]) {
-          merged[row.day].habits[row.habit_name] = row.done;
+          merged[row.day].habits[row.habit_name] = row.state === 'done';
         }
       });
       setTracker(merged);
