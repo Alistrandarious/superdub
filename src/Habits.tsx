@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import './App.css';
-import { api } from './api';
+import { api, clearToken } from './api';
 
 /* ── helpers ─────────────────────────────────────────────── */
 
@@ -112,11 +112,13 @@ function computeHabitStats(
     }
   }
 
-  // Consecutive misses before today (yesterday backwards)
+  // Consecutive misses before today — only relevant if habit has been done before
   let misses = 0;
-  for (let i = todayIdx - 1; i >= 0 && i >= todayIdx - 4; i--) {
-    if (!ht[ALL_DAYS[i]]?.[habit]) misses++;
-    else break;
+  if (totalDays > 0) {
+    for (let i = todayIdx - 1; i >= 0 && i >= todayIdx - 4; i--) {
+      if (!ht[ALL_DAYS[i]]?.[habit]) misses++;
+      else break;
+    }
   }
 
   // Streak (allow 1-grace miss)
@@ -267,7 +269,8 @@ const HabitCard: React.FC<{
   ht: Record<string, Record<string, boolean>>;
   today: string;
   onToggle: (habit: string, done: boolean) => void;
-}> = ({ habit, stats, weekDays, ht, today, onToggle }) => {
+  onRemove: (habit: string) => void;
+}> = ({ habit, stats, weekDays, ht, today, onToggle, onRemove }) => {
   const rank = getRank(stats.totalDays);
   const todayDone = !!ht[today]?.[habit];
   const isFlame = stats.streak >= 7;
@@ -287,6 +290,7 @@ const HabitCard: React.FC<{
         <span className="hcard-icon">{isFlame ? '🔥' : '✓'}</span>
         <span className="hcard-name">{habit}</span>
         <span className="hcard-streak">{stats.streak}d</span>
+        <button className="hcard-remove" onClick={() => onRemove(habit)} aria-label="Remove habit">✕</button>
       </div>
 
       {/* EXP bar */}
@@ -372,6 +376,7 @@ const Habits: React.FC = () => {
   const [ht, setHt] = useState<Record<string, Record<string, boolean>>>({});
   const [weather, setWeather] = useState<WeatherState | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const today = todayKey();
   const weekDays = getWeekDays();
@@ -448,14 +453,55 @@ const Habits: React.FC = () => {
     );
   }
 
+  const [newHabit, setNewHabit] = useState('');
+
+  const addHabit = () => {
+    const n = newHabit.trim();
+    if (!n || habits.includes(n)) return;
+    const updated = [...habits, n];
+    setHabits(updated);
+    setHt(prev => {
+      const next = { ...prev };
+      ALL_DAYS.forEach(d => { next[d] = { ...next[d], [n]: false }; });
+      return next;
+    });
+    setNewHabit('');
+    api.updateHabits(updated).catch(() => {});
+  };
+
+  const removeHabit = (n: string) => {
+    const updated = habits.filter(h => h !== n);
+    setHabits(updated);
+    api.updateHabits(updated).catch(() => {});
+  };
+
   return (
     <div className="app" style={{ '--theme': '#bf5af2', '--theme-dim': '#bf5af266', '--theme-glow': '#bf5af233' } as React.CSSProperties}>
       <header className="header">
         <div className="header-left">
-          <Link to="/dashboard" className="back-link">Dashboard</Link>
+          <button className="hamburger" onClick={() => setMenuOpen(true)} aria-label="Open menu">
+            <span /><span /><span />
+          </button>
         </div>
         <h1 className="title">Superdub</h1>
       </header>
+
+      {menuOpen && (
+        <div className="menu-overlay" onClick={() => setMenuOpen(false)}>
+          <nav className="menu" onClick={e => e.stopPropagation()}>
+            <div className="menu-header">
+              <span className="menu-title">menu</span>
+              <button className="menu-close" onClick={() => setMenuOpen(false)} aria-label="Close menu">✕</button>
+            </div>
+            <Link to="/" onClick={() => setMenuOpen(false)}>Habits</Link>
+            <Link to="/dashboard" onClick={() => setMenuOpen(false)}>Dashboard</Link>
+            <Link to="/diet" onClick={() => setMenuOpen(false)}>Diet</Link>
+            <Link to="/tasks" onClick={() => setMenuOpen(false)}>Additional Tasks</Link>
+            <Link to="/profile" onClick={() => setMenuOpen(false)}>Profile</Link>
+            <button type="button" onClick={() => { clearToken(); window.location.href = '/'; }}>Log out</button>
+          </nav>
+        </div>
+      )}
 
       <div className="habits-page-scroll">
         <WeatherBar weather={weather} />
@@ -467,9 +513,21 @@ const Habits: React.FC = () => {
             <span className="habits-count">{habits.length} active</span>
           </div>
 
+          <div className="habit-add-row" style={{ marginBottom: 20 }}>
+            <input
+              type="text"
+              className="habit-add-input"
+              value={newHabit}
+              onChange={e => setNewHabit(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && addHabit()}
+              placeholder="Add a new habit…"
+            />
+            <button className="habit-add-btn" onClick={addHabit}>+</button>
+          </div>
+
           {habits.length === 0 ? (
             <div className="habits-empty">
-              <p>No habits yet. Add one from the menu or join a featured habit above.</p>
+              <p>No habits yet. Add one above or join a featured habit.</p>
             </div>
           ) : (
             <div className="habits-grid">
@@ -484,6 +542,7 @@ const Habits: React.FC = () => {
                     ht={ht}
                     today={today}
                     onToggle={handleToggle}
+                    onRemove={removeHabit}
                   />
                 );
               })}
