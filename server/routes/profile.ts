@@ -53,4 +53,14 @@ router.put('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   }
 });
 
+// DELETE /api/profile — permanently deletes the user and all their data (cascades via FK)
+router.delete('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
+  try {
+    await pool.query('DELETE FROM users WHERE id = $1', [req.userId]);
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 export default router;

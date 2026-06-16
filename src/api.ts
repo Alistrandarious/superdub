@@ -44,6 +44,7 @@ export const api = {
   // profile
   getProfile: () => request('/profile'),
   updateProfile: (data: object) => request('/profile', { method: 'PUT', body: JSON.stringify(data) }),
+  deleteAccount: () => request('/profile', { method: 'DELETE' }),
 
   // habits
   getHabits: (): Promise<string[]> => request('/habits'),

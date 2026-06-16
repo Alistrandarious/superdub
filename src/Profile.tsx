@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import './App.css';
-import { api } from './api';
+import { api, clearToken } from './api';
 
 interface ProfileData {
   dob: string;
@@ -48,7 +48,30 @@ const ACTIVITY_LEVELS = [
 
 interface ProfileProps { onLogout?: () => void; }
 
+function useDeleteAccount(onLogout?: () => void) {
+  const [step, setStep] = useState<'idle' | 'confirm' | 'deleting'>('idle');
+  const [error, setError] = useState('');
+
+  const request = () => setStep('confirm');
+  const cancel = () => { setStep('idle'); setError(''); };
+  const confirm = async () => {
+    setStep('deleting');
+    try {
+      await api.deleteAccount();
+      clearToken();
+      if (onLogout) onLogout();
+      else window.location.href = '/';
+    } catch {
+      setError('Something went wrong. Please try again.');
+      setStep('confirm');
+    }
+  };
+
+  return { step, error, request, cancel, confirm };
+}
+
 const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
+  const deleteAccount = useDeleteAccount(onLogout);
   const [name, setName] = useState('');
   const [profile, setProfile] = useState<ProfileData>(DEFAULT_PROFILE);
   const [target, setTarget] = useState<MacroSet>(DEFAULT_TARGET);
@@ -328,6 +351,39 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
             />
             <button className="habit-add-btn" onClick={addHabit}>+</button>
           </div>
+        </div>
+
+        {/* Delete account */}
+        <div className="diet-section delete-account-section">
+          <h2 className="diet-heading" style={{ color: '#ff453a' }}>Danger Zone</h2>
+          {deleteAccount.step === 'idle' && (
+            <>
+              <p className="delete-account-desc">Permanently delete your account and all your data. This cannot be undone.</p>
+              <button className="delete-account-btn" onClick={deleteAccount.request}>Delete my account</button>
+            </>
+          )}
+          {(deleteAccount.step === 'confirm' || deleteAccount.step === 'deleting') && (
+            <div className="delete-account-confirm">
+              <p className="delete-account-desc">Are you sure? Every habit, log, meal plan, and task will be wiped forever.</p>
+              {deleteAccount.error && <p className="delete-account-error">{deleteAccount.error}</p>}
+              <div className="delete-account-actions">
+                <button
+                  className="delete-account-cancel"
+                  onClick={deleteAccount.cancel}
+                  disabled={deleteAccount.step === 'deleting'}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="delete-account-confirm-btn"
+                  onClick={deleteAccount.confirm}
+                  disabled={deleteAccount.step === 'deleting'}
+                >
+                  {deleteAccount.step === 'deleting' ? 'Deleting…' : 'Yes, delete everything'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
