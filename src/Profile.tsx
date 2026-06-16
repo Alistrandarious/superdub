@@ -39,11 +39,11 @@ const DEFAULT_TARGET: MacroSet = { calories: 2003, protein: 150, carbs: 200, fat
 const DEFAULT_HABITS = ['Walking', 'Praying', 'Duolingo'];
 
 const ACTIVITY_LEVELS = [
-  { value: '1.2', label: 'Sedentary' },
-  { value: '1.375', label: 'Light' },
-  { value: '1.55', label: 'Moderate' },
-  { value: '1.725', label: 'Very active' },
-  { value: '1.9', label: 'Extra active' },
+  { value: '1.2',   label: 'Sedentary — desk job, car commute, barely move outside work' },
+  { value: '1.375', label: 'Lightly active — walking most days, gym 1–2×/week or light sport' },
+  { value: '1.55',  label: 'Moderately active — gym or sport 3–4×/week, on your feet during the day' },
+  { value: '1.725', label: 'Very active — hard training 5–6×/week, manual labour, or two-a-days' },
+  { value: '1.9',   label: 'Extremely active — elite athlete, construction worker, training twice daily' },
 ];
 
 interface ProfileProps { onLogout?: () => void; }

@@ -12,11 +12,11 @@ const DEFAULT_HABITS = ['Walking', 'Praying', 'Duolingo'];
 const EXTRA_HABITS = ['Reading', 'Meditation', 'Gym', 'Running', 'Cold shower', 'Journaling', 'No sugar', 'Sleep by 11pm'];
 
 const ACTIVITY_OPTS = [
-  { value: '1.2',   label: 'Sedentary — desk job, little exercise' },
-  { value: '1.375', label: 'Light — exercise 1–3×/week' },
-  { value: '1.55',  label: 'Moderate — exercise 3–5×/week' },
-  { value: '1.725', label: 'Very active — hard exercise 6–7×/week' },
-  { value: '1.9',   label: 'Extra active — athlete / physical job' },
+  { value: '1.2',   label: 'Sedentary — desk job, car commute, barely move outside work' },
+  { value: '1.375', label: 'Lightly active — walking most days, gym 1–2×/week or light sport' },
+  { value: '1.55',  label: 'Moderately active — gym or sport 3–4×/week, on your feet during the day' },
+  { value: '1.725', label: 'Very active — hard training 5–6×/week, manual labour, or two-a-days' },
+  { value: '1.9',   label: 'Extremely active — elite athlete, construction worker, training twice daily' },
 ];
 
 const THEME = '#00e5ff';
