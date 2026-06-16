@@ -62,6 +62,26 @@ const migrations = [
     THEN ALTER TABLE profile RENAME COLUMN antophic_api_key TO anthropic_api_key;
     END IF;
   END $$`,
+  // Backdate habit start_date to earliest logged activity when start_date was
+  // clobbered forward (updateHabits bug that overrode NULL with today).
+  // day is stored as DD/MM text — reconstruct as 2026-MM-DD date.
+  `UPDATE habits h
+   SET start_date = sub.min_date
+   FROM (
+     SELECT th.user_id, th.habit_name,
+       MIN(TO_DATE(
+         '2026-' ||
+         LPAD(SPLIT_PART(th.day, '/', 2), 2, '0') || '-' ||
+         LPAD(SPLIT_PART(th.day, '/', 1), 2, '0'),
+         'YYYY-MM-DD'
+       )) AS min_date
+     FROM tracker_habits th
+     WHERE th.done = TRUE OR th.state = 'done'
+     GROUP BY th.user_id, th.habit_name
+   ) sub
+   WHERE h.user_id = sub.user_id
+     AND h.name = sub.habit_name
+     AND (h.start_date IS NULL OR h.start_date > sub.min_date)`,
 ];
 (async () => {
   for (const sql of migrations) {
