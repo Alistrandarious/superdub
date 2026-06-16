@@ -268,9 +268,9 @@ const HabitCard: React.FC<{
   weekDays: ReturnType<typeof getWeekDays>;
   ht: Record<string, Record<string, boolean>>;
   today: string;
-  onToggle: (habit: string, done: boolean) => void;
+  onToggleDay: (habit: string, dayKey: string, done: boolean) => void;
   onRemove: (habit: string) => void;
-}> = ({ habit, stats, weekDays, ht, today, onToggle, onRemove }) => {
+}> = ({ habit, stats, weekDays, ht, today, onToggleDay, onRemove }) => {
   const rank = getRank(stats.totalDays);
   const todayDone = !!ht[today]?.[habit];
   const isFlame = stats.streak >= 7;
@@ -340,7 +340,7 @@ const HabitCard: React.FC<{
         </div>
       )}
 
-      {/* Week circles */}
+      {/* Week circles — click any past/present day to toggle */}
       <div className="hcard-week">
         {weekDays.map(({ key, label, isFuture, isToday }) => {
           const done = !!ht[key]?.[habit];
@@ -349,9 +349,14 @@ const HabitCard: React.FC<{
               key={key}
               className={`hcard-day ${done ? 'done' : ''} ${isFuture ? 'future' : ''} ${isToday ? 'is-today' : ''}`}
             >
-              <div className="hcard-day-circle">
+              <button
+                className="hcard-day-circle"
+                disabled={isFuture}
+                onClick={() => !isFuture && onToggleDay(habit, key, !done)}
+                aria-label={`${done ? 'Unmark' : 'Mark'} ${label}`}
+              >
                 {done && !isFuture && <span className="hcard-day-tick">{isFlame && done ? '🔥' : '✓'}</span>}
-              </div>
+              </button>
               <span className="hcard-day-label">{label}</span>
             </div>
           );
@@ -361,7 +366,7 @@ const HabitCard: React.FC<{
       {/* Today toggle */}
       <button
         className={`hcard-today-btn ${todayDone ? 'done' : ''}`}
-        onClick={() => onToggle(habit, !todayDone)}
+        onClick={() => onToggleDay(habit, today, !todayDone)}
       >
         {todayDone ? '✓ Done today' : '+ Mark done today'}
       </button>
@@ -423,13 +428,13 @@ const Habits: React.FC = () => {
     );
   }, []);
 
-  const handleToggle = useCallback((habit: string, done: boolean) => {
+  const handleToggleDay = useCallback((habit: string, dayKey: string, done: boolean) => {
     setHt(prev => ({
       ...prev,
-      [today]: { ...prev[today], [habit]: done },
+      [dayKey]: { ...prev[dayKey], [habit]: done },
     }));
-    api.toggleTrackerHabit(today, habit, done).catch(() => {});
-  }, [today]);
+    api.toggleTrackerHabit(dayKey, habit, done).catch(() => {});
+  }, []);
 
   const handleAddFeatured = useCallback((name: string) => {
     if (habits.includes(name)) return;
@@ -541,7 +546,7 @@ const Habits: React.FC = () => {
                     weekDays={weekDays}
                     ht={ht}
                     today={today}
-                    onToggle={handleToggle}
+                    onToggleDay={handleToggleDay}
                     onRemove={removeHabit}
                   />
                 );

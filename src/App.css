@@ -3242,8 +3242,20 @@
   align-items: center;
   justify-content: center;
   background: rgba(255,255,255,0.04);
-  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s, transform 0.1s;
   position: relative;
+  cursor: pointer;
+  padding: 0;
+}
+
+.hcard-day:not(.future) .hcard-day-circle:hover {
+  border-color: var(--theme);
+  background: var(--theme-glow);
+  transform: scale(1.1);
+}
+
+.hcard-day-circle:disabled {
+  cursor: default;
 }
 
 .hcard-day.done .hcard-day-circle {
