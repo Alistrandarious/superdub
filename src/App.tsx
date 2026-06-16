@@ -435,10 +435,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               <button className="menu-close" onClick={() => setMenuOpen(false)} aria-label="Close menu">✕</button>
             </div>
             <Link to="/" onClick={() => setMenuOpen(false)}>Home</Link>
+            <Link to="/habits" onClick={() => setMenuOpen(false)}>Habit Tracker</Link>
             <Link to="/diet" onClick={() => setMenuOpen(false)}>Diet</Link>
             <Link to="/tasks" onClick={() => setMenuOpen(false)}>Additional Tasks</Link>
             <Link to="/profile" onClick={() => setMenuOpen(false)}>Profile</Link>
-            <button type="button" onClick={() => { setHabitsModalOpen(true); setMenuOpen(false); }}>Habits</button>
+            <button type="button" onClick={() => { setHabitsModalOpen(true); setMenuOpen(false); }}>Edit Habits</button>
             <button type="button" onClick={() => { setWeightPlanOpen(true); setMenuOpen(false); }}>Settings</button>
             {onLogout && <button type="button" onClick={onLogout}>Log out</button>}
           </nav>

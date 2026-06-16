@@ -5,30 +5,44 @@ import App from './App';
 import Diet from './Diet';
 import Tasks from './Tasks';
 import Profile from './Profile';
+import Habits from './Habits';
+import PrivacyPolicy from './PrivacyPolicy';
 import { Auth } from './Auth';
 import { isLoggedIn, clearToken } from './api';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 
-function Root() {
+function AppRouter() {
   const [authed, setAuthed] = useState(isLoggedIn());
+  const location = useLocation();
 
   const handleLogout = () => {
     clearToken();
     setAuthed(false);
   };
 
+  if (location.pathname === '/privacy') {
+    return <PrivacyPolicy />;
+  }
+
   if (!authed) {
     return <Auth onAuth={() => setAuthed(true)} />;
   }
 
   return (
+    <Routes>
+      <Route path="/" element={<App onLogout={handleLogout} />} />
+      <Route path="/diet" element={<Diet />} />
+      <Route path="/tasks" element={<Tasks />} />
+      <Route path="/habits" element={<Habits />} />
+      <Route path="/profile" element={<Profile onLogout={handleLogout} />} />
+    </Routes>
+  );
+}
+
+function Root() {
+  return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<App onLogout={handleLogout} />} />
-        <Route path="/diet" element={<Diet />} />
-        <Route path="/tasks" element={<Tasks />} />
-        <Route path="/profile" element={<Profile onLogout={handleLogout} />} />
-      </Routes>
+      <AppRouter />
     </BrowserRouter>
   );
 }
