@@ -399,13 +399,13 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
           </div>
 
           {/* Body goals */}
-          {(profile.weightKg || goalWeight) && (() => {
+          {(() => {
             const cur = parseFloat(profile.weightKg) || 0;
             const goal = parseFloat(goalWeight) || 0;
             const pct = cur > 0 && goal > 0 && cur !== goal
               ? Math.max(0, Math.min(100, goal < cur
-                  ? ((cur - goal) / cur) * 100 // cutting: how much already lost (inverted)
-                  : ((cur / goal) * 100)))       // bulking: how close to goal
+                  ? ((cur - goal) / cur) * 100
+                  : ((cur / goal) * 100)))
               : 0;
             return (
               <div className="profile-body-goals">
@@ -416,8 +416,22 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
                   </div>
                   <div className="pbg-arrow">→</div>
                   <div className="pbg-col">
-                    <span className="pbg-label">Goal weight</span>
-                    <span className="pbg-val">{goal > 0 ? `${goal} kg` : '—'}</span>
+                    <span className="pbg-label">Goal weight (kg)</span>
+                    <input
+                      className="pbg-goal-input"
+                      type="text"
+                      inputMode="decimal"
+                      value={goalWeight}
+                      placeholder="e.g. 70"
+                      onChange={e => setGoalWeight(e.target.value)}
+                      onBlur={() => {
+                        const gw = parseFloat(goalWeight);
+                        if (!isNaN(gw) && gw > 0) {
+                          api.updateWeightSettings({ goalWeight: String(gw), currentWeight: profile.weightKg }).catch(() => {});
+                        }
+                      }}
+                      onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                    />
                   </div>
                 </div>
                 {cur > 0 && goal > 0 && (
@@ -522,7 +536,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
         </div>
 
         {/* AI Key */}
-        <div className="diet-section">
+        <div id="ai-key" className="diet-section">
           <h2 className="diet-heading">AI Key</h2>
           <p className="diet-hint">Your personal Anthropic API key is stored securely on our server and used only to power food logging. We never see the key in plaintext responses.</p>
           {aiKeyMasked && !aiKeyInput && (

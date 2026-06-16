@@ -196,9 +196,29 @@ const FoodLog: React.FC = () => {
         {/* No key notice */}
         {hasKey === false && (
           <div className="fl-no-key">
-            <span>🔑</span>
-            <p>Add your Anthropic API key in <strong>Profile → Settings ⚙ → AI Key</strong> to enable AI food logging.</p>
-            <button className="fl-no-key-btn" onClick={() => navigate('/profile')}>Go to Profile</button>
+            <span className="fl-no-key-icon">🔑</span>
+            <h3 className="fl-no-key-title">Connect your Claude account</h3>
+            <p className="fl-no-key-desc">Superdub uses your own Anthropic API key to parse food — your data stays yours and it costs fractions of a cent per meal.</p>
+            <div className="fl-no-key-steps">
+              <div className="fl-no-key-step">
+                <span className="fl-nks-num">1</span>
+                <div>
+                  <strong>Get your free API key</strong>
+                  <p>Sign up at Anthropic Console (free tier available)</p>
+                  <a className="fl-console-btn" href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer">
+                    Open Anthropic Console →
+                  </a>
+                </div>
+              </div>
+              <div className="fl-no-key-step">
+                <span className="fl-nks-num">2</span>
+                <div>
+                  <strong>Paste it in Profile</strong>
+                  <p>Copy your key (starts with <code>sk-ant-</code>) and save it in your profile settings</p>
+                  <button className="fl-no-key-btn" onClick={() => navigate('/profile#ai-key')}>Add key in Profile →</button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
