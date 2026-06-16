@@ -587,8 +587,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </div>
       )}
 
-      {/* ── Daily check-in overlay (once per day) ── */}
-      {checkinOpen && (() => {
+      {/* ── Daily check-in overlay (once per day, waits for habits to load) ── */}
+      {checkinOpen && loaded && (() => {
         const todayEntry = tracker[todayKey];
         const doneCount = todayEntry ? habits.filter(h => todayEntry.habits[h]).length : 0;
         const total = habits.length;
@@ -655,6 +655,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         );
       })()}
 
+      <div className="dashboard-scroll">
       {/* Week selector bar */}
       <div className="week-bar">
         <button
@@ -927,6 +928,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </div>
         </div>
       </section>
+      <div style={{ height: 100 }} />
+      </div>{/* /dashboard-scroll */}
     </div>
   );
 };

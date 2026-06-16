@@ -3,7 +3,7 @@ import './App.css';
 import { api } from './api';
 import WheelPicker from './WheelPicker';
 
-const CHECKIN_KEY = 'superdub.checkin';
+const CHECKIN_KEY = 'superdub.weight.checkin';
 
 function todayStr() {
   return new Date().toISOString().split('T')[0];
@@ -14,13 +14,12 @@ function yesterdayStr() {
   return d.toISOString().split('T')[0];
 }
 
-const WEIGHT_VALUES = Array.from({ length: 321 }, (_, i) => Math.round((40 + i * 0.5) * 10) / 10); // 40–200 in 0.5 steps
-const STEP_VALUES   = Array.from({ length: 101 }, (_, i) => i * 500); // 0–50000 in 500 steps
+// 40–200 kg in 0.1 steps = 1601 values
+const WEIGHT_VALUES = Array.from({ length: 1601 }, (_, i) => Math.round((40 + i * 0.1) * 10) / 10);
 
 const DailyCheckIn: React.FC = () => {
   const [show, setShow] = useState(false);
   const [weight, setWeight] = useState(75);
-  const [steps, setSteps] = useState(8000);
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
 
@@ -36,7 +35,7 @@ const DailyCheckIn: React.FC = () => {
     if (!show) return;
     api.getProfile().then((p: any) => {
       const w = parseFloat(p.weightKg);
-      if (w > 0) setWeight(Math.round(w * 2) / 2); // snap to 0.5
+      if (w > 0) setWeight(Math.round(w * 10) / 10); // snap to 0.1
     }).catch(() => {});
   }, [show]);
 
@@ -48,10 +47,7 @@ const DailyCheckIn: React.FC = () => {
   const save = async () => {
     setSaving(true);
     try {
-      await Promise.all([
-        api.updateTrackerDay(todayStr(), { weightKg: weight }),
-        api.updateTrackerDay(yesterdayStr(), { steps }),
-      ]);
+      await api.updateTrackerDay(todayStr(), { weightKg: weight });
       setDone(true);
       setTimeout(dismiss, 900);
     } catch {
@@ -66,27 +62,17 @@ const DailyCheckIn: React.FC = () => {
   return (
     <div className="checkin-overlay">
       <div className="checkin-modal">
-        <h2 className="checkin-title">Daily Check-in</h2>
-        <p className="checkin-sub">Takes 5 seconds — keeps your data accurate.</p>
+        <h2 className="checkin-title">Morning Check-in</h2>
+        <p className="checkin-subtitle">Log your weight — steps can be added later.</p>
 
-        <div className="checkin-wheels">
+        <div className="checkin-wheels checkin-wheels-single">
           <div className="checkin-wheel-col">
-            <span className="checkin-wheel-label">Today's weight</span>
+            <label>Today's weight</label>
             <WheelPicker
               values={WEIGHT_VALUES}
               selected={weight}
               onSelect={setWeight}
               format={v => `${v} kg`}
-            />
-          </div>
-          <div className="checkin-divider" />
-          <div className="checkin-wheel-col">
-            <span className="checkin-wheel-label">Yesterday's steps</span>
-            <WheelPicker
-              values={STEP_VALUES}
-              selected={steps}
-              onSelect={setSteps}
-              format={v => v.toLocaleString()}
             />
           </div>
         </div>

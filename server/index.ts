@@ -48,6 +48,17 @@ pool.query(`
     transcript TEXT DEFAULT '',
     created_at TIMESTAMPTZ DEFAULT NOW()
   );
+  DO $$ BEGIN
+    IF EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name='profile' AND column_name='antophic_api_key'
+    ) AND NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name='profile' AND column_name='anthropic_api_key'
+    ) THEN
+      ALTER TABLE profile RENAME COLUMN antophic_api_key TO anthropic_api_key;
+    END IF;
+  END $$;
 `).catch(err => console.error('[migrate]', err?.message));
 
 // Serve React build in production

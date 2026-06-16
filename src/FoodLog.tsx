@@ -81,27 +81,39 @@ const FoodLog: React.FC = () => {
     { p: 0, c: 0, f: 0, kcal: 0 }
   );
 
+  const autoSubmitRef = useRef(false);
+  const transcriptRef = useRef('');
+
   const startListening = () => {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SR) { alert('Speech recognition is not supported in this browser. Please type instead.'); return; }
+    if (!SR) { alert('Speech recognition not supported in this browser. Please type instead.'); return; }
     const r = new SR();
     r.lang = 'en-US';
     r.interimResults = true;
-    r.continuous = false;
+    r.continuous = true;
     recognitionRef.current = r;
+    transcriptRef.current = '';
+    autoSubmitRef.current = false;
     r.onresult = (e: any) => {
       const t = Array.from(e.results as any[]).map((res: any) => res[0].transcript).join('');
+      transcriptRef.current = t;
       setInput(t);
     };
-    r.onend = () => setListening(false);
-    r.onerror = () => setListening(false);
+    r.onend = () => {
+      setListening(false);
+      if (autoSubmitRef.current && transcriptRef.current.trim()) {
+        submit(transcriptRef.current);
+        autoSubmitRef.current = false;
+      }
+    };
+    r.onerror = () => { setListening(false); autoSubmitRef.current = false; };
     r.start();
     setListening(true);
   };
 
-  const stopListening = () => {
+  const stopListening = (andSubmit = false) => {
+    autoSubmitRef.current = andSubmit;
     recognitionRef.current?.stop();
-    setListening(false);
   };
 
   const submit = async (text: string) => {
@@ -263,15 +275,6 @@ const FoodLog: React.FC = () => {
         {/* Input bar */}
         {hasKey !== false && (
           <div className="fl-input-bar">
-            <button
-              className={`fl-mic-btn${listening ? ' listening' : ''}`}
-              onPointerDown={startListening}
-              onPointerUp={() => { stopListening(); if (input.trim()) submit(input); }}
-              onPointerLeave={stopListening}
-              title="Hold to speak"
-            >
-              🎙
-            </button>
             <input
               className="fl-text-input"
               type="text"
@@ -283,6 +286,16 @@ const FoodLog: React.FC = () => {
             />
             <button className="fl-send-btn" onClick={() => submit(input)} disabled={!input.trim() || parsing}>
               ↑
+            </button>
+            <button
+              className={`fl-mic-btn${listening ? ' listening' : ''}`}
+              onPointerDown={e => { e.preventDefault(); startListening(); }}
+              onPointerUp={e => { e.preventDefault(); stopListening(true); }}
+              onPointerCancel={() => stopListening(false)}
+              title="Hold to speak"
+              style={{ touchAction: 'none' }}
+            >
+              🎙
             </button>
           </div>
         )}

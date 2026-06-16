@@ -5189,3 +5189,32 @@
   border: 1px solid var(--glass-border, rgba(255,255,255,0.08));
   border-radius: 18px;
 }
+
+/* ── Step Logger inline ── */
+.step-logger-row {
+  display: flex; gap: 8px; align-items: center; margin-top: 12px;
+}
+.step-logger-input {
+  flex: 1; background: var(--glass-bg-strong, rgba(255,255,255,0.07));
+  border: 1px solid var(--glass-border, rgba(255,255,255,0.1));
+  border-radius: 10px; padding: 9px 12px; color: #e0e0e0; font-size: 0.88rem;
+}
+.step-logger-input::placeholder { color: #555; }
+.step-logger-btn {
+  padding: 9px 18px; border-radius: 10px; border: none;
+  background: var(--theme, #00e5ff); color: #000; font-size: 0.85rem;
+  font-weight: 700; cursor: pointer; white-space: nowrap;
+}
+.step-logger-btn:disabled { opacity: 0.4; cursor: default; }
+
+/* single-wheel check-in centering */
+.checkin-wheels-single { justify-content: center; }
+.checkin-wheels-single .checkin-wheel-col { max-width: 200px; }
+
+/* ── Dashboard scroll shell ── */
+.dashboard-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
