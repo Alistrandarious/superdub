@@ -573,6 +573,10 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
           </p>
         </div>
       </div>
+      <p style={{ textAlign: 'center', fontSize: '0.75rem', color: '#4b5563', marginTop: 16, paddingBottom: 8 }}>
+        By creating an account you agree to our{' '}
+        <a href="/privacy" target="_blank" rel="noreferrer" style={{ color: '#6b7280', textDecoration: 'underline' }}>Privacy Policy</a>
+      </p>
     </div>
   );
 };
