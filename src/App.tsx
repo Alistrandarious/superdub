@@ -73,7 +73,7 @@ function getWeekOfMonth(dayStr: string): number {
   return Math.ceil(day / 7);
 }
 
-const DEFAULT_HABITS = ['Walking', 'Praying', 'Duolingo'];
+const DEFAULT_HABITS: string[] = [];
 
 type HabitState = true | 'failed' | false;
 
@@ -97,7 +97,7 @@ function initData(habits: string[]): Record<string, DayData> {
   return data;
 }
 
-const INITIAL_TRACKER = initData(DEFAULT_HABITS);
+const INITIAL_TRACKER = initData([]);
 
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -121,7 +121,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   };
 
   const [name, setName] = useState('');
-  const [habits, setHabits] = useState<string[]>(DEFAULT_HABITS);
+  const [habits, setHabits] = useState<string[]>([]);
   const [newHabit, setNewHabit] = useState('');
   const [tracker, setTracker] = useState<Record<string, DayData>>(INITIAL_TRACKER);
   const [loaded, setLoaded] = useState(false);
