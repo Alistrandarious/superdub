@@ -194,8 +194,18 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   }, []);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    loadData().then(() => {
+      // Auto-mark the mandatory habit done on every app open
+      const MANDATORY = 'Logging into Superdub';
+      api.toggleTrackerHabit(todayKey, MANDATORY, true).catch(() => {});
+      setTracker(prev => {
+        if (!prev[todayKey] || prev[todayKey].habits[MANDATORY]) return prev;
+        const next = { ...prev };
+        next[todayKey] = { ...next[todayKey], habits: { ...next[todayKey].habits, [MANDATORY]: true } };
+        return next;
+      });
+    });
+  }, [loadData]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Re-sync tracker when DailyCheckIn saves weight
   useEffect(() => {

@@ -454,6 +454,7 @@ const Habits: React.FC = () => {
   const [restoringHabit, setRestoringHabit] = useState<string | null>(null);
   const [showCogMenu, setShowCogMenu] = useState(false);
   const addRef = useRef<HTMLDivElement>(null);
+  const graveyardRef = useRef<HTMLDivElement>(null);
 
   const pwaKey = `superdub.pwa.${PWA_PROMPT_VERSION}`;
   const pwaDayKey = `superdub.pwa.day.${PWA_PROMPT_VERSION}`;
@@ -655,7 +656,7 @@ const Habits: React.FC = () => {
                   <button className="cog-menu-item" onClick={() => { setShowCogMenu(false); setTimeout(() => addRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50); }}>
                     <span>＋</span> Add Habit
                   </button>
-                  <button className="cog-menu-item" onClick={() => { setShowCogMenu(false); setGraveyardOpen(true); }}>
+                  <button className="cog-menu-item" onClick={() => { setShowCogMenu(false); setGraveyardOpen(true); setTimeout(() => graveyardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80); }}>
                     <span>📦</span> Archived Habits
                   </button>
                 </div>
@@ -789,7 +790,7 @@ const Habits: React.FC = () => {
 
         {/* Archived Habits */}
         {graveyard.length > 0 && (
-          <div className="graveyard-section">
+          <div className="graveyard-section" ref={graveyardRef}>
             <button className="graveyard-toggle" onClick={() => setGraveyardOpen(g => !g)}>
               <span>📦 Archived Habits</span>
               <span className="graveyard-count">{graveyard.length}</span>

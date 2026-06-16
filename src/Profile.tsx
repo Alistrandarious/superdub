@@ -162,6 +162,17 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
     api.getAiKeyStatus().then((d: any) => { if (d.masked) setAiKeyMasked(d.masked); }).catch(() => {});
   }, []);
 
+  // Refresh current weight when DailyCheckIn saves a new weight
+  useEffect(() => {
+    const handler = () => {
+      api.getProfile().then((p: any) => {
+        if (p.weightKg) setProfile(prev => ({ ...prev, weightKg: String(p.weightKg) }));
+      }).catch(() => {});
+    };
+    window.addEventListener('superdub:tracker-updated', handler);
+    return () => window.removeEventListener('superdub:tracker-updated', handler);
+  }, []);
+
   // Debounced profile save
   const profileSaveTimer = useRef<ReturnType<typeof setTimeout>>();
   const profileRef = useRef(profile);
