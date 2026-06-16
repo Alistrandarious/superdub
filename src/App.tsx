@@ -146,8 +146,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const [activityLevel, setActivityLevel] = useState('1.4');
 
   // Load all data on mount
-  useEffect(() => {
-    Promise.all([
+  const loadData = useCallback((currentHabits?: string[]) => {
+    return Promise.all([
       api.getProfile(),
       api.getHabits(),
       api.getTracker(),
@@ -156,7 +156,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       setName(profile.name ?? '');
 
       const habitObjs = loadedHabits as { name: string }[];
-      const activeHabits = habitObjs.length > 0 ? habitObjs.map(h => h.name) : DEFAULT_HABITS;
+      const activeHabits = habitObjs.length > 0 ? habitObjs.map(h => h.name) : (currentHabits ?? DEFAULT_HABITS);
       setHabits(activeHabits);
 
       // Merge DB data into full-year tracker structure
@@ -191,6 +191,27 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
       setLoaded(true);
     }).catch(() => setLoaded(true));
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Re-sync tracker when DailyCheckIn saves weight
+  useEffect(() => {
+    const handler = () => api.getTracker().then(trackerData => {
+      setTracker(prev => {
+        const next = { ...prev };
+        (trackerData.days as any[]).forEach(row => {
+          if (next[row.day]) {
+            next[row.day] = { ...next[row.day], weight: row.weight ?? next[row.day].weight };
+          }
+        });
+        return next;
+      });
+    }).catch(() => {});
+    window.addEventListener('superdub:tracker-updated', handler);
+    return () => window.removeEventListener('superdub:tracker-updated', handler);
   }, []);
 
   // Keep a ref to latest tracker for debounced saves

@@ -100,6 +100,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
   const [gymFreq, setGymFreq] = useState('3-4');
   const [walkFreq, setWalkFreq] = useState('moderate');
   const [goalWeight, setGoalWeight] = useState('');
+  const [wsRef, setWsRef] = useState<any>({});
   const [stepTarget, setStepTarget] = useState('10000');
   const [dietGoal, setDietGoal] = useState<'cut' | 'maintain' | 'bulk'>('cut');
   const [loaded, setLoaded] = useState(false);
@@ -124,6 +125,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
       api.getDietSettings(),
     ]).then(([profileData, targetData, habitsData, wsData, settingsData]) => {
       const ws = wsData as any;
+      setWsRef(ws);
       if (ws.goalWeight) setGoalWeight(ws.goalWeight);
       const s = settingsData as any;
       if (s.goal) setDietGoal(s.goal as 'cut' | 'maintain' | 'bulk');
@@ -398,7 +400,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
             })}
           </div>
 
-          {/* Body goals */}
+          {/* Body goals — always shown so user can set goal weight */}
           {(() => {
             const cur = parseFloat(profile.weightKg) || 0;
             const goal = parseFloat(goalWeight) || 0;
@@ -427,7 +429,8 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
                       onBlur={() => {
                         const gw = parseFloat(goalWeight);
                         if (!isNaN(gw) && gw > 0) {
-                          api.updateWeightSettings({ goalWeight: String(gw), currentWeight: profile.weightKg }).catch(() => {});
+                          api.updateWeightSettings({ ...wsRef, goalWeight: String(gw), currentWeight: profile.weightKg }).catch(() => {});
+                          setWsRef((prev: any) => ({ ...prev, goalWeight: String(gw) }));
                         }
                       }}
                       onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
