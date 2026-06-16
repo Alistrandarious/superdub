@@ -51,11 +51,11 @@ const Tasks: React.FC = () => {
         <div className="header-left">
           <Link to="/" className="back-link">← Back</Link>
         </div>
-        <h1 className="title">Tasks</h1>
+        <h1 className="title">To Dos</h1>
       </header>
       <div className="tasks-content page-content">
         <div className="diet-section">
-          <h2 className="diet-heading">Additional Tasks</h2>
+          <h2 className="diet-heading">To Dos</h2>
           <div className="food-add">
             <input
               className="food-name"

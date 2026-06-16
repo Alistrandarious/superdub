@@ -447,12 +447,14 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               <span className="menu-title">menu</span>
               <button className="menu-close" onClick={() => setMenuOpen(false)} aria-label="Close menu">✕</button>
             </div>
-            <Link to="/" onClick={() => setMenuOpen(false)}>Habits</Link>
-            <Link to="/dashboard" onClick={() => setMenuOpen(false)}>Dashboard</Link>
-            <Link to="/diet" onClick={() => setMenuOpen(false)}>Diet</Link>
-            <Link to="/tasks" onClick={() => setMenuOpen(false)}>Additional Tasks</Link>
-            <Link to="/profile" onClick={() => setMenuOpen(false)}>Profile</Link>
+            <Link to="/" onClick={() => setMenuOpen(false)}>Habit Tracker</Link>
+            <Link to="/dashboard" onClick={() => setMenuOpen(false)}>Progress Overview</Link>
+            <Link to="/diet" onClick={() => setMenuOpen(false)}>Diet Maker</Link>
+            <Link to="/tasks" onClick={() => setMenuOpen(false)}>To Dos</Link>
+            <Link to="/about" onClick={() => setMenuOpen(false)}>About</Link>
             <button type="button" onClick={() => { setHabitsModalOpen(true); setMenuOpen(false); }}>Edit Habits</button>
+            <div className="menu-spacer" />
+            <Link to="/profile" onClick={() => setMenuOpen(false)}>Profile</Link>
             <button type="button" onClick={() => { setWeightPlanOpen(true); setMenuOpen(false); }}>Settings</button>
             {onLogout && <button type="button" onClick={onLogout}>Log out</button>}
           </nav>

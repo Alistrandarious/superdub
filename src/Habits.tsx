@@ -31,6 +31,36 @@ const XP_GATES: [number, number][] = [
 ];
 const GATE_LABELS = ['G0', 'G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'MAX'];
 
+// [total XP required, level title]
+const LEVEL_GATES: [number, string][] = [
+  [0,      'Rookie'],
+  [100,    'Beginner'],
+  [300,    'Novice'],
+  [700,    'Apprentice'],
+  [1500,   'Adept'],
+  [3000,   'Journeyman'],
+  [5000,   'Expert'],
+  [8000,   'Elite'],
+  [12000,  'Champion'],
+  [18000,  'Legend'],
+  [28000,  'Grandmaster'],
+  [42000,  'Mythic'],
+  [60000,  'Immortal'],
+  [85000,  'Eternal'],
+  [120000, 'Transcendent'],
+];
+
+function getPlayerLevel(totalXP: number): { level: number; title: string; progress: number; xpForNext: number | null } {
+  let idx = 0;
+  for (let i = LEVEL_GATES.length - 1; i >= 0; i--) {
+    if (totalXP >= LEVEL_GATES[i][0]) { idx = i; break; }
+  }
+  const xpForLevel = LEVEL_GATES[idx][0];
+  const xpForNext = idx < LEVEL_GATES.length - 1 ? LEVEL_GATES[idx + 1][0] : null;
+  const progress = xpForNext ? (totalXP - xpForLevel) / (xpForNext - xpForLevel) : 1;
+  return { level: idx + 1, title: LEVEL_GATES[idx][1], progress, xpForNext };
+}
+
 function todayKey(): string {
   const n = new Date();
   return `${String(n.getDate()).padStart(2, '0')}/${String(n.getMonth() + 1).padStart(2, '0')}`;
@@ -426,6 +456,8 @@ const Habits: React.FC = () => {
 
   const today = todayKey();
   const weekDays = getWeekDays();
+  const totalXPAll = habits.reduce((sum, h) => sum + computeHabitStats(h, ht, today).totalXP, 0);
+  const playerLevel = getPlayerLevel(totalXPAll);
 
   // Load habits + tracker
   useEffect(() => {
@@ -529,7 +561,16 @@ const Habits: React.FC = () => {
             <span /><span /><span />
           </button>
         </div>
-        <h1 className="title">Superdub</h1>
+        <div className="title-group">
+          <h1 className="title">Superdub</h1>
+          <div className="player-level">
+            <span className="player-level-badge">Lv.{playerLevel.level}</span>
+            <span className="player-level-name">{playerLevel.title}</span>
+            <div className="player-level-bar">
+              <div className="player-level-fill" style={{ width: `${playerLevel.progress * 100}%` }} />
+            </div>
+          </div>
+        </div>
       </header>
 
       {menuOpen && (
@@ -539,10 +580,12 @@ const Habits: React.FC = () => {
               <span className="menu-title">menu</span>
               <button className="menu-close" onClick={() => setMenuOpen(false)} aria-label="Close menu">✕</button>
             </div>
-            <Link to="/" onClick={() => setMenuOpen(false)}>Habits</Link>
-            <Link to="/dashboard" onClick={() => setMenuOpen(false)}>Dashboard</Link>
-            <Link to="/diet" onClick={() => setMenuOpen(false)}>Diet</Link>
-            <Link to="/tasks" onClick={() => setMenuOpen(false)}>Additional Tasks</Link>
+            <Link to="/" onClick={() => setMenuOpen(false)}>Habit Tracker</Link>
+            <Link to="/dashboard" onClick={() => setMenuOpen(false)}>Progress Overview</Link>
+            <Link to="/diet" onClick={() => setMenuOpen(false)}>Diet Maker</Link>
+            <Link to="/tasks" onClick={() => setMenuOpen(false)}>To Dos</Link>
+            <Link to="/about" onClick={() => setMenuOpen(false)}>About</Link>
+            <div className="menu-spacer" />
             <Link to="/profile" onClick={() => setMenuOpen(false)}>Profile</Link>
             <button type="button" onClick={() => { clearToken(); window.location.href = '/'; }}>Log out</button>
           </nav>
