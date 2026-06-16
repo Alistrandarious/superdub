@@ -288,11 +288,10 @@ const FeaturedCarousel: React.FC<{
 
   return (
     <div className="featured-wrap">
-      <p className="featured-section-label">Featured Habits</p>
+      <p className="featured-section-label">Discover Habits</p>
       <div className={`featured-card ${card.bgClass}`} style={{ '--featured-accent': card.accent } as React.CSSProperties}>
         <div className="featured-icon-bg">{card.icon}</div>
         <div className="featured-content">
-          <p className="featured-tag">Featured</p>
           <h3 className="featured-name">{card.name}</h3>
           <p className="featured-tagline">{card.tagline}</p>
           <button
@@ -613,8 +612,7 @@ const Habits: React.FC = () => {
     );
   }
 
-  const featuredHabits = habits.filter(h => FEATURED_NAMES.has(h) && h !== MANDATORY_HABIT);
-  const otherHabits = habits.filter(h => !FEATURED_NAMES.has(h) && h !== MANDATORY_HABIT);
+  const yourHabits = habits.filter(h => h !== MANDATORY_HABIT);
 
   return (
     <div className="app" style={{ '--theme': '#0a84ff', '--theme-dim': '#0a84ff66', '--theme-glow': '#0a84ff22' } as React.CSSProperties}>
@@ -720,43 +718,15 @@ const Habits: React.FC = () => {
           </div>
         </div>
 
-        {/* Featured Habits — ones the user has added from the carousel */}
-        {featuredHabits.length > 0 && (
-          <div className="habits-section">
-            <div className="habits-section-head">
-              <h2 className="habits-section-title">Featured Habits</h2>
-              <span className="habits-count">{featuredHabits.length}</span>
-            </div>
-            <div className="habits-grid">
-              {featuredHabits.map(habit => {
-                const stats = computeHabitStats(habit, ht, today, startDates[habit]);
-                return (
-                  <HabitCard
-                    key={habit}
-                    habit={habit}
-                    startDate={startDates[habit] ?? null}
-                    stats={stats}
-                    weekDays={weekDays}
-                    ht={ht}
-                    today={today}
-                    onToggleDay={handleToggleDay}
-                    onRequestRemove={setPendingRemove}
-                  />
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Your own habits */}
-        {otherHabits.length > 0 && (
+        {/* All user habits in one section */}
+        {yourHabits.length > 0 && (
           <div className="habits-section">
             <div className="habits-section-head">
               <h2 className="habits-section-title">Your Habits</h2>
-              <span className="habits-count">{otherHabits.length}</span>
+              <span className="habits-count">{yourHabits.length}</span>
             </div>
             <div className="habits-grid">
-              {otherHabits.map(habit => {
+              {yourHabits.map(habit => {
                 const stats = computeHabitStats(habit, ht, today, startDates[habit]);
                 return (
                   <HabitCard
@@ -776,7 +746,7 @@ const Habits: React.FC = () => {
           </div>
         )}
 
-        {habits.filter(h => h !== MANDATORY_HABIT).length === 0 && (
+        {yourHabits.length === 0 && (
           <div className="habits-empty">
             <p>No habits yet. Add one below or join a featured habit above.</p>
           </div>
