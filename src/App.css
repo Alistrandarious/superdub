@@ -71,6 +71,7 @@
   height: 64px;
   flex-shrink: 0;
   position: relative;
+  z-index: 200;
   background: rgba(8,10,20,0.85);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   backdrop-filter: blur(20px) saturate(180%);
@@ -3842,6 +3843,18 @@
   box-shadow: 0 0 8px var(--theme-glow);
 }
 
+.hcard-day.failed .hcard-day-circle {
+  background: rgba(255,69,58,0.12);
+  border-color: #ff453a;
+}
+
+.hcard-day-fail {
+  font-size: 0.65rem;
+  color: #ff453a;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .hcard-day.future .hcard-day-circle {
   opacity: 0.3;
 }
@@ -3880,6 +3893,10 @@
   color: rgba(255,255,255,0.55);
 }
 
+.hcard-day.failed .hcard-day-label {
+  color: rgba(255,69,58,0.6);
+}
+
 .hcard-day.is-today .hcard-day-label {
   color: var(--theme);
 }
@@ -3901,19 +3918,25 @@
   transition: all 0.18s;
 }
 
-.hcard-today-btn:hover:not(.done) {
-  border-color: var(--theme);
-  color: var(--theme);
-  background: var(--theme-glow);
-  box-shadow: 0 0 16px var(--theme-glow);
-}
 
 .hcard-today-btn.done {
   border-color: var(--theme);
   color: var(--theme);
   background: var(--theme-glow);
   box-shadow: 0 0 14px var(--theme-glow);
-  cursor: default;
+}
+
+.hcard-today-btn.failed {
+  border-color: #ff453a;
+  color: #ff453a;
+  background: rgba(255,69,58,0.1);
+}
+
+.hcard-today-btn:hover:not(.done):not(.failed) {
+  border-color: var(--theme);
+  color: var(--theme);
+  background: var(--theme-glow);
+  box-shadow: 0 0 16px var(--theme-glow);
 }
 
 /* =====================================================================
@@ -5172,12 +5195,12 @@
   transition: color 0.15s, background 0.15s;
 }
 .habits-cog-btn:hover, .habits-cog-btn:active { color: #e0e0e0; background: rgba(255,255,255,0.08); }
-.cog-menu-overlay { position: fixed; inset: 0; z-index: 90; }
+.cog-menu-overlay { position: fixed; inset: 0; z-index: 190; }
 .cog-menu {
   position: absolute; top: calc(100% + 6px); right: 0;
   background: #1c1c2e; border: 1px solid rgba(255,255,255,0.12);
   border-radius: 12px; padding: 6px; min-width: 170px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5); z-index: 100;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5); z-index: 210;
 }
 .cog-menu-item {
   display: flex; align-items: center; gap: 10px; width: 100%;

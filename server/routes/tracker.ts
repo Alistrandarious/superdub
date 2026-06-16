@@ -5,10 +5,8 @@ import { requireAuth, AuthRequest } from '../middleware/auth';
 const router = Router();
 
 // Normalise any day value to DD/MM — the format used as tracker state keys.
-// DailyCheckIn sends ISO "YYYY-MM-DD"; everything else sends "DD/MM".
 function dayToDDMM(day: string): string {
   if (/^\d{4}-\d{2}-\d{2}/.test(day)) {
-    // ISO "2026-06-16" → "16/06"
     const parts = day.slice(0, 10).split('-');
     return `${parts[2]}/${parts[1]}`;
   }
@@ -19,11 +17,15 @@ router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
     const [daysRes, habitsRes] = await Promise.all([
       pool.query('SELECT day, weight, calories, protein, carbs, fats, steps FROM tracker WHERE user_id = $1', [req.userId]),
-      pool.query('SELECT day, habit_name, done FROM tracker_habits WHERE user_id = $1', [req.userId]),
+      pool.query('SELECT day, habit_name, done, state FROM tracker_habits WHERE user_id = $1', [req.userId]),
     ]);
-    // Normalise any ISO-stored days to DD/MM so they match client state keys
     const days = daysRes.rows.map((r: any) => ({ ...r, day: dayToDDMM(String(r.day)) }));
-    const habits = habitsRes.rows.map((r: any) => ({ ...r, day: dayToDDMM(String(r.day)) }));
+    const habits = habitsRes.rows.map((r: any) => ({
+      day: dayToDDMM(String(r.day)),
+      habit_name: r.habit_name,
+      // Prefer explicit state column; fall back to done boolean for old rows
+      state: (r.state as string | null) ?? (r.done ? 'done' : null),
+    }));
     res.json({ days, habits });
   } catch {
     res.status(500).json({ error: 'Server error' });
@@ -35,7 +37,6 @@ router.patch('/', requireAuth as any, async (req: AuthRequest, res: Response) =>
     const { day: rawDay, weight, calories, protein, carbs, fats, steps } = req.body;
     if (!rawDay) return res.status(400).json({ error: 'day required' });
     const day = dayToDDMM(rawDay);
-    // Upsert row, then only SET the fields that were actually sent
     await pool.query(
       `INSERT INTO tracker (user_id, day, weight, calories, protein, carbs, fats, steps)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -55,24 +56,29 @@ router.patch('/', requireAuth as any, async (req: AuthRequest, res: Response) =>
        steps     != null ? String(steps)     : null]
     );
     res.json({ ok: true });
-  } catch {
+  } catch (err: any) {
+    console.error('[tracker PATCH]', err?.message);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
 router.patch('/habit', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
-    const { day: rawDay, habitName, done } = req.body;
+    const { day: rawDay, habitName, state } = req.body;
     if (!rawDay || !habitName) return res.status(400).json({ error: 'day and habitName required' });
     const day = dayToDDMM(rawDay);
+    // state: 'done' | 'failed' | null (null = blank / remove)
+    const validState = state === 'done' || state === 'failed' ? state : null;
+    const done = validState === 'done';
     await pool.query(
-      `INSERT INTO tracker_habits (user_id, day, habit_name, done)
-       VALUES ($1, $2, $3, $4)
-       ON CONFLICT (user_id, day, habit_name) DO UPDATE SET done = EXCLUDED.done`,
-      [req.userId, day, habitName, !!done]
+      `INSERT INTO tracker_habits (user_id, day, habit_name, done, state)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (user_id, day, habit_name) DO UPDATE SET done = EXCLUDED.done, state = EXCLUDED.state`,
+      [req.userId, day, habitName, done, validState]
     );
     res.json({ ok: true });
-  } catch {
+  } catch (err: any) {
+    console.error('[tracker/habit PATCH]', err?.message);
     res.status(500).json({ error: 'Server error' });
   }
 });

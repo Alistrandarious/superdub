@@ -57,8 +57,8 @@ export const api = {
   getTracker: (): Promise<{ days: any[]; habits: any[] }> => request('/tracker'),
   updateTrackerDay: (day: string, data: object) =>
     request('/tracker', { method: 'PATCH', body: JSON.stringify({ day, ...data }) }),
-  toggleTrackerHabit: (day: string, habitName: string, done: boolean) =>
-    request('/tracker/habit', { method: 'PATCH', body: JSON.stringify({ day, habitName, done }) }),
+  toggleTrackerHabit: (day: string, habitName: string, state: 'done' | 'failed' | null) =>
+    request('/tracker/habit', { method: 'PATCH', body: JSON.stringify({ day, habitName, state }) }),
 
   // tasks
   getTasks: () => request('/tasks'),

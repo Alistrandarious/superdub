@@ -197,7 +197,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     loadData().then(() => {
       // Auto-mark the mandatory habit done on every app open
       const MANDATORY = 'Logging into Superdub';
-      api.toggleTrackerHabit(todayKey, MANDATORY, true).catch(() => {});
+      api.toggleTrackerHabit(todayKey, MANDATORY, 'done').catch(() => {});
       setTracker(prev => {
         if (!prev[todayKey] || prev[todayKey].habits[MANDATORY]) return prev;
         const next = { ...prev };
@@ -397,7 +397,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       ...prev,
       [day]: { ...prev[day], habits: { ...prev[day].habits, [habit]: newDone } }
     }));
-    api.toggleTrackerHabit(day, habit, newDone).catch(() => {});
+    api.toggleTrackerHabit(day, habit, newDone ? 'done' : null).catch(() => {});
   };
 
   const addHabit = () => {

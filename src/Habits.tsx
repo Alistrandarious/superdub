@@ -89,18 +89,8 @@ function getWeekDays(): { key: string; label: string; isFuture: boolean; isToday
   });
 }
 
-function getRank(totalDays: number, startDate?: string | null): { title: string; color: string } {
-  // If habit started within last 7 days (new or restored) → 6ft Under
-  if (startDate) {
-    const key = startDateToKey(startDate);
-    if (key) {
-      const startIdx = ALL_DAYS.indexOf(key);
-      const todayIdx = ALL_DAYS.indexOf(todayKey());
-      if (startIdx >= 0 && todayIdx - startIdx < 7) {
-        return { title: '6ft Under', color: '#555' };
-      }
-    }
-  }
+function getRank(totalDays: number): { title: string; color: string } {
+  if (totalDays === 0)  return { title: '6ft Under', color: '#555' };
   if (totalDays >= 365) return { title: 'Master', color: '#ffd700' };
   if (totalDays >= 100) return { title: 'In the Hundreds', color: '#0a84ff' };
   if (totalDays >= 50)  return { title: 'Habit Tracking Superstar', color: '#ff9500' };
@@ -133,9 +123,12 @@ interface HabitStats {
   misses: number;
 }
 
+type HabitState = 'done' | 'failed' | null;
+type HabitTracker = Record<string, Record<string, HabitState>>;
+
 function computeHabitStats(
   habit: string,
-  ht: Record<string, Record<string, boolean>>,
+  ht: HabitTracker,
   today: string,
   startDate?: string | null
 ): HabitStats {
@@ -144,9 +137,6 @@ function computeHabitStats(
     return { streak: 0, totalDays: 0, totalXP: 0, currentGateIndex: 0, xpPerDay: 10, nextGateAt: 7, gateProgress: 0, misses: 0 };
   }
 
-  // Determine where this habit's history starts.
-  // If no start_date, anchor at the first day it was ever done (prevents treating
-  // all past un-done days as misses for habits added before start_date tracking).
   let startIdx = 0;
   if (startDate) {
     const key = startDateToKey(startDate);
@@ -155,7 +145,7 @@ function computeHabitStats(
       if (si >= 0) startIdx = si;
     }
   } else {
-    const firstDone = ALL_DAYS.findIndex(d => !!ht[d]?.[habit]);
+    const firstDone = ALL_DAYS.findIndex(d => ht[d]?.[habit] === 'done');
     startIdx = firstDone >= 0 ? firstDone : todayIdx;
   }
 
@@ -165,8 +155,8 @@ function computeHabitStats(
 
   for (let i = startIdx; i <= todayIdx; i++) {
     const day = ALL_DAYS[i];
-    const done = !!ht[day]?.[habit];
-    if (done) {
+    const state = ht[day]?.[habit];
+    if (state === 'done') {
       rollingStreak++;
       totalDays++;
       const snap = rollingStreak;
@@ -177,27 +167,27 @@ function computeHabitStats(
     }
   }
 
-  // Consecutive misses before today — only days strictly after the start day
+  // Consecutive misses (done=null or failed) before today
   let misses = 0;
   if (totalDays > 0) {
     for (let i = todayIdx - 1; i > startIdx && i >= todayIdx - 4; i--) {
-      if (!ht[ALL_DAYS[i]]?.[habit]) misses++;
+      if (ht[ALL_DAYS[i]]?.[habit] !== 'done') misses++;
       else break;
     }
   }
 
-  // Streak (allow 1-grace miss), only from startIdx
+  // Streak with 1-grace for blank days; 'failed' gets no grace
   let streak = 0;
   if (misses < 2) {
-    const todayDone = !!ht[today]?.[habit];
+    const todayState = ht[today]?.[habit];
     let graceUsed = false;
-    let idx = todayDone ? todayIdx : todayIdx - 1;
+    let idx = todayState === 'done' ? todayIdx : todayIdx - 1;
     while (idx >= startIdx) {
-      const done = !!ht[ALL_DAYS[idx]]?.[habit];
-      if (done) {
+      const state = ht[ALL_DAYS[idx]]?.[habit];
+      if (state === 'done') {
         streak++;
         idx--;
-      } else if (!graceUsed) {
+      } else if (state !== 'failed' && !graceUsed) {
         graceUsed = true;
         idx--;
       } else {
@@ -329,24 +319,29 @@ const FeaturedCarousel: React.FC<{
   );
 };
 
+function cycleState(current: HabitState): HabitState {
+  if (current === null || current === undefined) return 'done';
+  if (current === 'done') return 'failed';
+  return null;
+}
+
 const HabitCard: React.FC<{
   habit: string;
   startDate: string | null;
   stats: HabitStats;
   weekDays: ReturnType<typeof getWeekDays>;
-  ht: Record<string, Record<string, boolean>>;
+  ht: HabitTracker;
   today: string;
-  onToggleDay: (habit: string, dayKey: string, done: boolean) => void;
+  onToggleDay: (habit: string, dayKey: string, state: HabitState) => void;
   onRequestRemove: (habit: string) => void;
   isMandatory?: boolean;
 }> = ({ habit, startDate, stats, weekDays, ht, today, onToggleDay, onRequestRemove, isMandatory }) => {
-  const rank = getRank(stats.totalDays, startDate);
-  const todayDone = !!ht[today]?.[habit];
+  const rank = getRank(stats.totalDays);
+  const todayState = ht[today]?.[habit] ?? null;
   const isFlame = stats.streak >= 7;
   const hasDanger = stats.misses >= 2;
-  const hasWarning = stats.misses === 1 && !todayDone;
+  const hasWarning = stats.misses === 1 && todayState !== 'done';
 
-  // Pre-compute start index so days before the habit began render as neutral (not missed)
   const startKey = startDateToKey(startDate);
   const startDayIdx = startKey ? ALL_DAYS.indexOf(startKey) : -1;
 
@@ -405,19 +400,20 @@ const HabitCard: React.FC<{
 
       <div className="hcard-week">
         {weekDays.map(({ key, label, isFuture, isToday }) => {
-          const done = !!ht[key]?.[habit];
+          const state = ht[key]?.[habit] ?? null;
           const dayIdx = ALL_DAYS.indexOf(key);
           const isBeforeStart = startDayIdx >= 0 && dayIdx < startDayIdx;
           const disabled = isFuture || isBeforeStart;
           return (
-            <div key={key} className={`hcard-day ${done && !isBeforeStart ? 'done' : ''} ${isFuture ? 'future' : ''} ${isToday ? 'is-today' : ''} ${isBeforeStart ? 'before-start' : ''}`}>
+            <div key={key} className={`hcard-day ${state === 'done' && !isBeforeStart ? 'done' : ''} ${state === 'failed' && !isBeforeStart ? 'failed' : ''} ${isFuture ? 'future' : ''} ${isToday ? 'is-today' : ''} ${isBeforeStart ? 'before-start' : ''}`}>
               <button
                 className="hcard-day-circle"
                 disabled={disabled}
-                onClick={() => !disabled && onToggleDay(habit, key, !done)}
-                aria-label={`${done ? 'Unmark' : 'Mark'} ${label}`}
+                onClick={() => !disabled && onToggleDay(habit, key, cycleState(state))}
+                aria-label={`${label}: ${state ?? 'blank'}`}
               >
-                {done && !disabled && <span className="hcard-day-tick">{isFlame && done ? '🔥' : '✓'}</span>}
+                {state === 'done' && !disabled && <span className="hcard-day-tick">{isFlame ? '🔥' : '✓'}</span>}
+                {state === 'failed' && !disabled && <span className="hcard-day-tick hcard-day-fail">✗</span>}
               </button>
               <span className="hcard-day-label">{label}</span>
             </div>
@@ -426,10 +422,10 @@ const HabitCard: React.FC<{
       </div>
 
       <button
-        className={`hcard-today-btn ${todayDone ? 'done' : ''}`}
-        onClick={() => onToggleDay(habit, today, !todayDone)}
+        className={`hcard-today-btn ${todayState === 'done' ? 'done' : ''} ${todayState === 'failed' ? 'failed' : ''}`}
+        onClick={() => onToggleDay(habit, today, cycleState(todayState))}
       >
-        {todayDone ? '✓ Done today' : '+ Mark done today'}
+        {todayState === 'done' ? '✓ Done today' : todayState === 'failed' ? '✗ Failed today — tap to clear' : '+ Mark done today'}
       </button>
     </div>
   );
@@ -444,7 +440,7 @@ const Habits: React.FC = () => {
   const navigate = useNavigate();
   const [habits, setHabits] = useState<string[]>([]);
   const [startDates, setStartDates] = useState<Record<string, string | null>>({});
-  const [ht, setHt] = useState<Record<string, Record<string, boolean>>>({});
+  const [ht, setHt] = useState<HabitTracker>({});
   const [weather, setWeather] = useState<WeatherState | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [newHabit, setNewHabit] = useState('');
@@ -507,15 +503,15 @@ const Habits: React.FC = () => {
       setGraveyard(graveyardData);
 
       const tod = todayKey();
-      const map: Record<string, Record<string, boolean>> = {};
+      const map: HabitTracker = {};
       ALL_DAYS.forEach(d => { map[d] = {}; });
-      names.forEach(name => ALL_DAYS.forEach(d => { map[d][name] = false; }));
+      names.forEach(name => ALL_DAYS.forEach(d => { map[d][name] = null; }));
       (trackerData.habits as any[]).forEach(row => {
-        if (map[row.day]) map[row.day][row.habit_name] = row.done;
+        if (map[row.day]) map[row.day][row.habit_name] = row.state as HabitState;
       });
-      // Auto-mark mandatory habit done for today (logging in = doing the habit)
-      map[tod] = { ...map[tod], [MANDATORY_HABIT]: true };
-      api.toggleTrackerHabit(tod, MANDATORY_HABIT, true).catch(() => {});
+      // Auto-mark mandatory habit done for today
+      map[tod] = { ...map[tod], [MANDATORY_HABIT]: 'done' };
+      api.toggleTrackerHabit(tod, MANDATORY_HABIT, 'done').catch(() => {});
 
       setHt(map);
       setLoaded(true);
@@ -542,9 +538,9 @@ const Habits: React.FC = () => {
     );
   }, []);
 
-  const handleToggleDay = useCallback((habit: string, dayKey: string, done: boolean) => {
-    setHt(prev => ({ ...prev, [dayKey]: { ...prev[dayKey], [habit]: done } }));
-    api.toggleTrackerHabit(dayKey, habit, done).catch(() => {});
+  const handleToggleDay = useCallback((habit: string, dayKey: string, state: HabitState) => {
+    setHt(prev => ({ ...prev, [dayKey]: { ...prev[dayKey], [habit]: state } }));
+    api.toggleTrackerHabit(dayKey, habit, state).catch(() => {});
   }, []);
 
   const handleAddFeatured = useCallback((name: string) => {
@@ -555,7 +551,7 @@ const Habits: React.FC = () => {
     setStartDates(prev => ({ ...prev, [name]: today }));
     setHt(prev => {
       const next = { ...prev };
-      ALL_DAYS.forEach(d => { next[d] = { ...next[d], [name]: false }; });
+      ALL_DAYS.forEach(d => { next[d] = { ...next[d], [name]: null }; });
       return next;
     });
     api.updateHabits(updated).catch(() => {});
@@ -570,7 +566,7 @@ const Habits: React.FC = () => {
     setStartDates(prev => ({ ...prev, [n]: startDate }));
     setHt(prev => {
       const next = { ...prev };
-      ALL_DAYS.forEach(d => { next[d] = { ...next[d], [n]: false }; });
+      ALL_DAYS.forEach(d => { next[d] = { ...next[d], [n]: null }; });
       return next;
     });
     setNewHabit('');
@@ -599,7 +595,7 @@ const Habits: React.FC = () => {
       setStartDates(prev => ({ ...prev, [name]: today }));
       setHt(prev => {
         const next = { ...prev };
-        ALL_DAYS.forEach(d => { next[d] = { ...next[d], [name]: false }; });
+        ALL_DAYS.forEach(d => { next[d] = { ...next[d], [name]: null }; });
         return next;
       });
       setGraveyard(prev => prev.filter(h => h.name !== name));
@@ -724,8 +720,6 @@ const Habits: React.FC = () => {
           </div>
         </div>
 
-        <FeaturedCarousel userHabits={habits} onAdd={handleAddFeatured} />
-
         {/* Featured Habits — ones the user has added from the carousel */}
         {featuredHabits.length > 0 && (
           <div className="habits-section">
@@ -782,7 +776,7 @@ const Habits: React.FC = () => {
           </div>
         )}
 
-        {habits.length === 0 && (
+        {habits.filter(h => h !== MANDATORY_HABIT).length === 0 && (
           <div className="habits-empty">
             <p>No habits yet. Add one below or join a featured habit above.</p>
           </div>
@@ -834,6 +828,9 @@ const Habits: React.FC = () => {
             <button className="habit-add-btn" onClick={addHabit}>+</button>
           </div>
         </div>
+
+        {/* Featured Habits Carousel — browse & join new habits */}
+        <FeaturedCarousel userHabits={habits} onAdd={handleAddFeatured} />
 
         <div style={{ height: 100 }} />
       </div>
