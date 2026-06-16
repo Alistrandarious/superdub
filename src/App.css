@@ -2803,6 +2803,96 @@
 }
 
 /* =====================================================================
+   PWA INSTALL BANNER
+   ===================================================================== */
+.pwa-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 20px 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  animation: fadeUp 0.3s cubic-bezier(0.22,1,0.36,1) both;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pwa-banner-icon {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.pwa-banner-text {
+  flex: 1;
+  min-width: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.pwa-banner-text strong {
+  font-size: 0.85rem;
+  color: #fff;
+  font-weight: 600;
+}
+
+.pwa-banner-text span {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.4);
+}
+
+.pwa-banner-btn {
+  background: var(--theme);
+  color: #000;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+}
+
+.pwa-banner-btn:hover { opacity: 0.85; }
+
+.pwa-banner-dismiss {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.3);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+
+.pwa-banner-dismiss:hover { color: rgba(255,255,255,0.7); }
+
+.pwa-banner-never {
+  width: 100%;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.25);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.7rem;
+  cursor: pointer;
+  padding: 2px 0;
+  text-align: left;
+  text-decoration: underline;
+  transition: color 0.15s;
+}
+
+.pwa-banner-never:hover { color: rgba(255,255,255,0.5); }
+
+/* =====================================================================
    FEATURED CAROUSEL
    ===================================================================== */
 .featured-wrap {

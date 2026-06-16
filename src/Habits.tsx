@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom';
 import './App.css';
 import { api, clearToken } from './api';
 
+/* bump this string on each major update to reset "don't show again" */
+const PWA_PROMPT_VERSION = '1.0';
+
 /* ── helpers ─────────────────────────────────────────────── */
 
 const YEAR = 2026;
@@ -383,6 +386,40 @@ const Habits: React.FC = () => {
   const [loaded, setLoaded] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // PWA install prompt — once per day, unless "don't show again" for this version
+  const pwaKey = `superdub.pwa.${PWA_PROMPT_VERSION}`;
+  const pwaDayKey = `superdub.pwa.day.${PWA_PROMPT_VERSION}`;
+  const todayStr = new Date().toDateString();
+  const [showInstall, setShowInstall] = useState(() => {
+    if (localStorage.getItem(pwaKey) === 'dismissed') return false;
+    if (localStorage.getItem(pwaDayKey) === todayStr) return false;
+    return true;
+  });
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    const handler = (e: Event) => { e.preventDefault(); setDeferredPrompt(e); };
+    window.addEventListener('beforeinstallprompt', handler as any);
+    return () => window.removeEventListener('beforeinstallprompt', handler as any);
+  }, []);
+
+  const dismissInstall = () => {
+    localStorage.setItem(pwaDayKey, todayStr);
+    setShowInstall(false);
+  };
+  const neverShowInstall = () => {
+    localStorage.setItem(pwaKey, 'dismissed');
+    setShowInstall(false);
+  };
+  const triggerInstall = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      setDeferredPrompt(null);
+    }
+    neverShowInstall();
+  };
+
   const today = todayKey();
   const weekDays = getWeekDays();
 
@@ -510,6 +547,20 @@ const Habits: React.FC = () => {
 
       <div className="habits-page-scroll">
         <WeatherBar weather={weather} />
+
+        {showInstall && (
+          <div className="pwa-banner">
+            <span className="pwa-banner-icon">📲</span>
+            <div className="pwa-banner-text">
+              <strong>Add to Home Screen</strong>
+              <span>Get the full app experience</span>
+            </div>
+            <button className="pwa-banner-btn" onClick={triggerInstall}>Install</button>
+            <button className="pwa-banner-dismiss" onClick={dismissInstall} title="Hide for today">✕</button>
+            <button className="pwa-banner-never" onClick={neverShowInstall}>Don't show again</button>
+          </div>
+        )}
+
         <FeaturedCarousel userHabits={habits} onAdd={handleAddFeatured} />
 
         <div className="habits-section">
