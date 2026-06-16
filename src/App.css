@@ -3158,7 +3158,7 @@
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  padding-bottom: 48px;
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
 }
 
 /* =====================================================================
@@ -3746,6 +3746,15 @@
 
 .hcard-day.future .hcard-day-circle {
   opacity: 0.3;
+}
+
+.hcard-day.before-start .hcard-day-circle {
+  opacity: 0.15;
+  border-style: dashed;
+}
+
+.hcard-day.before-start .hcard-day-label {
+  opacity: 0.2;
 }
 
 .hcard-day.is-today .hcard-day-circle {
@@ -4610,6 +4619,45 @@
   border-color: #00e5ff;
   color: #00e5ff;
   box-shadow: 0 0 12px rgba(0,229,255,0.15);
+}
+
+/* =====================================================================
+   DIET — PLAN LABEL RENAME
+   ===================================================================== */
+.plan-label-text {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  cursor: text;
+  border-bottom: 1px dashed rgba(255,255,255,0.2);
+  padding-bottom: 1px;
+  transition: border-color 0.15s;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plan-label-text:hover {
+  border-color: rgba(0,229,255,0.5);
+  color: #00e5ff;
+}
+
+.plan-label-input {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(0,229,255,0.5);
+  border-radius: 8px;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  outline: none;
+  flex: 1;
+  min-width: 0;
+  box-shadow: 0 0 10px rgba(0,229,255,0.15);
 }
 
 /* =====================================================================

@@ -312,6 +312,8 @@ const Diet: React.FC = () => {
   const [calorieLock, setCalorieLock] = useState(false);
   const [plans, setPlans] = useState<SavedPlan[]>([]);
   const [expandedPlan, setExpandedPlan] = useState<string | null>(null);
+  const [editingPlanId, setEditingPlanId] = useState<string | null>(null);
+  const [editingPlanLabel, setEditingPlanLabel] = useState('');
   const [dietFilters, setDietFilters] = useState<string[]>([]);
   const [loaded, setLoaded] = useState(false);
 
@@ -504,6 +506,19 @@ const Diet: React.FC = () => {
     api.deleteDietPlan(id).catch(() => {});
   };
 
+  const startRenamePlan = (plan: SavedPlan) => {
+    setEditingPlanId(plan.id);
+    setEditingPlanLabel(plan.label);
+  };
+
+  const commitRenamePlan = (id: string) => {
+    const label = editingPlanLabel.trim();
+    if (!label) { setEditingPlanId(null); return; }
+    setPlans(prev => prev.map(p => p.id === id ? { ...p, label } : p));
+    setEditingPlanId(null);
+    api.renameDietPlan(id, label).catch(() => {});
+  };
+
   const pieData = [
     { name: 'Protein', value: target.protein * 4, color: MACRO_COLORS.protein },
     { name: 'Carbs', value: target.carbs * 4, color: MACRO_COLORS.carbs },
@@ -694,8 +709,27 @@ const Diet: React.FC = () => {
               {plans.map(plan => (
                 <div key={plan.id} className="plan-card">
                   <div className="plan-card-head">
-                    <h3>{plan.label}</h3>
-                    <div style={{ display: 'flex', gap: 8 }}>
+                    {editingPlanId === plan.id ? (
+                      <input
+                        className="plan-label-input"
+                        value={editingPlanLabel}
+                        autoFocus
+                        onChange={e => setEditingPlanLabel(e.target.value)}
+                        onBlur={() => commitRenamePlan(plan.id)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') commitRenamePlan(plan.id);
+                          if (e.key === 'Escape') setEditingPlanId(null);
+                        }}
+                        maxLength={80}
+                      />
+                    ) : (
+                      <h3
+                        className="plan-label-text"
+                        onClick={() => startRenamePlan(plan)}
+                        title="Tap to rename"
+                      >{plan.label}</h3>
+                    )}
+                    <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
                       <button className="plan-toggle" onClick={() => setExpandedPlan(expandedPlan === plan.id ? null : plan.id)}>
                         {expandedPlan === plan.id ? 'Hide' : 'View meals'}
                       </button>

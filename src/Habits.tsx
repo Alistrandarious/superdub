@@ -340,6 +340,10 @@ const HabitCard: React.FC<{
   const hasDanger = stats.misses >= 2;
   const hasWarning = stats.misses === 1 && !todayDone;
 
+  // Pre-compute start index so days before the habit began render as neutral (not missed)
+  const startKey = startDateToKey(startDate);
+  const startDayIdx = startKey ? ALL_DAYS.indexOf(startKey) : -1;
+
   const gateDots = XP_GATES.map(([t], i) => ({
     label: GATE_LABELS[i],
     reached: stats.streak >= t || (t === 0),
@@ -393,15 +397,18 @@ const HabitCard: React.FC<{
       <div className="hcard-week">
         {weekDays.map(({ key, label, isFuture, isToday }) => {
           const done = !!ht[key]?.[habit];
+          const dayIdx = ALL_DAYS.indexOf(key);
+          const isBeforeStart = startDayIdx >= 0 && dayIdx < startDayIdx;
+          const disabled = isFuture || isBeforeStart;
           return (
-            <div key={key} className={`hcard-day ${done ? 'done' : ''} ${isFuture ? 'future' : ''} ${isToday ? 'is-today' : ''}`}>
+            <div key={key} className={`hcard-day ${done && !isBeforeStart ? 'done' : ''} ${isFuture ? 'future' : ''} ${isToday ? 'is-today' : ''} ${isBeforeStart ? 'before-start' : ''}`}>
               <button
                 className="hcard-day-circle"
-                disabled={isFuture}
-                onClick={() => !isFuture && onToggleDay(habit, key, !done)}
+                disabled={disabled}
+                onClick={() => !disabled && onToggleDay(habit, key, !done)}
                 aria-label={`${done ? 'Unmark' : 'Mark'} ${label}`}
               >
-                {done && !isFuture && <span className="hcard-day-tick">{isFlame && done ? '🔥' : '✓'}</span>}
+                {done && !disabled && <span className="hcard-day-tick">{isFlame && done ? '🔥' : '✓'}</span>}
               </button>
               <span className="hcard-day-label">{label}</span>
             </div>

@@ -92,6 +92,20 @@ router.post('/plans', requireAuth as any, async (req: AuthRequest, res: Response
   }
 });
 
+router.patch('/plans/:id', requireAuth as any, async (req: AuthRequest, res: Response) => {
+  try {
+    const { label } = req.body as { label: string };
+    if (!label || typeof label !== 'string') return res.status(400).json({ error: 'label required' });
+    await pool.query(
+      'UPDATE diet_plans SET label = $1 WHERE id = $2 AND user_id = $3',
+      [label.trim().slice(0, 80), req.params.id, req.userId]
+    );
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 router.delete('/plans/:id', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
     await pool.query('DELETE FROM diet_plans WHERE id = $1 AND user_id = $2', [req.params.id, req.userId]);

@@ -79,6 +79,8 @@ export const api = {
   createDietPlan: (plan: object) =>
     request('/diet/plans', { method: 'POST', body: JSON.stringify(plan) }),
   deleteDietPlan: (id: string) => request(`/diet/plans/${id}`, { method: 'DELETE' }),
+  renameDietPlan: (id: string, label: string) =>
+    request(`/diet/plans/${id}`, { method: 'PATCH', body: JSON.stringify({ label }) }),
 
   // weight settings
   getWeightSettings: () => request('/weight-settings'),
