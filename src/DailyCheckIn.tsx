@@ -21,20 +21,7 @@ const DailyCheckIn: React.FC = () => {
   const [done, setDone]     = useState(false);
   const [error, setError]   = useState<string | null>(null);
 
-  useEffect(() => {
-    if (localStorage.getItem(CHECKIN_KEY) === todayStr()) return;
-    const t = setTimeout(() => setShow(true), 800);
-    return () => clearTimeout(t);
-  }, []);
-
-  useEffect(() => {
-    const handler = () => { setDone(false); setError(null); setShow(true); };
-    window.addEventListener('superdub:show-checkin', handler);
-    return () => window.removeEventListener('superdub:show-checkin', handler);
-  }, []);
-
-  useEffect(() => {
-    if (!show) return;
+  const applyProfileWeight = () => {
     api.getProfile().then((p: any) => {
       const w = parseFloat(p.weightKg);
       if (w > 0) {
@@ -42,7 +29,25 @@ const DailyCheckIn: React.FC = () => {
         setDecKg(Math.round((w % 1) / 0.05) * 0.05);
       }
     }).catch(() => {});
-  }, [show]);
+  };
+
+  useEffect(() => {
+    if (localStorage.getItem(CHECKIN_KEY) === todayStr()) return;
+    applyProfileWeight();
+    const t = setTimeout(() => setShow(true), 800);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    const handler = () => {
+      setDone(false);
+      setError(null);
+      applyProfileWeight();
+      setShow(true);
+    };
+    window.addEventListener('superdub:show-checkin', handler);
+    return () => window.removeEventListener('superdub:show-checkin', handler);
+  }, []);
 
   const dismiss = () => {
     localStorage.setItem(CHECKIN_KEY, todayStr());

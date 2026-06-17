@@ -5466,3 +5466,85 @@
   border-radius: 5px; padding: 2px 6px; color: #555; text-transform: uppercase;
   letter-spacing: 0.05em; margin-left: auto;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   Weight Goal Card
+══════════════════════════════════════════════════════════════ */
+.wg-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.wg-edit-btn {
+  background: none; border: 1px solid #1e2a3a; color: var(--theme, #00e5ff);
+  padding: 4px 14px; border-radius: 6px; font-size: 0.78rem; font-weight: 600;
+  cursor: pointer; transition: background 0.15s;
+}
+.wg-edit-btn:hover { background: rgba(0,229,255,0.08); }
+.wg-weights { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.wg-weight-item { flex: 1; }
+.wg-weight-label { display: block; font-size: 0.68rem; color: #555; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.wg-weight-value { font-size: 1.8rem; font-weight: 800; color: #e0e0e0; line-height: 1; }
+.wg-weight-value.goal { color: var(--theme, #00e5ff); }
+.wg-weight-unit { font-size: 0.9rem; color: #555; font-weight: 400; }
+.wg-arrow { font-size: 1.2rem; color: #2a3a4a; flex-shrink: 0; padding: 0 4px; }
+.wg-togo { font-size: 0.8rem; color: #666; margin-bottom: 12px; }
+.wg-loss-row { display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid #111c28; }
+.wg-loss-label { font-size: 0.78rem; color: #555; }
+.wg-loss-value { font-size: 0.88rem; color: var(--theme, #00e5ff); font-weight: 700; }
+.wg-input {
+  background: #0a111a; border: 1px solid rgba(0,229,255,0.3); color: var(--theme, #00e5ff);
+  padding: 4px 8px; border-radius: 6px; font-size: 1.5rem; font-weight: 800; width: 90px;
+}
+.wg-select {
+  background: #0a111a; border: 1px solid rgba(0,229,255,0.3); color: var(--theme, #00e5ff);
+  padding: 5px 10px; border-radius: 6px; font-size: 0.8rem;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Calorie Strategy Card
+══════════════════════════════════════════════════════════════ */
+.cals-card {}
+.cals-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.cals-item { flex: 1; }
+.cals-item.goal .cals-value { color: var(--theme, #00e5ff); }
+.cals-label { display: block; font-size: 0.68rem; color: #555; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.cals-value { font-size: 1.6rem; font-weight: 800; color: #e0e0e0; line-height: 1; }
+.cals-unit { font-size: 0.82rem; color: #555; font-weight: 400; }
+.cals-sep { color: #2a3a4a; font-size: 1.3rem; flex-shrink: 0; }
+.cals-deficit { margin-bottom: 6px; }
+.cals-deficit-num { color: #30d158; font-weight: 700; font-size: 0.95rem; }
+.cals-deficit-label { color: #555; font-size: 0.82rem; }
+.cals-hint { font-size: 0.78rem; color: #ff9f0a; margin-top: 8px; line-height: 1.45; }
+
+/* ══════════════════════════════════════════════════════════════
+   Macro Targets section (2.5)
+══════════════════════════════════════════════════════════════ */
+.macro-section-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.target-fields { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+
+/* ══════════════════════════════════════════════════════════════
+   Weight Sparkline Card
+══════════════════════════════════════════════════════════════ */
+.weight-sparkline-card {}
+.insight-box {
+  margin-top: 14px; padding: 11px 14px; border-radius: 10px;
+  font-size: 0.82rem; line-height: 1.5;
+}
+.insight-good   { background: rgba(48,209,88,0.07);  color: #30d158; border: 1px solid rgba(48,209,88,0.18); }
+.insight-great  { background: rgba(0,229,255,0.07);  color: #00e5ff; border: 1px solid rgba(0,229,255,0.18); }
+.insight-behind { background: rgba(255,159,10,0.07); color: #ff9f0a; border: 1px solid rgba(255,159,10,0.18); }
+.insight-nodata { background: rgba(255,255,255,0.03); color: #484848; border: 1px solid #111c28; }
+.trend-stats { display: flex; gap: 20px; margin-top: 12px; flex-wrap: wrap; }
+.trend-stat { display: flex; flex-direction: column; gap: 2px; }
+.trend-stat-label { font-size: 0.65rem; color: #444; text-transform: uppercase; letter-spacing: 0.06em; }
+.trend-stat-val { font-size: 0.92rem; font-weight: 700; color: #c0c0c0; }
+
+/* ══════════════════════════════════════════════════════════════
+   Activity Targets Card
+══════════════════════════════════════════════════════════════ */
+.activity-card {}
+.activity-row { display: flex; gap: 10px; margin-bottom: 14px; }
+.activity-item {
+  flex: 1; background: rgba(0,0,0,0.25); border: 1px solid #111c28;
+  border-radius: 10px; padding: 12px 14px;
+}
+.activity-label { display: block; font-size: 0.65rem; color: #444; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+.activity-value { display: block; font-size: 1.4rem; font-weight: 800; color: var(--theme, #00e5ff); margin-bottom: 4px; }
+.activity-sub { display: block; font-size: 0.69rem; color: #484848; line-height: 1.35; }

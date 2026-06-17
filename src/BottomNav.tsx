@@ -83,7 +83,7 @@ const BottomNav: React.FC = () => {
               <line x1="14" y1="1" x2="14" y2="4" />
             </svg>
           </span>
-          <span className="bottom-nav-label">Diet</span>
+          <span className="bottom-nav-label">Plans</span>
         </button>
 
         {/* Habits — centre circle */}

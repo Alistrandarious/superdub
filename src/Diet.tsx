@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { ComposedChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import './App.css';
 import { api } from './api';
 
@@ -220,6 +221,23 @@ const FILTER_EXCLUDED: Record<string, string[]> = {
   vegan: ['chicken', 'turkey', 'salmon', 'whitefish', 'steak', 'beef', 'eggs', 'whey', 'yoghurt', 'cottage', 'cheese'],
   no_seafood: ['salmon', 'whitefish'],
 };
+
+function isoToDDMM(iso: string): string {
+  const [, m, d] = iso.split('-');
+  return `${d}/${m}`;
+}
+
+function linearReg(pts: { x: number; y: number }[]): { slope: number; weeklyRate: number } | null {
+  const n = pts.length;
+  if (n < 2) return null;
+  const mx = pts.reduce((s, p) => s + p.x, 0) / n;
+  const my = pts.reduce((s, p) => s + p.y, 0) / n;
+  const num = pts.reduce((s, p) => s + (p.x - mx) * (p.y - my), 0);
+  const den = pts.reduce((s, p) => s + (p.x - mx) ** 2, 0);
+  if (den === 0) return null;
+  const slope = num / den;
+  return { slope, weeklyRate: slope * 7 };
+}
 
 interface MacroFieldProps {
   label: string;
@@ -468,6 +486,309 @@ const StepLogger: React.FC<{ onSaved: (steps: number) => void }> = ({ onSaved })
   );
 };
 
+const DAY_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+// ── WeightGoalCard ────────────────────────────────────────────
+const WeightGoalCard: React.FC<{
+  currentWeight: number;
+  goalWeight: number;
+  lossPerWeek: number;
+  onSave: (gw: number, lpw: number) => void;
+}> = ({ currentWeight, goalWeight, lossPerWeek, onSave }) => {
+  const [editing, setEditing] = useState(false);
+  const [gw, setGw] = useState(goalWeight);
+  const [lpw, setLpw] = useState(lossPerWeek);
+
+  useEffect(() => { setGw(goalWeight); setLpw(lossPerWeek); }, [goalWeight, lossPerWeek]);
+
+  const toGo = currentWeight > 0 && goalWeight > 0 ? Math.max(0, currentWeight - goalWeight) : null;
+  const weeksToGoal = toGo && lossPerWeek > 0 ? Math.ceil(toGo / lossPerWeek) : null;
+
+  const save = () => { onSave(gw, lpw); setEditing(false); };
+
+  return (
+    <div className="diet-section weight-goal-card">
+      <div className="wg-header">
+        <h2 className="diet-heading" style={{ marginBottom: 0 }}>Weight Goal</h2>
+        <button className="wg-edit-btn" onClick={() => editing ? save() : setEditing(true)}>
+          {editing ? 'Save' : 'Edit'}
+        </button>
+      </div>
+
+      <div className="wg-weights">
+        <div className="wg-weight-item">
+          <span className="wg-weight-label">Current</span>
+          <span className="wg-weight-value">{currentWeight > 0 ? currentWeight.toFixed(1) : '—'}<span className="wg-weight-unit"> kg</span></span>
+        </div>
+        <div className="wg-arrow">→</div>
+        <div className="wg-weight-item">
+          <span className="wg-weight-label">Goal</span>
+          {editing ? (
+            <input className="wg-input" type="number" step="0.5" value={gw || ''} onChange={e => setGw(parseFloat(e.target.value) || 0)} />
+          ) : (
+            <span className="wg-weight-value goal">{goalWeight > 0 ? goalWeight.toFixed(1) : '—'}<span className="wg-weight-unit"> kg</span></span>
+          )}
+        </div>
+      </div>
+
+      {toGo !== null && (
+        <div className="wg-togo">{toGo.toFixed(1)} kg to go{weeksToGoal ? ` · ~${weeksToGoal} weeks` : ''}</div>
+      )}
+
+      <div className="wg-loss-row">
+        <span className="wg-loss-label">Target loss / week</span>
+        {editing ? (
+          <select className="wg-select" value={lpw} onChange={e => setLpw(parseFloat(e.target.value))}>
+            <option value={0.25}>0.25 kg/week — slow</option>
+            <option value={0.5}>0.5 kg/week — moderate</option>
+            <option value={0.75}>0.75 kg/week — fast</option>
+            <option value={1.0}>1.0 kg/week — aggressive</option>
+          </select>
+        ) : (
+          <span className="wg-loss-value">{lossPerWeek > 0 ? `${lossPerWeek} kg / week` : '—'}</span>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ── CalorieStrategyCard ───────────────────────────────────────
+const CalorieStrategyCard: React.FC<{
+  maintenance: number;
+  macroCalories: number;
+  lossPerWeek: number;
+  energyBalance: string;
+}> = ({ maintenance, macroCalories, lossPerWeek, energyBalance }) => {
+  if (maintenance <= 0) {
+    return (
+      <div className="diet-section cals-card">
+        <h2 className="diet-heading">Calorie Strategy</h2>
+        <p style={{ color: '#555', fontSize: '0.85rem' }}>Set up your profile to unlock calorie predictions.</p>
+        <Link to="/profile" className="diet-profile-link">Go to Profile →</Link>
+      </div>
+    );
+  }
+  const deficit = Math.max(0, maintenance - macroCalories);
+  const targetDeficit = lossPerWeek > 0 ? Math.round(lossPerWeek * 7700 / 7) : 0;
+
+  return (
+    <div className="diet-section cals-card">
+      <h2 className="diet-heading">Calorie Strategy</h2>
+      <div className="cals-row">
+        <div className="cals-item">
+          <span className="cals-label">Maintenance</span>
+          <span className="cals-value">{maintenance.toLocaleString()}<span className="cals-unit"> kcal</span></span>
+        </div>
+        <div className="cals-sep">→</div>
+        <div className="cals-item goal">
+          <span className="cals-label">Goal</span>
+          <span className="cals-value">{macroCalories.toLocaleString()}<span className="cals-unit"> kcal</span></span>
+        </div>
+      </div>
+      {deficit > 0 && (
+        <div className="cals-deficit">
+          <span className="cals-deficit-num">−{deficit.toLocaleString()} kcal/day</span>
+          <span className="cals-deficit-label"> deficit · {energyBalance}</span>
+        </div>
+      )}
+      {targetDeficit > 0 && deficit < targetDeficit && (
+        <p className="cals-hint">
+          To hit your {lossPerWeek} kg/week target you need a {targetDeficit} kcal/day deficit — currently {deficit} kcal.
+        </p>
+      )}
+    </div>
+  );
+};
+
+// ── WeightSparkline ───────────────────────────────────────────
+const WeightSparkline: React.FC<{
+  allTrackerDays: any[];
+  currentWeight: number;
+  lossPerWeek: number;
+}> = ({ allTrackerDays, currentWeight, lossPerWeek }) => {
+  const now = new Date();
+  const dow = now.getDay();
+  const mon = new Date(now);
+  mon.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1));
+  mon.setHours(0, 0, 0, 0);
+
+  const weekDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(mon); d.setDate(mon.getDate() + i);
+    return d.toISOString().split('T')[0];
+  });
+
+  const weekData = weekDays.map((iso, i) => {
+    const ddmm = isoToDDMM(iso);
+    const found = allTrackerDays.find((d: any) => d.day === ddmm);
+    const actual = found && parseFloat(found.weight) > 0 ? parseFloat(found.weight) : undefined;
+    const expected = currentWeight > 0 && lossPerWeek > 0
+      ? parseFloat((currentWeight - (lossPerWeek / 7) * i).toFixed(2))
+      : undefined;
+    return { label: DAY_SHORT[i], actual, expected };
+  });
+
+  // Historical 28-day regression for adaptive insight
+  const histPts: { x: number; y: number }[] = [];
+  for (let i = 27; i >= 0; i--) {
+    const d = new Date(now); d.setDate(now.getDate() - i);
+    const ddmm = isoToDDMM(d.toISOString().split('T')[0]);
+    const found = allTrackerDays.find((day: any) => day.day === ddmm);
+    if (found && parseFloat(found.weight) > 0)
+      histPts.push({ x: 27 - i, y: parseFloat(found.weight) });
+  }
+
+  const reg = linearReg(histPts);
+  const weeklyRate = reg?.weeklyRate ?? null;
+
+  let insightLevel: 'good' | 'great' | 'behind' | 'nodata' = 'nodata';
+  let insightMsg = 'Log your weight for a few more days to unlock your trend analysis.';
+
+  if (lossPerWeek <= 0) {
+    insightMsg = 'Set a goal weight and weekly target to see your progress prediction.';
+  } else if (histPts.length >= 3 && weeklyRate !== null) {
+    const actualLoss = -weeklyRate;
+    if (actualLoss >= lossPerWeek + 0.15) {
+      insightLevel = 'great';
+      insightMsg = `You're losing ${actualLoss.toFixed(2)} kg/week — ahead of your ${lossPerWeek} kg target. Great progress! Make sure you're eating enough protein to protect muscle.`;
+    } else if (actualLoss >= lossPerWeek - 0.1) {
+      insightLevel = 'good';
+      insightMsg = `Right on track — ${actualLoss.toFixed(2)} kg/week matches your ${lossPerWeek} kg target. Keep the routine going.`;
+    } else if (actualLoss >= 0.05) {
+      insightLevel = 'behind';
+      const gap = Math.round((lossPerWeek - actualLoss) * 7700 / 7);
+      insightMsg = `You're losing ${actualLoss.toFixed(2)} kg/week vs your ${lossPerWeek} kg target. Tighten up ~${gap} kcal/day to close the gap — you've got this.`;
+    } else {
+      insightLevel = 'behind';
+      insightMsg = `Minimal change detected recently. That's okay — consistency beats perfection. Focus on hitting your calorie and protein targets this week.`;
+    }
+  }
+
+  const hasAny = weekData.some(d => d.actual !== undefined);
+  const allVals = weekData.flatMap(d => [d.actual, d.expected].filter(v => v !== undefined) as number[]);
+  const minW = allVals.length > 0 ? Math.floor(Math.min(...allVals) - 1) : 70;
+  const maxW = allVals.length > 0 ? Math.ceil(Math.max(...allVals) + 1) : 90;
+
+  return (
+    <div className="diet-section weight-sparkline-card">
+      <h2 className="diet-heading">Weight This Week</h2>
+
+      {hasAny || weekData.some(d => d.expected !== undefined) ? (
+        <ResponsiveContainer width="100%" height={150}>
+          <ComposedChart data={weekData} margin={{ top: 8, right: 4, bottom: 0, left: -18 }}>
+            <XAxis dataKey="label" tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
+            <YAxis domain={[minW, maxW]} tick={{ fill: '#444', fontSize: 10 }} axisLine={false} tickLine={false} width={38} />
+            <Tooltip
+              contentStyle={{ background: '#0d0d1a', border: '1px solid #1e2a3a', borderRadius: 8, fontSize: 12 }}
+              labelStyle={{ color: '#888' }}
+              formatter={((val: any, name: string) => [`${val} kg`, name === 'actual' ? 'Logged' : 'Expected']) as any}
+            />
+            <Line type="linear" dataKey="expected" stroke="#00e5ff33" strokeWidth={1.5} strokeDasharray="4 3" dot={false} connectNulls name="expected" />
+            <Line type="monotone" dataKey="actual" stroke="#00e5ff" strokeWidth={2.5} dot={{ fill: '#00e5ff', r: 4, strokeWidth: 0 }} activeDot={{ r: 6 }} connectNulls={false} name="actual" />
+          </ComposedChart>
+        </ResponsiveContainer>
+      ) : (
+        <p className="diet-hint" style={{ marginTop: 8 }}>No weight data this week — log your morning weight via the daily check-in.</p>
+      )}
+
+      <div className={`insight-box insight-${insightLevel}`}>{insightMsg}</div>
+
+      {weeklyRate !== null && (
+        <div className="trend-stats">
+          <div className="trend-stat">
+            <span className="trend-stat-label">28-day trend</span>
+            <span className="trend-stat-val">{(-weeklyRate) >= 0 ? '−' : '+'}{Math.abs(weeklyRate).toFixed(2)} kg/wk</span>
+          </div>
+          <div className="trend-stat">
+            <span className="trend-stat-label">Your target</span>
+            <span className="trend-stat-val">−{lossPerWeek} kg/wk</span>
+          </div>
+          <div className="trend-stat">
+            <span className="trend-stat-label">Data points</span>
+            <span className="trend-stat-val">{histPts.length} days</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── ActivityTargetsCard ───────────────────────────────────────
+const ActivityTargetsCard: React.FC<{
+  currentWeight: number;
+  maintenance: number;
+  macroCalories: number;
+  lossPerWeek: number;
+  stepTarget: number;
+  yesterdaySteps: number | null;
+  onSaved: (steps: number) => void;
+  onStepTargetChange: (val: number) => void;
+}> = ({ currentWeight, maintenance, macroCalories, lossPerWeek, stepTarget, yesterdaySteps, onSaved, onStepTargetChange }) => {
+  const [localStep, setLocalStep] = useState(stepTarget);
+  useEffect(() => setLocalStep(stepTarget), [stepTarget]);
+
+  const targetDeficit = lossPerWeek > 0 ? Math.round(lossPerWeek * 7700 / 7) : 0;
+  const dietDeficit = maintenance > 0 ? Math.max(0, maintenance - macroCalories) : 0;
+  const exerciseGap = Math.max(0, targetDeficit - dietDeficit);
+
+  const kcalPerStep = currentWeight > 0 ? 0.04 * (currentWeight / 70) : 0.04;
+  const extraSteps = exerciseGap > 0 ? Math.round(exerciseGap / kcalPerStep) : 0;
+  const recommendedSteps = Math.max(8000, stepTarget + extraSteps);
+  const cardioBurn = exerciseGap > 0
+    ? Math.max(0, exerciseGap - Math.round(stepTarget * kcalPerStep))
+    : Math.round(200 * (currentWeight > 0 ? currentWeight / 80 : 1));
+
+  return (
+    <div className="diet-section activity-card">
+      <h2 className="diet-heading">Activity Targets</h2>
+
+      <div className="activity-row">
+        <div className="activity-item">
+          <span className="activity-label">Recommended steps</span>
+          <span className="activity-value">{recommendedSteps.toLocaleString()}</span>
+          <span className="activity-sub">≈ {Math.round(recommendedSteps * kcalPerStep)} kcal from walking</span>
+        </div>
+        <div className="activity-item">
+          <span className="activity-label">Cardio to burn</span>
+          <span className="activity-value">{cardioBurn > 0 ? cardioBurn.toLocaleString() : '—'} <span style={{ fontSize: '0.8rem' }}>kcal</span></span>
+          <span className="activity-sub">{exerciseGap > 0 ? 'needed to hit weekly target' : 'bonus burn for faster results'}</span>
+        </div>
+      </div>
+
+      <div className="step-perf-target-row">
+        <span className="step-perf-label">Step target</span>
+        <input
+          className="step-target-input"
+          type="text"
+          inputMode="numeric"
+          value={localStep}
+          onChange={e => setLocalStep(parseInt(e.target.value) || localStep)}
+          onBlur={() => { onStepTargetChange(localStep); api.updateProfile({ stepTarget: localStep }).catch(() => {}); }}
+          onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+        />
+        <span className="step-perf-unit">steps / day</span>
+      </div>
+
+      {yesterdaySteps !== null && (
+        <div className="step-perf-yesterday">
+          <div className="step-perf-bar-wrap">
+            <div className="step-perf-bar">
+              <div className="step-perf-fill" style={{ width: `${Math.min(100, (yesterdaySteps / stepTarget) * 100)}%`, background: yesterdaySteps >= stepTarget ? '#30d158' : '#ff9f0a' }} />
+            </div>
+          </div>
+          <div className="step-perf-row">
+            <span className="step-perf-count">{yesterdaySteps.toLocaleString()} yesterday</span>
+            <span className={`step-perf-badge${yesterdaySteps >= stepTarget ? ' hit' : ' miss'}`}>
+              {yesterdaySteps >= stepTarget ? '✓ Target hit' : `${(stepTarget - yesterdaySteps).toLocaleString()} short`}
+            </span>
+          </div>
+        </div>
+      )}
+
+      <StepLogger onSaved={onSaved} />
+    </div>
+  );
+};
+
 const Diet: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -486,6 +807,9 @@ const Diet: React.FC = () => {
   const [stepTarget, setStepTarget] = useState(10000);
   const [yesterdaySteps, setYesterdaySteps] = useState<number | null>(null);
   const [weekTrackerDays, setWeekTrackerDays] = useState<any[]>([]);
+  const [allTrackerDays, setAllTrackerDays] = useState<any[]>([]);
+  const [goalWeight, setGoalWeight] = useState(0);
+  const [lossPerWeek, setLossPerWeek] = useState(0.5);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -495,9 +819,14 @@ const Diet: React.FC = () => {
       api.getDietSettings(),
       api.getDietPlans(),
       api.getTracker(),
-    ]).then(([profileData, targetData, settingsData, plansData, trackerData]) => {
+      api.getWeightSettings(),
+    ]).then(([profileData, targetData, settingsData, plansData, trackerData, weightSettingsData]) => {
       const td = trackerData as any;
       const allDays: any[] = td.days ?? [];
+      setAllTrackerDays(allDays);
+      const ws = weightSettingsData as any;
+      if (ws.goalWeight) setGoalWeight(parseFloat(ws.goalWeight) || 0);
+      if (ws.lossPerWeek) setLossPerWeek(parseFloat(ws.lossPerWeek) || 0.5);
 
       // Yesterday's steps
       const yest = new Date(); yest.setDate(yest.getDate() - 1);
@@ -776,95 +1105,77 @@ const Diet: React.FC = () => {
           <button className={`diet-tab${activeTab === 'meals' ? ' active' : ''}`} onClick={() => setSearchParams({ tab: 'meals' })}>Meal Plans</button>
         </div>
 
-        {/* Maintenance card */}
-        <div className="diet-maintenance-card">
-          {maintenance > 0 ? (
-            <>
-              <div className="diet-maint-top">
-                <span className="diet-maint-label">Daily Calorie Target</span>
-                <span className="diet-maint-badge">{energyBalance}</span>
-              </div>
-              <div className="diet-maint-kcal">{macroCalories.toLocaleString()} <span className="diet-maint-unit">kcal / day</span></div>
-              <div className="diet-maint-bar-wrap">
-                <div className="diet-maint-bar">
-                  <div
-                    className="diet-maint-fill"
-                    style={{ width: `${Math.min(100, (macroCalories / maintenance) * 100)}%` }}
-                  />
-                  <div className="diet-maint-marker" />
-                </div>
-                <div className="diet-maint-labels">
-                  <span>0</span>
-                  <span style={{ marginLeft: 'auto' }}>Maintenance: {maintenance.toLocaleString()} kcal</span>
-                </div>
-              </div>
-              <div className="diet-maint-breakdown">
-                Your body burns ~{maintenance.toLocaleString()} kcal/day
-                {macroCalories < maintenance
-                  ? ` — eating ${(maintenance - macroCalories).toLocaleString()} kcal less creates your deficit`
-                  : macroCalories > maintenance
-                  ? ` — eating ${(macroCalories - maintenance).toLocaleString()} kcal more builds a surplus`
-                  : ' — you are eating at maintenance'}
-                {walkBurn > 0 && ` (includes ${walkBurn} kcal from steps)`}
-              </div>
-            </>
-          ) : (
-            <div className="diet-maint-empty">
-              <span>Set up your profile to unlock calorie predictions</span>
-              <Link to="/profile" className="diet-profile-link">Go to Profile →</Link>
-            </div>
-          )}
-        </div>
-
         {activeTab === 'targets' && (<>
 
-        {/* Weekly macro completion */}
-        <WeeklyPerformance target={target} stepTarget={stepTarget} trackerDays={weekTrackerDays} />
+        {/* 1. Weight Goal */}
+        <WeightGoalCard
+          currentWeight={kg}
+          goalWeight={goalWeight}
+          lossPerWeek={lossPerWeek}
+          onSave={(gw, lpw) => {
+            setGoalWeight(gw);
+            setLossPerWeek(lpw);
+            api.updateWeightSettings({ goalWeight: gw, lossPerWeek: lpw }).catch(() => {});
+          }}
+        />
 
-        {/* Step Performance */}
+        {/* 2. Calorie Strategy */}
+        <CalorieStrategyCard
+          maintenance={maintenance}
+          macroCalories={macroCalories}
+          lossPerWeek={lossPerWeek}
+          energyBalance={energyBalance}
+        />
+
+        {/* 2.5 Macro Targets */}
         <div className="diet-section">
-          <h2 className="diet-heading">Daily Steps</h2>
-          <div className="step-perf-card">
-            <div className="step-perf-target-row">
-              <span className="step-perf-label">Target</span>
-              <input
-                className="step-target-input"
-                type="text"
-                inputMode="numeric"
-                value={stepTarget}
-                onChange={e => setStepTarget(parseInt(e.target.value) || stepTarget)}
-                onBlur={() => api.updateProfile({ stepTarget }).catch(() => {})}
-                onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-              />
-              <span className="step-perf-unit">steps / day</span>
-            </div>
-            {yesterdaySteps !== null && (
-              <div className="step-perf-yesterday">
-                <div className="step-perf-bar-wrap">
-                  <div className="step-perf-bar">
-                    <div className="step-perf-fill" style={{ width: `${Math.min(100, (yesterdaySteps / stepTarget) * 100)}%`, background: yesterdaySteps >= stepTarget ? '#30d158' : '#ff9f0a' }} />
-                  </div>
-                </div>
-                <div className="step-perf-row">
-                  <span className="step-perf-count">{yesterdaySteps.toLocaleString()} yesterday</span>
-                  <span className={`step-perf-badge${yesterdaySteps >= stepTarget ? ' hit' : ' miss'}`}>
-                    {yesterdaySteps >= stepTarget ? '✓ Target hit' : `${(stepTarget - yesterdaySteps).toLocaleString()} short`}
-                  </span>
-                </div>
-              </div>
-            )}
-            <StepLogger onSaved={steps => setYesterdaySteps(steps)} />
+          <div className="macro-section-head">
+            <h2 className="diet-heading" style={{ marginBottom: 0 }}>Macro Targets</h2>
+            <button className={`lock-btn${calorieLock ? ' on' : ''}`} onClick={toggleCalorieLock} title="Lock total calories">
+              {calorieLock ? '🔒 Cal locked' : '🔓 Lock cals'}
+            </button>
           </div>
+          <div className="target-fields">
+            <MacroField label="Protein (g)" mkey="protein" val={target.protein} isLocked={locks.protein} max={getMax('protein')} onChangeMacro={changeMacro} onToggleLock={toggleLock} />
+            <MacroField label="Carbs (g)"   mkey="carbs"   val={target.carbs}   isLocked={locks.carbs}   max={getMax('carbs')}   onChangeMacro={changeMacro} onToggleLock={toggleLock} />
+            <MacroField label="Fats (g)"    mkey="fats"    val={target.fats}    isLocked={locks.fats}    max={getMax('fats')}    onChangeMacro={changeMacro} onToggleLock={toggleLock} />
+          </div>
+          <div className="diet-goal-card">
+            {(['cut', 'maintain', 'bulk'] as const).map(g => (
+              <button key={g} className={`diet-goal-btn${goal === g ? ' active' : ''}`} onClick={() => applyGoal(g)}>
+                <span className="diet-goal-icon">{g === 'cut' ? '🔥' : g === 'maintain' ? '⚖️' : '💪'}</span>
+                <span className="diet-goal-label">{g.charAt(0).toUpperCase() + g.slice(1)}</span>
+                <span className="diet-goal-delta">{g === 'cut' ? '−400 kcal' : g === 'maintain' ? '±0 kcal' : '+300 kcal'}</span>
+              </button>
+            ))}
+          </div>
+          <Link to="/diet/macro" className="diet-macro-link-card" style={{ marginTop: 12 }}>
+            <div className="diet-macro-link-left">
+              <span className="diet-macro-link-title">Macro Analysis</span>
+              <span className="diet-macro-link-sub">Split · Classification · Balance</span>
+            </div>
+            <span className="diet-macro-link-arrow">→</span>
+          </Link>
         </div>
 
-        {/* Macro Analysis link */}
-        <Link to="/diet/macro" className="diet-macro-link-card">
-          <div className="diet-macro-link-left">
-            <span className="diet-macro-link-title">Macro Analysis</span>
-            <span className="diet-macro-link-sub">Split · Classification · Balance</span>
-          </div>
-          <span className="diet-macro-link-arrow">→</span>
-        </Link>
+        {/* 3. Weight sparkline + ML adaptive insight */}
+        <WeightSparkline
+          allTrackerDays={allTrackerDays}
+          currentWeight={kg}
+          lossPerWeek={lossPerWeek}
+        />
+
+        {/* 4 & 5. Recommended steps + calories to burn */}
+        <ActivityTargetsCard
+          currentWeight={kg}
+          maintenance={maintenance}
+          macroCalories={macroCalories}
+          lossPerWeek={lossPerWeek}
+          stepTarget={stepTarget}
+          yesterdaySteps={yesterdaySteps}
+          onSaved={steps => setYesterdaySteps(steps)}
+          onStepTargetChange={setStepTarget}
+        />
 
         </>)}
 
