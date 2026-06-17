@@ -5523,6 +5523,11 @@
 .bio-loss-input:focus { border-color: var(--theme, #ff9f0a); }
 .bio-loss-unit { font-size: 0.75rem; color: #666; white-space: nowrap; }
 
+.profile-rate-hint {
+  font-size: 0.72rem; color: #555; margin-top: 6px; line-height: 1.5;
+}
+.profile-rate-hint strong { color: #aaa; }
+
 /* ── Profile: maintenance + strategy ── */
 .profile-maintenance-row {
   display: flex; align-items: center; justify-content: space-between;

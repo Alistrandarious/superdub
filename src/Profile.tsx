@@ -701,14 +701,24 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
         <div className="diet-section">
           <h2 className="diet-heading">Goal & Targets</h2>
 
-          {/* Body goals — always shown so user can set goal weight */}
+          {/* Maintenance — shown first so rate inputs make sense */}
+          {maintenance > 0 && (
+            <div className="profile-maintenance-row">
+              <span className="profile-maintenance-label">Maintenance calories</span>
+              <span className="profile-maintenance-val">{maintenance.toLocaleString()} kcal/day</span>
+            </div>
+          )}
+
+          {/* Current → Goal weight */}
           {(() => {
-            const cur = parseFloat(profile.weightKg) || 0;
+            const cur = currentKg;
             const goal = parseFloat(goalWeight) || 0;
+            const isGain = goal > 0 && cur > 0 && goal > cur;
+            const rateLabel = isGain ? 'Gain per week' : 'Lose per week';
             const pct = cur > 0 && goal > 0 && cur !== goal
-              ? Math.max(0, Math.min(100, goal < cur
-                  ? ((cur - goal) / cur) * 100
-                  : ((cur / goal) * 100)))
+              ? Math.max(0, Math.min(100, isGain
+                  ? Math.min(100, (cur / goal) * 100)
+                  : ((cur - goal) / cur) * 100))
               : 0;
             return (
               <div className="profile-body-goals">
@@ -732,6 +742,11 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
                         if (!isNaN(gw) && gw > 0) {
                           api.updateWeightSettings({ ...wsRef, goalWeight: String(gw), currentWeight: profile.weightKg }).catch(() => {});
                           setWsRef((prev: any) => ({ ...prev, goalWeight: String(gw) }));
+                          // Derive goal direction and recalculate
+                          const derived: 'cut' | 'maintain' | 'bulk' = gw < cur ? 'cut' : gw > cur ? 'bulk' : 'maintain';
+                          setDietGoal(derived);
+                          api.updateDietSettings({ goal: derived, calorieLock: locks.calories, lockProtein: locks.protein, lockCarbs: locks.carbs, lockFats: locks.fats }).catch(() => {});
+                          if (!locks.calories) applyGoalCalories(derived);
                         }
                       }}
                       onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
@@ -743,11 +758,13 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
                     <div className="pbg-bar">
                       <div className="pbg-fill" style={{ width: `${pct}%` }} />
                     </div>
-                    <span className="pbg-diff">{cur > goal ? `${(cur - goal).toFixed(1)} kg to go` : cur < goal ? `${(goal - cur).toFixed(1)} kg to gain` : 'At goal!'}</span>
+                    <span className="pbg-diff">{cur > goal ? `${(cur - goal).toFixed(1)} kg to lose` : cur < goal ? `${(goal - cur).toFixed(1)} kg to gain` : 'At goal!'}</span>
                   </div>
                 )}
+
+                {/* Rate — label flips with direction */}
                 <div className="bio-loss-row">
-                  <span className="bio-loss-label">{autoGoal === 'bulk' ? 'Gain per week' : 'Lose per week'}</span>
+                  <span className="bio-loss-label">{rateLabel}</span>
                   <div className="bio-loss-right">
                     <input
                       type="text"
@@ -764,8 +781,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
                           const updated = { ...wsRef, lossPerWeek: val };
                           api.updateWeightSettings(updated).catch(() => {});
                           setWsRef(updated);
-                          // Re-derive calorie target from the new rate
-                          if (dietGoal && !locks.calories) applyGoalCalories(dietGoal, parseFloat(val));
+                          if (!locks.calories) applyGoalCalories(dietGoal, parseFloat(val));
                         }
                       }}
                       onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
@@ -773,51 +789,15 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
                     <span className="bio-loss-unit">kg / week</span>
                   </div>
                 </div>
+                {/* Show what that rate means in calories */}
+                {lossPerWeek && parseFloat(lossPerWeek) > 0 && maintenance > 0 && (
+                  <div className="profile-rate-hint">
+                    {parseFloat(lossPerWeek)} kg/wk = {isGain ? '+' : '−'}{Math.round(parseFloat(lossPerWeek) * 7700 / 7).toLocaleString()} kcal/day → goal: <strong>{(isGain ? maintenance + Math.round(parseFloat(lossPerWeek) * 7700 / 7) : Math.max(1200, maintenance - Math.round(parseFloat(lossPerWeek) * 7700 / 7))).toLocaleString()} kcal</strong>
+                  </div>
+                )}
               </div>
             );
           })()}
-
-          {/* Strategy + Maintenance */}
-          {maintenance > 0 && (
-            <div className="profile-maintenance-row">
-              <span className="profile-maintenance-label">Maintenance</span>
-              <span className="profile-maintenance-val">{maintenance.toLocaleString()} kcal/day</span>
-            </div>
-          )}
-          {autoGoal && (
-            <div className="profile-autostrategy">
-              {autoGoal === 'cut' ? '🔥 Cut — goal is below current weight'
-               : autoGoal === 'bulk' ? '💪 Bulk — goal is above current weight'
-               : '⚖️ Maintain — at goal weight'}
-            </div>
-          )}
-          <div className="profile-apply-row">
-            {(['cut', 'maintain', 'bulk'] as const).map(g => {
-              const meta = {
-                cut:      { icon: '🔥', label: 'Cut',      delta: '−400 kcal' },
-                maintain: { icon: '⚖️', label: 'Maintain', delta: '= maintenance' },
-                bulk:     { icon: '💪', label: 'Bulk',     delta: '+300 kcal' },
-              }[g];
-              const disabled = maintenance <= 0 || (!!autoGoal && autoGoal !== g);
-              return (
-                <button
-                  key={g}
-                  className={`profile-apply-btn${dietGoal === g ? ' active' : ''}`}
-                  disabled={disabled}
-                  title={disabled && autoGoal && autoGoal !== g ? `Set goal weight to ${g === 'bulk' ? 'gain' : 'lose'} first` : undefined}
-                  onClick={() => {
-                    setDietGoal(g);
-                    api.updateDietSettings({ goal: g, calorieLock: locks.calories, lockProtein: locks.protein, lockCarbs: locks.carbs, lockFats: locks.fats }).catch(() => {});
-                    applyGoalCalories(g);
-                  }}
-                >
-                  <span className="profile-apply-icon">{meta.icon}</span>
-                  <span className="profile-apply-label">{meta.label}</span>
-                  <span className="profile-apply-delta">{meta.delta}</span>
-                </button>
-              );
-            })}
-          </div>
 
           <div className="profile-macro-grid">
             {/* Calories */}
@@ -914,9 +894,6 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
                 </button>
               </div>
             </div>
-          </div>
-          <div className="target-actions">
-            <button className="plan-apply" onClick={advisableSplit}>Advisable Split</button>
           </div>
           <div className="target-field" style={{ marginTop: 12 }}>
             <label>Daily step target</label>
