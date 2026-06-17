@@ -39,16 +39,6 @@ const DEFAULT_TARGET: MacroSet = { calories: 2003, protein: 150, carbs: 200, fat
 
 const STRIDE_M = 0.762;
 
-function ddmmToDate(ddmm: string): Date {
-  const [dd, mm] = ddmm.split('/').map(Number);
-  const now = new Date();
-  let year = now.getFullYear();
-  const candidate = new Date(year, mm - 1, dd);
-  candidate.setHours(0, 0, 0, 0);
-  if (candidate > now) year--;
-  return new Date(year, mm - 1, dd);
-}
-
 function linearReg(pts: { x: number; y: number }[]): { slope: number; weeklyRate: number } | null {
   const n = pts.length;
   if (n < 2) return null;
@@ -178,6 +168,17 @@ const PlanSummaryCard: React.FC<{
   );
 };
 
+const DAY_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+function localYMD(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function isoToDDMM(iso: string): string {
+  const [, m, d] = iso.split('-');
+  return `${d}/${m}`;
+}
+
 // ── WeightSparkline ───────────────────────────────────────────
 const WeightSparkline: React.FC<{
   allTrackerDays: any[];
@@ -186,40 +187,42 @@ const WeightSparkline: React.FC<{
   lossPerWeek: number;
 }> = ({ allTrackerDays, currentWeight, goalWeight, lossPerWeek }) => {
   const isBulk = goalWeight > currentWeight && currentWeight > 0;
-  const now = new Date(); now.setHours(0, 0, 0, 0);
+  const now = new Date();
 
-  // All days with weight logged, sorted oldest → newest
-  const weightDays = allTrackerDays
-    .filter(d => parseFloat(d.weight) > 0)
-    .map(d => ({ day: d.day as string, weight: parseFloat(d.weight), date: ddmmToDate(d.day) }))
-    .sort((a, b) => a.date.getTime() - b.date.getTime());
+  // Mon–Sun of the current week
+  const dow = now.getDay();
+  const mon = new Date(now);
+  mon.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1));
+  mon.setHours(0, 0, 0, 0);
 
-  const firstDate = weightDays.length > 0 ? weightDays[0].date : null;
-  const startWeight = weightDays.length > 0 ? weightDays[0].weight : 0;
-  const direction = isBulk ? 1 : -1;
-
-  // Build chart: one point per logged day + today (for expected line endpoint)
-  const loggedSet = new Set(weightDays.map(d => d.day));
-  const todayDDMM = `${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}`;
-
-  const points = [...weightDays.map(d => ({ day: d.day, weight: d.weight, date: d.date }))];
-  if (firstDate && !loggedSet.has(todayDDMM) && now > firstDate) {
-    points.push({ day: todayDDMM, weight: 0, date: new Date(now) });
-  }
-
-  const chartData = points.map(p => {
-    const daysSince = firstDate ? Math.round((p.date.getTime() - firstDate.getTime()) / 86400000) : 0;
-    const actual = p.weight > 0 ? p.weight : undefined;
-    const expected = lossPerWeek > 0 && startWeight > 0
-      ? parseFloat((startWeight + direction * (lossPerWeek / 7) * daysSince).toFixed(2))
-      : undefined;
-    return { label: p.day, actual, expected };
+  const weekDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(mon); d.setDate(mon.getDate() + i);
+    return localYMD(d);
   });
 
-  // Regression over all available data for insight
-  const histPts: { x: number; y: number }[] = weightDays.map((d, i) => ({ x: i, y: d.weight }));
+  const weekData = weekDays.map((iso, i) => {
+    const ddmm = isoToDDMM(iso);
+    const found = allTrackerDays.find((d: any) => d.day === ddmm);
+    const actual = found && parseFloat(found.weight) > 0 ? parseFloat(found.weight) : undefined;
+    const direction = isBulk ? 1 : -1;
+    const expected = currentWeight > 0 && lossPerWeek > 0
+      ? parseFloat((currentWeight + direction * (lossPerWeek / 7) * i).toFixed(2))
+      : undefined;
+    return { label: DAY_SHORT[i], actual, expected };
+  });
+
+  // 28-day regression for the ML insight
+  const histPts: { x: number; y: number }[] = [];
+  for (let i = 27; i >= 0; i--) {
+    const d = new Date(now); d.setDate(now.getDate() - i);
+    const ddmm = isoToDDMM(localYMD(d));
+    const found = allTrackerDays.find((day: any) => day.day === ddmm);
+    if (found && parseFloat(found.weight) > 0)
+      histPts.push({ x: 27 - i, y: parseFloat(found.weight) });
+  }
+
   const reg = linearReg(histPts);
-  const weeklyRate = reg ? reg.weeklyRate : null;
+  const weeklyRate = reg?.weeklyRate ?? null;
 
   let insightLevel: 'good' | 'great' | 'behind' | 'nodata' = 'nodata';
   let insightMsg = 'Log your weight for a few more days to unlock your trend analysis.';
@@ -261,20 +264,19 @@ const WeightSparkline: React.FC<{
     }
   }
 
-  const hasAny = chartData.some(d => d.actual !== undefined);
-  const allVals = chartData.flatMap(d => [d.actual, d.expected].filter(v => v !== undefined) as number[]);
-  const minW = allVals.length > 0 ? Math.floor(Math.min(...allVals) - 1) : 60;
-  const maxW = allVals.length > 0 ? Math.ceil(Math.max(...allVals) + 1) : 100;
-  const tickInterval = chartData.length > 10 ? Math.floor(chartData.length / 5) : 0;
+  const hasAny = weekData.some(d => d.actual !== undefined);
+  const allVals = weekData.flatMap(d => [d.actual, d.expected].filter(v => v !== undefined) as number[]);
+  const minW = allVals.length > 0 ? Math.floor(Math.min(...allVals) - 1) : 70;
+  const maxW = allVals.length > 0 ? Math.ceil(Math.max(...allVals) + 1) : 90;
 
   return (
     <div className="diet-section weight-sparkline-card">
-      <h2 className="diet-heading">Weight Progress</h2>
+      <h2 className="diet-heading">Weight This Week</h2>
 
-      {hasAny || chartData.some(d => d.expected !== undefined) ? (
-        <ResponsiveContainer width="100%" height={160}>
-          <ComposedChart data={chartData} margin={{ top: 8, right: 4, bottom: 0, left: -18 }}>
-            <XAxis dataKey="label" tick={{ fill: '#555', fontSize: 10 }} axisLine={false} tickLine={false} interval={tickInterval} />
+      {hasAny || weekData.some(d => d.expected !== undefined) ? (
+        <ResponsiveContainer width="100%" height={150}>
+          <ComposedChart data={weekData} margin={{ top: 8, right: 4, bottom: 0, left: -18 }}>
+            <XAxis dataKey="label" tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
             <YAxis domain={[minW, maxW]} tick={{ fill: '#444', fontSize: 10 }} axisLine={false} tickLine={false} width={38} />
             <Tooltip
               contentStyle={{ background: '#0d0d1a', border: '1px solid #1e2a3a', borderRadius: 8, fontSize: 12 }}
@@ -286,19 +288,19 @@ const WeightSparkline: React.FC<{
           </ComposedChart>
         </ResponsiveContainer>
       ) : (
-        <p className="diet-hint" style={{ marginTop: 8 }}>No weight logged yet — use the morning check-in to start tracking.</p>
+        <p className="diet-hint" style={{ marginTop: 8 }}>No weight data this week — log your morning weight via the daily check-in.</p>
       )}
 
       <div className={`insight-box insight-${insightLevel}`}>{insightMsg}</div>
 
-      {weeklyRate !== null && histPts.length >= 2 && (
+      {weeklyRate !== null && (
         <div className="trend-stats">
           <div className="trend-stat">
-            <span className="trend-stat-label">Trend</span>
-            <span className="trend-stat-val">{weeklyRate >= 0 ? '+' : '−'}{Math.abs(weeklyRate).toFixed(2)} kg/wk</span>
+            <span className="trend-stat-label">28-day trend</span>
+            <span className="trend-stat-val">{(-weeklyRate) >= 0 ? '−' : '+'}{Math.abs(weeklyRate).toFixed(2)} kg/wk</span>
           </div>
           <div className="trend-stat">
-            <span className="trend-stat-label">Target</span>
+            <span className="trend-stat-label">Your target</span>
             <span className="trend-stat-val">{isBulk ? '+' : '−'}{lossPerWeek} kg/wk</span>
           </div>
           <div className="trend-stat">
