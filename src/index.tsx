@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
@@ -14,10 +14,12 @@ import FoodLog from './FoodLog';
 import DailyCheckIn from './DailyCheckIn';
 import BottomNav from './BottomNav';
 import { Auth } from './Auth';
-import { isLoggedIn, clearToken } from './api';
+import { isLoggedIn, clearToken, api } from './api';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 
 const NO_NAV_PATHS = ['/privacy'];
+
+const HEARTBEAT_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
 function AppRouter() {
   const [authed, setAuthed] = useState(isLoggedIn());
@@ -27,6 +29,27 @@ function AppRouter() {
     clearToken();
     setAuthed(false);
   };
+
+  // Keep last_active_at current: fire on mount, tab focus, and every 5 min
+  useEffect(() => {
+    if (!authed) return;
+
+    const ping = () => api.heartbeat().catch(() => {});
+
+    ping(); // immediate on app open / login
+
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') ping();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+
+    const timer = setInterval(ping, HEARTBEAT_INTERVAL_MS);
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      clearInterval(timer);
+    };
+  }, [authed]);
 
   if (NO_NAV_PATHS.includes(location.pathname)) {
     return <PrivacyPolicy />;

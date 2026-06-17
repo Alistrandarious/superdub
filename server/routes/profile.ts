@@ -116,6 +116,12 @@ router.put('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   }
 });
 
+// POST /heartbeat — client pings this to keep last_active_at current
+// requireAuth middleware handles the DB update, so this just needs to exist
+router.post('/heartbeat', requireAuth as any, (_req: AuthRequest, res: Response) => {
+  res.json({ ok: true });
+});
+
 router.delete('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
     await pool.query('DELETE FROM users WHERE id = $1', [req.userId]);
