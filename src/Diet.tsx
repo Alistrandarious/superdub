@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { ComposedChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import './App.css';
 import { api } from './api';
@@ -63,7 +63,6 @@ const DEFAULT_PROFILE: ProfileData = {
 const DEFAULT_TARGET: MacroSet = { calories: 2003, protein: 150, carbs: 200, fats: 67 };
 
 const MACRO_STEP = 5;
-const CAL_STEP = 10;
 const STRIDE_M = 0.762;
 
 const CAL_PER: Record<MacroKey, number> = { protein: 4, carbs: 4, fats: 9 };
@@ -382,77 +381,6 @@ function yesterdayIso() {
   return d.toISOString().split('T')[0];
 }
 
-const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-const WeeklyPerformance: React.FC<{
-  target: MacroSet;
-  stepTarget: number;
-  trackerDays: any[];
-}> = ({ target, stepTarget, trackerDays }) => {
-  const today = new Date().toISOString().split('T')[0];
-
-  return (
-    <div className="diet-section">
-      <h2 className="diet-heading">This Week</h2>
-      <div className="weekly-perf-grid">
-        {trackerDays.map((d, i) => {
-          const isPast = d.day < today;
-          const isToday = d.day === today;
-          const cal = Number(d?.calories) || 0;
-          const prot = Number(d?.protein) || 0;
-          const carbs = Number(d?.carbs) || 0;
-          const fats = Number(d?.fats) || 0;
-          const steps = Number(d?.steps) || 0;
-          const hasData = cal > 0 || prot > 0 || steps > 0;
-
-          const calPct = target.calories > 0 ? Math.min(100, (cal / target.calories) * 100) : 0;
-          const protPct = target.protein > 0 ? Math.min(100, (prot / target.protein) * 100) : 0;
-          const carbsPct = target.carbs > 0 ? Math.min(100, (carbs / target.carbs) * 100) : 0;
-          const fatsPct = target.fats > 0 ? Math.min(100, (fats / target.fats) * 100) : 0;
-          const stepPct = stepTarget > 0 ? Math.min(100, (steps / stepTarget) * 100) : 0;
-
-          return (
-            <div key={d.day} className={`weekly-day-card${isToday ? ' today' : ''}${!isPast && !isToday ? ' future' : ''}`}>
-              <span className="weekly-day-label">{DAY_LABELS[i]}</span>
-              {!hasData && !isPast && !isToday ? (
-                <span className="weekly-day-empty">—</span>
-              ) : !hasData && (isPast || isToday) ? (
-                <span className="weekly-day-empty">No log</span>
-              ) : (
-                <div className="weekly-day-bars">
-                  <div className="wdb" title={`Calories: ${cal}/${target.calories}`}>
-                    <div className="wdb-fill" style={{ height: `${calPct}%`, background: '#ff6ec7' }} />
-                  </div>
-                  <div className="wdb" title={`Protein: ${prot}g/${target.protein}g`}>
-                    <div className="wdb-fill" style={{ height: `${protPct}%`, background: '#0a84ff' }} />
-                  </div>
-                  <div className="wdb" title={`Carbs: ${carbs}g/${target.carbs}g`}>
-                    <div className="wdb-fill" style={{ height: `${carbsPct}%`, background: '#00e5ff' }} />
-                  </div>
-                  <div className="wdb" title={`Fats: ${fats}g/${target.fats}g`}>
-                    <div className="wdb-fill" style={{ height: `${fatsPct}%`, background: '#ffd60a' }} />
-                  </div>
-                  <div className="wdb" title={`Steps: ${steps}/${stepTarget}`}>
-                    <div className="wdb-fill" style={{ height: `${stepPct}%`, background: steps >= stepTarget ? '#30d158' : '#ff9f0a' }} />
-                  </div>
-                </div>
-              )}
-              {steps > 0 && <span className="weekly-day-steps">{(steps / 1000).toFixed(1)}k</span>}
-            </div>
-          );
-        })}
-      </div>
-      <div className="weekly-legend">
-        <span className="wl-dot" style={{ background: '#ff6ec7' }} />Cal
-        <span className="wl-dot" style={{ background: '#0a84ff' }} />Pro
-        <span className="wl-dot" style={{ background: '#00e5ff' }} />Carbs
-        <span className="wl-dot" style={{ background: '#ffd60a' }} />Fat
-        <span className="wl-dot" style={{ background: '#30d158' }} />Steps
-      </div>
-      <p className="diet-hint">Bar height = % of daily target. Log nutrition via Food Log or the tracker on Dashboard.</p>
-    </div>
-  );
-};
 
 const StepLogger: React.FC<{ onSaved: (steps: number) => void }> = ({ onSaved }) => {
   const [val, setVal] = useState('');
@@ -791,10 +719,8 @@ const ActivityTargetsCard: React.FC<{
 
 const Diet: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
   const activeTab = searchParams.get('tab') === 'meals' ? 'meals' : 'targets';
   const [profile, setProfile] = useState<ProfileData>(DEFAULT_PROFILE);
-  const [profileName, setProfileName] = useState('');
   const [target, setTarget] = useState<MacroSet>(DEFAULT_TARGET);
   const [locks, setLocks] = useState<Locks>({ protein: false, carbs: false, fats: false });
   const [calorieLock, setCalorieLock] = useState(false);
@@ -806,7 +732,6 @@ const Diet: React.FC = () => {
   const [goal, setGoal] = useState<'cut' | 'maintain' | 'bulk'>('cut');
   const [stepTarget, setStepTarget] = useState(10000);
   const [yesterdaySteps, setYesterdaySteps] = useState<number | null>(null);
-  const [weekTrackerDays, setWeekTrackerDays] = useState<any[]>([]);
   const [allTrackerDays, setAllTrackerDays] = useState<any[]>([]);
   const [goalWeight, setGoalWeight] = useState(0);
   const [lossPerWeek, setLossPerWeek] = useState(0.5);
@@ -834,24 +759,7 @@ const Diet: React.FC = () => {
       const yestDay = allDays.find((d: any) => d.day === yestKey);
       if (yestDay?.steps != null) setYesterdaySteps(Number(yestDay.steps));
 
-      // Current week (Mon–Sun) for weekly performance
-      const now = new Date();
-      const dow = now.getDay(); // 0=Sun
-      const mon = new Date(now);
-      mon.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1));
-      mon.setHours(0, 0, 0, 0);
-      const weekDays = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(mon);
-        d.setDate(mon.getDate() + i);
-        return d.toISOString().split('T')[0];
-      });
-      const weekData = weekDays.map(day => {
-        const found = allDays.find((d: any) => d.day === day);
-        return { day, ...found };
-      });
-      setWeekTrackerDays(weekData);
       const p = profileData as ProfileData & { name: string };
-      setProfileName(p.name ?? '');
       setProfile({
         dob: p.dob ?? '',
         heightCm: p.heightCm ?? '',
@@ -910,19 +818,6 @@ const Diet: React.FC = () => {
   const walkBurn = steps > 0 && kg > 0 ? Math.round(walkKm * (kg + vestKg) * 0.5) : 0;
   const maintenance = tdee + walkBurn;
 
-  const totalKcal = macroCalories;
-  const proteinPct = totalKcal > 0 ? (target.protein * 4 / totalKcal) * 100 : 0;
-  const carbsPct = totalKcal > 0 ? (target.carbs * 4 / totalKcal) * 100 : 0;
-  const fatsPct = totalKcal > 0 ? (target.fats * 9 / totalKcal) * 100 : 0;
-
-  const macroStyle = (() => {
-    if (carbsPct < 10) return 'Ketogenic';
-    if (carbsPct < 26) return 'Low Carb';
-    if (proteinPct > 35) return 'High Protein';
-    if (carbsPct > 55) return 'High Carb';
-    return 'Balanced';
-  })();
-
   const energyBalance = (() => {
     if (maintenance === 0) return '—';
     const diff = macroCalories - maintenance;
@@ -932,8 +827,6 @@ const Diet: React.FC = () => {
     if (diff >= -500) return 'Mild Cut';
     return 'Aggressive Cut';
   })();
-
-  const proteinPerKg = kg > 0 ? (target.protein / kg).toFixed(1) : '—';
 
   const getMax = (key: MacroKey): number | null => {
     if (!calorieLock) return null;
@@ -1067,12 +960,6 @@ const Diet: React.FC = () => {
     setEditingPlanId(null);
     api.renameDietPlan(id, label).catch(() => {});
   };
-
-  const pieData = [
-    { name: 'Protein', value: target.protein * 4, color: MACRO_COLORS.protein },
-    { name: 'Carbs', value: target.carbs * 4, color: MACRO_COLORS.carbs },
-    { name: 'Fats', value: target.fats * 9, color: MACRO_COLORS.fats },
-  ].filter(d => d.value > 0);
 
   if (!loaded) {
     return (
