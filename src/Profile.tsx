@@ -430,6 +430,22 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
 
       <div className="profile-content page-content">
 
+        {/* Identity header */}
+        <div className="profile-identity">
+          <div className="profile-avatar">{name ? name.trim()[0].toUpperCase() : '?'}</div>
+          <div className="profile-identity-info">
+            <input
+              className="profile-name-input"
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="Your name"
+              maxLength={40}
+            />
+            <div className="profile-name-hint">Tap to edit</div>
+          </div>
+        </div>
+
         {/* Account meta */}
         {(lastActiveAt || lastLoginAt || accountCreatedAt) && (
           <div className="profile-account-meta">
