@@ -118,7 +118,6 @@ const DailyCheckIn: React.FC = () => {
               <button className="checkin-save-btn" onClick={save} disabled={saving}>
                 {saving ? 'Saving…' : error ? 'Retry' : 'Log it'}
               </button>
-              <button className="checkin-skip-btn" onClick={dismiss}>Skip for today</button>
             </>
           )}
         </div>
