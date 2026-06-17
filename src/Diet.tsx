@@ -134,11 +134,12 @@ const PlanSummaryCard: React.FC<{
   const macroCalories = target.protein * 4 + target.carbs * 4 + target.fats * 9;
   const deficit = maintenance > 0 ? macroCalories - maintenance : 0;
 
-  const goalMeta = {
+  const goalMeta = ({
     cut:      { icon: '🔥', label: 'Cut',      color: '#ff6b6b' },
     maintain: { icon: '⚖️', label: 'Maintain', color: '#30d158' },
     bulk:     { icon: '💪', label: 'Bulk',      color: '#00e5ff' },
-  }[goal];
+  } as Record<string, { icon: string; label: string; color: string }>)[goal]
+    ?? { icon: '🔥', label: 'Cut', color: '#ff6b6b' };
 
   const trainingParts: string[] = [];
   if (gymSessionsPerWeek > 0) trainingParts.push(`${gymSessionsPerWeek}× gym (${gymIntensity})`);
@@ -713,7 +714,26 @@ const Diet: React.FC = () => {
   }, []);
 
   const macroCalories = target.protein * 4 + target.carbs * 4 + target.fats * 9;
-  const kg = parseFloat(profile.weightKg) || 0;
+
+  // Today's logged weight (if available)
+  const today = new Date();
+  const todayDDMM = `${String(today.getDate()).padStart(2,'0')}/${String(today.getMonth()+1).padStart(2,'0')}`;
+  const todayEntry = allTrackerDays.find((d: any) => d.day === todayDDMM);
+  const todayWeight = todayEntry && parseFloat(todayEntry.weight) > 0 ? parseFloat(todayEntry.weight) : null;
+
+  // Most recent tracker weight as fallback when profile.weightKg is not set
+  const latestTrackerKg = (() => {
+    for (let i = 0; i < 60; i++) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      const ddmm = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+      const entry = allTrackerDays.find((x: any) => x.day === ddmm);
+      if (entry && parseFloat(entry.weight) > 0) return parseFloat(entry.weight);
+    }
+    return 0;
+  })();
+
+  const profileKg = parseFloat(profile.weightKg) || 0;
+  const kg = profileKg || latestTrackerKg;
   const cm = parseFloat(profile.heightCm) || 0;
   const age = ageFromDob(profile.dob) || 0;
   const activity = parseFloat(profile.activity) || 1.55;
@@ -729,12 +749,6 @@ const Diet: React.FC = () => {
   const walkKm = steps * STRIDE_M / 1000;
   const walkBurn = steps > 0 && kg > 0 ? Math.round(walkKm * (kg + vestKg) * 0.5) : 0;
   const maintenance = tdee + walkBurn;
-
-  // Today's logged weight (if available)
-  const today = new Date();
-  const todayDDMM = `${String(today.getDate()).padStart(2,'0')}/${String(today.getMonth()+1).padStart(2,'0')}`;
-  const todayEntry = allTrackerDays.find((d: any) => d.day === todayDDMM);
-  const todayWeight = todayEntry && parseFloat(todayEntry.weight) > 0 ? parseFloat(todayEntry.weight) : null;
 
   const handleSmartApply = (newTarget: MacroSet) => {
     setTarget(newTarget);
