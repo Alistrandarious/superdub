@@ -69,6 +69,15 @@ function linearReg(pts: { x: number; y: number }[]): { slope: number; weeklyRate
   return { slope, weeklyRate: slope * 7 };
 }
 
+function localYMD(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function isoToDDMM(iso: string): string {
+  const [, m, d] = iso.split('-');
+  return `${d}/${m}`;
+}
+
 function yesterdayIso() {
   const d = new Date(); d.setDate(d.getDate() - 1);
   return d.toISOString().split('T')[0];
@@ -91,17 +100,14 @@ const StepLogger: React.FC<{ onSaved: (steps: number) => void }> = ({ onSaved })
     <div className="step-logger-row">
       <input
         className="step-logger-input"
-        type="text"
-        inputMode="numeric"
+        type="text" inputMode="numeric"
         placeholder={saved ? '✓ Saved!' : "Yesterday's steps…"}
         value={saved ? '' : val}
         onChange={e => setVal(e.target.value)}
         onKeyDown={e => e.key === 'Enter' && submit()}
         disabled={saved}
       />
-      {!saved && (
-        <button className="step-logger-btn" onClick={submit} disabled={!val}>Save</button>
-      )}
+      {!saved && <button className="step-logger-btn" onClick={submit} disabled={!val}>Save</button>}
     </div>
   );
 };
@@ -109,15 +115,21 @@ const StepLogger: React.FC<{ onSaved: (steps: number) => void }> = ({ onSaved })
 // ── PlanSummaryCard ───────────────────────────────────────────────────────────
 const PlanSummaryCard: React.FC<{
   currentWeight: number;
+  todayWeight: number | null;
   goalWeight: number;
   lossPerWeek: number;
   goal: 'cut' | 'maintain' | 'bulk';
   target: MacroSet;
   maintenance: number;
+  gymSessionsPerWeek: number;
+  gymIntensity: 'light' | 'moderate' | 'hard';
+  weeklyActivities: WeeklyActivity[];
   onEdit: () => void;
-}> = ({ currentWeight, goalWeight, lossPerWeek, goal, target, maintenance, onEdit }) => {
+}> = ({ currentWeight, todayWeight, goalWeight, lossPerWeek, goal, target, maintenance,
+        gymSessionsPerWeek, gymIntensity, weeklyActivities, onEdit }) => {
   const isBulk = goal === 'bulk';
-  const diff = currentWeight > 0 && goalWeight > 0 ? Math.abs(currentWeight - goalWeight) : null;
+  const displayWeight = todayWeight ?? currentWeight;
+  const diff = displayWeight > 0 && goalWeight > 0 ? Math.abs(displayWeight - goalWeight) : null;
   const weeksToGoal = diff && lossPerWeek > 0 ? Math.ceil(diff / lossPerWeek) : null;
   const macroCalories = target.protein * 4 + target.carbs * 4 + target.fats * 9;
   const deficit = maintenance > 0 ? macroCalories - maintenance : 0;
@@ -128,33 +140,37 @@ const PlanSummaryCard: React.FC<{
     bulk:     { icon: '💪', label: 'Bulk',      color: '#00e5ff' },
   }[goal];
 
+  const trainingParts: string[] = [];
+  if (gymSessionsPerWeek > 0) trainingParts.push(`${gymSessionsPerWeek}× gym (${gymIntensity})`);
+  weeklyActivities.slice(0, 2).forEach(a => trainingParts.push(a.name));
+  if (weeklyActivities.length > 2) trainingParts.push(`+${weeklyActivities.length - 2} more`);
+
   return (
     <div className="diet-section psc-card" style={{ '--psc-accent': goalMeta.color } as any}>
-      <div className="psc-accent-bar" style={{ background: `linear-gradient(90deg, ${goalMeta.color}cc, ${goalMeta.color}44)` }} />
+      <div className="psc-accent-bar" style={{ background: `linear-gradient(90deg, ${goalMeta.color}cc, ${goalMeta.color}33)` }} />
 
       <div className="psc-header">
         <span className="psc-badge" style={{ color: goalMeta.color, background: goalMeta.color + '18', borderColor: goalMeta.color + '44' }}>
           {goalMeta.icon} {goalMeta.label}
         </span>
-        {weeksToGoal && (
-          <span className="psc-eta">~{weeksToGoal} {weeksToGoal === 1 ? 'week' : 'weeks'} to goal</span>
-        )}
+        {weeksToGoal && <span className="psc-eta">~{weeksToGoal} {weeksToGoal === 1 ? 'week' : 'weeks'} to goal</span>}
         <button className="psc-edit-btn" onClick={onEdit}>Edit →</button>
       </div>
 
+      {/* Weight journey */}
       <div className="psc-journey">
         <div className="psc-wblock">
-          <span className="psc-wlabel">NOW</span>
-          <span className="psc-wval">{currentWeight > 0 ? currentWeight.toFixed(1) : '—'}</span>
-          <span className="psc-wunit">kg</span>
+          <span className="psc-wlabel">{todayWeight !== null ? 'TODAY' : 'CURRENT'}</span>
+          <span className="psc-wval">{displayWeight > 0 ? displayWeight.toFixed(1) : '—'}</span>
+          <span className="psc-wunit">kg{todayWeight !== null && <span className="psc-today-dot" />}</span>
         </div>
         <div className="psc-journey-mid">
           {diff !== null ? (
             <>
               <div className="psc-journey-track">
                 <div className="psc-jdot psc-jdot--start" />
-                <div className="psc-jline" style={{ background: `linear-gradient(90deg, #ffffff25, ${goalMeta.color}88)` }} />
-                <div className="psc-jdot psc-jdot--end" style={{ background: goalMeta.color, boxShadow: `0 0 8px ${goalMeta.color}88` }} />
+                <div className="psc-jline" style={{ background: `linear-gradient(90deg, #ffffff20, ${goalMeta.color}70)` }} />
+                <div className="psc-jdot psc-jdot--end" style={{ background: goalMeta.color, boxShadow: `0 0 8px ${goalMeta.color}80` }} />
               </div>
               <div className="psc-journey-diff">
                 {isBulk ? '+' : '−'}{diff.toFixed(1)} kg
@@ -172,6 +188,7 @@ const PlanSummaryCard: React.FC<{
         </div>
       </div>
 
+      {/* Calorie strip */}
       <div className="psc-cal-strip">
         <div className="psc-cal-item">
           <span className="psc-cal-num">{macroCalories.toLocaleString()}</span>
@@ -195,6 +212,7 @@ const PlanSummaryCard: React.FC<{
         )}
       </div>
 
+      {/* Macro bar */}
       <div className="psc-macro-bar">
         {[
           { val: target.protein, lbl: 'Protein', color: '#ff6ec7' },
@@ -207,20 +225,19 @@ const PlanSummaryCard: React.FC<{
           </div>
         ))}
       </div>
+
+      {/* Training summary */}
+      {trainingParts.length > 0 && (
+        <div className="psc-training-row">
+          <span className="psc-training-icon">🏋️</span>
+          <span className="psc-training-text">{trainingParts.join(' · ')}</span>
+        </div>
+      )}
     </div>
   );
 };
 
 const DAY_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-function localYMD(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-}
-
-function isoToDDMM(iso: string): string {
-  const [, m, d] = iso.split('-');
-  return `${d}/${m}`;
-}
 
 // ── WeightSparkline ───────────────────────────────────────────────────────────
 const WeightSparkline: React.FC<{
@@ -272,36 +289,17 @@ const WeightSparkline: React.FC<{
     insightMsg = 'Set a goal weight and weekly target in Profile to see your progress prediction.';
   } else if (histPts.length >= 3 && weeklyRate !== null) {
     if (isBulk) {
-      const actualGain = weeklyRate;
-      if (actualGain >= lossPerWeek + 0.1) {
-        insightLevel = 'behind';
-        insightMsg = `Gaining ${actualGain.toFixed(2)} kg/week — faster than your ${lossPerWeek} kg target. Slow bulk means more muscle, less fat. Check your surplus.`;
-      } else if (actualGain >= lossPerWeek - 0.1) {
-        insightLevel = 'great';
-        insightMsg = `Right on track — gaining ${actualGain.toFixed(2)} kg/week matches your ${lossPerWeek} kg bulk target. Keep training heavy and hitting your protein.`;
-      } else if (actualGain >= 0.05) {
-        insightLevel = 'good';
-        insightMsg = `Gaining ${actualGain.toFixed(2)} kg/week vs your ${lossPerWeek} kg target. A little more food or one extra gym session could close the gap.`;
-      } else {
-        insightLevel = 'behind';
-        insightMsg = `Minimal weight change. To bulk, you need a consistent calorie surplus — make sure you're hitting your kcal target every day.`;
-      }
+      const g = weeklyRate;
+      if (g >= lossPerWeek + 0.1) { insightLevel = 'behind'; insightMsg = `Gaining ${g.toFixed(2)} kg/week — faster than your ${lossPerWeek} kg target. Slow bulk means more muscle, less fat. Check your surplus.`; }
+      else if (g >= lossPerWeek - 0.1) { insightLevel = 'great'; insightMsg = `Right on track — gaining ${g.toFixed(2)} kg/week matches your ${lossPerWeek} kg bulk target.`; }
+      else if (g >= 0.05) { insightLevel = 'good'; insightMsg = `Gaining ${g.toFixed(2)} kg/week vs your ${lossPerWeek} kg target. A little more food or one extra gym session could close the gap.`; }
+      else { insightLevel = 'behind'; insightMsg = `Minimal weight change. To bulk, you need a consistent calorie surplus every day.`; }
     } else {
-      const actualLoss = -weeklyRate;
-      if (actualLoss >= lossPerWeek + 0.15) {
-        insightLevel = 'great';
-        insightMsg = `Losing ${actualLoss.toFixed(2)} kg/week — ahead of your ${lossPerWeek} kg target. Great progress! Keep hitting your protein to protect muscle.`;
-      } else if (actualLoss >= lossPerWeek - 0.1) {
-        insightLevel = 'good';
-        insightMsg = `Right on track — ${actualLoss.toFixed(2)} kg/week matches your ${lossPerWeek} kg target. Keep the routine going.`;
-      } else if (actualLoss >= 0.05) {
-        insightLevel = 'behind';
-        const gap = Math.round((lossPerWeek - actualLoss) * 7700 / 7);
-        insightMsg = `Losing ${actualLoss.toFixed(2)} kg/week vs your ${lossPerWeek} kg target. Tighten up ~${gap} kcal/day to close the gap.`;
-      } else {
-        insightLevel = 'behind';
-        insightMsg = `Minimal change recently. Consistency beats perfection — focus on hitting your calorie and protein targets this week.`;
-      }
+      const l = -weeklyRate;
+      if (l >= lossPerWeek + 0.15) { insightLevel = 'great'; insightMsg = `Losing ${l.toFixed(2)} kg/week — ahead of your ${lossPerWeek} kg target. Keep hitting protein to protect muscle.`; }
+      else if (l >= lossPerWeek - 0.1) { insightLevel = 'good'; insightMsg = `Right on track — ${l.toFixed(2)} kg/week matches your ${lossPerWeek} kg target. Keep the routine going.`; }
+      else if (l >= 0.05) { insightLevel = 'behind'; const gap = Math.round((lossPerWeek - l) * 7700 / 7); insightMsg = `Losing ${l.toFixed(2)} kg/week vs your ${lossPerWeek} kg target. Tighten up ~${gap} kcal/day to close the gap.`; }
+      else { insightLevel = 'behind'; insightMsg = `Minimal change recently. Focus on hitting your calorie and protein targets this week.`; }
     }
   }
 
@@ -350,6 +348,128 @@ const WeightSparkline: React.FC<{
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+// ── SmartAdjustCard ───────────────────────────────────────────────────────────
+const SmartAdjustCard: React.FC<{
+  goal: 'cut' | 'maintain' | 'bulk';
+  lossPerWeek: number;
+  allTrackerDays: any[];
+  macroCalories: number;
+  target: MacroSet;
+  currentWeight: number;
+  locks: { protein: boolean; carbs: boolean; fats: boolean };
+  onApply: (newTarget: MacroSet) => void;
+}> = ({ goal, lossPerWeek, allTrackerDays, macroCalories, target, currentWeight, locks, onApply }) => {
+  const [applied, setApplied] = useState(false);
+
+  const now = new Date();
+  const histPts: { x: number; y: number }[] = [];
+  for (let i = 27; i >= 0; i--) {
+    const d = new Date(now); d.setDate(now.getDate() - i);
+    const ddmm = isoToDDMM(localYMD(d));
+    const found = allTrackerDays.find((day: any) => day.day === ddmm);
+    if (found && parseFloat(found.weight) > 0)
+      histPts.push({ x: 27 - i, y: parseFloat(found.weight) });
+  }
+
+  if (histPts.length < 7 || lossPerWeek <= 0 || goal === 'maintain') return null;
+
+  const reg = linearReg(histPts);
+  if (!reg) return null;
+
+  const actualWeeklyKg = reg.weeklyRate;
+  const targetWeeklyKg = goal === 'cut' ? -lossPerWeek : lossPerWeek;
+  const deviation = actualWeeklyKg - targetWeeklyKg;
+  const THRESHOLD = 0.12;
+
+  if (Math.abs(deviation) < THRESHOLD) return null;
+
+  const calorieAdj = Math.round(-deviation * 7700 / 7);
+  const cappedAdj = Math.max(-500, Math.min(500, calorieAdj));
+  const newCalories = Math.max(1200, Math.min(5000, macroCalories + cappedAdj));
+
+  if (newCalories === macroCalories) return null;
+
+  const buildTarget = (): MacroSet => {
+    const kg = currentWeight || 75;
+    const p = locks.protein ? target.protein : Math.round(kg * (goal === 'cut' ? 2.0 : goal === 'bulk' ? 1.8 : 1.7));
+    const f = locks.fats ? target.fats : Math.round(kg * (goal === 'cut' ? 0.8 : goal === 'bulk' ? 1.1 : 0.9));
+    const carbCals = Math.max(0, newCalories - p * 4 - f * 9);
+    const c = locks.carbs ? target.carbs : Math.round(carbCals / 4);
+    return { calories: p * 4 + c * 4 + f * 9, protein: p, carbs: c, fats: f };
+  };
+
+  const isBehind = goal === 'cut'
+    ? actualWeeklyKg > targetWeeklyKg   // cutting but not losing fast enough
+    : actualWeeklyKg < targetWeeklyKg;  // bulking but not gaining fast enough
+
+  const actualDisplay = goal === 'cut' ? (-actualWeeklyKg).toFixed(2) : actualWeeklyKg.toFixed(2);
+  const statusColor = isBehind ? '#ff9f0a' : '#30d158';
+
+  const handleApply = () => {
+    const newTarget = buildTarget();
+    onApply(newTarget);
+    setApplied(true);
+    setTimeout(() => setApplied(false), 3000);
+  };
+
+  return (
+    <div className="diet-section sa-card">
+      <div className="sa-header">
+        <div className="sa-icon-wrap">
+          <span className="sa-icon">🤖</span>
+        </div>
+        <div className="sa-titles">
+          <span className="sa-title">Smart Adjust</span>
+          <span className="sa-subtitle">Based on your {histPts.length}-day weight trend</span>
+        </div>
+        <span className="sa-status-pill" style={{ color: statusColor, borderColor: statusColor + '40', background: statusColor + '12' }}>
+          {isBehind ? 'Behind' : 'Ahead'}
+        </span>
+      </div>
+
+      <div className="sa-rates">
+        <div className="sa-rate">
+          <span className="sa-rate-lbl">Target</span>
+          <span className="sa-rate-val">{lossPerWeek} kg/wk</span>
+        </div>
+        <div className="sa-rate-arrow">→</div>
+        <div className="sa-rate">
+          <span className="sa-rate-lbl">Actual trend</span>
+          <span className="sa-rate-val" style={{ color: statusColor }}>{actualDisplay} kg/wk</span>
+        </div>
+      </div>
+
+      <div className="sa-rec-box">
+        <div className="sa-rec-row">
+          <span className="sa-rec-lbl">Adjustment</span>
+          <span className="sa-rec-val" style={{ color: cappedAdj < 0 ? '#ff9f0a' : '#30d158' }}>
+            {cappedAdj > 0 ? '+' : ''}{cappedAdj} kcal/day
+          </span>
+        </div>
+        <div className="sa-rec-row">
+          <span className="sa-rec-lbl">New daily target</span>
+          <span className="sa-rec-val">
+            {newCalories.toLocaleString()} kcal
+            <span className="sa-rec-was"> (was {macroCalories.toLocaleString()})</span>
+          </span>
+        </div>
+        {(locks.protein || locks.carbs || locks.fats) && (
+          <div className="sa-locked-note">
+            Locked macros will be preserved
+            {locks.protein && ' · Protein'}
+            {locks.carbs && ' · Carbs'}
+            {locks.fats && ' · Fats'}
+          </div>
+        )}
+      </div>
+
+      <button className={`sa-apply-btn${applied ? ' sa-applied' : ''}`} onClick={handleApply} disabled={applied}>
+        {applied ? '✓ Applied' : 'Apply Adjustment'}
+      </button>
     </div>
   );
 };
@@ -490,13 +610,10 @@ const ActivityTargetsCard: React.FC<{
         <div className="step-perf-yesterday">
           <div className="step-perf-bar-wrap">
             <div className="step-perf-bar">
-              <div
-                className="step-perf-fill"
-                style={{
-                  width: `${Math.min(100, (yesterdaySteps / stepTarget) * 100)}%`,
-                  background: yesterdaySteps >= stepTarget ? '#30d158' : '#ff9f0a',
-                }}
-              />
+              <div className="step-perf-fill" style={{
+                width: `${Math.min(100, (yesterdaySteps / stepTarget) * 100)}%`,
+                background: yesterdaySteps >= stepTarget ? '#30d158' : '#ff9f0a',
+              }} />
             </div>
           </div>
           <div className="step-perf-row">
@@ -519,6 +636,7 @@ const Diet: React.FC = () => {
   const [profile, setProfile] = useState<ProfileData>(DEFAULT_PROFILE);
   const [target, setTarget] = useState<MacroSet>(DEFAULT_TARGET);
   const [goal, setGoal] = useState<'cut' | 'maintain' | 'bulk'>('cut');
+  const [locks, setLocks] = useState({ protein: false, carbs: false, fats: false });
   const [stepTarget, setStepTarget] = useState(10000);
   const [yesterdaySteps, setYesterdaySteps] = useState<number | null>(null);
   const [allTrackerDays, setAllTrackerDays] = useState<any[]>([]);
@@ -573,6 +691,7 @@ const Diet: React.FC = () => {
       setTarget(targetData as MacroSet);
       const s = settingsData as any;
       setGoal((s.goal as 'cut' | 'maintain' | 'bulk') ?? 'cut');
+      setLocks({ protein: !!s.lockProtein, carbs: !!s.lockCarbs, fats: !!s.lockFats });
       setLoaded(true);
     }).catch(() => setLoaded(true));
   }, []);
@@ -611,6 +730,17 @@ const Diet: React.FC = () => {
   const walkBurn = steps > 0 && kg > 0 ? Math.round(walkKm * (kg + vestKg) * 0.5) : 0;
   const maintenance = tdee + walkBurn;
 
+  // Today's logged weight (if available)
+  const today = new Date();
+  const todayDDMM = `${String(today.getDate()).padStart(2,'0')}/${String(today.getMonth()+1).padStart(2,'0')}`;
+  const todayEntry = allTrackerDays.find((d: any) => d.day === todayDDMM);
+  const todayWeight = todayEntry && parseFloat(todayEntry.weight) > 0 ? parseFloat(todayEntry.weight) : null;
+
+  const handleSmartApply = (newTarget: MacroSet) => {
+    setTarget(newTarget);
+    api.updateDietTarget(newTarget).catch(() => {});
+  };
+
   if (!loaded) {
     return (
       <div className="app" style={{ '--theme': '#00e5ff', '--theme-dim': '#00e5ff66', '--theme-glow': '#00e5ff33' } as React.CSSProperties}>
@@ -637,23 +767,38 @@ const Diet: React.FC = () => {
       <div className="diet-content page-content">
         <PlanSummaryCard
           currentWeight={kg}
+          todayWeight={todayWeight}
           goalWeight={goalWeight}
           lossPerWeek={lossPerWeek}
           goal={goal}
           target={target}
           maintenance={maintenance}
+          gymSessionsPerWeek={gymSessionsPerWeek}
+          gymIntensity={gymIntensity}
+          weeklyActivities={weeklyActivities}
           onEdit={() => navigate('/profile')}
         />
 
         <WeightSparkline
           allTrackerDays={allTrackerDays}
-          currentWeight={kg}
+          currentWeight={todayWeight ?? kg}
           goalWeight={goalWeight}
           lossPerWeek={lossPerWeek}
         />
 
+        <SmartAdjustCard
+          goal={goal}
+          lossPerWeek={lossPerWeek}
+          allTrackerDays={allTrackerDays}
+          macroCalories={macroCalories}
+          target={target}
+          currentWeight={todayWeight ?? kg}
+          locks={locks}
+          onApply={handleSmartApply}
+        />
+
         <ActivityTargetsCard
-          currentWeight={kg}
+          currentWeight={todayWeight ?? kg}
           maintenance={maintenance}
           macroCalories={macroCalories}
           lossPerWeek={lossPerWeek}
