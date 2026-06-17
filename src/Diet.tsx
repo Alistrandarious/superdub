@@ -682,7 +682,7 @@ const WeeklyPlanCard: React.FC<{
             type="text"
             inputMode="numeric"
             value={localStep}
-            onChange={e => setLocalStep(parseInt(e.target.value) || localStep)}
+            onChange={e => { const n = parseInt(e.target.value); if (!isNaN(n)) setLocalStep(n); }}
             onBlur={() => onStepTargetChange(localStep)}
             onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
           />
