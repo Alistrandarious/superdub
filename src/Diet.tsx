@@ -838,6 +838,15 @@ const Diet: React.FC = () => {
     );
   }
 
+  const GOAL_COLORS: Record<string, string> = { cut: '#ff6b6b', maintain: '#30d158', bulk: '#00e5ff' };
+  const GOAL_LABELS: Record<string, string> = { cut: '🔥 Fat Loss', maintain: '⚖️ Maintain', bulk: '💪 Muscle Gain' };
+  const accent = GOAL_COLORS[goal] ?? '#ff6b6b';
+  const goalLabel = GOAL_LABELS[goal] ?? '🔥 Fat Loss';
+  const displayWeight = todayWeight ?? kg;
+  const weightDiff = displayWeight > 0 && goalWeight > 0 ? Math.abs(displayWeight - goalWeight) : null;
+  const weeksLeft = weightDiff && lossPerWeek > 0 ? Math.ceil(weightDiff / lossPerWeek) : null;
+  const deficit = maintenance > 0 ? macroCalories - maintenance : 0;
+
   return (
     <div className="app" style={{ '--theme': '#00e5ff', '--theme-dim': '#00e5ff66', '--theme-glow': '#00e5ff33' } as React.CSSProperties}>
       <header className="header">
@@ -847,21 +856,119 @@ const Diet: React.FC = () => {
         <h1 className="title">Training Plan</h1>
       </header>
 
-      <div className="diet-content page-content">
-        <PlanSummaryCard
-          currentWeight={kg}
-          todayWeight={todayWeight}
-          goalWeight={goalWeight}
-          lossPerWeek={lossPerWeek}
-          goal={goal}
-          target={target}
-          maintenance={maintenance}
-          gymSessionsPerWeek={gymSessionsPerWeek}
-          gymIntensity={gymIntensity}
-          weeklyActivities={weeklyActivities}
-          onEdit={() => navigate('/profile')}
-        />
+      {/* ── Plan summary — pinned above the scroll area, always visible ── */}
+      <div style={{ borderBottom: '1px solid #0d1520', background: '#08091400', flexShrink: 0 }}>
+        {/* Accent bar */}
+        <div style={{ height: 3, background: `linear-gradient(90deg, ${accent}, ${accent}22)` }} />
 
+        {/* Goal + edit */}
+        <div style={{ display: 'flex', alignItems: 'center', padding: '12px 20px 8px', gap: 10 }}>
+          <span style={{
+            fontSize: '0.7rem', fontWeight: 700, color: accent,
+            background: accent + '18', border: `1px solid ${accent}40`,
+            borderRadius: 20, padding: '3px 11px',
+          }}>
+            {goalLabel}
+          </span>
+          {weeksLeft && (
+            <span style={{ fontSize: '0.7rem', color: '#555', flex: 1 }}>~{weeksLeft}w to goal</span>
+          )}
+          <button onClick={() => navigate('/profile')} style={{
+            marginLeft: 'auto', background: 'none', border: '1px solid #1e2a3a',
+            color: '#777', padding: '4px 12px', borderRadius: 7,
+            fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer',
+          }}>Edit →</button>
+        </div>
+
+        {/* Weight row */}
+        <div style={{ display: 'flex', alignItems: 'center', padding: '4px 20px 12px', gap: 0 }}>
+          {/* Current */}
+          <div style={{ minWidth: 80 }}>
+            <div style={{ fontSize: '0.55rem', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+              {todayWeight !== null ? 'Today' : 'Current'}
+            </div>
+            <div style={{ fontSize: '1.9rem', fontWeight: 800, color: '#e0e4f0', lineHeight: 1.1 }}>
+              {displayWeight > 0 ? displayWeight.toFixed(1) : '—'}
+            </div>
+            <div style={{ fontSize: '0.75rem', color: '#555', display: 'flex', alignItems: 'center', gap: 4 }}>
+              kg
+              {todayWeight !== null && (
+                <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#30d158', display: 'inline-block' }} />
+              )}
+            </div>
+          </div>
+
+          {/* Arrow */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '0 8px' }}>
+            <div style={{ width: '100%', display: 'flex', alignItems: 'center' }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#2a3a4a', flexShrink: 0 }} />
+              <div style={{ flex: 1, height: 1.5, background: `linear-gradient(90deg, #ffffff18, ${accent}55)` }} />
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: accent, flexShrink: 0, boxShadow: `0 0 6px ${accent}80` }} />
+            </div>
+            {weightDiff !== null && (
+              <span style={{ fontSize: '0.65rem', color: '#555' }}>
+                {goal === 'bulk' ? '+' : '−'}{weightDiff.toFixed(1)} kg
+              </span>
+            )}
+          </div>
+
+          {/* Goal weight */}
+          <div style={{ minWidth: 80, textAlign: 'right' }}>
+            <div style={{ fontSize: '0.55rem', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Goal</div>
+            <div style={{ fontSize: '1.9rem', fontWeight: 800, color: accent, lineHeight: 1.1 }}>
+              {goalWeight > 0 ? goalWeight.toFixed(1) : '—'}
+            </div>
+            <div style={{ fontSize: '0.75rem', color: '#555' }}>kg</div>
+          </div>
+        </div>
+
+        {/* Calorie strip */}
+        <div style={{ display: 'flex', borderTop: '1px solid #0d1825', borderBottom: '1px solid #0d1825', background: 'rgba(0,0,0,0.25)' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 0', gap: 2 }}>
+            <span style={{ fontSize: '1rem', fontWeight: 800, color: '#dde' }}>{macroCalories.toLocaleString()}</span>
+            <span style={{ fontSize: '0.58rem', color: '#555', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Goal kcal</span>
+          </div>
+          {maintenance > 0 && (
+            <>
+              <div style={{ width: 1, background: '#1a2535' }} />
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 0', gap: 2 }}>
+                <span style={{ fontSize: '1rem', fontWeight: 800, color: '#dde' }}>{maintenance.toLocaleString()}</span>
+                <span style={{ fontSize: '0.58rem', color: '#555', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Maintenance</span>
+              </div>
+              <div style={{ width: 1, background: '#1a2535' }} />
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 0', gap: 2 }}>
+                <span style={{ fontSize: '1rem', fontWeight: 800, color: deficit < 0 ? '#30d158' : deficit > 0 ? '#ff453a' : '#888' }}>
+                  {deficit === 0 ? '±0' : `${deficit > 0 ? '+' : ''}${deficit.toLocaleString()}`}
+                </span>
+                <span style={{ fontSize: '0.58rem', color: '#555', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  {deficit < 0 ? 'Deficit' : deficit > 0 ? 'Surplus' : 'Balance'}
+                </span>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Macro chips */}
+        <div style={{ display: 'flex', gap: 8, padding: '10px 20px 14px' }}>
+          {[
+            { val: target.protein, lbl: 'Protein', color: '#ff6ec7' },
+            { val: target.carbs,   lbl: 'Carbs',   color: '#00e5ff' },
+            { val: target.fats,    lbl: 'Fats',     color: '#ffd60a' },
+          ].map(m => (
+            <div key={m.lbl} style={{
+              flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+              background: 'rgba(255,255,255,0.03)', border: `1px solid ${m.color}25`,
+              borderRadius: 10, padding: '8px 4px', gap: 2,
+            }}>
+              <span style={{ fontSize: '0.95rem', fontWeight: 800, color: m.color }}>{m.val}g</span>
+              <span style={{ fontSize: '0.56rem', color: '#555', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{m.lbl}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Scrollable detail area ── */}
+      <div className="diet-content page-content">
         <WeightSparkline
           allTrackerDays={allTrackerDays}
           currentWeight={todayWeight ?? kg}
