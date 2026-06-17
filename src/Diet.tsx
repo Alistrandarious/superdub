@@ -127,19 +127,21 @@ const PlanSummaryCard: React.FC<{
   onEdit: () => void;
 }> = ({ currentWeight, todayWeight, goalWeight, lossPerWeek, goal, target, maintenance,
         gymSessionsPerWeek, gymIntensity, weeklyActivities, onEdit }) => {
-  const isBulk = goal === 'bulk';
+  const GOAL_META: Record<string, { icon: string; label: string; color: string }> = {
+    cut:      { icon: '🔥', label: 'Fat Loss',  color: '#ff6b6b' },
+    maintain: { icon: '⚖️', label: 'Maintain',  color: '#30d158' },
+    bulk:     { icon: '💪', label: 'Muscle Gain', color: '#00e5ff' },
+  };
+  const meta = GOAL_META[goal] ?? GOAL_META.cut;
+  const accent = meta.color;
+
   const displayWeight = todayWeight ?? currentWeight;
   const diff = displayWeight > 0 && goalWeight > 0 ? Math.abs(displayWeight - goalWeight) : null;
   const weeksToGoal = diff && lossPerWeek > 0 ? Math.ceil(diff / lossPerWeek) : null;
+  const isBulk = goal === 'bulk';
+
   const macroCalories = target.protein * 4 + target.carbs * 4 + target.fats * 9;
   const deficit = maintenance > 0 ? macroCalories - maintenance : 0;
-
-  const goalMeta = ({
-    cut:      { icon: '🔥', label: 'Cut',      color: '#ff6b6b' },
-    maintain: { icon: '⚖️', label: 'Maintain', color: '#30d158' },
-    bulk:     { icon: '💪', label: 'Bulk',      color: '#00e5ff' },
-  } as Record<string, { icon: string; label: string; color: string }>)[goal]
-    ?? { icon: '🔥', label: 'Cut', color: '#ff6b6b' };
 
   const trainingParts: string[] = [];
   if (gymSessionsPerWeek > 0) trainingParts.push(`${gymSessionsPerWeek}× gym (${gymIntensity})`);
@@ -147,91 +149,158 @@ const PlanSummaryCard: React.FC<{
   if (weeklyActivities.length > 2) trainingParts.push(`+${weeklyActivities.length - 2} more`);
 
   return (
-    <div className="diet-section psc-card" style={{ '--psc-accent': goalMeta.color } as any}>
-      <div className="psc-accent-bar" style={{ background: `linear-gradient(90deg, ${goalMeta.color}cc, ${goalMeta.color}33)` }} />
+    <div style={{
+      background: 'linear-gradient(150deg, #0c1220 0%, #0a0d18 100%)',
+      border: `1px solid ${accent}22`,
+      borderRadius: 18,
+      overflow: 'hidden',
+      fontFamily: 'inherit',
+    }}>
+      {/* Accent bar */}
+      <div style={{ height: 3, background: `linear-gradient(90deg, ${accent}, ${accent}33)` }} />
 
-      <div className="psc-header">
-        <span className="psc-badge" style={{ color: goalMeta.color, background: goalMeta.color + '18', borderColor: goalMeta.color + '44' }}>
-          {goalMeta.icon} {goalMeta.label}
+      {/* Header row */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 20px 12px' }}>
+        <span style={{
+          fontSize: '0.72rem', fontWeight: 700, color: accent,
+          background: accent + '18', border: `1px solid ${accent}44`,
+          borderRadius: 20, padding: '4px 12px', letterSpacing: '0.04em',
+        }}>
+          {meta.icon} {meta.label}
         </span>
-        {weeksToGoal && <span className="psc-eta">~{weeksToGoal} {weeksToGoal === 1 ? 'week' : 'weeks'} to goal</span>}
-        <button className="psc-edit-btn" onClick={onEdit}>Edit →</button>
+        {weeksToGoal && (
+          <span style={{ fontSize: '0.72rem', color: '#666', flex: 1 }}>
+            ~{weeksToGoal} {weeksToGoal === 1 ? 'week' : 'weeks'} to goal
+          </span>
+        )}
+        <button onClick={onEdit} style={{
+          marginLeft: 'auto', background: 'none', border: '1px solid #1e2a3a',
+          color: '#888', padding: '5px 14px', borderRadius: 8, fontSize: '0.75rem',
+          fontWeight: 600, cursor: 'pointer',
+        }}>
+          Edit →
+        </button>
       </div>
 
       {/* Weight journey */}
-      <div className="psc-journey">
-        <div className="psc-wblock">
-          <span className="psc-wlabel">{todayWeight !== null ? 'TODAY' : 'CURRENT'}</span>
-          <span className="psc-wval">{displayWeight > 0 ? displayWeight.toFixed(1) : '—'}</span>
-          <span className="psc-wunit">kg{todayWeight !== null && <span className="psc-today-dot" />}</span>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '4px 20px 20px' }}>
+        {/* Current */}
+        <div style={{ minWidth: 70 }}>
+          <div style={{ fontSize: '0.58rem', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 2 }}>
+            {todayWeight !== null ? 'Today' : 'Current'}
+          </div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#e0e4f0', lineHeight: 1 }}>
+            {displayWeight > 0 ? displayWeight.toFixed(1) : '—'}
+          </div>
+          <div style={{ fontSize: '0.8rem', color: '#555', display: 'flex', alignItems: 'center', gap: 5 }}>
+            kg
+            {todayWeight !== null && (
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#30d158', display: 'inline-block', boxShadow: '0 0 6px #30d15888' }} />
+            )}
+          </div>
         </div>
-        <div className="psc-journey-mid">
+
+        {/* Arrow / diff */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 26 }}>
           {diff !== null ? (
             <>
-              <div className="psc-journey-track">
-                <div className="psc-jdot psc-jdot--start" />
-                <div className="psc-jline" style={{ background: `linear-gradient(90deg, #ffffff20, ${goalMeta.color}70)` }} />
-                <div className="psc-jdot psc-jdot--end" style={{ background: goalMeta.color, boxShadow: `0 0 8px ${goalMeta.color}80` }} />
+              <div style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 0 }}>
+                <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#2a3a4a', flexShrink: 0 }} />
+                <div style={{ flex: 1, height: 2, background: `linear-gradient(90deg, #ffffff15, ${accent}60)` }} />
+                <div style={{ width: 7, height: 7, borderRadius: '50%', background: accent, flexShrink: 0, boxShadow: `0 0 8px ${accent}80` }} />
               </div>
-              <div className="psc-journey-diff">
+              <div style={{ fontSize: '0.72rem', color: '#555', marginTop: 5, textAlign: 'center' }}>
                 {isBulk ? '+' : '−'}{diff.toFixed(1)} kg
-                {lossPerWeek > 0 && <span className="psc-journey-rate"> · {lossPerWeek} kg/wk</span>}
+                {lossPerWeek > 0 && <span style={{ color: '#444' }}> · {lossPerWeek} kg/wk</span>}
               </div>
             </>
           ) : (
-            <div className="psc-journey-empty">Set goal weight in Profile →</div>
+            <div style={{ fontSize: '0.7rem', color: '#444', textAlign: 'center' }}>
+              Set goal weight in Profile →
+            </div>
           )}
         </div>
-        <div className="psc-wblock psc-wblock--goal">
-          <span className="psc-wlabel">GOAL</span>
-          <span className="psc-wval" style={{ color: goalMeta.color }}>{goalWeight > 0 ? goalWeight.toFixed(1) : '—'}</span>
-          <span className="psc-wunit">kg</span>
+
+        {/* Goal */}
+        <div style={{ minWidth: 70, textAlign: 'right' }}>
+          <div style={{ fontSize: '0.58rem', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 2 }}>
+            Goal
+          </div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: accent, lineHeight: 1 }}>
+            {goalWeight > 0 ? goalWeight.toFixed(1) : '—'}
+          </div>
+          <div style={{ fontSize: '0.8rem', color: '#555' }}>kg</div>
         </div>
       </div>
 
       {/* Calorie strip */}
-      <div className="psc-cal-strip">
-        <div className="psc-cal-item">
-          <span className="psc-cal-num">{macroCalories.toLocaleString()}</span>
-          <span className="psc-cal-lbl">target kcal</span>
+      <div style={{
+        display: 'flex', background: 'rgba(0,0,0,0.3)',
+        borderTop: '1px solid #111c28', borderBottom: '1px solid #111c28',
+        padding: '14px 0',
+      }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+          <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#dde', lineHeight: 1 }}>
+            {macroCalories.toLocaleString()}
+          </span>
+          <span style={{ fontSize: '0.6rem', color: '#555', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            target kcal
+          </span>
         </div>
         {maintenance > 0 && (
           <>
-            <div className="psc-cal-sep" />
-            <div className="psc-cal-item">
-              <span className="psc-cal-num">{maintenance.toLocaleString()}</span>
-              <span className="psc-cal-lbl">maintenance</span>
+            <div style={{ width: 1, background: '#1a2535', flexShrink: 0 }} />
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+              <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#dde', lineHeight: 1 }}>
+                {maintenance.toLocaleString()}
+              </span>
+              <span style={{ fontSize: '0.6rem', color: '#555', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                maintenance
+              </span>
             </div>
-            <div className="psc-cal-sep" />
-            <div className="psc-cal-item">
-              <span className="psc-cal-num" style={{ color: deficit < 0 ? '#30d158' : deficit > 0 ? '#ff453a' : '#888' }}>
+            <div style={{ width: 1, background: '#1a2535', flexShrink: 0 }} />
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+              <span style={{
+                fontSize: '1.1rem', fontWeight: 800, lineHeight: 1,
+                color: deficit < 0 ? '#30d158' : deficit > 0 ? '#ff453a' : '#888',
+              }}>
                 {deficit === 0 ? '±0' : `${deficit > 0 ? '+' : ''}${deficit.toLocaleString()}`}
               </span>
-              <span className="psc-cal-lbl">daily {deficit < 0 ? 'deficit' : deficit > 0 ? 'surplus' : 'balance'}</span>
+              <span style={{ fontSize: '0.6rem', color: '#555', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                {deficit < 0 ? 'deficit' : deficit > 0 ? 'surplus' : 'balance'}
+              </span>
             </div>
           </>
         )}
       </div>
 
-      {/* Macro bar */}
-      <div className="psc-macro-bar">
+      {/* Macro chips */}
+      <div style={{ display: 'flex', gap: 8, padding: '14px 20px 18px' }}>
         {[
           { val: target.protein, lbl: 'Protein', color: '#ff6ec7' },
           { val: target.carbs,   lbl: 'Carbs',   color: '#00e5ff' },
           { val: target.fats,    lbl: 'Fats',     color: '#ffd60a' },
         ].map(m => (
-          <div key={m.lbl} className="psc-mc" style={{ borderColor: m.color + '30' }}>
-            <span className="psc-mc-val" style={{ color: m.color }}>{m.val}g</span>
-            <span className="psc-mc-lbl">{m.lbl}</span>
+          <div key={m.lbl} style={{
+            flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+            background: 'rgba(255,255,255,0.03)', border: `1px solid ${m.color}28`,
+            borderRadius: 10, padding: '10px 8px', gap: 3,
+          }}>
+            <span style={{ fontSize: '1rem', fontWeight: 800, color: m.color, lineHeight: 1 }}>{m.val}g</span>
+            <span style={{ fontSize: '0.58rem', color: '#555', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{m.lbl}</span>
           </div>
         ))}
       </div>
 
-      {/* Training summary */}
+      {/* Training footer */}
       {trainingParts.length > 0 && (
-        <div className="psc-training-row">
-          <span className="psc-training-icon">🏋️</span>
-          <span className="psc-training-text">{trainingParts.join(' · ')}</span>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '10px 20px 16px', borderTop: '1px solid #0d1520',
+          fontSize: '0.72rem', color: '#555',
+        }}>
+          <span style={{ fontSize: '0.9rem' }}>🏋️</span>
+          <span>{trainingParts.join(' · ')}</span>
         </div>
       )}
     </div>
