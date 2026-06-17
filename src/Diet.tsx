@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ComposedChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import './App.css';
@@ -62,16 +62,7 @@ const DEFAULT_PROFILE: ProfileData = {
 
 const DEFAULT_TARGET: MacroSet = { calories: 2003, protein: 150, carbs: 200, fats: 67 };
 
-const MACRO_STEP = 5;
 const STRIDE_M = 0.762;
-
-const CAL_PER: Record<MacroKey, number> = { protein: 4, carbs: 4, fats: 9 };
-
-const MACRO_COLORS: Record<MacroKey, string> = {
-  protein: '#ff6ec7',
-  carbs: '#00e5ff',
-  fats: '#ffd60a',
-};
 
 interface Food {
   name: string;
@@ -226,6 +217,10 @@ function isoToDDMM(iso: string): string {
   return `${d}/${m}`;
 }
 
+function localYMD(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
 function linearReg(pts: { x: number; y: number }[]): { slope: number; weeklyRate: number } | null {
   const n = pts.length;
   if (n < 2) return null;
@@ -237,53 +232,6 @@ function linearReg(pts: { x: number; y: number }[]): { slope: number; weeklyRate
   const slope = num / den;
   return { slope, weeklyRate: slope * 7 };
 }
-
-interface MacroFieldProps {
-  label: string;
-  mkey: MacroKey;
-  val: number;
-  isLocked: boolean;
-  max: number | null;
-  onChangeMacro: (key: MacroKey, newVal: number) => void;
-  onToggleLock: (key: MacroKey) => void;
-}
-
-const MacroField: React.FC<MacroFieldProps> = ({ label, mkey, val, isLocked, max, onChangeMacro, onToggleLock }) => (
-  <div className={`target-field macro-field${isLocked ? ' locked' : ''}`}>
-    <label>{label}{max !== null && <span className="plan-target-note"> (max {max}g)</span>}</label>
-    <div className="macro-input-row">
-      <div className="stepper">
-        <input
-          type="text"
-          inputMode="numeric"
-          value={val}
-          disabled={isLocked}
-          onChange={e => {
-            const n = parseInt(e.target.value);
-            if (!isNaN(n)) onChangeMacro(mkey, n);
-            else if (e.target.value === '') onChangeMacro(mkey, 0);
-          }}
-          onKeyDown={e => {
-            if (e.key === 'ArrowUp') { e.preventDefault(); onChangeMacro(mkey, val + MACRO_STEP); }
-            if (e.key === 'ArrowDown') { e.preventDefault(); onChangeMacro(mkey, Math.max(0, val - MACRO_STEP)); }
-          }}
-        />
-        <div className="stepper-btns">
-          <button type="button" disabled={isLocked} onClick={() => onChangeMacro(mkey, val + MACRO_STEP)}>▲</button>
-          <button type="button" disabled={isLocked || val <= 0} onClick={() => onChangeMacro(mkey, Math.max(0, val - MACRO_STEP))}>▼</button>
-        </div>
-      </div>
-      <button
-        type="button"
-        className={`lock-btn${isLocked ? ' on' : ''}`}
-        onClick={() => onToggleLock(mkey)}
-        title={isLocked ? 'Unlock' : 'Lock'}
-      >
-        {isLocked ? '🔒' : '🔓'}
-      </button>
-    </div>
-  </div>
-);
 
 function getFood(name: string): Food {
   return FOODS.find(f => f.name === name)!;
@@ -429,8 +377,9 @@ const WeightGoalCard: React.FC<{
 
   useEffect(() => { setGw(goalWeight); setLpw(lossPerWeek); }, [goalWeight, lossPerWeek]);
 
-  const toGo = currentWeight > 0 && goalWeight > 0 ? Math.max(0, currentWeight - goalWeight) : null;
-  const weeksToGoal = toGo && lossPerWeek > 0 ? Math.ceil(toGo / lossPerWeek) : null;
+  const isBulk = gw > 0 && currentWeight > 0 && gw > currentWeight;
+  const diff = currentWeight > 0 && goalWeight > 0 ? Math.abs(currentWeight - goalWeight) : null;
+  const weeksToGoal = diff && lossPerWeek > 0 ? Math.ceil(diff / lossPerWeek) : null;
 
   const save = () => { onSave(gw, lpw); setEditing(false); };
 
@@ -448,7 +397,7 @@ const WeightGoalCard: React.FC<{
           <span className="wg-weight-label">Current</span>
           <span className="wg-weight-value">{currentWeight > 0 ? currentWeight.toFixed(1) : '—'}<span className="wg-weight-unit"> kg</span></span>
         </div>
-        <div className="wg-arrow">→</div>
+        <div className="wg-arrow">{isBulk ? '↗' : '→'}</div>
         <div className="wg-weight-item">
           <span className="wg-weight-label">Goal</span>
           {editing ? (
@@ -459,18 +408,24 @@ const WeightGoalCard: React.FC<{
         </div>
       </div>
 
-      {toGo !== null && (
-        <div className="wg-togo">{toGo.toFixed(1)} kg to go{weeksToGoal ? ` · ~${weeksToGoal} weeks` : ''}</div>
+      {diff !== null && (
+        <div className="wg-togo">{diff.toFixed(1)} kg to {isBulk ? 'gain' : 'lose'}{weeksToGoal ? ` · ~${weeksToGoal} weeks` : ''}</div>
       )}
 
       <div className="wg-loss-row">
-        <span className="wg-loss-label">Target loss / week</span>
+        <span className="wg-loss-label">Target {isBulk ? 'gain' : 'loss'} / week</span>
         {editing ? (
           <select className="wg-select" value={lpw} onChange={e => setLpw(parseFloat(e.target.value))}>
-            <option value={0.25}>0.25 kg/week — slow</option>
-            <option value={0.5}>0.5 kg/week — moderate</option>
-            <option value={0.75}>0.75 kg/week — fast</option>
-            <option value={1.0}>1.0 kg/week — aggressive</option>
+            {isBulk ? (<>
+              <option value={0.1}>0.1 kg/week — lean bulk</option>
+              <option value={0.25}>0.25 kg/week — moderate</option>
+              <option value={0.5}>0.5 kg/week — fast bulk</option>
+            </>) : (<>
+              <option value={0.25}>0.25 kg/week — slow</option>
+              <option value={0.5}>0.5 kg/week — moderate</option>
+              <option value={0.75}>0.75 kg/week — fast</option>
+              <option value={1.0}>1.0 kg/week — aggressive</option>
+            </>)}
           </select>
         ) : (
           <span className="wg-loss-value">{lossPerWeek > 0 ? `${lossPerWeek} kg / week` : '—'}</span>
@@ -480,60 +435,14 @@ const WeightGoalCard: React.FC<{
   );
 };
 
-// ── CalorieStrategyCard ───────────────────────────────────────
-const CalorieStrategyCard: React.FC<{
-  maintenance: number;
-  macroCalories: number;
-  lossPerWeek: number;
-  energyBalance: string;
-}> = ({ maintenance, macroCalories, lossPerWeek, energyBalance }) => {
-  if (maintenance <= 0) {
-    return (
-      <div className="diet-section cals-card">
-        <h2 className="diet-heading">Calorie Strategy</h2>
-        <p style={{ color: '#555', fontSize: '0.85rem' }}>Set up your profile to unlock calorie predictions.</p>
-        <Link to="/profile" className="diet-profile-link">Go to Profile →</Link>
-      </div>
-    );
-  }
-  const deficit = Math.max(0, maintenance - macroCalories);
-  const targetDeficit = lossPerWeek > 0 ? Math.round(lossPerWeek * 7700 / 7) : 0;
-
-  return (
-    <div className="diet-section cals-card">
-      <h2 className="diet-heading">Calorie Strategy</h2>
-      <div className="cals-row">
-        <div className="cals-item">
-          <span className="cals-label">Maintenance</span>
-          <span className="cals-value">{maintenance.toLocaleString()}<span className="cals-unit"> kcal</span></span>
-        </div>
-        <div className="cals-sep">→</div>
-        <div className="cals-item goal">
-          <span className="cals-label">Goal</span>
-          <span className="cals-value">{macroCalories.toLocaleString()}<span className="cals-unit"> kcal</span></span>
-        </div>
-      </div>
-      {deficit > 0 && (
-        <div className="cals-deficit">
-          <span className="cals-deficit-num">−{deficit.toLocaleString()} kcal/day</span>
-          <span className="cals-deficit-label"> deficit · {energyBalance}</span>
-        </div>
-      )}
-      {targetDeficit > 0 && deficit < targetDeficit && (
-        <p className="cals-hint">
-          To hit your {lossPerWeek} kg/week target you need a {targetDeficit} kcal/day deficit — currently {deficit} kcal.
-        </p>
-      )}
-    </div>
-  );
-};
-
 // ── WeightSparkline ───────────────────────────────────────────
 const WeightSparkline: React.FC<{
   allTrackerDays: any[];
   currentWeight: number;
+  goalWeight: number;
   lossPerWeek: number;
-}> = ({ allTrackerDays, currentWeight, lossPerWeek }) => {
+}> = ({ allTrackerDays, currentWeight, goalWeight, lossPerWeek }) => {
+  const isBulk = goalWeight > currentWeight && currentWeight > 0;
   const now = new Date();
   const dow = now.getDay();
   const mon = new Date(now);
@@ -542,15 +451,16 @@ const WeightSparkline: React.FC<{
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(mon); d.setDate(mon.getDate() + i);
-    return d.toISOString().split('T')[0];
+    return localYMD(d);
   });
 
   const weekData = weekDays.map((iso, i) => {
     const ddmm = isoToDDMM(iso);
     const found = allTrackerDays.find((d: any) => d.day === ddmm);
     const actual = found && parseFloat(found.weight) > 0 ? parseFloat(found.weight) : undefined;
+    const direction = isBulk ? 1 : -1;
     const expected = currentWeight > 0 && lossPerWeek > 0
-      ? parseFloat((currentWeight - (lossPerWeek / 7) * i).toFixed(2))
+      ? parseFloat((currentWeight + direction * (lossPerWeek / 7) * i).toFixed(2))
       : undefined;
     return { label: DAY_SHORT[i], actual, expected };
   });
@@ -559,7 +469,7 @@ const WeightSparkline: React.FC<{
   const histPts: { x: number; y: number }[] = [];
   for (let i = 27; i >= 0; i--) {
     const d = new Date(now); d.setDate(now.getDate() - i);
-    const ddmm = isoToDDMM(d.toISOString().split('T')[0]);
+    const ddmm = isoToDDMM(localYMD(d));
     const found = allTrackerDays.find((day: any) => day.day === ddmm);
     if (found && parseFloat(found.weight) > 0)
       histPts.push({ x: 27 - i, y: parseFloat(found.weight) });
@@ -574,20 +484,39 @@ const WeightSparkline: React.FC<{
   if (lossPerWeek <= 0) {
     insightMsg = 'Set a goal weight and weekly target to see your progress prediction.';
   } else if (histPts.length >= 3 && weeklyRate !== null) {
-    const actualLoss = -weeklyRate;
-    if (actualLoss >= lossPerWeek + 0.15) {
-      insightLevel = 'great';
-      insightMsg = `You're losing ${actualLoss.toFixed(2)} kg/week — ahead of your ${lossPerWeek} kg target. Great progress! Make sure you're eating enough protein to protect muscle.`;
-    } else if (actualLoss >= lossPerWeek - 0.1) {
-      insightLevel = 'good';
-      insightMsg = `Right on track — ${actualLoss.toFixed(2)} kg/week matches your ${lossPerWeek} kg target. Keep the routine going.`;
-    } else if (actualLoss >= 0.05) {
-      insightLevel = 'behind';
-      const gap = Math.round((lossPerWeek - actualLoss) * 7700 / 7);
-      insightMsg = `You're losing ${actualLoss.toFixed(2)} kg/week vs your ${lossPerWeek} kg target. Tighten up ~${gap} kcal/day to close the gap — you've got this.`;
+    if (isBulk) {
+      // Gaining weight — weeklyRate > 0 means gaining
+      const actualGain = weeklyRate;
+      if (actualGain >= lossPerWeek + 0.1) {
+        insightLevel = 'behind';
+        insightMsg = `You're gaining ${actualGain.toFixed(2)} kg/week — faster than your ${lossPerWeek} kg target. Slow bulk means more muscle, less fat. Check your surplus.`;
+      } else if (actualGain >= lossPerWeek - 0.1) {
+        insightLevel = 'great';
+        insightMsg = `Right on track — gaining ${actualGain.toFixed(2)} kg/week matches your ${lossPerWeek} kg bulk target. Keep training heavy and hitting your protein.`;
+      } else if (actualGain >= 0.05) {
+        insightLevel = 'good';
+        insightMsg = `Gaining ${actualGain.toFixed(2)} kg/week vs your ${lossPerWeek} kg target. A little more food or one extra gym session could close the gap.`;
+      } else {
+        insightLevel = 'behind';
+        insightMsg = `Minimal weight change detected. To bulk, you need a consistent calorie surplus — make sure you're hitting your kcal target every day.`;
+      }
     } else {
-      insightLevel = 'behind';
-      insightMsg = `Minimal change detected recently. That's okay — consistency beats perfection. Focus on hitting your calorie and protein targets this week.`;
+      // Losing weight — actualLoss > 0 means losing
+      const actualLoss = -weeklyRate;
+      if (actualLoss >= lossPerWeek + 0.15) {
+        insightLevel = 'great';
+        insightMsg = `You're losing ${actualLoss.toFixed(2)} kg/week — ahead of your ${lossPerWeek} kg target. Great progress! Make sure you're eating enough protein to protect muscle.`;
+      } else if (actualLoss >= lossPerWeek - 0.1) {
+        insightLevel = 'good';
+        insightMsg = `Right on track — ${actualLoss.toFixed(2)} kg/week matches your ${lossPerWeek} kg target. Keep the routine going.`;
+      } else if (actualLoss >= 0.05) {
+        insightLevel = 'behind';
+        const gap = Math.round((lossPerWeek - actualLoss) * 7700 / 7);
+        insightMsg = `You're losing ${actualLoss.toFixed(2)} kg/week vs your ${lossPerWeek} kg target. Tighten up ~${gap} kcal/day to close the gap — you've got this.`;
+      } else {
+        insightLevel = 'behind';
+        insightMsg = `Minimal change detected recently. That's okay — consistency beats perfection. Focus on hitting your calorie and protein targets this week.`;
+      }
     }
   }
 
@@ -649,10 +578,7 @@ const ActivityTargetsCard: React.FC<{
   stepTarget: number;
   yesterdaySteps: number | null;
   onSaved: (steps: number) => void;
-  onStepTargetChange: (val: number) => void;
-}> = ({ currentWeight, maintenance, macroCalories, lossPerWeek, stepTarget, yesterdaySteps, onSaved, onStepTargetChange }) => {
-  const [localStep, setLocalStep] = useState(stepTarget);
-  useEffect(() => setLocalStep(stepTarget), [stepTarget]);
+}> = ({ currentWeight, maintenance, macroCalories, lossPerWeek, stepTarget, yesterdaySteps, onSaved }) => {
 
   const targetDeficit = lossPerWeek > 0 ? Math.round(lossPerWeek * 7700 / 7) : 0;
   const dietDeficit = maintenance > 0 ? Math.max(0, maintenance - macroCalories) : 0;
@@ -682,20 +608,6 @@ const ActivityTargetsCard: React.FC<{
         </div>
       </div>
 
-      <div className="step-perf-target-row">
-        <span className="step-perf-label">Step target</span>
-        <input
-          className="step-target-input"
-          type="text"
-          inputMode="numeric"
-          value={localStep}
-          onChange={e => setLocalStep(parseInt(e.target.value) || localStep)}
-          onBlur={() => { onStepTargetChange(localStep); api.updateProfile({ stepTarget: localStep }).catch(() => {}); }}
-          onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-        />
-        <span className="step-perf-unit">steps / day</span>
-      </div>
-
       {yesterdaySteps !== null && (
         <div className="step-perf-yesterday">
           <div className="step-perf-bar-wrap">
@@ -717,6 +629,75 @@ const ActivityTargetsCard: React.FC<{
   );
 };
 
+// ── WeeklyPlanCard ────────────────────────────────────────────
+const WeeklyPlanCard: React.FC<{
+  goal: 'cut' | 'maintain' | 'bulk';
+  kg: number;
+  stepTarget: number;
+  gymSessions: number;
+  onStepTargetChange: (val: number) => void;
+  onGymSessionsChange: (val: number) => void;
+}> = ({ goal, kg, stepTarget, gymSessions, onStepTargetChange, onGymSessionsChange }) => {
+  const [localStep, setLocalStep] = useState(stepTarget);
+  useEffect(() => setLocalStep(stepTarget), [stepTarget]);
+
+  const proteinG = kg > 0 ? Math.round(kg * (goal === 'cut' ? 2.0 : goal === 'bulk' ? 1.8 : 1.7)) : 0;
+
+  const gymAdvice = gymSessions === 0
+    ? 'Try adding at least 2 gym sessions this week — resistance training protects muscle.'
+    : gymSessions < 3
+    ? `${gymSessions} gym session${gymSessions > 1 ? 's' : ''} this week is a solid start. Mix strength and cardio.`
+    : gymSessions >= 5
+    ? `${gymSessions} sessions this week — strong commitment. Make sure you're recovering well too.`
+    : `${gymSessions} gym sessions keeps you on track. Prioritise compound lifts for best results.`;
+
+  const stepAdvice = localStep >= 10000
+    ? `Your ${Math.round(localStep / 1000)}k step target adds a great daily calorie burn.`
+    : `Aim for 10,000 steps/day — the extra movement makes a real difference over time.`;
+
+  const proteinAdvice = kg > 0
+    ? ` Hit ${proteinG}g protein daily to ${goal === 'cut' ? 'protect muscle while cutting' : goal === 'bulk' ? 'fuel your muscle growth' : 'stay lean and strong'}.`
+    : '';
+
+  const goalLabel = goal === 'cut' ? 'cut fat' : goal === 'bulk' ? 'build muscle' : 'maintain your weight';
+
+  return (
+    <div className="diet-section weekly-plan-card">
+      <h2 className="diet-heading">Weekly Plan</h2>
+
+      <div className="weekly-plan-row">
+        <span className="weekly-plan-label">Gym sessions this week</span>
+        <div className="gym-stepper">
+          <button className="gym-step-btn" onClick={() => onGymSessionsChange(Math.max(0, gymSessions - 1))}>−</button>
+          <span className="gym-step-val">{gymSessions}<span className="gym-step-x">×</span></span>
+          <button className="gym-step-btn" onClick={() => onGymSessionsChange(Math.min(7, gymSessions + 1))}>+</button>
+        </div>
+      </div>
+
+      <div className="weekly-plan-row">
+        <span className="weekly-plan-label">Daily step target</span>
+        <div className="step-target-inline">
+          <input
+            className="step-target-input"
+            type="text"
+            inputMode="numeric"
+            value={localStep}
+            onChange={e => setLocalStep(parseInt(e.target.value) || localStep)}
+            onBlur={() => onStepTargetChange(localStep)}
+            onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+          />
+          <span className="weekly-plan-unit">steps</span>
+        </div>
+      </div>
+
+      <div className="plan-advice-box">
+        <span className="plan-advice-icon">💡</span>
+        <p className="plan-advice-text">To {goalLabel}: {gymAdvice} {stepAdvice}{proteinAdvice}</p>
+      </div>
+    </div>
+  );
+};
+
 const Diet: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') === 'meals' ? 'meals' : 'targets';
@@ -730,6 +711,7 @@ const Diet: React.FC = () => {
   const [editingPlanLabel, setEditingPlanLabel] = useState('');
   const [dietFilters, setDietFilters] = useState<string[]>([]);
   const [goal, setGoal] = useState<'cut' | 'maintain' | 'bulk'>('cut');
+  const [gymSessions, setGymSessions] = useState<number>(() => parseInt(localStorage.getItem('superdub.gym.sessions') || '3'));
   const [stepTarget, setStepTarget] = useState(10000);
   const [yesterdaySteps, setYesterdaySteps] = useState<number | null>(null);
   const [allTrackerDays, setAllTrackerDays] = useState<any[]>([]);
@@ -753,10 +735,10 @@ const Diet: React.FC = () => {
       if (ws.goalWeight) setGoalWeight(parseFloat(ws.goalWeight) || 0);
       if (ws.lossPerWeek) setLossPerWeek(parseFloat(ws.lossPerWeek) || 0.5);
 
-      // Yesterday's steps
+      // Yesterday's steps — tracker stores days in DD/MM format
       const yest = new Date(); yest.setDate(yest.getDate() - 1);
-      const yestKey = yest.toISOString().split('T')[0];
-      const yestDay = allDays.find((d: any) => d.day === yestKey);
+      const yestDDMM = `${String(yest.getDate()).padStart(2,'0')}/${String(yest.getMonth()+1).padStart(2,'0')}`;
+      const yestDay = allDays.find((d: any) => d.day === yestDDMM);
       if (yestDay?.steps != null) setYesterdaySteps(Number(yestDay.steps));
 
       const p = profileData as ProfileData & { name: string };
@@ -785,18 +767,6 @@ const Diet: React.FC = () => {
       setLoaded(true);
     }).catch(() => setLoaded(true));
   }, []);
-
-  // Debounced target save
-  const targetSaveTimer = useRef<ReturnType<typeof setTimeout>>();
-  const targetRef = useRef(target);
-  useEffect(() => { targetRef.current = target; }, [target]);
-
-  const scheduleTargetSave = () => {
-    clearTimeout(targetSaveTimer.current);
-    targetSaveTimer.current = setTimeout(() => {
-      api.updateDietTarget(targetRef.current).catch(() => {});
-    }, 600);
-  };
 
   // Derived
   const macroCalories = target.protein * 4 + target.carbs * 4 + target.fats * 9;
@@ -828,92 +798,19 @@ const Diet: React.FC = () => {
     return 'Aggressive Cut';
   })();
 
-  const getMax = (key: MacroKey): number | null => {
-    if (!calorieLock) return null;
-    const ceiling = macroCalories;
-    const othersCal = (['protein', 'carbs', 'fats'] as MacroKey[])
-      .filter(k => k !== key)
-      .reduce((sum, k) => sum + target[k] * CAL_PER[k], 0);
-    return Math.max(0, Math.floor((ceiling - othersCal) / CAL_PER[key]));
-  };
-
-  const changeMacro = (key: MacroKey, newVal: number) => {
-    const safeVal = Math.max(0, newVal);
-    if (!calorieLock) {
-      setTarget(prev => {
-        const next = { ...prev, [key]: safeVal };
-        setTimeout(() => { targetRef.current = next; scheduleTargetSave(); }, 0);
-        return next;
-      });
-      return;
-    }
-    const ceiling = macroCalories;
-    const calFromThis = safeVal * CAL_PER[key];
-    const otherKeys = (['protein', 'carbs', 'fats'] as MacroKey[]).filter(k => k !== key);
-    const lockedCal = otherKeys.filter(k => locks[k]).reduce((s, k) => s + target[k] * CAL_PER[k], 0);
-    const remaining = ceiling - calFromThis - lockedCal;
-    const unlocked = otherKeys.filter(k => !locks[k]);
-
-    const newValues: Partial<MacroSet> = { [key]: safeVal };
-    if (unlocked.length === 0) {
-      setTarget(prev => {
-        const next = { ...prev, ...newValues };
-        setTimeout(() => { targetRef.current = next; scheduleTargetSave(); }, 0);
-        return next;
-      });
-      return;
-    }
-    const currentUnlockedCal = unlocked.reduce((s, k) => s + target[k] * CAL_PER[k], 0);
-    if (currentUnlockedCal <= 0 || remaining <= 0) {
-      const calEach = Math.max(0, remaining) / unlocked.length;
-      unlocked.forEach(k => { newValues[k] = Math.max(0, Math.round(calEach / CAL_PER[k])); });
-    } else {
-      unlocked.forEach(k => {
-        const proportion = (target[k] * CAL_PER[k]) / currentUnlockedCal;
-        newValues[k] = Math.max(0, Math.round((remaining * proportion) / CAL_PER[k]));
-      });
-    }
-    setTarget(prev => {
-      const next = { ...prev, ...newValues };
-      setTimeout(() => { targetRef.current = next; scheduleTargetSave(); }, 0);
-      return next;
-    });
-  };
-
-  const toggleLock = (key: MacroKey) => {
-    setLocks(prev => {
-      const next = { ...prev, [key]: !prev[key] };
-      api.updateDietSettings({ lockProtein: next.protein, lockCarbs: next.carbs, lockFats: next.fats, calorieLock, goal }).catch(() => {});
-      return next;
-    });
-  };
-
-  const toggleCalorieLock = () => {
-    setCalorieLock(prev => {
-      const next = !prev;
-      api.updateDietSettings({ lockProtein: locks.protein, lockCarbs: locks.carbs, lockFats: locks.fats, calorieLock: next, goal }).catch(() => {});
-      return next;
-    });
-  };
-
   const applyGoal = (newGoal: 'cut' | 'maintain' | 'bulk') => {
     setGoal(newGoal);
     api.updateDietSettings({ lockProtein: locks.protein, lockCarbs: locks.carbs, lockFats: locks.fats, calorieLock, goal: newGoal }).catch(() => {});
-    if (maintenance <= 0) return;
-    const delta = newGoal === 'cut' ? -400 : newGoal === 'bulk' ? 300 : 0;
-    const newCals = Math.max(1200, maintenance + delta);
-    const curCals = macroCalories > 0 ? macroCalories : newCals;
-    const ratio = newCals / curCals;
-    setTarget(prev => {
-      const next = {
-        calories: newCals,
-        protein: Math.round(prev.protein * ratio),
-        carbs: Math.max(0, Math.round(prev.carbs * ratio)),
-        fats: Math.max(0, Math.round(prev.fats * ratio)),
-      };
-      api.updateDietTarget(next).catch(() => {});
-      return next;
-    });
+    if (maintenance <= 0 || kg <= 0) return;
+    const targetCals = Math.max(1200, newGoal === 'cut' ? maintenance - 400 : newGoal === 'bulk' ? maintenance + 300 : maintenance);
+    // Body-weight based macro split
+    const proteinG = Math.round(kg * (newGoal === 'cut' ? 2.0 : newGoal === 'bulk' ? 1.8 : 1.7));
+    const fatG     = Math.round(kg * (newGoal === 'cut' ? 0.8 : newGoal === 'bulk' ? 1.1 : 0.9));
+    const carbCals = Math.max(0, targetCals - proteinG * 4 - fatG * 9);
+    const carbG    = Math.round(carbCals / 4);
+    const next = { calories: targetCals, protein: proteinG, carbs: carbG, fats: fatG };
+    setTarget(next);
+    api.updateDietTarget(next).catch(() => {});
   };
 
   const generatePlan = () => {
@@ -994,7 +891,9 @@ const Diet: React.FC = () => {
 
         {activeTab === 'targets' && (<>
 
-        {/* 1. Weight Goal */}
+        {/* ── Section 1: Goal & Strategy ── */}
+        <div className="plan-section-label">Goal & Strategy</div>
+
         <WeightGoalCard
           currentWeight={kg}
           goalWeight={goalWeight}
@@ -1006,53 +905,74 @@ const Diet: React.FC = () => {
           }}
         />
 
-        {/* 2. Calorie Strategy */}
-        <CalorieStrategyCard
-          maintenance={maintenance}
-          macroCalories={macroCalories}
-          lossPerWeek={lossPerWeek}
-          energyBalance={energyBalance}
-        />
-
-        {/* 2.5 Macro Targets */}
-        <div className="diet-section">
-          <div className="macro-section-head">
-            <h2 className="diet-heading" style={{ marginBottom: 0 }}>Macro Targets</h2>
-            <button className={`lock-btn${calorieLock ? ' on' : ''}`} onClick={toggleCalorieLock} title="Lock total calories">
-              {calorieLock ? '🔒 Cal locked' : '🔓 Lock cals'}
-            </button>
-          </div>
-          <div className="target-fields">
-            <MacroField label="Protein (g)" mkey="protein" val={target.protein} isLocked={locks.protein} max={getMax('protein')} onChangeMacro={changeMacro} onToggleLock={toggleLock} />
-            <MacroField label="Carbs (g)"   mkey="carbs"   val={target.carbs}   isLocked={locks.carbs}   max={getMax('carbs')}   onChangeMacro={changeMacro} onToggleLock={toggleLock} />
-            <MacroField label="Fats (g)"    mkey="fats"    val={target.fats}    isLocked={locks.fats}    max={getMax('fats')}    onChangeMacro={changeMacro} onToggleLock={toggleLock} />
-          </div>
+        {/* Strategy: Cut / Bulk / Maintain with auto macro recommendation */}
+        <div className="diet-section strategy-card">
+          <h2 className="diet-heading">Strategy</h2>
           <div className="diet-goal-card">
             {(['cut', 'maintain', 'bulk'] as const).map(g => (
               <button key={g} className={`diet-goal-btn${goal === g ? ' active' : ''}`} onClick={() => applyGoal(g)}>
                 <span className="diet-goal-icon">{g === 'cut' ? '🔥' : g === 'maintain' ? '⚖️' : '💪'}</span>
-                <span className="diet-goal-label">{g.charAt(0).toUpperCase() + g.slice(1)}</span>
+                <span className="diet-goal-label">{g === 'cut' ? 'Cut' : g === 'maintain' ? 'Maintain' : 'Bulk'}</span>
                 <span className="diet-goal-delta">{g === 'cut' ? '−400 kcal' : g === 'maintain' ? '±0 kcal' : '+300 kcal'}</span>
               </button>
             ))}
           </div>
+          <div className="strategy-macro-row">
+            {[
+              { val: target.protein, lbl: 'protein', color: '#ff6ec7' },
+              { val: target.carbs,   lbl: 'carbs',   color: '#00e5ff' },
+              { val: target.fats,    lbl: 'fats',     color: '#ffd60a' },
+            ].map(m => (
+              <div key={m.lbl} className="strategy-macro-chip">
+                <span className="smc-val" style={{ color: m.color }}>{m.val}g</span>
+                <span className="smc-lbl">{m.lbl}</span>
+              </div>
+            ))}
+            <div className="strategy-macro-chip">
+              <span className="smc-val">{macroCalories.toLocaleString()}</span>
+              <span className="smc-lbl">kcal/day</span>
+            </div>
+          </div>
+          {maintenance > 0 && (
+            <div className="strategy-maintenance">
+              Maintenance: {maintenance.toLocaleString()} kcal · <span className="strategy-eb">{energyBalance}</span>
+            </div>
+          )}
           <Link to="/diet/macro" className="diet-macro-link-card" style={{ marginTop: 12 }}>
             <div className="diet-macro-link-left">
               <span className="diet-macro-link-title">Macro Analysis</span>
-              <span className="diet-macro-link-sub">Split · Classification · Balance</span>
+              <span className="diet-macro-link-sub">Fine-tune protein · carbs · fats</span>
             </div>
             <span className="diet-macro-link-arrow">→</span>
           </Link>
         </div>
 
-        {/* 3. Weight sparkline + ML adaptive insight */}
+        {/* Gym sessions + step target + personalised advice */}
+        <WeeklyPlanCard
+          goal={goal}
+          kg={kg}
+          stepTarget={stepTarget}
+          gymSessions={gymSessions}
+          onStepTargetChange={val => {
+            setStepTarget(val);
+            api.updateProfile({ stepTarget: val }).catch(() => {});
+          }}
+          onGymSessionsChange={val => {
+            setGymSessions(val);
+            localStorage.setItem('superdub.gym.sessions', String(val));
+          }}
+        />
+
+        {/* ── Section 2: Actuals ── */}
+        <div className="plan-section-label" style={{ marginTop: 8 }}>Actuals</div>
+
         <WeightSparkline
           allTrackerDays={allTrackerDays}
           currentWeight={kg}
+          goalWeight={goalWeight}
           lossPerWeek={lossPerWeek}
         />
 
-        {/* 4 & 5. Recommended steps + calories to burn */}
         <ActivityTargetsCard
           currentWeight={kg}
           maintenance={maintenance}
@@ -1061,7 +981,6 @@ const Diet: React.FC = () => {
           stepTarget={stepTarget}
           yesterdaySteps={yesterdaySteps}
           onSaved={steps => setYesterdaySteps(steps)}
-          onStepTargetChange={setStepTarget}
         />
 
         </>)}
