@@ -112,7 +112,8 @@ const StepLogger: React.FC<{ onSaved: (steps: number) => void }> = ({ onSaved })
   );
 };
 
-// ── PlanSummaryCard ───────────────────────────────────────────────────────────
+// ── PlanSummaryCard (unused — inlined into Diet render) ──────────────────────
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const PlanSummaryCard: React.FC<{
   currentWeight: number;
   todayWeight: number | null;
@@ -383,7 +384,7 @@ const WeightSparkline: React.FC<{
       <h2 className="diet-heading">Weight This Week</h2>
 
       {hasAny || weekData.some(d => d.expected !== undefined) ? (
-        <ResponsiveContainer width="100%" height={150}>
+        <ResponsiveContainer width="100%" height={160}>
           <ComposedChart data={weekData} margin={{ top: 8, right: 4, bottom: 0, left: -18 }}>
             <XAxis dataKey="label" tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
             <YAxis domain={[minW, maxW]} tick={{ fill: '#444', fontSize: 10 }} axisLine={false} tickLine={false} width={38} />
@@ -392,8 +393,15 @@ const WeightSparkline: React.FC<{
               labelStyle={{ color: '#888' }}
               formatter={((val: any, name: string) => [`${val} kg`, name === 'actual' ? 'Logged' : 'Expected']) as any}
             />
-            <Line type="linear" dataKey="expected" stroke="#00e5ff33" strokeWidth={1.5} strokeDasharray="4 3" dot={false} connectNulls name="expected" />
-            <Line type="monotone" dataKey="actual" stroke="#00e5ff" strokeWidth={2.5} dot={{ fill: '#00e5ff', r: 4, strokeWidth: 0 }} activeDot={{ r: 6 }} connectNulls={false} name="actual" />
+            <Line type="linear" dataKey="expected" stroke="#00e5ff33" strokeWidth={1.5} strokeDasharray="4 3"
+              dot={(props: any) => {
+                const { cx, cy, payload } = props;
+                if (payload.actual !== undefined) return <g key={cx} />;
+                return <circle key={cx} cx={cx} cy={cy} r={4} fill="none" stroke="#1e2a3a" strokeWidth={1.5} />;
+              }}
+              connectNulls name="expected"
+            />
+            <Line type="monotone" dataKey="actual" stroke="#00e5ff" strokeWidth={2.5} dot={{ fill: '#00e5ff', r: 5, stroke: '#0a0d18', strokeWidth: 2 }} activeDot={{ r: 7 }} connectNulls={false} name="actual" />
           </ComposedChart>
         </ResponsiveContainer>
       ) : (
@@ -854,6 +862,18 @@ const Diet: React.FC = () => {
           <Link to="/" className="back-link">← Back</Link>
         </div>
         <h1 className="title">Training Plan</h1>
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('superdub:show-checkin'))}
+          style={{
+            marginLeft: 'auto', background: 'none', border: 'none',
+            color: '#555', cursor: 'pointer', padding: '6px 8px',
+            fontSize: '1.2rem', lineHeight: 1, borderRadius: 8,
+            transition: 'color 0.15s',
+          }}
+          title="Log weight"
+        >
+          ⚙️
+        </button>
       </header>
 
       {/* ── Plan summary — pinned above the scroll area, always visible ── */}

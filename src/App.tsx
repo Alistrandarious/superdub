@@ -105,6 +105,15 @@ interface AppProps { onLogout?: () => void; }
 
 const App: React.FC<AppProps> = ({ onLogout }) => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const cogRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (cogRef.current && !cogRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [menuOpen]);
   const [weightPlanOpen, setWeightPlanOpen] = useState(false);
   const [habitsModalOpen, setHabitsModalOpen] = useState(false);
   const [nutritionOpen, setNutritionOpen] = useState(false);
@@ -527,15 +536,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     <div className="app" style={{ '--theme': themeColor, '--theme-dim': themeColor + '66', '--theme-glow': themeColor + '33' } as React.CSSProperties}>
       <header className="header">
         <div className="header-left">
-          <button
-            className="hamburger"
-            onClick={() => setMenuOpen(!menuOpen)}
-            aria-label="Toggle menu"
-          >
-            <span />
-            <span />
-            <span />
-          </button>
           <div className="calendar-picker">
             <button className="calendar-btn" onClick={() => setCalendarOpen(!calendarOpen)}>
               {MONTH_NAMES[selectedMonth]} {YEAR}
@@ -564,20 +564,53 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             )}
           </div>
         </div>
-      </header>
 
-      {menuOpen && (
-        <div className="menu-overlay" onClick={() => setMenuOpen(false)}>
-          <nav className="menu" onClick={e => e.stopPropagation()}>
-            <div className="menu-header">
-              <span className="menu-title">Options</span>
-              <button className="menu-close" onClick={() => setMenuOpen(false)} aria-label="Close menu">✕</button>
+        {/* Cog dropdown — top right */}
+        <div ref={cogRef} style={{ marginLeft: 'auto', position: 'relative' }}>
+          <button
+            onClick={() => setMenuOpen(o => !o)}
+            style={{
+              background: 'none', border: 'none', color: menuOpen ? 'var(--theme)' : '#555',
+              cursor: 'pointer', fontSize: '1.15rem', padding: '6px 8px',
+              lineHeight: 1, borderRadius: 8, transition: 'color 0.15s',
+            }}
+            aria-label="Settings"
+          >
+            ⚙️
+          </button>
+          {menuOpen && (
+            <div style={{
+              position: 'absolute', top: 'calc(100% + 6px)', right: 0,
+              background: '#0e1022', border: '1px solid #1e2245',
+              borderRadius: 12, minWidth: 160, overflow: 'hidden',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.5)', zIndex: 300,
+            }}>
+              <button
+                onClick={() => { setHabitsModalOpen(true); setMenuOpen(false); }}
+                style={{
+                  display: 'block', width: '100%', padding: '12px 16px',
+                  background: 'none', border: 'none', color: '#ccc',
+                  textAlign: 'left', cursor: 'pointer', fontSize: '0.85rem',
+                  fontFamily: 'inherit', borderBottom: '1px solid #1a2535',
+                }}
+              >
+                Edit Habits
+              </button>
+              <button
+                onClick={() => { setWeightPlanOpen(true); setMenuOpen(false); }}
+                style={{
+                  display: 'block', width: '100%', padding: '12px 16px',
+                  background: 'none', border: 'none', color: '#ccc',
+                  textAlign: 'left', cursor: 'pointer', fontSize: '0.85rem',
+                  fontFamily: 'inherit',
+                }}
+              >
+                Weight Settings
+              </button>
             </div>
-            <button type="button" onClick={() => { setHabitsModalOpen(true); setMenuOpen(false); }}>Edit Habits</button>
-            <button type="button" onClick={() => { setWeightPlanOpen(true); setMenuOpen(false); }}>Weight Settings</button>
-          </nav>
+          )}
         </div>
-      )}
+      </header>
 
       {habitsModalOpen && (
         <div className="modal-overlay" onClick={() => setHabitsModalOpen(false)}>
