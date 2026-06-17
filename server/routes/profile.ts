@@ -18,7 +18,10 @@ router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
     const [profileRes, userRes] = await Promise.all([
       pool.query(
-        'SELECT name, dob, height_cm, weight_kg, age, sex, activity, steps, vest_kg, job_type, gym_freq, walk_freq, step_target FROM profile WHERE user_id = $1',
+        `SELECT name, dob, height_cm, weight_kg, age, sex, activity, steps, vest_kg,
+                job_type, gym_freq, walk_freq, step_target,
+                gym_sessions_per_week, gym_intensity, gym_minutes, weekly_activities
+         FROM profile WHERE user_id = $1`,
         [req.userId]
       ),
       pool.query('SELECT created_at, last_login_at, last_active_at FROM users WHERE id = $1', [req.userId]),
@@ -29,6 +32,8 @@ router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
     if (!profileRes.rows[0]) return res.json({ accountCreatedAt, lastLoginAt, lastActiveAt });
     const r = profileRes.rows[0];
     const dobStr = r.dob ? new Date(r.dob).toISOString().split('T')[0] : '';
+    let weeklyActivities: any[] = [];
+    try { weeklyActivities = JSON.parse(r.weekly_activities ?? '[]'); } catch {}
     res.json({
       name: r.name ?? '',
       dob: dobStr,
@@ -42,6 +47,10 @@ router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
       gymFreq: r.gym_freq ?? '3-4',
       walkFreq: r.walk_freq ?? 'moderate',
       stepTarget: r.step_target ?? 10000,
+      gymSessionsPerWeek: r.gym_sessions_per_week ?? 3,
+      gymIntensity: r.gym_intensity ?? 'moderate',
+      gymMinutes: r.gym_minutes ?? 60,
+      weeklyActivities,
       accountCreatedAt,
       lastLoginAt,
       lastActiveAt,
@@ -53,9 +62,15 @@ router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
 
 router.put('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
-    const { name, dob, heightCm, weightKg, sex, activity, steps, vestKg, jobType, gymFreq, walkFreq, stepTarget } = req.body;
+    const {
+      name, dob, heightCm, weightKg, sex, activity, steps, vestKg,
+      jobType, gymFreq, walkFreq, stepTarget,
+      gymSessionsPerWeek, gymIntensity, gymMinutes, weeklyActivities,
+    } = req.body;
     const age = dob != null ? ageFromDob(dob || null) : undefined;
-    // Only update fields that were explicitly provided — preserve everything else
+    const activitiesStr = weeklyActivities != null
+      ? (typeof weeklyActivities === 'string' ? weeklyActivities : JSON.stringify(weeklyActivities))
+      : null;
     await pool.query(
       `UPDATE profile SET
          name       = CASE WHEN $2::text IS NOT NULL THEN $2 ELSE name END,
@@ -70,22 +85,30 @@ router.put('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
          job_type   = CASE WHEN $11::text IS NOT NULL THEN $11 ELSE job_type END,
          gym_freq   = CASE WHEN $12::text IS NOT NULL THEN $12 ELSE gym_freq END,
          walk_freq  = CASE WHEN $13::text IS NOT NULL THEN $13 ELSE walk_freq END,
-         step_target = CASE WHEN $14::int IS NOT NULL THEN $14 ELSE step_target END
+         step_target = CASE WHEN $14::int IS NOT NULL THEN $14 ELSE step_target END,
+         gym_sessions_per_week = CASE WHEN $15::int IS NOT NULL THEN $15 ELSE gym_sessions_per_week END,
+         gym_intensity = CASE WHEN $16::text IS NOT NULL THEN $16 ELSE gym_intensity END,
+         gym_minutes = CASE WHEN $17::int IS NOT NULL THEN $17 ELSE gym_minutes END,
+         weekly_activities = CASE WHEN $18::text IS NOT NULL THEN $18 ELSE weekly_activities END
        WHERE user_id=$1`,
       [req.userId,
-       name     != null ? String(name)     : null,
-       dob      != null ? (dob || null)    : null,
-       heightCm != null ? String(heightCm) : null,
-       weightKg != null ? String(weightKg) : null,
-       age      != null ? String(age)      : null,
-       sex      != null ? String(sex)      : null,
-       activity != null ? String(activity) : null,
-       steps    != null ? String(steps)    : null,
-       vestKg   != null ? String(vestKg)   : null,
-       jobType  != null ? String(jobType)  : null,
-       gymFreq  != null ? String(gymFreq)  : null,
-       walkFreq != null ? String(walkFreq) : null,
-       stepTarget != null ? Number(stepTarget) : null]
+       name          != null ? String(name)          : null,
+       dob           != null ? (dob || null)          : null,
+       heightCm      != null ? String(heightCm)       : null,
+       weightKg      != null ? String(weightKg)       : null,
+       age           != null ? String(age)            : null,
+       sex           != null ? String(sex)            : null,
+       activity      != null ? String(activity)       : null,
+       steps         != null ? String(steps)          : null,
+       vestKg        != null ? String(vestKg)         : null,
+       jobType       != null ? String(jobType)        : null,
+       gymFreq       != null ? String(gymFreq)        : null,
+       walkFreq      != null ? String(walkFreq)       : null,
+       stepTarget    != null ? Number(stepTarget)     : null,
+       gymSessionsPerWeek != null ? Number(gymSessionsPerWeek) : null,
+       gymIntensity  != null ? String(gymIntensity)   : null,
+       gymMinutes    != null ? Number(gymMinutes)     : null,
+       activitiesStr]
     );
     res.json({ ok: true });
   } catch {
@@ -93,7 +116,6 @@ router.put('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   }
 });
 
-// DELETE /api/profile — permanently deletes the user and all their data (cascades via FK)
 router.delete('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
     await pool.query('DELETE FROM users WHERE id = $1', [req.userId]);
@@ -103,7 +125,6 @@ router.delete('/', requireAuth as any, async (req: AuthRequest, res: Response) =
   }
 });
 
-// GET /ai-key — returns whether key is set + masked value
 router.get('/ai-key', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
     const { rows } = await pool.query('SELECT anthropic_api_key FROM profile WHERE user_id = $1', [req.userId]);
@@ -114,7 +135,6 @@ router.get('/ai-key', requireAuth as any, async (req: AuthRequest, res: Response
   }
 });
 
-// PUT /ai-key — store or clear the user's Anthropic API key
 router.put('/ai-key', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
     const { key } = req.body as { key: string };

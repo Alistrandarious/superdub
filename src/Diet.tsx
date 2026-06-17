@@ -14,14 +14,12 @@ interface ProfileData {
   vestKg: string;
 }
 
-function ageFromDob(dob: string): number {
-  if (!dob) return 0;
-  const born = new Date(dob);
-  const today = new Date();
-  let age = today.getFullYear() - born.getFullYear();
-  const m = today.getMonth() - born.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < born.getDate())) age--;
-  return Math.max(0, age);
+interface WeeklyActivity {
+  id: string;
+  name: string;
+  sessionsPerWeek: number;
+  minutesPerSession: number;
+  intensity: 'light' | 'moderate' | 'hard';
 }
 
 interface MacroSet {
@@ -34,10 +32,30 @@ interface MacroSet {
 const DEFAULT_PROFILE: ProfileData = {
   dob: '', heightCm: '', weightKg: '', sex: 'male', activity: '1.55', steps: '', vestKg: '',
 };
-
 const DEFAULT_TARGET: MacroSet = { calories: 2003, protein: 150, carbs: 200, fats: 67 };
-
 const STRIDE_M = 0.762;
+const GYM_MET: Record<string, number> = { light: 4, moderate: 6, hard: 8 };
+
+function ageFromDob(dob: string): number {
+  if (!dob) return 0;
+  const born = new Date(dob);
+  const today = new Date();
+  let age = today.getFullYear() - born.getFullYear();
+  const m = today.getMonth() - born.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < born.getDate())) age--;
+  return Math.max(0, age);
+}
+
+function deduplicateDays(days: any[]): any[] {
+  const map: Record<string, any> = {};
+  for (const d of days) {
+    const existing = map[d.day];
+    if (!existing || (parseFloat(d.weight) > 0 && !(parseFloat(existing.weight) > 0))) {
+      map[d.day] = d;
+    }
+  }
+  return Object.values(map);
+}
 
 function linearReg(pts: { x: number; y: number }[]): { slope: number; weeklyRate: number } | null {
   const n = pts.length;
@@ -55,7 +73,6 @@ function yesterdayIso() {
   const d = new Date(); d.setDate(d.getDate() - 1);
   return d.toISOString().split('T')[0];
 }
-
 
 const StepLogger: React.FC<{ onSaved: (steps: number) => void }> = ({ onSaved }) => {
   const [val, setVal] = useState('');
@@ -89,7 +106,7 @@ const StepLogger: React.FC<{ onSaved: (steps: number) => void }> = ({ onSaved })
   );
 };
 
-// ── PlanSummaryCard ───────────────────────────────────────────
+// ── PlanSummaryCard ───────────────────────────────────────────────────────────
 const PlanSummaryCard: React.FC<{
   currentWeight: number;
   goalWeight: number;
@@ -99,10 +116,11 @@ const PlanSummaryCard: React.FC<{
   maintenance: number;
   onEdit: () => void;
 }> = ({ currentWeight, goalWeight, lossPerWeek, goal, target, maintenance, onEdit }) => {
-  const isBulk = goal === 'bulk' || (goalWeight > 0 && currentWeight > 0 && goalWeight > currentWeight);
+  const isBulk = goal === 'bulk';
   const diff = currentWeight > 0 && goalWeight > 0 ? Math.abs(currentWeight - goalWeight) : null;
   const weeksToGoal = diff && lossPerWeek > 0 ? Math.ceil(diff / lossPerWeek) : null;
   const macroCalories = target.protein * 4 + target.carbs * 4 + target.fats * 9;
+  const deficit = maintenance > 0 ? macroCalories - maintenance : 0;
 
   const goalMeta = {
     cut:      { icon: '🔥', label: 'Cut',      color: '#ff6b6b' },
@@ -111,58 +129,83 @@ const PlanSummaryCard: React.FC<{
   }[goal];
 
   return (
-    <div className="diet-section plan-summary-card">
-      <div className="plan-summary-header">
-        <h2 className="diet-heading" style={{ marginBottom: 0 }}>Your Plan</h2>
-        <button className="plan-summary-edit-btn" onClick={onEdit}>Edit →</button>
-      </div>
+    <div className="diet-section psc-card" style={{ '--psc-accent': goalMeta.color } as any}>
+      <div className="psc-accent-bar" style={{ background: `linear-gradient(90deg, ${goalMeta.color}cc, ${goalMeta.color}44)` }} />
 
-      <div className="plan-summary-weights">
-        <div className="psw-col">
-          <span className="psw-label">Current</span>
-          <span className="psw-val">{currentWeight > 0 ? currentWeight.toFixed(1) : '—'}<span className="psw-unit"> kg</span></span>
-        </div>
-        <div className="psw-arrow">{isBulk ? '↗' : '↘'}</div>
-        <div className="psw-col">
-          <span className="psw-label">Goal</span>
-          <span className="psw-val psw-goal">{goalWeight > 0 ? goalWeight.toFixed(1) : '—'}<span className="psw-unit"> kg</span></span>
-        </div>
-      </div>
-
-      {diff !== null && (
-        <div className="plan-summary-togo">
-          {diff.toFixed(1)} kg to {isBulk ? 'gain' : 'lose'}
-          {lossPerWeek > 0 && ` · ${lossPerWeek} kg/week`}
-          {weeksToGoal && ` · ~${weeksToGoal} weeks`}
-        </div>
-      )}
-
-      <div className="plan-summary-strategy">
-        <span className="plan-summary-goal-badge" style={{ color: goalMeta.color, borderColor: goalMeta.color + '55' }}>
+      <div className="psc-header">
+        <span className="psc-badge" style={{ color: goalMeta.color, background: goalMeta.color + '18', borderColor: goalMeta.color + '44' }}>
           {goalMeta.icon} {goalMeta.label}
         </span>
+        {weeksToGoal && (
+          <span className="psc-eta">~{weeksToGoal} {weeksToGoal === 1 ? 'week' : 'weeks'} to goal</span>
+        )}
+        <button className="psc-edit-btn" onClick={onEdit}>Edit →</button>
+      </div>
+
+      <div className="psc-journey">
+        <div className="psc-wblock">
+          <span className="psc-wlabel">NOW</span>
+          <span className="psc-wval">{currentWeight > 0 ? currentWeight.toFixed(1) : '—'}</span>
+          <span className="psc-wunit">kg</span>
+        </div>
+        <div className="psc-journey-mid">
+          {diff !== null ? (
+            <>
+              <div className="psc-journey-track">
+                <div className="psc-jdot psc-jdot--start" />
+                <div className="psc-jline" style={{ background: `linear-gradient(90deg, #ffffff25, ${goalMeta.color}88)` }} />
+                <div className="psc-jdot psc-jdot--end" style={{ background: goalMeta.color, boxShadow: `0 0 8px ${goalMeta.color}88` }} />
+              </div>
+              <div className="psc-journey-diff">
+                {isBulk ? '+' : '−'}{diff.toFixed(1)} kg
+                {lossPerWeek > 0 && <span className="psc-journey-rate"> · {lossPerWeek} kg/wk</span>}
+              </div>
+            </>
+          ) : (
+            <div className="psc-journey-empty">Set goal weight in Profile →</div>
+          )}
+        </div>
+        <div className="psc-wblock psc-wblock--goal">
+          <span className="psc-wlabel">GOAL</span>
+          <span className="psc-wval" style={{ color: goalMeta.color }}>{goalWeight > 0 ? goalWeight.toFixed(1) : '—'}</span>
+          <span className="psc-wunit">kg</span>
+        </div>
+      </div>
+
+      <div className="psc-cal-strip">
+        <div className="psc-cal-item">
+          <span className="psc-cal-num">{macroCalories.toLocaleString()}</span>
+          <span className="psc-cal-lbl">target kcal</span>
+        </div>
         {maintenance > 0 && (
-          <span className="plan-summary-maint">
-            {macroCalories.toLocaleString()} kcal · maint. {maintenance.toLocaleString()}
-          </span>
+          <>
+            <div className="psc-cal-sep" />
+            <div className="psc-cal-item">
+              <span className="psc-cal-num">{maintenance.toLocaleString()}</span>
+              <span className="psc-cal-lbl">maintenance</span>
+            </div>
+            <div className="psc-cal-sep" />
+            <div className="psc-cal-item">
+              <span className="psc-cal-num" style={{ color: deficit < 0 ? '#30d158' : deficit > 0 ? '#ff453a' : '#888' }}>
+                {deficit === 0 ? '±0' : `${deficit > 0 ? '+' : ''}${deficit.toLocaleString()}`}
+              </span>
+              <span className="psc-cal-lbl">daily {deficit < 0 ? 'deficit' : deficit > 0 ? 'surplus' : 'balance'}</span>
+            </div>
+          </>
         )}
       </div>
 
-      <div className="plan-summary-macros">
+      <div className="psc-macro-bar">
         {[
-          { val: target.protein, lbl: 'protein', color: '#ff6ec7' },
-          { val: target.carbs,   lbl: 'carbs',   color: '#00e5ff' },
-          { val: target.fats,    lbl: 'fats',     color: '#ffd60a' },
+          { val: target.protein, lbl: 'Protein', color: '#ff6ec7' },
+          { val: target.carbs,   lbl: 'Carbs',   color: '#00e5ff' },
+          { val: target.fats,    lbl: 'Fats',     color: '#ffd60a' },
         ].map(m => (
-          <div key={m.lbl} className="psm-chip">
-            <span className="psm-val" style={{ color: m.color }}>{m.val}g</span>
-            <span className="psm-lbl">{m.lbl}</span>
+          <div key={m.lbl} className="psc-mc" style={{ borderColor: m.color + '30' }}>
+            <span className="psc-mc-val" style={{ color: m.color }}>{m.val}g</span>
+            <span className="psc-mc-lbl">{m.lbl}</span>
           </div>
         ))}
-        <div className="psm-chip">
-          <span className="psm-val">{macroCalories.toLocaleString()}</span>
-          <span className="psm-lbl">kcal</span>
-        </div>
       </div>
     </div>
   );
@@ -179,7 +222,7 @@ function isoToDDMM(iso: string): string {
   return `${d}/${m}`;
 }
 
-// ── WeightSparkline ───────────────────────────────────────────
+// ── WeightSparkline ───────────────────────────────────────────────────────────
 const WeightSparkline: React.FC<{
   allTrackerDays: any[];
   currentWeight: number;
@@ -189,7 +232,6 @@ const WeightSparkline: React.FC<{
   const isBulk = goalWeight > currentWeight && currentWeight > 0;
   const now = new Date();
 
-  // Mon–Sun of the current week
   const dow = now.getDay();
   const mon = new Date(now);
   mon.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1));
@@ -211,7 +253,6 @@ const WeightSparkline: React.FC<{
     return { label: DAY_SHORT[i], actual, expected };
   });
 
-  // 28-day regression for the ML insight
   const histPts: { x: number; y: number }[] = [];
   for (let i = 27; i >= 0; i--) {
     const d = new Date(now); d.setDate(now.getDate() - i);
@@ -234,7 +275,7 @@ const WeightSparkline: React.FC<{
       const actualGain = weeklyRate;
       if (actualGain >= lossPerWeek + 0.1) {
         insightLevel = 'behind';
-        insightMsg = `You're gaining ${actualGain.toFixed(2)} kg/week — faster than your ${lossPerWeek} kg target. Slow bulk means more muscle, less fat. Check your surplus.`;
+        insightMsg = `Gaining ${actualGain.toFixed(2)} kg/week — faster than your ${lossPerWeek} kg target. Slow bulk means more muscle, less fat. Check your surplus.`;
       } else if (actualGain >= lossPerWeek - 0.1) {
         insightLevel = 'great';
         insightMsg = `Right on track — gaining ${actualGain.toFixed(2)} kg/week matches your ${lossPerWeek} kg bulk target. Keep training heavy and hitting your protein.`;
@@ -243,23 +284,23 @@ const WeightSparkline: React.FC<{
         insightMsg = `Gaining ${actualGain.toFixed(2)} kg/week vs your ${lossPerWeek} kg target. A little more food or one extra gym session could close the gap.`;
       } else {
         insightLevel = 'behind';
-        insightMsg = `Minimal weight change detected. To bulk, you need a consistent calorie surplus — make sure you're hitting your kcal target every day.`;
+        insightMsg = `Minimal weight change. To bulk, you need a consistent calorie surplus — make sure you're hitting your kcal target every day.`;
       }
     } else {
       const actualLoss = -weeklyRate;
       if (actualLoss >= lossPerWeek + 0.15) {
         insightLevel = 'great';
-        insightMsg = `You're losing ${actualLoss.toFixed(2)} kg/week — ahead of your ${lossPerWeek} kg target. Great progress! Make sure you're eating enough protein to protect muscle.`;
+        insightMsg = `Losing ${actualLoss.toFixed(2)} kg/week — ahead of your ${lossPerWeek} kg target. Great progress! Keep hitting your protein to protect muscle.`;
       } else if (actualLoss >= lossPerWeek - 0.1) {
         insightLevel = 'good';
         insightMsg = `Right on track — ${actualLoss.toFixed(2)} kg/week matches your ${lossPerWeek} kg target. Keep the routine going.`;
       } else if (actualLoss >= 0.05) {
         insightLevel = 'behind';
         const gap = Math.round((lossPerWeek - actualLoss) * 7700 / 7);
-        insightMsg = `You're losing ${actualLoss.toFixed(2)} kg/week vs your ${lossPerWeek} kg target. Tighten up ~${gap} kcal/day to close the gap — you've got this.`;
+        insightMsg = `Losing ${actualLoss.toFixed(2)} kg/week vs your ${lossPerWeek} kg target. Tighten up ~${gap} kcal/day to close the gap.`;
       } else {
         insightLevel = 'behind';
-        insightMsg = `Minimal change detected recently. That's okay — consistency beats perfection. Focus on hitting your calorie and protein targets this week.`;
+        insightMsg = `Minimal change recently. Consistency beats perfection — focus on hitting your calorie and protein targets this week.`;
       }
     }
   }
@@ -313,42 +354,135 @@ const WeightSparkline: React.FC<{
   );
 };
 
-// ── ActivityTargetsCard ───────────────────────────────────────
+// ── ActivityTargetsCard ───────────────────────────────────────────────────────
 const ActivityTargetsCard: React.FC<{
   currentWeight: number;
   maintenance: number;
   macroCalories: number;
   lossPerWeek: number;
+  goal: 'cut' | 'maintain' | 'bulk';
   stepTarget: number;
   yesterdaySteps: number | null;
+  gymSessionsPerWeek: number;
+  gymIntensity: 'light' | 'moderate' | 'hard';
+  gymMinutes: number;
+  weeklyActivities: WeeklyActivity[];
   onSaved: (steps: number) => void;
-}> = ({ currentWeight, maintenance, macroCalories, lossPerWeek, stepTarget, yesterdaySteps, onSaved }) => {
+}> = ({
+  currentWeight, maintenance, macroCalories, lossPerWeek, goal,
+  stepTarget, yesterdaySteps, gymSessionsPerWeek, gymIntensity, gymMinutes,
+  weeklyActivities, onSaved,
+}) => {
+  const met = GYM_MET[gymIntensity] ?? 6;
+  const gymBurnPerSession = currentWeight > 0 && gymSessionsPerWeek > 0
+    ? Math.round(met * currentWeight * gymMinutes / 60) : 0;
+  const gymBurnPerDay = gymSessionsPerWeek > 0
+    ? Math.round(gymSessionsPerWeek * gymBurnPerSession / 7) : 0;
 
-  const targetDeficit = lossPerWeek > 0 ? Math.round(lossPerWeek * 7700 / 7) : 0;
-  const dietDeficit = maintenance > 0 ? Math.max(0, maintenance - macroCalories) : 0;
-  const exerciseGap = Math.max(0, targetDeficit - dietDeficit);
+  const activityBurnPerDay = weeklyActivities.reduce((sum, a) => {
+    const aMet = GYM_MET[a.intensity] ?? 6;
+    const bps = currentWeight > 0 ? Math.round(aMet * currentWeight * a.minutesPerSession / 60) : 0;
+    return sum + Math.round(a.sessionsPerWeek * bps / 7);
+  }, 0);
 
+  const totalTrainingBurnPerDay = gymBurnPerDay + activityBurnPerDay;
   const kcalPerStep = currentWeight > 0 ? 0.04 * (currentWeight / 70) : 0.04;
-  const extraSteps = exerciseGap > 0 ? Math.round(exerciseGap / kcalPerStep) : 0;
-  const recommendedSteps = Math.max(8000, stepTarget + extraSteps);
-  const cardioBurn = exerciseGap > 0
-    ? Math.max(0, exerciseGap - Math.round(stepTarget * kcalPerStep))
-    : Math.round(200 * (currentWeight > 0 ? currentWeight / 80 : 1));
+  const stepTargetKcal = Math.round(stepTarget * kcalPerStep);
+
+  const goalDeficit = goal === 'cut' && lossPerWeek > 0
+    ? Math.round(lossPerWeek * 7700 / 7)
+    : goal === 'bulk' && lossPerWeek > 0
+    ? -Math.round(lossPerWeek * 7700 / 7)
+    : 0;
+  const foodDeficit = maintenance > 0 ? maintenance - macroCalories : 0;
+  const gapKcal = goalDeficit - foodDeficit - totalTrainingBurnPerDay;
+  const stepsNeeded = gapKcal > 0 ? Math.ceil(gapKcal / kcalPerStep) : 0;
+  const alreadyCovered = gapKcal <= 0 && (goalDeficit !== 0 || goal === 'maintain') && maintenance > 0;
+
+  const hasTraining = gymSessionsPerWeek > 0 || weeklyActivities.length > 0;
 
   return (
-    <div className="diet-section activity-card">
+    <div className="diet-section atc-card">
       <h2 className="diet-heading">Activity Targets</h2>
 
-      <div className="activity-row">
-        <div className="activity-item">
-          <span className="activity-label">Recommended steps</span>
-          <span className="activity-value">{recommendedSteps.toLocaleString()}</span>
-          <span className="activity-sub">≈ {Math.round(recommendedSteps * kcalPerStep)} kcal from walking</span>
+      {hasTraining && (
+        <div className="atc-training">
+          <div className="atc-section-label">Training Burn</div>
+          {gymSessionsPerWeek > 0 && (
+            <div className="atc-burn-row">
+              <div className="atc-burn-left">
+                <span className="atc-burn-icon">🏋️</span>
+                <div>
+                  <div className="atc-burn-name">Gym</div>
+                  <div className="atc-burn-detail">{gymSessionsPerWeek}×/week · {gymMinutes} min · {gymIntensity}</div>
+                </div>
+              </div>
+              <div className="atc-burn-right">
+                <span className="atc-burn-session">~{gymBurnPerSession.toLocaleString()} kcal/session</span>
+                <span className="atc-burn-day">{gymBurnPerDay} kcal/day avg</span>
+              </div>
+            </div>
+          )}
+          {weeklyActivities.map(a => {
+            const aMet = GYM_MET[a.intensity] ?? 6;
+            const bps = currentWeight > 0 ? Math.round(aMet * currentWeight * a.minutesPerSession / 60) : 0;
+            const bpd = Math.round(a.sessionsPerWeek * bps / 7);
+            return (
+              <div key={a.id} className="atc-burn-row">
+                <div className="atc-burn-left">
+                  <span className="atc-burn-icon">🏃</span>
+                  <div>
+                    <div className="atc-burn-name">{a.name}</div>
+                    <div className="atc-burn-detail">{a.sessionsPerWeek}×/week · {a.minutesPerSession} min · {a.intensity}</div>
+                  </div>
+                </div>
+                <div className="atc-burn-right">
+                  <span className="atc-burn-session">~{bps.toLocaleString()} kcal/session</span>
+                  <span className="atc-burn-day">{bpd} kcal/day avg</span>
+                </div>
+              </div>
+            );
+          })}
+          {totalTrainingBurnPerDay > 0 && (
+            <div className="atc-total-row">
+              <span>Total training</span>
+              <span className="atc-total-val">{totalTrainingBurnPerDay.toLocaleString()} kcal/day avg</span>
+            </div>
+          )}
         </div>
-        <div className="activity-item">
-          <span className="activity-label">Cardio to burn</span>
-          <span className="activity-value">{cardioBurn > 0 ? cardioBurn.toLocaleString() : '—'} <span style={{ fontSize: '0.8rem' }}>kcal</span></span>
-          <span className="activity-sub">{exerciseGap > 0 ? 'needed to hit weekly target' : 'bonus burn for faster results'}</span>
+      )}
+
+      {!hasTraining && (
+        <div className="atc-no-training">
+          <span>No training plan set.</span>
+          <Link to="/profile" className="atc-set-link">Set it in Profile →</Link>
+        </div>
+      )}
+
+      <div className="atc-steps">
+        <div className="atc-section-label">Steps Today</div>
+        {maintenance <= 0 ? (
+          <p className="diet-hint">Complete your biographics in Profile to see personalised step targets.</p>
+        ) : alreadyCovered ? (
+          <div className="atc-covered">
+            <div className="atc-covered-check" style={{ color: '#30d158' }}>✓</div>
+            <div>
+              <p className="atc-covered-main">Food{hasTraining ? ' + training' : ''} already covers your {goal} target.</p>
+              <p className="atc-covered-sub">Every step is bonus burn — aim for {stepTarget.toLocaleString()} for health.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="atc-steps-needed">
+            <div className="atc-steps-big">{stepsNeeded > 0 ? stepsNeeded.toLocaleString() : stepTarget.toLocaleString()}</div>
+            <div className="atc-steps-sub">
+              {stepsNeeded > 0
+                ? `steps to close the ${Math.round(Math.abs(gapKcal)).toLocaleString()} kcal gap`
+                : `step target · ≈ ${stepTargetKcal.toLocaleString()} kcal`}
+            </div>
+          </div>
+        )}
+        <div className="atc-step-meta">
+          <span>{stepTarget.toLocaleString()} step target · ≈ {stepTargetKcal.toLocaleString()} kcal</span>
         </div>
       </div>
 
@@ -356,7 +490,13 @@ const ActivityTargetsCard: React.FC<{
         <div className="step-perf-yesterday">
           <div className="step-perf-bar-wrap">
             <div className="step-perf-bar">
-              <div className="step-perf-fill" style={{ width: `${Math.min(100, (yesterdaySteps / stepTarget) * 100)}%`, background: yesterdaySteps >= stepTarget ? '#30d158' : '#ff9f0a' }} />
+              <div
+                className="step-perf-fill"
+                style={{
+                  width: `${Math.min(100, (yesterdaySteps / stepTarget) * 100)}%`,
+                  background: yesterdaySteps >= stepTarget ? '#30d158' : '#ff9f0a',
+                }}
+              />
             </div>
           </div>
           <div className="step-perf-row">
@@ -373,86 +513,21 @@ const ActivityTargetsCard: React.FC<{
   );
 };
 
-// ── WeeklyPlanCard ────────────────────────────────────────────
-const WeeklyPlanCard: React.FC<{
-  goal: 'cut' | 'maintain' | 'bulk';
-  kg: number;
-  stepTarget: number;
-  gymSessions: number;
-  onStepTargetChange: (val: number) => void;
-  onGymSessionsChange: (val: number) => void;
-}> = ({ goal, kg, stepTarget, gymSessions, onStepTargetChange, onGymSessionsChange }) => {
-  const [localStep, setLocalStep] = useState(stepTarget);
-  useEffect(() => setLocalStep(stepTarget), [stepTarget]);
-
-  const proteinG = kg > 0 ? Math.round(kg * (goal === 'cut' ? 2.0 : goal === 'bulk' ? 1.8 : 1.7)) : 0;
-
-  const gymAdvice = gymSessions === 0
-    ? 'Try adding at least 2 gym sessions this week — resistance training protects muscle.'
-    : gymSessions < 3
-    ? `${gymSessions} gym session${gymSessions > 1 ? 's' : ''} this week is a solid start. Mix strength and cardio.`
-    : gymSessions >= 5
-    ? `${gymSessions} sessions this week — strong commitment. Make sure you're recovering well too.`
-    : `${gymSessions} gym sessions keeps you on track. Prioritise compound lifts for best results.`;
-
-  const stepAdvice = localStep >= 10000
-    ? `Your ${Math.round(localStep / 1000)}k step target adds a great daily calorie burn.`
-    : `Aim for 10,000 steps/day — the extra movement makes a real difference over time.`;
-
-  const proteinAdvice = kg > 0
-    ? ` Hit ${proteinG}g protein daily to ${goal === 'cut' ? 'protect muscle while cutting' : goal === 'bulk' ? 'fuel your muscle growth' : 'stay lean and strong'}.`
-    : '';
-
-  const goalLabel = goal === 'cut' ? 'cut fat' : goal === 'bulk' ? 'build muscle' : 'maintain your weight';
-
-  return (
-    <div className="diet-section weekly-plan-card">
-      <h2 className="diet-heading">Weekly Plan</h2>
-
-      <div className="weekly-plan-row">
-        <span className="weekly-plan-label">Gym sessions this week</span>
-        <div className="gym-stepper">
-          <button className="gym-step-btn" onClick={() => onGymSessionsChange(Math.max(0, gymSessions - 1))}>−</button>
-          <span className="gym-step-val">{gymSessions}<span className="gym-step-x">×</span></span>
-          <button className="gym-step-btn" onClick={() => onGymSessionsChange(Math.min(7, gymSessions + 1))}>+</button>
-        </div>
-      </div>
-
-      <div className="weekly-plan-row">
-        <span className="weekly-plan-label">Daily step target</span>
-        <div className="step-target-inline">
-          <input
-            className="step-target-input"
-            type="text"
-            inputMode="numeric"
-            value={localStep}
-            onChange={e => { const n = parseInt(e.target.value); if (!isNaN(n)) setLocalStep(n); }}
-            onBlur={() => onStepTargetChange(localStep)}
-            onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-          />
-          <span className="weekly-plan-unit">steps</span>
-        </div>
-      </div>
-
-      <div className="plan-advice-box">
-        <span className="plan-advice-icon">💡</span>
-        <p className="plan-advice-text">To {goalLabel}: {gymAdvice} {stepAdvice}{proteinAdvice}</p>
-      </div>
-    </div>
-  );
-};
-
+// ── Diet page ─────────────────────────────────────────────────────────────────
 const Diet: React.FC = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<ProfileData>(DEFAULT_PROFILE);
   const [target, setTarget] = useState<MacroSet>(DEFAULT_TARGET);
   const [goal, setGoal] = useState<'cut' | 'maintain' | 'bulk'>('cut');
-  const [gymSessions, setGymSessions] = useState<number>(() => parseInt(localStorage.getItem('superdub.gym.sessions') || '3'));
   const [stepTarget, setStepTarget] = useState(10000);
   const [yesterdaySteps, setYesterdaySteps] = useState<number | null>(null);
   const [allTrackerDays, setAllTrackerDays] = useState<any[]>([]);
   const [goalWeight, setGoalWeight] = useState(0);
   const [lossPerWeek, setLossPerWeek] = useState(0.5);
+  const [gymSessionsPerWeek, setGymSessionsPerWeek] = useState(3);
+  const [gymIntensity, setGymIntensity] = useState<'light' | 'moderate' | 'hard'>('moderate');
+  const [gymMinutes, setGymMinutes] = useState(60);
+  const [weeklyActivities, setWeeklyActivities] = useState<WeeklyActivity[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -465,15 +540,16 @@ const Diet: React.FC = () => {
     ]).then(([profileData, targetData, settingsData, trackerData, weightSettingsData]) => {
       const td = trackerData as any;
       const allDays: any[] = td.days ?? [];
-      setAllTrackerDays(allDays);
+      const unique = deduplicateDays(allDays);
+      setAllTrackerDays(unique);
+
       const ws = weightSettingsData as any;
       if (ws.goalWeight) setGoalWeight(parseFloat(ws.goalWeight) || 0);
       if (ws.lossPerWeek) setLossPerWeek(parseFloat(ws.lossPerWeek) || 0.5);
 
-      // Yesterday's steps — tracker stores days in DD/MM format
       const yest = new Date(); yest.setDate(yest.getDate() - 1);
       const yestDDMM = `${String(yest.getDate()).padStart(2,'0')}/${String(yest.getMonth()+1).padStart(2,'0')}`;
-      const yestDay = allDays.find((d: any) => d.day === yestDDMM);
+      const yestDay = unique.find((d: any) => d.day === yestDDMM);
       if (yestDay?.steps != null) setYesterdaySteps(Number(yestDay.steps));
 
       const p = profileData as ProfileData & { name: string };
@@ -486,18 +562,38 @@ const Diet: React.FC = () => {
         steps: p.steps ?? '',
         vestKg: p.vestKg ?? '',
       });
+
+      const pa = profileData as any;
+      if (pa.stepTarget) setStepTarget(Number(pa.stepTarget));
+      if (pa.gymSessionsPerWeek != null) setGymSessionsPerWeek(Number(pa.gymSessionsPerWeek));
+      if (pa.gymIntensity) setGymIntensity(pa.gymIntensity as 'light' | 'moderate' | 'hard');
+      if (pa.gymMinutes) setGymMinutes(Number(pa.gymMinutes));
+      if (Array.isArray(pa.weeklyActivities)) setWeeklyActivities(pa.weeklyActivities);
+
       setTarget(targetData as MacroSet);
       const s = settingsData as any;
       setGoal((s.goal as 'cut' | 'maintain' | 'bulk') ?? 'cut');
-      const pa = profileData as any;
-      if (pa.stepTarget) setStepTarget(Number(pa.stepTarget));
       setLoaded(true);
     }).catch(() => setLoaded(true));
   }, []);
 
-  // Derived
-  const macroCalories = target.protein * 4 + target.carbs * 4 + target.fats * 9;
+  useEffect(() => {
+    const handler = () => {
+      api.getTracker().then((td: any) => {
+        const allDays: any[] = (td as any).days ?? [];
+        const unique = deduplicateDays(allDays);
+        setAllTrackerDays(unique);
+        const yest = new Date(); yest.setDate(yest.getDate() - 1);
+        const yestDDMM = `${String(yest.getDate()).padStart(2,'0')}/${String(yest.getMonth()+1).padStart(2,'0')}`;
+        const yestDay = unique.find((d: any) => d.day === yestDDMM);
+        if (yestDay?.steps != null) setYesterdaySteps(Number(yestDay.steps));
+      }).catch(() => {});
+    };
+    window.addEventListener('superdub:tracker-updated', handler);
+    return () => window.removeEventListener('superdub:tracker-updated', handler);
+  }, []);
 
+  const macroCalories = target.protein * 4 + target.carbs * 4 + target.fats * 9;
   const kg = parseFloat(profile.weightKg) || 0;
   const cm = parseFloat(profile.heightCm) || 0;
   const age = ageFromDob(profile.dob) || 0;
@@ -520,7 +616,7 @@ const Diet: React.FC = () => {
       <div className="app" style={{ '--theme': '#00e5ff', '--theme-dim': '#00e5ff66', '--theme-glow': '#00e5ff33' } as React.CSSProperties}>
         <header className="header">
           <div className="header-left"><Link to="/" className="back-link">← Back</Link></div>
-          <h1 className="title">Macro Split & Performance</h1>
+          <h1 className="title">Training Plan</h1>
         </header>
         <div className="page-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '4rem', color: '#00e5ff' }}>
           Loading…
@@ -539,9 +635,6 @@ const Diet: React.FC = () => {
       </header>
 
       <div className="diet-content page-content">
-
-        {(<>
-
         <PlanSummaryCard
           currentWeight={kg}
           goalWeight={goalWeight}
@@ -550,22 +643,6 @@ const Diet: React.FC = () => {
           target={target}
           maintenance={maintenance}
           onEdit={() => navigate('/profile')}
-        />
-
-        {/* Gym sessions + step target + personalised advice */}
-        <WeeklyPlanCard
-          goal={goal}
-          kg={kg}
-          stepTarget={stepTarget}
-          gymSessions={gymSessions}
-          onStepTargetChange={val => {
-            setStepTarget(val);
-            api.updateProfile({ stepTarget: val }).catch(() => {});
-          }}
-          onGymSessionsChange={val => {
-            setGymSessions(val);
-            localStorage.setItem('superdub.gym.sessions', String(val));
-          }}
         />
 
         <WeightSparkline
@@ -580,14 +657,15 @@ const Diet: React.FC = () => {
           maintenance={maintenance}
           macroCalories={macroCalories}
           lossPerWeek={lossPerWeek}
+          goal={goal}
           stepTarget={stepTarget}
           yesterdaySteps={yesterdaySteps}
-          onSaved={steps => setYesterdaySteps(steps)}
+          gymSessionsPerWeek={gymSessionsPerWeek}
+          gymIntensity={gymIntensity}
+          gymMinutes={gymMinutes}
+          weeklyActivities={weeklyActivities}
+          onSaved={s => setYesterdaySteps(s)}
         />
-
-        </>)}
-
-
       </div>
     </div>
   );

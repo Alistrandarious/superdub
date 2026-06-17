@@ -39,6 +39,33 @@ const DEFAULT_TARGET: MacroSet = { calories: 2003, protein: 150, carbs: 200, fat
 
 const DEFAULT_HABITS = ['Walking', 'Praying', 'Duolingo'];
 
+const GYM_MET_P: Record<string, number> = { light: 4, moderate: 6, hard: 8 };
+
+interface WeeklyActivity {
+  id: string;
+  name: string;
+  sessionsPerWeek: number;
+  minutesPerSession: number;
+  intensity: 'light' | 'moderate' | 'hard';
+}
+
+function formatRelativeTime(iso: string): string {
+  const then = new Date(iso);
+  const now = new Date();
+  const diffMs = now.getTime() - then.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return 'just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHrs = Math.floor(diffMins / 60);
+  if (diffHrs < 24) return `${diffHrs}h ago`;
+  const diffDays = Math.floor(diffHrs / 24);
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return then.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
 
 interface ProfileProps { onLogout?: () => void; }
 
@@ -98,6 +125,18 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
   const [dietGoal, setDietGoal] = useState<'cut' | 'maintain' | 'bulk'>('cut');
   const [lossPerWeek, setLossPerWeek] = useState('');
   const [locks, setLocks] = useState({ protein: false, carbs: false, fats: false });
+  const [gymSessionsPerWeek, setGymSessionsPerWeek] = useState(3);
+  const [gymIntensity, setGymIntensity] = useState<'light' | 'moderate' | 'hard'>('moderate');
+  const [gymMinutes, setGymMinutes] = useState(60);
+  const [weeklyActivities, setWeeklyActivities] = useState<WeeklyActivity[]>([]);
+  const [showAddActivity, setShowAddActivity] = useState(false);
+  const [newActivityName, setNewActivityName] = useState('');
+  const [newActivitySessions, setNewActivitySessions] = useState(2);
+  const [newActivityMinutes, setNewActivityMinutes] = useState(45);
+  const [newActivityIntensity, setNewActivityIntensity] = useState<'light' | 'moderate' | 'hard'>('moderate');
+  const [accountCreatedAt, setAccountCreatedAt] = useState<string | null>(null);
+  const [lastLoginAt, setLastLoginAt] = useState<string | null>(null);
+  const [lastActiveAt, setLastActiveAt] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [aiKeyInput, setAiKeyInput] = useState('');
   const [aiKeyMasked, setAiKeyMasked] = useState<string | null>(null);
@@ -142,6 +181,13 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
       if (pa.gymFreq) setGymFreq(pa.gymFreq);
       if (pa.walkFreq) setWalkFreq(pa.walkFreq);
       if (pa.stepTarget) setStepTarget(String(pa.stepTarget));
+      if (pa.gymSessionsPerWeek != null) setGymSessionsPerWeek(Number(pa.gymSessionsPerWeek));
+      if (pa.gymIntensity) setGymIntensity(pa.gymIntensity as 'light' | 'moderate' | 'hard');
+      if (pa.gymMinutes) setGymMinutes(Number(pa.gymMinutes));
+      if (Array.isArray(pa.weeklyActivities)) setWeeklyActivities(pa.weeklyActivities);
+      if (pa.accountCreatedAt) setAccountCreatedAt(pa.accountCreatedAt);
+      if (pa.lastLoginAt) setLastLoginAt(pa.lastLoginAt);
+      if (pa.lastActiveAt) setLastActiveAt(pa.lastActiveAt);
       const t = targetData as MacroSet;
       setTarget(t);
       setDraft({
@@ -279,6 +325,41 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
     }, 600);
   };
 
+  const saveTrainingSettings = (spw: number, intensity: string, minutes: number, activities: WeeklyActivity[]) => {
+    api.updateProfile({
+      gymSessionsPerWeek: spw,
+      gymIntensity: intensity,
+      gymMinutes: minutes,
+      weeklyActivities: JSON.stringify(activities),
+    }).catch(() => {});
+  };
+
+  const addActivity = () => {
+    const name = newActivityName.trim();
+    if (!name) return;
+    const activity: WeeklyActivity = {
+      id: Date.now().toString(),
+      name,
+      sessionsPerWeek: newActivitySessions,
+      minutesPerSession: newActivityMinutes,
+      intensity: newActivityIntensity,
+    };
+    const next = [...weeklyActivities, activity];
+    setWeeklyActivities(next);
+    saveTrainingSettings(gymSessionsPerWeek, gymIntensity, gymMinutes, next);
+    setNewActivityName('');
+    setNewActivitySessions(2);
+    setNewActivityMinutes(45);
+    setNewActivityIntensity('moderate');
+    setShowAddActivity(false);
+  };
+
+  const removeActivity = (id: string) => {
+    const next = weeklyActivities.filter(a => a.id !== id);
+    setWeeklyActivities(next);
+    saveTrainingSettings(gymSessionsPerWeek, gymIntensity, gymMinutes, next);
+  };
+
   const addHabit = () => {
     const h = newHabit.trim();
     if (!h || habits.includes(h)) return;
@@ -348,6 +429,31 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
       </header>
 
       <div className="profile-content page-content">
+
+        {/* Account meta */}
+        {(lastActiveAt || lastLoginAt || accountCreatedAt) && (
+          <div className="profile-account-meta">
+            {lastActiveAt && (
+              <span className="pam-item">
+                <span className="pam-icon">⏱</span>
+                Last active: <strong>{formatRelativeTime(lastActiveAt)}</strong>
+              </span>
+            )}
+            {lastLoginAt && (
+              <span className="pam-item">
+                <span className="pam-icon">🔐</span>
+                Last login: <strong>{formatDate(lastLoginAt)}</strong>
+              </span>
+            )}
+            {accountCreatedAt && (
+              <span className="pam-item">
+                <span className="pam-icon">📅</span>
+                Member since <strong>{formatDate(accountCreatedAt)}</strong>
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Biographics */}
         <div className="diet-section">
           <h2 className="diet-heading">Biographics</h2>
@@ -427,6 +533,148 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
                 <span className="bio-unit">kg</span>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Training Plan */}
+        <div className="diet-section">
+          <h2 className="diet-heading">Training Plan</h2>
+
+          <div className="bio-field">
+            <label className="bio-label">Gym sessions / week</label>
+            <div className="training-sessions-row">
+              <button className="training-step-btn" onClick={() => {
+                const n = Math.max(0, gymSessionsPerWeek - 1);
+                setGymSessionsPerWeek(n);
+                saveTrainingSettings(n, gymIntensity, gymMinutes, weeklyActivities);
+              }}>−</button>
+              <span className="training-step-val">{gymSessionsPerWeek}</span>
+              <button className="training-step-btn" onClick={() => {
+                const n = Math.min(7, gymSessionsPerWeek + 1);
+                setGymSessionsPerWeek(n);
+                saveTrainingSettings(n, gymIntensity, gymMinutes, weeklyActivities);
+              }}>+</button>
+              <span className="training-step-unit">{gymSessionsPerWeek === 1 ? 'session' : 'sessions'}/week</span>
+            </div>
+          </div>
+
+          {gymSessionsPerWeek > 0 && (
+            <>
+              <div className="bio-pair">
+                <div className="bio-field">
+                  <label className="bio-label">Duration per session</label>
+                  <div className="bio-input-unit">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={gymMinutes}
+                      onChange={e => setGymMinutes(parseInt(e.target.value) || 60)}
+                      onBlur={() => saveTrainingSettings(gymSessionsPerWeek, gymIntensity, gymMinutes, weeklyActivities)}
+                      onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                    />
+                    <span className="bio-unit">min</span>
+                  </div>
+                </div>
+                <div className="bio-field">
+                  <label className="bio-label">Intensity</label>
+                  <div className="bio-pills">
+                    {(['light', 'moderate', 'hard'] as const).map(i => (
+                      <button
+                        key={i}
+                        type="button"
+                        className={`bio-pill${gymIntensity === i ? ' active' : ''}`}
+                        onClick={() => {
+                          setGymIntensity(i);
+                          saveTrainingSettings(gymSessionsPerWeek, i, gymMinutes, weeklyActivities);
+                        }}
+                      >
+                        {i.charAt(0).toUpperCase() + i.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              {currentKg > 0 && (
+                <div className="training-burn-est">
+                  ~{Math.round(GYM_MET_P[gymIntensity] * currentKg * gymMinutes / 60).toLocaleString()} kcal/session
+                  <span className="tbe-sep">·</span>
+                  ~{Math.round(gymSessionsPerWeek * GYM_MET_P[gymIntensity] * currentKg * gymMinutes / 60 / 7).toLocaleString()} kcal/day avg
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Extra activities */}
+          <div className="bio-field" style={{ marginTop: 18 }}>
+            <label className="bio-label">Other weekly activities</label>
+            {weeklyActivities.length === 0 && !showAddActivity && (
+              <p className="diet-hint" style={{ marginBottom: 8 }}>Add swimming, cycling, football — anything you commit to weekly.</p>
+            )}
+            {weeklyActivities.map(a => {
+              const aMet = GYM_MET_P[a.intensity] ?? 6;
+              const bps = currentKg > 0 ? Math.round(aMet * currentKg * a.minutesPerSession / 60) : 0;
+              return (
+                <div key={a.id} className="activity-entry-row">
+                  <div className="aer-info">
+                    <span className="aer-name">{a.name}</span>
+                    <span className="aer-detail">{a.sessionsPerWeek}×/week · {a.minutesPerSession} min · {a.intensity}{currentKg > 0 ? ` · ~${bps} kcal/session` : ''}</span>
+                  </div>
+                  <button className="aer-remove" onClick={() => removeActivity(a.id)} title="Remove">✕</button>
+                </div>
+              );
+            })}
+
+            {showAddActivity ? (
+              <div className="add-activity-form">
+                <input
+                  className="aaf-name-input"
+                  type="text"
+                  placeholder="Activity name (e.g. Swimming, Cycling)"
+                  value={newActivityName}
+                  onChange={e => setNewActivityName(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && addActivity()}
+                  autoFocus
+                />
+                <div className="aaf-row">
+                  <div className="aaf-col">
+                    <label className="aaf-label">Sessions/week</label>
+                    <div className="training-sessions-row" style={{ gap: 6 }}>
+                      <button className="training-step-btn" onClick={() => setNewActivitySessions(Math.max(1, newActivitySessions - 1))}>−</button>
+                      <span className="training-step-val">{newActivitySessions}</span>
+                      <button className="training-step-btn" onClick={() => setNewActivitySessions(Math.min(7, newActivitySessions + 1))}>+</button>
+                    </div>
+                  </div>
+                  <div className="aaf-col">
+                    <label className="aaf-label">Duration (min)</label>
+                    <input
+                      className="aaf-mins-input"
+                      type="text"
+                      inputMode="numeric"
+                      value={newActivityMinutes}
+                      onChange={e => setNewActivityMinutes(parseInt(e.target.value) || 45)}
+                    />
+                  </div>
+                </div>
+                <div className="bio-pills" style={{ marginBottom: 10 }}>
+                  {(['light', 'moderate', 'hard'] as const).map(i => (
+                    <button
+                      key={i}
+                      type="button"
+                      className={`bio-pill${newActivityIntensity === i ? ' active' : ''}`}
+                      onClick={() => setNewActivityIntensity(i)}
+                    >
+                      {i.charAt(0).toUpperCase() + i.slice(1)}
+                    </button>
+                  ))}
+                </div>
+                <div className="aaf-actions">
+                  <button className="aaf-cancel-btn" onClick={() => { setShowAddActivity(false); setNewActivityName(''); }}>Cancel</button>
+                  <button className="aaf-save-btn" onClick={addActivity} disabled={!newActivityName.trim()}>Add Activity</button>
+                </div>
+              </div>
+            ) : (
+              <button className="add-activity-trigger" onClick={() => setShowAddActivity(true)}>+ Add activity</button>
+            )}
           </div>
         </div>
 
