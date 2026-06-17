@@ -135,7 +135,30 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
   const themeColor = MONTH_COLORS[selectedMonth];
 
-  const monthDays = useMemo(() => getMonthDays(selectedMonth), [selectedMonth]);
+  // Chart state
+  const [accountCreatedAt, setAccountCreatedAt] = useState<string>('');
+
+  // Join date as month index + day (within 2026) for filtering
+  const joinMonth = useMemo(() => {
+    if (!accountCreatedAt) return 0;
+    return new Date(accountCreatedAt).getMonth();
+  }, [accountCreatedAt]);
+
+  const joinDay = useMemo(() => {
+    if (!accountCreatedAt) return 1;
+    return new Date(accountCreatedAt).getDate();
+  }, [accountCreatedAt]);
+
+  const monthDays = useMemo(() => {
+    const days = getMonthDays(selectedMonth);
+    if (!accountCreatedAt) return days;
+    if (selectedMonth < joinMonth) return [];
+    if (selectedMonth > joinMonth) return days;
+    // Same month — drop days before join day
+    const joinDDStr = String(joinDay).padStart(2, '0');
+    return days.filter(d => d.slice(0, 2) >= joinDDStr);
+  }, [selectedMonth, accountCreatedAt, joinMonth, joinDay]);
+
   const visibleDays = useMemo(() => {
     if (selectedWeek === null) return monthDays;
     return monthDays.filter(d => getWeekOfMonth(d) === selectedWeek);
@@ -155,7 +178,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
   // Chart state
   const [chartRange, setChartRange] = useState<'7d' | '1m' | '3m' | 'all'>('all');
-  const [accountCreatedAt, setAccountCreatedAt] = useState<string>('');
 
   // Weight plan state
   const [currentWeight, setCurrentWeight] = useState('');
@@ -523,16 +545,20 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             {calendarOpen && (
               <div className="calendar-dropdown">
                 <div className="calendar-grid">
-                  {MONTH_SHORT.map((m, i) => (
-                    <button
-                      key={m}
-                      className={`calendar-month ${i === selectedMonth ? 'selected' : ''} ${i === currentMonth ? 'current' : ''}`}
-                      style={{ '--month-color': MONTH_COLORS[i] } as React.CSSProperties}
-                      onClick={() => { setSelectedMonth(i); setSelectedWeek(null); setCalendarOpen(false); }}
-                    >
-                      {m}
-                    </button>
-                  ))}
+                  {MONTH_SHORT.map((m, i) => {
+                    const isBeforeJoin = i < joinMonth;
+                    return (
+                      <button
+                        key={m}
+                        className={`calendar-month ${i === selectedMonth ? 'selected' : ''} ${i === currentMonth ? 'current' : ''} ${isBeforeJoin ? 'disabled' : ''}`}
+                        style={{ '--month-color': MONTH_COLORS[i] } as React.CSSProperties}
+                        disabled={isBeforeJoin}
+                        onClick={() => { setSelectedMonth(i); setSelectedWeek(null); setCalendarOpen(false); }}
+                      >
+                        {m}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
