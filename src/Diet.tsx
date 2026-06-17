@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ComposedChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import './App.css';
 import { api } from './api';
@@ -31,9 +31,6 @@ interface MacroSet {
   fats: number;
 }
 
-type MacroKey = 'protein' | 'carbs' | 'fats';
-type Locks = Record<MacroKey, boolean>;
-
 const DEFAULT_PROFILE: ProfileData = {
   dob: '', heightCm: '', weightKg: '', sex: 'male', activity: '1.55', steps: '', vestKg: '',
 };
@@ -42,13 +39,14 @@ const DEFAULT_TARGET: MacroSet = { calories: 2003, protein: 150, carbs: 200, fat
 
 const STRIDE_M = 0.762;
 
-function isoToDDMM(iso: string): string {
-  const [, m, d] = iso.split('-');
-  return `${d}/${m}`;
-}
-
-function localYMD(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+function ddmmToDate(ddmm: string): Date {
+  const [dd, mm] = ddmm.split('/').map(Number);
+  const now = new Date();
+  let year = now.getFullYear();
+  const candidate = new Date(year, mm - 1, dd);
+  candidate.setHours(0, 0, 0, 0);
+  if (candidate > now) year--;
+  return new Date(year, mm - 1, dd);
 }
 
 function linearReg(pts: { x: number; y: number }[]): { slope: number; weeklyRate: number } | null {
@@ -101,74 +99,80 @@ const StepLogger: React.FC<{ onSaved: (steps: number) => void }> = ({ onSaved })
   );
 };
 
-const DAY_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-// ── WeightGoalCard ────────────────────────────────────────────
-const WeightGoalCard: React.FC<{
+// ── PlanSummaryCard ───────────────────────────────────────────
+const PlanSummaryCard: React.FC<{
   currentWeight: number;
   goalWeight: number;
   lossPerWeek: number;
-  onSave: (gw: number, lpw: number) => void;
-}> = ({ currentWeight, goalWeight, lossPerWeek, onSave }) => {
-  const [editing, setEditing] = useState(false);
-  const [gw, setGw] = useState(goalWeight);
-  const [lpw, setLpw] = useState(lossPerWeek);
-
-  useEffect(() => { setGw(goalWeight); setLpw(lossPerWeek); }, [goalWeight, lossPerWeek]);
-
-  const isBulk = gw > 0 && currentWeight > 0 && gw > currentWeight;
+  goal: 'cut' | 'maintain' | 'bulk';
+  target: MacroSet;
+  maintenance: number;
+  onEdit: () => void;
+}> = ({ currentWeight, goalWeight, lossPerWeek, goal, target, maintenance, onEdit }) => {
+  const isBulk = goal === 'bulk' || (goalWeight > 0 && currentWeight > 0 && goalWeight > currentWeight);
   const diff = currentWeight > 0 && goalWeight > 0 ? Math.abs(currentWeight - goalWeight) : null;
   const weeksToGoal = diff && lossPerWeek > 0 ? Math.ceil(diff / lossPerWeek) : null;
+  const macroCalories = target.protein * 4 + target.carbs * 4 + target.fats * 9;
 
-  const save = () => { onSave(gw, lpw); setEditing(false); };
+  const goalMeta = {
+    cut:      { icon: '🔥', label: 'Cut',      color: '#ff6b6b' },
+    maintain: { icon: '⚖️', label: 'Maintain', color: '#30d158' },
+    bulk:     { icon: '💪', label: 'Bulk',      color: '#00e5ff' },
+  }[goal];
 
   return (
-    <div className="diet-section weight-goal-card">
-      <div className="wg-header">
-        <h2 className="diet-heading" style={{ marginBottom: 0 }}>Weight Goal</h2>
-        <button className="wg-edit-btn" onClick={() => editing ? save() : setEditing(true)}>
-          {editing ? 'Save' : 'Edit'}
-        </button>
+    <div className="diet-section plan-summary-card">
+      <div className="plan-summary-header">
+        <h2 className="diet-heading" style={{ marginBottom: 0 }}>Your Plan</h2>
+        <button className="plan-summary-edit-btn" onClick={onEdit}>Edit →</button>
       </div>
 
-      <div className="wg-weights">
-        <div className="wg-weight-item">
-          <span className="wg-weight-label">Current</span>
-          <span className="wg-weight-value">{currentWeight > 0 ? currentWeight.toFixed(1) : '—'}<span className="wg-weight-unit"> kg</span></span>
+      <div className="plan-summary-weights">
+        <div className="psw-col">
+          <span className="psw-label">Current</span>
+          <span className="psw-val">{currentWeight > 0 ? currentWeight.toFixed(1) : '—'}<span className="psw-unit"> kg</span></span>
         </div>
-        <div className="wg-arrow">{isBulk ? '↗' : '→'}</div>
-        <div className="wg-weight-item">
-          <span className="wg-weight-label">Goal</span>
-          {editing ? (
-            <input className="wg-input" type="number" step="0.5" value={gw || ''} onChange={e => setGw(parseFloat(e.target.value) || 0)} />
-          ) : (
-            <span className="wg-weight-value goal">{goalWeight > 0 ? goalWeight.toFixed(1) : '—'}<span className="wg-weight-unit"> kg</span></span>
-          )}
+        <div className="psw-arrow">{isBulk ? '↗' : '↘'}</div>
+        <div className="psw-col">
+          <span className="psw-label">Goal</span>
+          <span className="psw-val psw-goal">{goalWeight > 0 ? goalWeight.toFixed(1) : '—'}<span className="psw-unit"> kg</span></span>
         </div>
       </div>
 
       {diff !== null && (
-        <div className="wg-togo">{diff.toFixed(1)} kg to {isBulk ? 'gain' : 'lose'}{weeksToGoal ? ` · ~${weeksToGoal} weeks` : ''}</div>
+        <div className="plan-summary-togo">
+          {diff.toFixed(1)} kg to {isBulk ? 'gain' : 'lose'}
+          {lossPerWeek > 0 && ` · ${lossPerWeek} kg/week`}
+          {weeksToGoal && ` · ~${weeksToGoal} weeks`}
+        </div>
       )}
 
-      <div className="wg-loss-row">
-        <span className="wg-loss-label">Target {isBulk ? 'gain' : 'loss'} / week</span>
-        {editing ? (
-          <select className="wg-select" value={lpw} onChange={e => setLpw(parseFloat(e.target.value))}>
-            {isBulk ? (<>
-              <option value={0.1}>0.1 kg/week — lean bulk</option>
-              <option value={0.25}>0.25 kg/week — moderate</option>
-              <option value={0.5}>0.5 kg/week — fast bulk</option>
-            </>) : (<>
-              <option value={0.25}>0.25 kg/week — slow</option>
-              <option value={0.5}>0.5 kg/week — moderate</option>
-              <option value={0.75}>0.75 kg/week — fast</option>
-              <option value={1.0}>1.0 kg/week — aggressive</option>
-            </>)}
-          </select>
-        ) : (
-          <span className="wg-loss-value">{lossPerWeek > 0 ? `${lossPerWeek} kg / week` : '—'}</span>
+      <div className="plan-summary-strategy">
+        <span className="plan-summary-goal-badge" style={{ color: goalMeta.color, borderColor: goalMeta.color + '55' }}>
+          {goalMeta.icon} {goalMeta.label}
+        </span>
+        {maintenance > 0 && (
+          <span className="plan-summary-maint">
+            {macroCalories.toLocaleString()} kcal · maint. {maintenance.toLocaleString()}
+          </span>
         )}
+      </div>
+
+      <div className="plan-summary-macros">
+        {[
+          { val: target.protein, lbl: 'protein', color: '#ff6ec7' },
+          { val: target.carbs,   lbl: 'carbs',   color: '#00e5ff' },
+          { val: target.fats,    lbl: 'fats',     color: '#ffd60a' },
+        ].map(m => (
+          <div key={m.lbl} className="psm-chip">
+            <span className="psm-val" style={{ color: m.color }}>{m.val}g</span>
+            <span className="psm-lbl">{m.lbl}</span>
+          </div>
+        ))}
+        <div className="psm-chip">
+          <span className="psm-val">{macroCalories.toLocaleString()}</span>
+          <span className="psm-lbl">kcal</span>
+        </div>
       </div>
     </div>
   );
@@ -182,49 +186,48 @@ const WeightSparkline: React.FC<{
   lossPerWeek: number;
 }> = ({ allTrackerDays, currentWeight, goalWeight, lossPerWeek }) => {
   const isBulk = goalWeight > currentWeight && currentWeight > 0;
-  const now = new Date();
-  const dow = now.getDay();
-  const mon = new Date(now);
-  mon.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1));
-  mon.setHours(0, 0, 0, 0);
+  const now = new Date(); now.setHours(0, 0, 0, 0);
 
-  const weekDays = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(mon); d.setDate(mon.getDate() + i);
-    return localYMD(d);
-  });
+  // All days with weight logged, sorted oldest → newest
+  const weightDays = allTrackerDays
+    .filter(d => parseFloat(d.weight) > 0)
+    .map(d => ({ day: d.day as string, weight: parseFloat(d.weight), date: ddmmToDate(d.day) }))
+    .sort((a, b) => a.date.getTime() - b.date.getTime());
 
-  const weekData = weekDays.map((iso, i) => {
-    const ddmm = isoToDDMM(iso);
-    const found = allTrackerDays.find((d: any) => d.day === ddmm);
-    const actual = found && parseFloat(found.weight) > 0 ? parseFloat(found.weight) : undefined;
-    const direction = isBulk ? 1 : -1;
-    const expected = currentWeight > 0 && lossPerWeek > 0
-      ? parseFloat((currentWeight + direction * (lossPerWeek / 7) * i).toFixed(2))
-      : undefined;
-    return { label: DAY_SHORT[i], actual, expected };
-  });
+  const firstDate = weightDays.length > 0 ? weightDays[0].date : null;
+  const startWeight = weightDays.length > 0 ? weightDays[0].weight : 0;
+  const direction = isBulk ? 1 : -1;
 
-  // Historical 28-day regression for adaptive insight
-  const histPts: { x: number; y: number }[] = [];
-  for (let i = 27; i >= 0; i--) {
-    const d = new Date(now); d.setDate(now.getDate() - i);
-    const ddmm = isoToDDMM(localYMD(d));
-    const found = allTrackerDays.find((day: any) => day.day === ddmm);
-    if (found && parseFloat(found.weight) > 0)
-      histPts.push({ x: 27 - i, y: parseFloat(found.weight) });
+  // Build chart: one point per logged day + today (for expected line endpoint)
+  const loggedSet = new Set(weightDays.map(d => d.day));
+  const todayDDMM = `${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}`;
+
+  const points = [...weightDays.map(d => ({ day: d.day, weight: d.weight, date: d.date }))];
+  if (firstDate && !loggedSet.has(todayDDMM) && now > firstDate) {
+    points.push({ day: todayDDMM, weight: 0, date: new Date(now) });
   }
 
+  const chartData = points.map(p => {
+    const daysSince = firstDate ? Math.round((p.date.getTime() - firstDate.getTime()) / 86400000) : 0;
+    const actual = p.weight > 0 ? p.weight : undefined;
+    const expected = lossPerWeek > 0 && startWeight > 0
+      ? parseFloat((startWeight + direction * (lossPerWeek / 7) * daysSince).toFixed(2))
+      : undefined;
+    return { label: p.day, actual, expected };
+  });
+
+  // Regression over all available data for insight
+  const histPts: { x: number; y: number }[] = weightDays.map((d, i) => ({ x: i, y: d.weight }));
   const reg = linearReg(histPts);
-  const weeklyRate = reg?.weeklyRate ?? null;
+  const weeklyRate = reg ? reg.weeklyRate : null;
 
   let insightLevel: 'good' | 'great' | 'behind' | 'nodata' = 'nodata';
   let insightMsg = 'Log your weight for a few more days to unlock your trend analysis.';
 
   if (lossPerWeek <= 0) {
-    insightMsg = 'Set a goal weight and weekly target to see your progress prediction.';
+    insightMsg = 'Set a goal weight and weekly target in Profile to see your progress prediction.';
   } else if (histPts.length >= 3 && weeklyRate !== null) {
     if (isBulk) {
-      // Gaining weight — weeklyRate > 0 means gaining
       const actualGain = weeklyRate;
       if (actualGain >= lossPerWeek + 0.1) {
         insightLevel = 'behind';
@@ -240,7 +243,6 @@ const WeightSparkline: React.FC<{
         insightMsg = `Minimal weight change detected. To bulk, you need a consistent calorie surplus — make sure you're hitting your kcal target every day.`;
       }
     } else {
-      // Losing weight — actualLoss > 0 means losing
       const actualLoss = -weeklyRate;
       if (actualLoss >= lossPerWeek + 0.15) {
         insightLevel = 'great';
@@ -259,19 +261,20 @@ const WeightSparkline: React.FC<{
     }
   }
 
-  const hasAny = weekData.some(d => d.actual !== undefined);
-  const allVals = weekData.flatMap(d => [d.actual, d.expected].filter(v => v !== undefined) as number[]);
-  const minW = allVals.length > 0 ? Math.floor(Math.min(...allVals) - 1) : 70;
-  const maxW = allVals.length > 0 ? Math.ceil(Math.max(...allVals) + 1) : 90;
+  const hasAny = chartData.some(d => d.actual !== undefined);
+  const allVals = chartData.flatMap(d => [d.actual, d.expected].filter(v => v !== undefined) as number[]);
+  const minW = allVals.length > 0 ? Math.floor(Math.min(...allVals) - 1) : 60;
+  const maxW = allVals.length > 0 ? Math.ceil(Math.max(...allVals) + 1) : 100;
+  const tickInterval = chartData.length > 10 ? Math.floor(chartData.length / 5) : 0;
 
   return (
     <div className="diet-section weight-sparkline-card">
-      <h2 className="diet-heading">Weight This Week</h2>
+      <h2 className="diet-heading">Weight Progress</h2>
 
-      {hasAny || weekData.some(d => d.expected !== undefined) ? (
-        <ResponsiveContainer width="100%" height={150}>
-          <ComposedChart data={weekData} margin={{ top: 8, right: 4, bottom: 0, left: -18 }}>
-            <XAxis dataKey="label" tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
+      {hasAny || chartData.some(d => d.expected !== undefined) ? (
+        <ResponsiveContainer width="100%" height={160}>
+          <ComposedChart data={chartData} margin={{ top: 8, right: 4, bottom: 0, left: -18 }}>
+            <XAxis dataKey="label" tick={{ fill: '#555', fontSize: 10 }} axisLine={false} tickLine={false} interval={tickInterval} />
             <YAxis domain={[minW, maxW]} tick={{ fill: '#444', fontSize: 10 }} axisLine={false} tickLine={false} width={38} />
             <Tooltip
               contentStyle={{ background: '#0d0d1a', border: '1px solid #1e2a3a', borderRadius: 8, fontSize: 12 }}
@@ -283,20 +286,20 @@ const WeightSparkline: React.FC<{
           </ComposedChart>
         </ResponsiveContainer>
       ) : (
-        <p className="diet-hint" style={{ marginTop: 8 }}>No weight data this week — log your morning weight via the daily check-in.</p>
+        <p className="diet-hint" style={{ marginTop: 8 }}>No weight logged yet — use the morning check-in to start tracking.</p>
       )}
 
       <div className={`insight-box insight-${insightLevel}`}>{insightMsg}</div>
 
-      {weeklyRate !== null && (
+      {weeklyRate !== null && histPts.length >= 2 && (
         <div className="trend-stats">
           <div className="trend-stat">
-            <span className="trend-stat-label">28-day trend</span>
-            <span className="trend-stat-val">{(-weeklyRate) >= 0 ? '−' : '+'}{Math.abs(weeklyRate).toFixed(2)} kg/wk</span>
+            <span className="trend-stat-label">Trend</span>
+            <span className="trend-stat-val">{weeklyRate >= 0 ? '+' : '−'}{Math.abs(weeklyRate).toFixed(2)} kg/wk</span>
           </div>
           <div className="trend-stat">
-            <span className="trend-stat-label">Your target</span>
-            <span className="trend-stat-val">−{lossPerWeek} kg/wk</span>
+            <span className="trend-stat-label">Target</span>
+            <span className="trend-stat-val">{isBulk ? '+' : '−'}{lossPerWeek} kg/wk</span>
           </div>
           <div className="trend-stat">
             <span className="trend-stat-label">Data points</span>
@@ -438,10 +441,9 @@ const WeeklyPlanCard: React.FC<{
 };
 
 const Diet: React.FC = () => {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<ProfileData>(DEFAULT_PROFILE);
   const [target, setTarget] = useState<MacroSet>(DEFAULT_TARGET);
-  const [locks, setLocks] = useState<Locks>({ protein: false, carbs: false, fats: false });
-  const [calorieLock, setCalorieLock] = useState(false);
   const [goal, setGoal] = useState<'cut' | 'maintain' | 'bulk'>('cut');
   const [gymSessions, setGymSessions] = useState<number>(() => parseInt(localStorage.getItem('superdub.gym.sessions') || '3'));
   const [stepTarget, setStepTarget] = useState(10000);
@@ -484,8 +486,6 @@ const Diet: React.FC = () => {
       });
       setTarget(targetData as MacroSet);
       const s = settingsData as any;
-      setLocks({ protein: !!s.lockProtein, carbs: !!s.lockCarbs, fats: !!s.lockFats });
-      setCalorieLock(!!s.calorieLock);
       setGoal((s.goal as 'cut' | 'maintain' | 'bulk') ?? 'cut');
       const pa = profileData as any;
       if (pa.stepTarget) setStepTarget(Number(pa.stepTarget));
@@ -512,31 +512,6 @@ const Diet: React.FC = () => {
   const walkKm = steps * STRIDE_M / 1000;
   const walkBurn = steps > 0 && kg > 0 ? Math.round(walkKm * (kg + vestKg) * 0.5) : 0;
   const maintenance = tdee + walkBurn;
-
-  const energyBalance = (() => {
-    if (maintenance === 0) return '—';
-    const diff = macroCalories - maintenance;
-    if (diff > 300) return 'Aggressive Bulk';
-    if (diff > 50) return 'Mild Bulk';
-    if (diff >= -50) return 'Maintenance';
-    if (diff >= -500) return 'Mild Cut';
-    return 'Aggressive Cut';
-  })();
-
-  const applyGoal = (newGoal: 'cut' | 'maintain' | 'bulk') => {
-    setGoal(newGoal);
-    api.updateDietSettings({ lockProtein: locks.protein, lockCarbs: locks.carbs, lockFats: locks.fats, calorieLock, goal: newGoal }).catch(() => {});
-    if (maintenance <= 0 || kg <= 0) return;
-    const targetCals = Math.max(1200, newGoal === 'cut' ? maintenance - 400 : newGoal === 'bulk' ? maintenance + 300 : maintenance);
-    // Body-weight based macro split
-    const proteinG = Math.round(kg * (newGoal === 'cut' ? 2.0 : newGoal === 'bulk' ? 1.8 : 1.7));
-    const fatG     = Math.round(kg * (newGoal === 'cut' ? 0.8 : newGoal === 'bulk' ? 1.1 : 0.9));
-    const carbCals = Math.max(0, targetCals - proteinG * 4 - fatG * 9);
-    const carbG    = Math.round(carbCals / 4);
-    const next = { calories: targetCals, protein: proteinG, carbs: carbG, fats: fatG };
-    setTarget(next);
-    api.updateDietTarget(next).catch(() => {});
-  };
 
   if (!loaded) {
     return (
@@ -565,61 +540,15 @@ const Diet: React.FC = () => {
 
         {(<>
 
-        {/* ── Section 1: Goal & Strategy ── */}
-        <div className="plan-section-label">Goal & Strategy</div>
-
-        <WeightGoalCard
+        <PlanSummaryCard
           currentWeight={kg}
           goalWeight={goalWeight}
           lossPerWeek={lossPerWeek}
-          onSave={(gw, lpw) => {
-            setGoalWeight(gw);
-            setLossPerWeek(lpw);
-            api.updateWeightSettings({ goalWeight: gw, lossPerWeek: lpw }).catch(() => {});
-          }}
+          goal={goal}
+          target={target}
+          maintenance={maintenance}
+          onEdit={() => navigate('/profile')}
         />
-
-        {/* Strategy: Cut / Bulk / Maintain with auto macro recommendation */}
-        <div className="diet-section strategy-card">
-          <h2 className="diet-heading">Strategy</h2>
-          <div className="diet-goal-card">
-            {(['cut', 'maintain', 'bulk'] as const).map(g => (
-              <button key={g} className={`diet-goal-btn${goal === g ? ' active' : ''}`} onClick={() => applyGoal(g)}>
-                <span className="diet-goal-icon">{g === 'cut' ? '🔥' : g === 'maintain' ? '⚖️' : '💪'}</span>
-                <span className="diet-goal-label">{g === 'cut' ? 'Cut' : g === 'maintain' ? 'Maintain' : 'Bulk'}</span>
-                <span className="diet-goal-delta">{g === 'cut' ? '−400 kcal' : g === 'maintain' ? '±0 kcal' : '+300 kcal'}</span>
-              </button>
-            ))}
-          </div>
-          <div className="strategy-macro-row">
-            {[
-              { val: target.protein, lbl: 'protein', color: '#ff6ec7' },
-              { val: target.carbs,   lbl: 'carbs',   color: '#00e5ff' },
-              { val: target.fats,    lbl: 'fats',     color: '#ffd60a' },
-            ].map(m => (
-              <div key={m.lbl} className="strategy-macro-chip">
-                <span className="smc-val" style={{ color: m.color }}>{m.val}g</span>
-                <span className="smc-lbl">{m.lbl}</span>
-              </div>
-            ))}
-            <div className="strategy-macro-chip">
-              <span className="smc-val">{macroCalories.toLocaleString()}</span>
-              <span className="smc-lbl">kcal/day</span>
-            </div>
-          </div>
-          {maintenance > 0 && (
-            <div className="strategy-maintenance">
-              Maintenance: {maintenance.toLocaleString()} kcal · <span className="strategy-eb">{energyBalance}</span>
-            </div>
-          )}
-          <Link to="/diet/macro" className="diet-macro-link-card" style={{ marginTop: 12 }}>
-            <div className="diet-macro-link-left">
-              <span className="diet-macro-link-title">Macro Analysis</span>
-              <span className="diet-macro-link-sub">Fine-tune protein · carbs · fats</span>
-            </div>
-            <span className="diet-macro-link-arrow">→</span>
-          </Link>
-        </div>
 
         {/* Gym sessions + step target + personalised advice */}
         <WeeklyPlanCard
@@ -636,9 +565,6 @@ const Diet: React.FC = () => {
             localStorage.setItem('superdub.gym.sessions', String(val));
           }}
         />
-
-        {/* ── Section 2: Actuals ── */}
-        <div className="plan-section-label" style={{ marginTop: 8 }}>Actuals</div>
 
         <WeightSparkline
           allTrackerDays={allTrackerDays}

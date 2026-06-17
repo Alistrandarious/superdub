@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { pool } from '../db';
 
 export interface AuthRequest extends Request {
   userId?: number;
@@ -14,6 +15,7 @@ export function requireAuth(req: AuthRequest, res: Response, next: NextFunction)
   try {
     const payload = jwt.verify(header.slice(7), process.env.JWT_SECRET!) as { userId: number };
     req.userId = payload.userId;
+    pool.query('UPDATE users SET last_active_at = NOW() WHERE id = $1', [payload.userId]).catch(() => {});
     next();
   } catch {
     res.status(401).json({ error: 'Invalid token' });

@@ -21,10 +21,12 @@ router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
         'SELECT name, dob, height_cm, weight_kg, age, sex, activity, steps, vest_kg, job_type, gym_freq, walk_freq, step_target FROM profile WHERE user_id = $1',
         [req.userId]
       ),
-      pool.query('SELECT created_at FROM users WHERE id = $1', [req.userId]),
+      pool.query('SELECT created_at, last_login_at, last_active_at FROM users WHERE id = $1', [req.userId]),
     ]);
     const accountCreatedAt = userRes.rows[0]?.created_at ?? null;
-    if (!profileRes.rows[0]) return res.json({ accountCreatedAt });
+    const lastLoginAt = userRes.rows[0]?.last_login_at ?? null;
+    const lastActiveAt = userRes.rows[0]?.last_active_at ?? null;
+    if (!profileRes.rows[0]) return res.json({ accountCreatedAt, lastLoginAt, lastActiveAt });
     const r = profileRes.rows[0];
     const dobStr = r.dob ? new Date(r.dob).toISOString().split('T')[0] : '';
     res.json({
@@ -41,6 +43,8 @@ router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
       walkFreq: r.walk_freq ?? 'moderate',
       stepTarget: r.step_target ?? 10000,
       accountCreatedAt,
+      lastLoginAt,
+      lastActiveAt,
     });
   } catch {
     res.status(500).json({ error: 'Server error' });

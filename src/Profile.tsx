@@ -39,13 +39,6 @@ const DEFAULT_TARGET: MacroSet = { calories: 2003, protein: 150, carbs: 200, fat
 
 const DEFAULT_HABITS = ['Walking', 'Praying', 'Duolingo'];
 
-const ACTIVITY_LEVELS = [
-  { value: '1.2',   label: 'Sedentary — desk job, car commute, barely move outside work' },
-  { value: '1.375', label: 'Lightly active — walking most days, gym 1–2×/week or light sport' },
-  { value: '1.55',  label: 'Moderately active — gym or sport 3–4×/week, on your feet during the day' },
-  { value: '1.725', label: 'Very active — hard training 5–6×/week, manual labour, or two-a-days' },
-  { value: '1.9',   label: 'Extremely active — elite athlete, construction worker, training twice daily' },
-];
 
 interface ProfileProps { onLogout?: () => void; }
 
@@ -104,6 +97,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
   const [stepTarget, setStepTarget] = useState('10000');
   const [dietGoal, setDietGoal] = useState<'cut' | 'maintain' | 'bulk'>('cut');
   const [lossPerWeek, setLossPerWeek] = useState('');
+  const [locks, setLocks] = useState({ protein: false, carbs: false, fats: false });
   const [loaded, setLoaded] = useState(false);
   const [aiKeyInput, setAiKeyInput] = useState('');
   const [aiKeyMasked, setAiKeyMasked] = useState<string | null>(null);
@@ -131,6 +125,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
       if (ws.lossPerWeek) setLossPerWeek(ws.lossPerWeek);
       const s = settingsData as any;
       if (s.goal) setDietGoal(s.goal as 'cut' | 'maintain' | 'bulk');
+      setLocks({ protein: !!s.lockProtein, carbs: !!s.lockCarbs, fats: !!s.lockFats });
       const p = profileData as ProfileData & { name: string };
       setName(p.name ?? '');
       setProfile({
@@ -201,6 +196,22 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
 
   const title = 'Profile';
 
+  const currentKg = parseFloat(profile.weightKg) || 0;
+  const currentAge = ageFromDob(profile.dob);
+  const actMult = parseFloat(profile.activity) || 1.55;
+  const maintenance = (currentKg > 0 && parseFloat(profile.heightCm) > 0 && currentAge > 0)
+    ? Math.round((profile.sex === 'female'
+        ? 10 * currentKg + 6.25 * parseFloat(profile.heightCm) - 5 * currentAge - 161
+        : 10 * currentKg + 6.25 * parseFloat(profile.heightCm) - 5 * currentAge + 5) * actMult)
+    : 0;
+  const autoGoal: 'cut' | 'maintain' | 'bulk' | null = (() => {
+    const gw = parseFloat(goalWeight) || 0;
+    if (currentKg <= 0 || gw <= 0) return null;
+    if (gw > currentKg) return 'bulk';
+    if (gw < currentKg) return 'cut';
+    return 'maintain';
+  })();
+
   const MIN_SAFE_CALORIES = 1200;
   const MAX_SAFE_CALORIES = 6000;
 
@@ -229,6 +240,31 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
     api.updateDietTarget(newTarget).catch(() => {});
   };
 
+  const toggleLock = (key: 'protein' | 'carbs' | 'fats') => {
+    setLocks(prev => {
+      const next = { ...prev, [key]: !prev[key] };
+      api.updateDietSettings({ lockProtein: next.protein, lockCarbs: next.carbs, lockFats: next.fats, goal: dietGoal }).catch(() => {});
+      return next;
+    });
+  };
+
+  const applyGoalCalories = (g: 'cut' | 'maintain' | 'bulk') => {
+    if (maintenance <= 0) return;
+    const targetCals = g === 'cut' ? Math.max(MIN_SAFE_CALORIES, maintenance - 400)
+                     : g === 'bulk' ? maintenance + 300
+                     : maintenance;
+    const kg = currentKg || 70;
+    const finalProtein = locks.protein ? target.protein : Math.round(kg * (g === 'cut' ? 2.0 : g === 'bulk' ? 1.8 : 1.7));
+    const finalFat     = locks.fats    ? target.fats    : Math.round(kg * (g === 'cut' ? 0.8 : g === 'bulk' ? 1.1 : 0.9));
+    const carbCals     = Math.max(0, targetCals - finalProtein * 4 - finalFat * 9);
+    const finalCarbs   = locks.carbs   ? target.carbs   : Math.round(carbCals / 4);
+    const actualCals   = finalProtein * 4 + finalCarbs * 4 + finalFat * 9;
+    const next = { calories: actualCals, protein: finalProtein, carbs: finalCarbs, fats: finalFat };
+    setTarget(next);
+    setDraft({ calories: String(actualCals), protein: String(finalProtein), carbs: String(finalCarbs), fats: String(finalFat) });
+    api.updateDietTarget(next).catch(() => {});
+  };
+
   const updateProfile = (field: keyof ProfileData, value: string) => {
     setProfile(prev => ({ ...prev, [field]: value }));
     scheduleProfileSave();
@@ -241,11 +277,6 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
     profileSaveTimer.current = setTimeout(() => {
       api.updateProfile({ ...profileRef.current, activity: computed, name: nameRef.current, jobType: job, gymFreq: gym, walkFreq: walk }).catch(() => {});
     }, 600);
-  };
-
-  const updateName = (value: string) => {
-    setName(value);
-    scheduleProfileSave();
   };
 
   const addHabit = () => {
@@ -403,31 +434,6 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
         <div className="diet-section">
           <h2 className="diet-heading">Goal & Targets</h2>
 
-          {/* Goal selector */}
-          <div className="diet-goal-card" style={{ marginBottom: 20 }}>
-            {(['cut', 'maintain', 'bulk'] as const).map(g => {
-              const meta = {
-                cut:      { icon: '🔥', label: 'Cut',      desc: 'Calorie deficit' },
-                maintain: { icon: '⚖️', label: 'Maintain', desc: 'Match maintenance' },
-                bulk:     { icon: '💪', label: 'Bulk',     desc: 'Calorie surplus' },
-              }[g];
-              return (
-                <button
-                  key={g}
-                  className={`diet-goal-btn${dietGoal === g ? ' active' : ''}`}
-                  onClick={() => {
-                    setDietGoal(g);
-                    api.updateDietSettings({ goal: g }).catch(() => {});
-                  }}
-                >
-                  <span className="diet-goal-icon">{meta.icon}</span>
-                  <span className="diet-goal-label">{meta.label}</span>
-                  <span className="diet-goal-delta">{meta.desc}</span>
-                </button>
-              );
-            })}
-          </div>
-
           {/* Body goals — always shown so user can set goal weight */}
           {(() => {
             const cur = parseFloat(profile.weightKg) || 0;
@@ -474,7 +480,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
                   </div>
                 )}
                 <div className="bio-loss-row">
-                  <span className="bio-loss-label">Lose per week</span>
+                  <span className="bio-loss-label">{autoGoal === 'bulk' ? 'Gain per week' : 'Lose per week'}</span>
                   <div className="bio-loss-right">
                     <input
                       type="text"
@@ -502,10 +508,54 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
             );
           })()}
 
-          <div className="target-grid">
-            <div className="target-field">
-              <label>Calories (kcal)</label>
+          {/* Strategy + Maintenance */}
+          {maintenance > 0 && (
+            <div className="profile-maintenance-row">
+              <span className="profile-maintenance-label">Maintenance</span>
+              <span className="profile-maintenance-val">{maintenance.toLocaleString()} kcal/day</span>
+            </div>
+          )}
+          {autoGoal && (
+            <div className="profile-autostrategy">
+              {autoGoal === 'cut' ? '🔥 Cut — goal is below current weight'
+               : autoGoal === 'bulk' ? '💪 Bulk — goal is above current weight'
+               : '⚖️ Maintain — at goal weight'}
+            </div>
+          )}
+          <div className="profile-apply-row">
+            {(['cut', 'maintain', 'bulk'] as const).map(g => {
+              const meta = {
+                cut:      { icon: '🔥', label: 'Cut',      delta: '−400 kcal' },
+                maintain: { icon: '⚖️', label: 'Maintain', delta: '= maintenance' },
+                bulk:     { icon: '💪', label: 'Bulk',     delta: '+300 kcal' },
+              }[g];
+              const disabled = maintenance <= 0 || (!!autoGoal && autoGoal !== g);
+              return (
+                <button
+                  key={g}
+                  className={`profile-apply-btn${dietGoal === g ? ' active' : ''}`}
+                  disabled={disabled}
+                  title={disabled && autoGoal && autoGoal !== g ? `Set goal weight to ${g === 'bulk' ? 'gain' : 'lose'} first` : undefined}
+                  onClick={() => {
+                    setDietGoal(g);
+                    api.updateDietSettings({ goal: g, lockProtein: locks.protein, lockCarbs: locks.carbs, lockFats: locks.fats }).catch(() => {});
+                    applyGoalCalories(g);
+                  }}
+                >
+                  <span className="profile-apply-icon">{meta.icon}</span>
+                  <span className="profile-apply-label">{meta.label}</span>
+                  <span className="profile-apply-delta">{meta.delta}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="profile-macro-grid">
+            {/* Calories */}
+            <div className="profile-macro-field">
+              <label className="profile-macro-label">Calories <span className="profile-macro-unit">kcal</span></label>
               <input
+                className="profile-macro-input"
                 type="text" inputMode="numeric"
                 value={draft.calories}
                 onChange={e => setDraft(d => ({ ...d, calories: e.target.value }))}
@@ -513,38 +563,75 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
                 onKeyDown={e => e.key === 'Enter' && commitDraft()}
               />
               {parseInt(draft.calories) > 0 && parseInt(draft.calories) < 1200 && (
-                <span className="profile-cal-warn">⚠ Min 1,200 kcal for safety</span>
+                <span className="profile-cal-warn">⚠ Min 1,200 kcal</span>
+              )}
+              {maintenance > 0 && target.calories > 0 && (
+                <span className="profile-cal-vs">
+                  vs {maintenance.toLocaleString()} maint.&nbsp;
+                  <span style={{ color: target.calories < maintenance ? '#30d158' : target.calories > maintenance ? '#ff453a' : '#888' }}>
+                    ({target.calories > maintenance ? '+' : ''}{(target.calories - maintenance).toLocaleString()} kcal)
+                  </span>
+                </span>
               )}
             </div>
-            <div className="target-field">
-              <label>Protein (g)</label>
-              <input
-                type="text" inputMode="numeric"
-                value={draft.protein}
-                onChange={e => setDraft(d => ({ ...d, protein: e.target.value }))}
-                onBlur={commitDraft}
-                onKeyDown={e => e.key === 'Enter' && commitDraft()}
-              />
+
+            {/* Protein */}
+            <div className="profile-macro-field">
+              <div className="profile-macro-label-row">
+                <label className="profile-macro-label">Protein <span className="profile-macro-unit">g</span></label>
+                {currentKg > 0 && target.protein > 0 && (
+                  <span className="profile-per-kg">{(target.protein / currentKg).toFixed(1)} g/kg</span>
+                )}
+              </div>
+              <div className="profile-macro-input-row">
+                <input
+                  className="profile-macro-input"
+                  type="text" inputMode="numeric"
+                  value={draft.protein}
+                  onChange={e => setDraft(d => ({ ...d, protein: e.target.value }))}
+                  onBlur={commitDraft}
+                  onKeyDown={e => e.key === 'Enter' && commitDraft()}
+                />
+                <button className={`profile-lock-btn${locks.protein ? ' locked' : ''}`} onClick={() => toggleLock('protein')} title={locks.protein ? 'Unlock protein' : 'Lock protein'}>
+                  {locks.protein ? '🔒' : '🔓'}
+                </button>
+              </div>
             </div>
-            <div className="target-field">
-              <label>Carbs (g)</label>
-              <input
-                type="text" inputMode="numeric"
-                value={draft.carbs}
-                onChange={e => setDraft(d => ({ ...d, carbs: e.target.value }))}
-                onBlur={commitDraft}
-                onKeyDown={e => e.key === 'Enter' && commitDraft()}
-              />
+
+            {/* Carbs */}
+            <div className="profile-macro-field">
+              <label className="profile-macro-label">Carbs <span className="profile-macro-unit">g</span></label>
+              <div className="profile-macro-input-row">
+                <input
+                  className="profile-macro-input"
+                  type="text" inputMode="numeric"
+                  value={draft.carbs}
+                  onChange={e => setDraft(d => ({ ...d, carbs: e.target.value }))}
+                  onBlur={commitDraft}
+                  onKeyDown={e => e.key === 'Enter' && commitDraft()}
+                />
+                <button className={`profile-lock-btn${locks.carbs ? ' locked' : ''}`} onClick={() => toggleLock('carbs')} title={locks.carbs ? 'Unlock carbs' : 'Lock carbs'}>
+                  {locks.carbs ? '🔒' : '🔓'}
+                </button>
+              </div>
             </div>
-            <div className="target-field">
-              <label>Fats (g)</label>
-              <input
-                type="text" inputMode="numeric"
-                value={draft.fats}
-                onChange={e => setDraft(d => ({ ...d, fats: e.target.value }))}
-                onBlur={commitDraft}
-                onKeyDown={e => e.key === 'Enter' && commitDraft()}
-              />
+
+            {/* Fats */}
+            <div className="profile-macro-field">
+              <label className="profile-macro-label">Fats <span className="profile-macro-unit">g</span></label>
+              <div className="profile-macro-input-row">
+                <input
+                  className="profile-macro-input"
+                  type="text" inputMode="numeric"
+                  value={draft.fats}
+                  onChange={e => setDraft(d => ({ ...d, fats: e.target.value }))}
+                  onBlur={commitDraft}
+                  onKeyDown={e => e.key === 'Enter' && commitDraft()}
+                />
+                <button className={`profile-lock-btn${locks.fats ? ' locked' : ''}`} onClick={() => toggleLock('fats')} title={locks.fats ? 'Unlock fats' : 'Lock fats'}>
+                  {locks.fats ? '🔒' : '🔓'}
+                </button>
+              </div>
             </div>
           </div>
           <div className="target-actions">
