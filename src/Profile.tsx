@@ -124,7 +124,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
   const [stepTarget, setStepTarget] = useState('10000');
   const [dietGoal, setDietGoal] = useState<'cut' | 'maintain' | 'bulk'>('cut');
   const [lossPerWeek, setLossPerWeek] = useState('');
-  const [locks, setLocks] = useState({ protein: false, carbs: false, fats: false });
+  const [locks, setLocks] = useState({ calories: false, protein: false, carbs: false, fats: false });
   const [gymSessionsPerWeek, setGymSessionsPerWeek] = useState(3);
   const [gymIntensity, setGymIntensity] = useState<'light' | 'moderate' | 'hard'>('moderate');
   const [gymMinutes, setGymMinutes] = useState(60);
@@ -164,7 +164,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
       if (ws.lossPerWeek) setLossPerWeek(ws.lossPerWeek);
       const s = settingsData as any;
       if (s.goal) setDietGoal(s.goal as 'cut' | 'maintain' | 'bulk');
-      setLocks({ protein: !!s.lockProtein, carbs: !!s.lockCarbs, fats: !!s.lockFats });
+      setLocks({ calories: !!s.calorieLock, protein: !!s.lockProtein, carbs: !!s.lockCarbs, fats: !!s.lockFats });
       const p = profileData as ProfileData & { name: string };
       setName(p.name ?? '');
       setProfile({
@@ -286,18 +286,21 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
     api.updateDietTarget(newTarget).catch(() => {});
   };
 
-  const toggleLock = (key: 'protein' | 'carbs' | 'fats') => {
+  const toggleLock = (key: 'calories' | 'protein' | 'carbs' | 'fats') => {
     setLocks(prev => {
       const next = { ...prev, [key]: !prev[key] };
-      api.updateDietSettings({ lockProtein: next.protein, lockCarbs: next.carbs, lockFats: next.fats, goal: dietGoal }).catch(() => {});
+      api.updateDietSettings({ calorieLock: next.calories, lockProtein: next.protein, lockCarbs: next.carbs, lockFats: next.fats, goal: dietGoal }).catch(() => {});
       return next;
     });
   };
 
-  const applyGoalCalories = (g: 'cut' | 'maintain' | 'bulk') => {
+  const applyGoalCalories = (g: 'cut' | 'maintain' | 'bulk', rateOverride?: number) => {
     if (maintenance <= 0) return;
-    const targetCals = g === 'cut' ? Math.max(MIN_SAFE_CALORIES, maintenance - 400)
-                     : g === 'bulk' ? maintenance + 300
+    const rate = rateOverride ?? parseFloat(lossPerWeek) ?? 0;
+    const dailyDelta = rate > 0 ? Math.round(rate * 7700 / 7) : 400;
+    const targetCals = locks.calories ? target.calories
+                     : g === 'cut' ? Math.max(MIN_SAFE_CALORIES, maintenance - dailyDelta)
+                     : g === 'bulk' ? maintenance + dailyDelta
                      : maintenance;
     const kg = currentKg || 70;
     const finalProtein = locks.protein ? target.protein : Math.round(kg * (g === 'cut' ? 2.0 : g === 'bulk' ? 1.8 : 1.7));
@@ -761,6 +764,8 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
                           const updated = { ...wsRef, lossPerWeek: val };
                           api.updateWeightSettings(updated).catch(() => {});
                           setWsRef(updated);
+                          // Re-derive calorie target from the new rate
+                          if (dietGoal && !locks.calories) applyGoalCalories(dietGoal, parseFloat(val));
                         }
                       }}
                       onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
@@ -802,7 +807,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
                   title={disabled && autoGoal && autoGoal !== g ? `Set goal weight to ${g === 'bulk' ? 'gain' : 'lose'} first` : undefined}
                   onClick={() => {
                     setDietGoal(g);
-                    api.updateDietSettings({ goal: g, lockProtein: locks.protein, lockCarbs: locks.carbs, lockFats: locks.fats }).catch(() => {});
+                    api.updateDietSettings({ goal: g, calorieLock: locks.calories, lockProtein: locks.protein, lockCarbs: locks.carbs, lockFats: locks.fats }).catch(() => {});
                     applyGoalCalories(g);
                   }}
                 >
@@ -817,15 +822,22 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
           <div className="profile-macro-grid">
             {/* Calories */}
             <div className="profile-macro-field">
-              <label className="profile-macro-label">Calories <span className="profile-macro-unit">kcal</span></label>
-              <input
-                className="profile-macro-input"
-                type="text" inputMode="numeric"
-                value={draft.calories}
-                onChange={e => setDraft(d => ({ ...d, calories: e.target.value }))}
-                onBlur={commitDraft}
-                onKeyDown={e => e.key === 'Enter' && commitDraft()}
-              />
+              <div className="profile-macro-label-row">
+                <label className="profile-macro-label">Calories <span className="profile-macro-unit">kcal</span></label>
+                <button className={`profile-lock-btn${locks.calories ? ' locked' : ''}`} onClick={() => toggleLock('calories')} title={locks.calories ? 'Unlock calories' : 'Lock calories'}>
+                  {locks.calories ? '🔒' : '🔓'}
+                </button>
+              </div>
+              <div className="profile-macro-input-row">
+                <input
+                  className="profile-macro-input"
+                  type="text" inputMode="numeric"
+                  value={draft.calories}
+                  onChange={e => setDraft(d => ({ ...d, calories: e.target.value }))}
+                  onBlur={commitDraft}
+                  onKeyDown={e => e.key === 'Enter' && commitDraft()}
+                />
+              </div>
               {parseInt(draft.calories) > 0 && parseInt(draft.calories) < 1200 && (
                 <span className="profile-cal-warn">⚠ Min 1,200 kcal</span>
               )}
@@ -835,6 +847,11 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
                   <span style={{ color: target.calories < maintenance ? '#30d158' : target.calories > maintenance ? '#ff453a' : '#888' }}>
                     ({target.calories > maintenance ? '+' : ''}{(target.calories - maintenance).toLocaleString()} kcal)
                   </span>
+                </span>
+              )}
+              {!locks.calories && lossPerWeek && parseFloat(lossPerWeek) > 0 && maintenance > 0 && (
+                <span className="profile-cal-vs" style={{ color: '#666' }}>
+                  {parseFloat(lossPerWeek)} kg/wk = −{Math.round(parseFloat(lossPerWeek) * 7700 / 7).toLocaleString()} kcal/day
                 </span>
               )}
             </div>

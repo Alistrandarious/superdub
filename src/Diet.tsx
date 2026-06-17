@@ -985,6 +985,28 @@ const Diet: React.FC = () => {
             </div>
           ))}
         </div>
+
+        {/* Rate → deficit line */}
+        {lossPerWeek > 0 && goal !== 'maintain' && (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '8px 20px 12px', fontSize: '0.7rem',
+          }}>
+            <span style={{ color: '#444' }}>
+              {goal === 'bulk' ? 'Gain' : 'Lose'} {lossPerWeek} kg/wk
+              <span style={{ color: '#333', margin: '0 6px' }}>→</span>
+              {Math.round(lossPerWeek * 7700 / 7).toLocaleString()} kcal/day {goal === 'bulk' ? 'surplus' : 'deficit'} needed
+            </span>
+            {maintenance > 0 && (
+              <span style={{
+                fontSize: '0.65rem', fontWeight: 700,
+                color: Math.abs(deficit) >= Math.round(lossPerWeek * 7700 / 7) * 0.85 ? '#30d158' : '#ff9f0a',
+              }}>
+                {Math.abs(deficit) >= Math.round(lossPerWeek * 7700 / 7) * 0.85 ? '✓ On track' : '⚠ Off target'}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── Scrollable detail area ── */}
