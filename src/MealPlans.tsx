@@ -68,9 +68,9 @@ const DIET_FILTERS = [
 ];
 
 const THEME = {
-  '--theme': '#7C5CFF',
-  '--theme-dim': '#7C5CFF66',
-  '--theme-glow': '#7C5CFF33',
+  '--theme': '#7C3AED',
+  '--theme-dim': '#7C3AED66',
+  '--theme-glow': '#7C3AED33',
 } as React.CSSProperties;
 
 // ─── IngredientPanel ──────────────────────────────────────────────────────────
@@ -482,13 +482,11 @@ const MealPlans: React.FC = () => {
   } : null;
 
   return (
-    <div className="app" style={THEME}>
-      <header className="header">
-        <div className="header-left">
-          <Link to="/diet" className="back-link">&larr; Back</Link>
-        </div>
-        <h1 className="title">Meal Plans</h1>
-      </header>
+    <div className="app flush" style={THEME}>
+      <div className="mp-intro">
+        <Link to="/diet" className="page-back"><span className="page-back-arrow">‹</span> Diet</Link>
+        <h1 className="page-intro-title">Meal Plans</h1>
+      </div>
 
       <div className="mp-tab-bar">
         <button className={`mp-tab${tab === 'generate' ? ' mp-tab--active' : ''}`} onClick={() => setTab('generate')}>Generate</button>
@@ -565,10 +563,10 @@ const MealPlans: React.FC = () => {
                 {avgTotals && (
                   <div className="mp-totals-card">
                     <div className="mp-totals-title">Avg daily totals vs targets</div>
-                    <MacroPill label="Calories" value={avgTotals.calories} unit=" kcal" target={plan.targets.calories} color="#7C5CFF" />
-                    <MacroPill label="Protein"  value={avgTotals.protein}               target={plan.targets.protein}  color="#885CF6" />
-                    <MacroPill label="Carbs"    value={avgTotals.carbs}                 target={plan.targets.carbs}    color="#22C55E" />
-                    <MacroPill label="Fat"      value={avgTotals.fat}                   target={plan.targets.fat}      color="#F59E0B" />
+                    <MacroPill label="Calories" value={avgTotals.calories} unit=" kcal" target={plan.targets.calories} color="#7C3AED" />
+                    <MacroPill label="Protein"  value={avgTotals.protein}               target={plan.targets.protein}  color="#B84DFF" />
+                    <MacroPill label="Carbs"    value={avgTotals.carbs}                 target={plan.targets.carbs}    color="#FF4D8D" />
+                    <MacroPill label="Fat"      value={avgTotals.fat}                   target={plan.targets.fat}      color="#FFD233" />
                   </div>
                 )}
 

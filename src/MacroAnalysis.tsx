@@ -9,7 +9,7 @@ interface ProfileData { dob: string; heightCm: string; weightKg: string; sex: 'm
 
 type MacroKey = 'protein' | 'carbs' | 'fats';
 const CAL_PER: Record<MacroKey, number> = { protein: 4, carbs: 4, fats: 9 };
-const MACRO_COLORS: Record<MacroKey, string> = { protein: '#ff6ec7', carbs: '#7C5CFF', fats: '#ffd60a' };
+const MACRO_COLORS: Record<MacroKey, string> = { protein: '#ff6ec7', carbs: '#7C3AED', fats: '#ffd60a' };
 const STRIDE_M = 0.762;
 
 function ageFromDob(dob: string): number {
@@ -84,24 +84,20 @@ const MacroAnalysis: React.FC = () => {
 
   if (!loaded) {
     return (
-      <div className="app" style={{ '--theme': '#7C5CFF', '--theme-dim': '#7C5CFF66', '--theme-glow': '#7C5CFF33' } as React.CSSProperties}>
-        <header className="header">
-          <div className="header-left"><Link to="/diet" className="back-link">← Back</Link></div>
-          <h1 className="title">Macro Analysis</h1>
-        </header>
-        <div className="page-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '4rem', color: '#7C5CFF' }}>Loading…</div>
+      <div className="app flush" style={{ '--theme': '#7C3AED', '--theme-dim': '#7C3AED66', '--theme-glow': '#7C3AED33' } as React.CSSProperties}>
+        <div className="page-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '4rem', color: '#7C3AED' }}>Loading…</div>
       </div>
     );
   }
 
   return (
-    <div className="app" style={{ '--theme': '#7C5CFF', '--theme-dim': '#7C5CFF66', '--theme-glow': '#7C5CFF33' } as React.CSSProperties}>
-      <header className="header">
-        <div className="header-left"><Link to="/diet" className="back-link">← Training Plan</Link></div>
-        <h1 className="title">Macro Analysis</h1>
-      </header>
-
+    <div className="app flush" style={{ '--theme': '#7C3AED', '--theme-dim': '#7C3AED66', '--theme-glow': '#7C3AED33' } as React.CSSProperties}>
       <div className="diet-content page-content">
+        <div className="page-intro-row">
+          <Link to="/diet" className="page-back"><span className="page-back-arrow">‹</span> Training Plan</Link>
+          <h1 className="page-intro-title">Macro Analysis</h1>
+        </div>
+
 
         {/* Macro Split */}
         <div className="diet-section">
@@ -113,7 +109,7 @@ const MacroAnalysis: React.FC = () => {
                   <Pie data={pieData} dataKey="value" cx="50%" cy="50%" innerRadius={55} outerRadius={88} paddingAngle={2}>
                     {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                   </Pie>
-                  <Tooltip formatter={(val) => [`${val} kcal`, '']} contentStyle={{ background: '#0e1022', border: '1px solid #1e2245', color: '#7C5CFF', borderRadius: 10 }} />
+                  <Tooltip formatter={(val) => [`${val} kcal`, '']} contentStyle={{ background: '#0e1022', border: '1px solid #1e2245', color: '#7C3AED', borderRadius: 10 }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>

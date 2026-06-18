@@ -2,22 +2,19 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './App.css';
 
-const THEME = '#7C5CFF';
+const THEME = '#7C3AED';
 
 const PrivacyPolicy: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="app" style={{ '--theme': THEME, '--theme-dim': THEME + '55', '--theme-glow': THEME + '22' } as React.CSSProperties}>
-      <header className="header">
-        <div className="header-left">
-          <button className="back-link" style={{ background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => navigate(-1)}>← Back</button>
-        </div>
-        <h1 className="title">Privacy Policy</h1>
-      </header>
-
+    <div className="app flush" style={{ '--theme': THEME, '--theme-dim': THEME + '55', '--theme-glow': THEME + '22' } as React.CSSProperties}>
       <div className="page-content" style={{ overflowY: 'auto', flex: 1, maxWidth: 720, margin: '0 auto', width: '100%' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 28, paddingBottom: 64, color: '#c8cdd4' }}>
+          <div className="page-intro-row">
+            <button className="page-back" onClick={() => navigate(-1)}><span className="page-back-arrow">‹</span> Back</button>
+            <h1 className="page-intro-title">Privacy Policy</h1>
+          </div>
 
           <div className="diet-section">
             <p style={{ fontSize: '0.82rem', color: '#6b7280', margin: 0 }}>Last updated: 16 June 2026</p>

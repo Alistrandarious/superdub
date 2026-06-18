@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import './App.css';
 import { api } from './api';
 
 const PWA_PROMPT_VERSION = '1.0';
 const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !(window as any).MSStream;
 const isInStandaloneMode = ('standalone' in window.navigator) && (window.navigator as any).standalone;
+
+const INSTALL_XP = 100;
+const INSTALL_XP_KEY = 'superdub.installXP';
 
 /* ── helpers ─────────────────────────────────────────────── */
 
@@ -46,15 +49,16 @@ const LEVEL_GATES: [number, string][] = [
   [120000, 'Transcendent'],
 ];
 
-function getPlayerLevel(totalXP: number): { level: number; title: string; progress: number; xpForNext: number | null } {
+function getPlayerLevel(totalXP: number): { level: number; title: string; progress: number; xpForLevel: number; xpForNext: number | null; nextTitle: string | null } {
   let idx = 0;
   for (let i = LEVEL_GATES.length - 1; i >= 0; i--) {
     if (totalXP >= LEVEL_GATES[i][0]) { idx = i; break; }
   }
   const xpForLevel = LEVEL_GATES[idx][0];
   const xpForNext = idx < LEVEL_GATES.length - 1 ? LEVEL_GATES[idx + 1][0] : null;
+  const nextTitle = idx < LEVEL_GATES.length - 1 ? LEVEL_GATES[idx + 1][1] : null;
   const progress = xpForNext ? (totalXP - xpForLevel) / (xpForNext - xpForLevel) : 1;
-  return { level: idx + 1, title: LEVEL_GATES[idx][1], progress, xpForNext };
+  return { level: idx + 1, title: LEVEL_GATES[idx][1], progress, xpForLevel, xpForNext, nextTitle };
 }
 
 function todayKey(): string {
@@ -91,11 +95,11 @@ function getWeekDays(): { key: string; label: string; isFuture: boolean; isToday
 
 function getRank(totalDays: number): { title: string; color: string } {
   if (totalDays === 0)  return { title: '6ft Under', color: '#555' };
-  if (totalDays >= 365) return { title: 'Master', color: '#ffd700' };
-  if (totalDays >= 100) return { title: 'In the Hundreds', color: '#0a84ff' };
-  if (totalDays >= 50)  return { title: 'Habit Tracking Superstar', color: '#ff9500' };
-  if (totalDays >= 30)  return { title: 'Rising Star', color: '#ff6ec7' };
-  if (totalDays >= 10)  return { title: 'Gathering Momentum', color: '#7C5CFF' };
+  if (totalDays >= 365) return { title: 'Master', color: '#FFD233' };
+  if (totalDays >= 100) return { title: 'In the Hundreds', color: '#7C3AED' };
+  if (totalDays >= 50)  return { title: 'Habit Tracking Superstar', color: '#FF8A00' };
+  if (totalDays >= 30)  return { title: 'Rising Star', color: '#FF4D8D' };
+  if (totalDays >= 10)  return { title: 'Gathering Momentum', color: '#B84DFF' };
   return { title: 'Habitteaur', color: '#888' };
 }
 
@@ -216,7 +220,7 @@ const FEATURED = [
     name: '10K Walks',
     tagline: "Ali's doing steps — join him",
     icon: '🚶‍♂️',
-    accent: '#7C5CFF',
+    accent: '#22C55E',
     bgClass: 'featured-bg-walk',
   },
   {
@@ -224,7 +228,7 @@ const FEATURED = [
     name: '0 Gambling',
     tagline: 'Take back control. Every day counts.',
     icon: '🎯',
-    accent: '#0a84ff',
+    accent: '#FF8A00',
     bgClass: 'featured-bg-gamble',
   },
   {
@@ -232,7 +236,7 @@ const FEATURED = [
     name: 'Petting Iggy',
     tagline: 'Daily love for your sweet fury baby girl.',
     icon: '🐶',
-    accent: '#22C55E',
+    accent: '#FF4D8D',
     bgClass: 'featured-bg-iggy',
   },
   {
@@ -251,98 +255,63 @@ interface WeatherState { temp: number; code: number; city: string; }
 
 /* ── sub-components ──────────────────────────────────────── */
 
-const WeatherBar: React.FC<{ weather: WeatherState | null }> = ({ weather }) => {
-  if (!weather) return null;
-  return (
-    <div className="weather-bar">
-      <span className="weather-emoji">{weatherEmoji(weather.code)}</span>
-      <span className="weather-temp">{weather.temp}°C</span>
-      {weather.city && <span className="weather-city">{weather.city}</span>}
-    </div>
-  );
-};
-
-const FeaturedCarousel: React.FC<{
-  userHabits: string[];
-  onAdd: (name: string) => void;
-}> = ({ userHabits, onAdd }) => {
-  const [active, setActive] = useState(0);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const startTimer = useCallback(() => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => {
-      setActive(a => (a + 1) % FEATURED.length);
-    }, 5000);
-  }, []);
-
-  useEffect(() => {
-    startTimer();
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [startTimer]);
-
-  const goTo = (i: number) => { setActive(i); startTimer(); };
-
-  const card = FEATURED[active];
-  const alreadyAdded = userHabits.includes(card.name);
-
-  return (
-    <div className="featured-wrap">
-      <p className="featured-section-label">Discover Habits</p>
-      <div className={`featured-card ${card.bgClass}`} style={{ '--featured-accent': card.accent } as React.CSSProperties}>
-        <div className="featured-icon-bg">{card.icon}</div>
-        <div className="featured-content">
-          <h3 className="featured-name">{card.name}</h3>
-          <p className="featured-tagline">{card.tagline}</p>
-          <button
-            className={`featured-add-btn ${alreadyAdded ? 'added' : ''}`}
-            onClick={() => !alreadyAdded && onAdd(card.name)}
-            style={{ '--featured-accent': card.accent } as React.CSSProperties}
-          >
-            {alreadyAdded ? '✓ Added' : '+ Join'}
-          </button>
-        </div>
-        <div className="featured-dots">
-          {FEATURED.map((_, i) => (
-            <button
-              key={i}
-              className={`featured-dot ${i === active ? 'active' : ''}`}
-              onClick={() => goTo(i)}
-              style={{ '--featured-accent': card.accent } as React.CSSProperties}
-              aria-label={`Go to ${FEATURED[i].name}`}
-            />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
-
 function cycleState(current: HabitState): HabitState {
   if (current === null || current === undefined) return 'done';
   if (current === 'done') return 'failed';
   return null;
 }
 
+// Big circular level ring (gold gradient progress)
+const LevelRing: React.FC<{ level: number; title: string; progress: number; onClick?: () => void }> = ({ level, title, progress, onClick }) => {
+  const size = 168, stroke = 13, r = (size - stroke) / 2, circ = 2 * Math.PI * r;
+  const pct = Math.max(0, Math.min(1, progress));
+  const offset = circ * (1 - pct);
+  return (
+    <button className="lvl-ring" style={{ width: size, height: size }} onClick={onClick} aria-label={`Level ${level} — ${title}`}>
+      <svg width={size} height={size} className="lvl-ring-svg">
+        <defs>
+          <linearGradient id="lvlGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FFE15A" />
+            <stop offset="100%" stopColor="#FFC42E" />
+          </linearGradient>
+        </defs>
+        {/* track — solid grey, unfilled */}
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#33333D" strokeWidth={stroke} />
+        {/* progress arc — sharp, straight ends, glow only on the line */}
+        <circle
+          className="lvl-ring-arc"
+          cx={size / 2} cy={size / 2} r={r} fill="none"
+          stroke="url(#lvlGrad)" strokeWidth={stroke} strokeLinecap="butt"
+          strokeDasharray={circ} strokeDashoffset={offset}
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        />
+        {/* inner black disc — meets the inner edge of the grey track */}
+        <circle cx={size / 2} cy={size / 2} r={r - stroke / 2} fill="#0B0B11" />
+      </svg>
+      <div className="lvl-ring-center">
+        <span className="lvl-ring-eyebrow">LEVEL</span>
+        <span className="lvl-ring-num">{level}</span>
+        <span className="lvl-ring-title">{title}</span>
+      </div>
+    </button>
+  );
+};
+
+// Full habit card — XP bar · gate dots · weekly M-T-W circles · big done button
 const HabitCard: React.FC<{
   habit: string;
-  startDate: string | null;
   stats: HabitStats;
   weekDays: ReturnType<typeof getWeekDays>;
   ht: HabitTracker;
   today: string;
   onToggleDay: (habit: string, dayKey: string, state: HabitState) => void;
   onRequestRemove: (habit: string) => void;
-  isMandatory?: boolean;
-}> = ({ habit, startDate, stats, weekDays, ht, today, onToggleDay, onRequestRemove, isMandatory }) => {
+}> = ({ habit, stats, weekDays, ht, today, onToggleDay, onRequestRemove }) => {
   const rank = getRank(stats.totalDays);
   const todayState = ht[today]?.[habit] ?? null;
   const isFlame = stats.streak >= 7;
   const hasDanger = stats.misses >= 2;
   const hasWarning = stats.misses === 1 && todayState !== 'done';
-
-  const startKey = startDateToKey(startDate);
-  const startDayIdx = startKey ? ALL_DAYS.indexOf(startKey) : -1;
 
   const gateDots = XP_GATES.map(([t], i) => ({
     label: GATE_LABELS[i],
@@ -355,10 +324,7 @@ const HabitCard: React.FC<{
         <span className="hcard-icon">{isFlame ? '🔥' : '✓'}</span>
         <span className="hcard-name">{habit}</span>
         <span className="hcard-streak">{stats.streak}d</span>
-        {isMandatory
-          ? <span className="hcard-mandatory-badge">Pinned</span>
-          : <button className="hcard-remove" onClick={() => onRequestRemove(habit)} aria-label="Remove habit">✕</button>
-        }
+        <button className="hcard-remove" onClick={() => onRequestRemove(habit)} aria-label="Remove habit">✕</button>
       </div>
 
       <div className="hcard-exp-area">
@@ -400,13 +366,12 @@ const HabitCard: React.FC<{
       <div className="hcard-week">
         {weekDays.map(({ key, label, isFuture, isToday }) => {
           const state = ht[key]?.[habit] ?? null;
-          const disabled = isFuture;
           return (
             <div key={key} className={`hcard-day ${state === 'done' ? 'done' : ''} ${state === 'failed' ? 'failed' : ''} ${isFuture ? 'future' : ''} ${isToday ? 'is-today' : ''}`}>
               <button
                 className="hcard-day-circle"
-                disabled={disabled}
-                onClick={() => !disabled && onToggleDay(habit, key, cycleState(state))}
+                disabled={isFuture}
+                onClick={() => !isFuture && onToggleDay(habit, key, cycleState(state))}
                 aria-label={`${label}: ${state ?? 'blank'}`}
               >
                 {state === 'done' && <span className="hcard-day-tick">{isFlame ? '🔥' : '✓'}</span>}
@@ -424,6 +389,49 @@ const HabitCard: React.FC<{
       >
         {todayState === 'done' ? '✓ Done today' : todayState === 'failed' ? '✗ Failed today — tap to clear' : '+ Mark done today'}
       </button>
+    </div>
+  );
+};
+
+// Featured habits bottom-sheet (tap the banner to open, then join)
+const FeaturedSheet: React.FC<{
+  open: boolean;
+  onClose: () => void;
+  userHabits: string[];
+  onAdd: (name: string) => void;
+}> = ({ open, onClose, userHabits, onAdd }) => {
+  if (!open) return null;
+  return (
+    <div className="hb-sheet-overlay" onClick={onClose}>
+      <div className="hb-sheet" onClick={e => e.stopPropagation()}>
+        <div className="hb-sheet-grip" />
+        <div className="hb-sheet-head">
+          <h3 className="hb-sheet-title">Featured Habits</h3>
+          <button className="hb-sheet-close" onClick={onClose} aria-label="Close">✕</button>
+        </div>
+        <p className="hb-sheet-sub">Tap to add one to your list.</p>
+        <div className="hb-feat-list">
+          {FEATURED.map(f => {
+            const added = userHabits.includes(f.name);
+            return (
+              <div key={f.id} className="hb-feat-item" style={{ '--featured-accent': f.accent } as React.CSSProperties}>
+                <span className="hb-feat-icon">{f.icon}</span>
+                <div className="hb-feat-text">
+                  <div className="hb-feat-name">{f.name}</div>
+                  <div className="hb-feat-tag">{f.tagline}</div>
+                </div>
+                <button
+                  className={`hb-feat-add ${added ? 'added' : ''}`}
+                  onClick={() => !added && onAdd(f.name)}
+                  disabled={added}
+                >
+                  {added ? '✓' : '+ Join'}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 };
@@ -446,7 +454,8 @@ const Habits: React.FC = () => {
   const [graveyardOpen, setGraveyardOpen] = useState(false);
   const [restoringHabit, setRestoringHabit] = useState<string | null>(null);
   const [showCogMenu, setShowCogMenu] = useState(false);
-  const addRef = useRef<HTMLDivElement>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [featuredOpen, setFeaturedOpen] = useState(false);
   const graveyardRef = useRef<HTMLDivElement>(null);
 
   const pwaKey = `superdub.pwa.${PWA_PROMPT_VERSION}`;
@@ -459,6 +468,9 @@ const Habits: React.FC = () => {
     return true;
   });
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [installClosing, setInstallClosing] = useState(false);
+  // +100 XP reward for installing to the home screen (granted once the app runs installed)
+  const [installBonus, setInstallBonus] = useState(() => localStorage.getItem(INSTALL_XP_KEY) === 'granted');
 
   useEffect(() => {
     const handler = (e: Event) => { e.preventDefault(); setDeferredPrompt(e); };
@@ -466,16 +478,38 @@ const Habits: React.FC = () => {
     return () => window.removeEventListener('beforeinstallprompt', handler as any);
   }, []);
 
-  const dismissInstall = () => { localStorage.setItem(pwaDayKey, todayStr); setShowInstall(false); };
-  const neverShowInstall = () => { localStorage.setItem(pwaKey, 'dismissed'); setShowInstall(false); };
+  // Grant the install reward when the app is actually running as an installed PWA
+  useEffect(() => {
+    const installed = isInStandaloneMode || (typeof window.matchMedia === 'function' && window.matchMedia('(display-mode: standalone)').matches);
+    if (installed && localStorage.getItem(INSTALL_XP_KEY) !== 'granted') {
+      localStorage.setItem(INSTALL_XP_KEY, 'granted');
+      setInstallBonus(true);
+    }
+  }, []);
+
+  const animateOutInstall = (persist: () => void) => {
+    setInstallClosing(true);
+    setTimeout(() => { persist(); setShowInstall(false); setInstallClosing(false); }, 320);
+  };
+  const dismissInstall = () => animateOutInstall(() => localStorage.setItem(pwaDayKey, todayStr));
+  const neverShowInstall = () => animateOutInstall(() => localStorage.setItem(pwaKey, 'dismissed'));
   const triggerInstall = async () => {
-    if (deferredPrompt) { deferredPrompt.prompt(); await deferredPrompt.userChoice; setDeferredPrompt(null); }
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const choice = await deferredPrompt.userChoice;
+      setDeferredPrompt(null);
+      if (choice?.outcome === 'accepted' && localStorage.getItem(INSTALL_XP_KEY) !== 'granted') {
+        localStorage.setItem(INSTALL_XP_KEY, 'granted');
+        setInstallBonus(true);
+      }
+    }
     neverShowInstall();
   };
 
   const today = todayKey();
   const weekDays = getWeekDays();
-  const totalXPAll = habits.reduce((sum, h) => sum + computeHabitStats(h, ht, today, startDates[h]).totalXP, 0);
+  const habitXP = habits.reduce((sum, h) => sum + computeHabitStats(h, ht, today, startDates[h]).totalXP, 0);
+  const totalXPAll = habitXP + (installBonus ? INSTALL_XP : 0);
   const playerLevel = getPlayerLevel(totalXPAll);
 
   useEffect(() => {
@@ -567,6 +601,7 @@ const Habits: React.FC = () => {
       return next;
     });
     setNewHabit('');
+    setAddOpen(false);
     api.updateHabits(updated).catch(() => {});
   };
 
@@ -602,8 +637,8 @@ const Habits: React.FC = () => {
 
   if (!loaded) {
     return (
-      <div className="app" style={{ '--theme': '#0a84ff', '--theme-dim': '#0a84ff66', '--theme-glow': '#0a84ff22' } as React.CSSProperties}>
-        <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', color: '#0a84ff', fontSize: '1.2rem' }}>
+      <div className="app" style={{ '--theme': '#22C55E', '--theme-dim': '#22C55E66', '--theme-glow': '#22C55E14' } as React.CSSProperties}>
+        <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', color: '#22C55E', fontSize: '1.2rem' }}>
           Loading…
         </div>
       </div>
@@ -612,55 +647,10 @@ const Habits: React.FC = () => {
 
   const yourHabits = habits.filter(h => h !== MANDATORY_HABIT);
 
-  return (
-    <div className="app" style={{ '--theme': '#0a84ff', '--theme-dim': '#0a84ff66', '--theme-glow': '#0a84ff22' } as React.CSSProperties}>
-      <header className="header">
-        <div className="title-group">
-          <h1 className="title" style={{ position: 'relative', transform: 'none', left: 'auto' }}>Superdub</h1>
-          <button
-            className="player-level"
-            onClick={() => navigate('/level')}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left' }}
-          >
-            <span className="player-level-badge">Lv.{playerLevel.level}</span>
-            <span className="player-level-name">{playerLevel.title}</span>
-            <div className="player-level-bar">
-              <div className="player-level-fill" style={{ width: `${playerLevel.progress * 100}%` }} />
-            </div>
-          </button>
-        </div>
-        <div className="habits-header-actions">
-          <div style={{ position: 'relative' }}>
-            <button
-              className="habits-cog-btn"
-              onClick={() => setShowCogMenu(o => !o)}
-              aria-label="Habits settings"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
-                <circle cx="12" cy="12" r="3" />
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-              </svg>
-            </button>
-            {showCogMenu && (
-              <>
-                <div className="cog-menu-overlay" onClick={() => setShowCogMenu(false)} />
-                <div className="cog-menu">
-                  <button className="cog-menu-item" onClick={() => { setShowCogMenu(false); setTimeout(() => addRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50); }}>
-                    <span>＋</span> Add Habit
-                  </button>
-                  <button className="cog-menu-item" onClick={() => { setShowCogMenu(false); window.dispatchEvent(new CustomEvent('superdub:show-checkin')); }}>
-                    <span>⚖️</span> Log Weight
-                  </button>
-                  <button className="cog-menu-item" onClick={() => { setShowCogMenu(false); setGraveyardOpen(true); setTimeout(() => graveyardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80); }}>
-                    <span>📦</span> Archived Habits
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
+  const mandatoryStats = computeHabitStats(MANDATORY_HABIT, ht, today, startDates[MANDATORY_HABIT]);
 
+  return (
+    <div className="app flush" style={{ '--theme': '#22C55E', '--theme-dim': '#22C55E66', '--theme-glow': '#22C55E0D' } as React.CSSProperties}>
       {/* Remove confirmation dialog */}
       {pendingRemove && (
         <div className="confirm-overlay" onClick={() => setPendingRemove(null)}>
@@ -675,83 +665,166 @@ const Habits: React.FC = () => {
         </div>
       )}
 
+      {/* Add habit sheet */}
+      {addOpen && (
+        <div className="hb-sheet-overlay" onClick={() => setAddOpen(false)}>
+          <div className="hb-sheet" onClick={e => e.stopPropagation()}>
+            <div className="hb-sheet-grip" />
+            <div className="hb-sheet-head">
+              <h3 className="hb-sheet-title">New Habit</h3>
+              <button className="hb-sheet-close" onClick={() => setAddOpen(false)} aria-label="Close">✕</button>
+            </div>
+            <p className="hb-sheet-sub">What do you want to build?</p>
+            <div className="habit-add-row">
+              <input
+                type="text"
+                className="habit-add-input"
+                value={newHabit}
+                autoFocus
+                onChange={e => setNewHabit(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addHabit()}
+                placeholder="Name your new habit…"
+              />
+              <button className="habit-add-btn" onClick={addHabit}>+</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Featured habits sheet */}
+      <FeaturedSheet open={featuredOpen} onClose={() => setFeaturedOpen(false)} userHabits={habits} onAdd={handleAddFeatured} />
+
       <div className="habits-page-scroll">
-        <WeatherBar weather={weather} />
+        {/* Top bar: brand + weather + cog */}
+        <div className="hb-topbar">
+          <div className="hb-brand">
+            <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
+            <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span>
+          </div>
+          <div className="hb-topbar-actions">
+            {weather && (
+              <span className="hb-weather">{weatherEmoji(weather.code)} {weather.temp}°</span>
+            )}
+            <div style={{ position: 'relative' }}>
+              <button className="hb-cog" onClick={() => setShowCogMenu(o => !o)} aria-label="Settings">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="19" height="19">
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+              </button>
+              {showCogMenu && (
+                <>
+                  <div className="cog-menu-overlay" onClick={() => setShowCogMenu(false)} />
+                  <div className="cog-menu">
+                    <button className="cog-menu-item" onClick={() => { setShowCogMenu(false); setAddOpen(true); }}>
+                      <span>＋</span> Add Habit
+                    </button>
+                    <button className="cog-menu-item" onClick={() => { setShowCogMenu(false); setGraveyardOpen(true); setTimeout(() => graveyardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80); }}>
+                      <span>📦</span> Archived Habits
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
 
         {showInstall && (
-          <div className="pwa-banner">
-            <span className="pwa-banner-icon">📲</span>
-            <div className="pwa-banner-text">
-              <strong>Add to Home Screen</strong>
-              {isIOS
-                ? <span>Tap <strong>Share</strong> then <strong>Add to Home Screen</strong></span>
-                : <span>Get the full app experience</span>}
+          <div className={`pwa-banner${installClosing ? ' closing' : ''}`}>
+            <button className="pwa-banner-dismiss" onClick={dismissInstall} aria-label="Hide for today">✕</button>
+            <div className="pwa-banner-main">
+              <img className="pwa-banner-icon" src="/superdub-icon-512.png" alt="" />
+              <div className="pwa-banner-text">
+                <strong>Add to Home Screen</strong>
+                {isIOS
+                  ? <span>Tap <strong>Share</strong> → <strong>Add to Home Screen</strong></span>
+                  : <span>Install Superdub for the full experience</span>}
+              </div>
             </div>
-            {!isIOS && <button className="pwa-banner-btn" onClick={triggerInstall}>Install</button>}
-            <button className="pwa-banner-dismiss" onClick={dismissInstall} title="Hide for today">✕</button>
-            <button className="pwa-banner-never" onClick={neverShowInstall}>Don't show again</button>
+            <div className="pwa-banner-foot">
+              <span className="pwa-reward"><span className="pwa-reward-plus">+</span>100 XP</span>
+              {!isIOS
+                ? <button className="pwa-banner-btn" onClick={triggerInstall}>Install</button>
+                : <button className="pwa-banner-never" onClick={neverShowInstall}>Don't show again</button>}
+            </div>
+            {!isIOS && <button className="pwa-banner-never pwa-banner-never--row" onClick={neverShowInstall}>Don't show again</button>}
           </div>
         )}
 
-        {/* Pinned / Mandatory habits */}
-        <div className="habits-pinned-section">
-          <div className="habits-pinned-head">
-            <span className="habits-pinned-title">Pinned</span>
+        {/* Level ring + XP */}
+        <div className="hb-level">
+          <LevelRing level={playerLevel.level} title={playerLevel.title} progress={playerLevel.progress} onClick={() => navigate('/level')} />
+          <div className="hb-xp">
+            <div className="hb-xp-scale">
+              <span>{totalXPAll.toLocaleString()} XP</span>
+              <span>{playerLevel.xpForNext != null ? playerLevel.xpForNext.toLocaleString() : 'MAX'}</span>
+            </div>
+            <div className="hb-xp-bar">
+              <div className="hb-xp-fill" style={{ width: `${Math.max(2, playerLevel.progress * 100)}%` }} />
+            </div>
+            {playerLevel.xpForNext != null ? (
+              <p className="hb-xp-to">{(playerLevel.xpForNext - totalXPAll).toLocaleString()} XP to <span>{playerLevel.nextTitle}</span></p>
+            ) : (
+              <p className="hb-xp-to">Max level — you legend.</p>
+            )}
           </div>
-          <div className="habits-grid">
-            {(() => {
-              const stats = computeHabitStats(MANDATORY_HABIT, ht, today, startDates[MANDATORY_HABIT]);
+        </div>
+
+        {/* Weekly strip — the simplified "Logging into Superdub" habit */}
+        <div className="hb-week">
+          {weekDays.map(({ key, label, isFuture, isToday }) => {
+            const state = ht[key]?.[MANDATORY_HABIT] ?? null;
+            return (
+              <div key={key} className="hb-week-col">
+                <span className="hb-week-dow">{label}</span>
+                <button
+                  className={`hb-week-circle ${state === 'done' ? 'done' : ''} ${state === 'failed' ? 'failed' : ''} ${isToday ? 'today' : ''} ${isFuture ? 'future' : ''}`}
+                  disabled={isFuture}
+                  onClick={() => !isFuture && handleToggleDay(MANDATORY_HABIT, key, cycleState(state))}
+                  aria-label={`${label}: ${state ?? 'not logged'}`}
+                >
+                  {state === 'done' && <span className="hb-week-tick">✓</span>}
+                  {state === 'failed' && <span className="hb-week-tick fail">✕</span>}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+        <p className="hb-week-caption">{mandatoryStats.streak}-day check-in streak · keep it alive</p>
+
+        {/* Your habits — full cards with weekly circles + done button */}
+        {yourHabits.length > 0 ? (
+          <div className="hb-rows">
+            {yourHabits.map(habit => {
+              const stats = computeHabitStats(habit, ht, today, startDates[habit]);
               return (
                 <HabitCard
-                  key={MANDATORY_HABIT}
-                  habit={MANDATORY_HABIT}
-                  startDate={startDates[MANDATORY_HABIT] ?? null}
+                  key={habit}
+                  habit={habit}
                   stats={stats}
                   weekDays={weekDays}
                   ht={ht}
                   today={today}
                   onToggleDay={handleToggleDay}
-                  onRequestRemove={() => {}}
-                  isMandatory={true}
+                  onRequestRemove={setPendingRemove}
                 />
               );
-            })()}
+            })}
           </div>
-        </div>
-
-        {/* All user habits in one section */}
-        {yourHabits.length > 0 && (
-          <div className="habits-section">
-            <div className="habits-section-head">
-              <h2 className="habits-section-title">Your Habits</h2>
-              <span className="habits-count">{yourHabits.length}</span>
-            </div>
-            <div className="habits-grid">
-              {yourHabits.map(habit => {
-                const stats = computeHabitStats(habit, ht, today, startDates[habit]);
-                return (
-                  <HabitCard
-                    key={habit}
-                    habit={habit}
-                    startDate={startDates[habit] ?? null}
-                    stats={stats}
-                    weekDays={weekDays}
-                    ht={ht}
-                    today={today}
-                    onToggleDay={handleToggleDay}
-                    onRequestRemove={setPendingRemove}
-                  />
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {yourHabits.length === 0 && (
+        ) : (
           <div className="habits-empty">
-            <p>No habits yet. Add one below or join a featured habit above.</p>
+            <p>No habits yet. Tap the cog to add one, or join a featured habit.</p>
           </div>
         )}
+
+        {/* Featured banner — tap to open & join (below the user's habits) */}
+        <button className="hb-featured" onClick={() => setFeaturedOpen(true)}>
+          <div className="hb-featured-text">
+            <span className="hb-featured-eyebrow">FEATURED</span>
+            <span className="hb-featured-cta">Discover habits to join →</span>
+          </div>
+          <span className="hb-featured-icon">🚶</span>
+        </button>
 
         {/* Archived Habits */}
         {graveyard.length > 0 && (
@@ -759,7 +832,7 @@ const Habits: React.FC = () => {
             <button className="graveyard-toggle" onClick={() => setGraveyardOpen(g => !g)}>
               <span>📦 Archived Habits</span>
               <span className="graveyard-count">{graveyard.length}</span>
-              <span className="graveyard-arrow">{graveyardOpen ? '▲' : '▼'}</span>
+              <span className="graveyard-arrow">{graveyardOpen ? '▲' : '▾'}</span>
             </button>
             {graveyardOpen && (
               <div className="graveyard-list">
@@ -783,25 +856,6 @@ const Habits: React.FC = () => {
             )}
           </div>
         )}
-
-        {/* Add Habits */}
-        <div className="habit-add-section" ref={addRef}>
-          <h2 className="habits-section-title" style={{ marginBottom: 14 }}>Add Habits</h2>
-          <div className="habit-add-row">
-            <input
-              type="text"
-              className="habit-add-input"
-              value={newHabit}
-              onChange={e => setNewHabit(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && addHabit()}
-              placeholder="Name your new habit…"
-            />
-            <button className="habit-add-btn" onClick={addHabit}>+</button>
-          </div>
-        </div>
-
-        {/* Featured Habits Carousel — browse & join new habits */}
-        <FeaturedCarousel userHabits={habits} onAdd={handleAddFeatured} />
 
         <div style={{ height: 100 }} />
       </div>

@@ -37,7 +37,7 @@ export function computeActivity(job: string, gym: string, walk: string): number 
   return Math.min(1.9, parseFloat((1.2 + (JOB_FACTOR[job] ?? 0) + (GYM_FACTOR[gym] ?? 0) + (WALK_FACTOR[walk] ?? 0)).toFixed(4)));
 }
 
-const THEME = '#7C5CFF';
+const THEME = '#7C3AED';
 
 export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
   const [mode, setMode] = useState<Mode>('landing');

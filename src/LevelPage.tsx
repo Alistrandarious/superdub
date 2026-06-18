@@ -216,15 +216,12 @@ const LevelPage: React.FC = () => {
   const sortedByXP = [...allStats].sort((a, b) => b.totalXP - a.totalXP);
 
   return (
-    <div className="app" style={{ '--theme': '#0a84ff', '--theme-dim': '#0a84ff66', '--theme-glow': '#0a84ff22' } as React.CSSProperties}>
-      <header className="header">
-        <div className="header-left">
-          <button className="back-link" onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--theme)', fontSize: '0.9rem', padding: 0 }}>← Back</button>
-        </div>
-        <h1 className="title">Level Profile</h1>
-      </header>
-
+    <div className="app flush" style={{ '--theme': '#7C3AED', '--theme-dim': '#7C3AED66', '--theme-glow': '#7C3AED22' } as React.CSSProperties}>
       <div className="page-content level-page-content">
+        <div className="page-intro-row">
+          <button className="page-back" onClick={() => navigate(-1)}><span className="page-back-arrow">‹</span> Back</button>
+          <h1 className="page-intro-title">Level Profile</h1>
+        </div>
 
         {/* Level card */}
         <div className="level-hero-card">

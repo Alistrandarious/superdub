@@ -22,15 +22,12 @@ const XP_GATES = [
 
 const About: React.FC = () => {
   return (
-    <div className="app" style={{ '--theme': '#0a84ff', '--theme-dim': '#0a84ff66', '--theme-glow': '#0a84ff22' } as React.CSSProperties}>
-      <header className="header">
-        <div className="header-left">
-          <Link to="/" className="back-link">← Back</Link>
-        </div>
-        <h1 className="title">About</h1>
-      </header>
-
+    <div className="app flush" style={{ '--theme': '#7C3AED', '--theme-dim': '#7C3AED66', '--theme-glow': '#7C3AED22' } as React.CSSProperties}>
       <div className="page-content" style={{ maxWidth: 680, margin: '0 auto', overflowY: 'auto', flex: 1, paddingBottom: 60 }}>
+        <div className="page-intro-row">
+          <Link to="/profile" className="page-back"><span className="page-back-arrow">‹</span> More</Link>
+          <h1 className="page-intro-title">About</h1>
+        </div>
 
         {/* Who made it */}
         <div className="diet-section" style={{ marginBottom: 20 }}>

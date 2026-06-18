@@ -18,18 +18,18 @@ const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'Ju
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 const MONTH_COLORS: Record<number, string> = {
-  0: '#00ff41',  // Jan - matrix green
-  1: '#ff6ec7',  // Feb - hot pink
-  2: '#7C5CFF',  // Mar - electric cyan
-  3: '#ff9500',  // Apr - amber
-  4: '#b4ff00',  // May - lime
-  5: '#ff2d55',  // Jun - coral red
-  6: '#0a84ff',  // Jul - blue
-  7: '#64d2ff',  // Aug - sky blue
-  8: '#ffd60a',  // Sep - gold
-  9: '#ff453a',  // Oct - red
-  10: '#22C55E', // Nov - apple green
-  11: '#ac8e68', // Dec - copper
+  0: '#FF4D8D',  // Jan - hot pink
+  1: '#B84DFF',  // Feb - violet
+  2: '#7C3AED',  // Mar - deep purple
+  3: '#FF8A00',  // Apr - orange
+  4: '#FFD233',  // May - gold
+  5: '#FF4D8D',  // Jun - hot pink
+  6: '#7C3AED',  // Jul - deep purple
+  7: '#B84DFF',  // Aug - violet
+  8: '#FFD233',  // Sep - gold
+  9: '#FF8A00',  // Oct - orange
+  10: '#FF4D8D', // Nov - hot pink
+  11: '#FFD233', // Dec - gold
 };
 
 function getYearDays(year: number): string[] {
@@ -524,8 +524,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
   if (!loaded) {
     return (
-      <div className="app" style={{ '--theme': '#7C5CFF', '--theme-dim': '#7C5CFF66', '--theme-glow': '#7C5CFF33' } as React.CSSProperties}>
-        <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', color: '#7C5CFF', fontSize: '1.2rem', letterSpacing: '0.1em' }}>
+      <div className="app" style={{ '--theme': '#7C3AED', '--theme-dim': '#7C3AED66', '--theme-glow': '#7C3AED33' } as React.CSSProperties}>
+        <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', color: '#7C3AED', fontSize: '1.2rem', letterSpacing: '0.1em' }}>
           Loading…
         </div>
       </div>
@@ -540,7 +540,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             <button className="calendar-btn" onClick={() => setCalendarOpen(!calendarOpen)}>
               {MONTH_NAMES[selectedMonth]} {YEAR}
               {selectedWeek !== null && ` · W${selectedWeek}`}
-              <span className="calendar-arrow">{calendarOpen ? '▲' : '▼'}</span>
+              <span className="calendar-arrow">{calendarOpen ? '▲' : '▾'}</span>
             </button>
             {calendarOpen && (
               <div className="calendar-dropdown">
@@ -565,13 +565,18 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           </div>
         </div>
 
+        <div className="header-brand">
+          <img className="header-brand-logo" src="/superdub-logo.png" alt="" />
+          <span className="header-brand-name">super<span className="hb-brand-dub">dub</span></span>
+        </div>
+
         {/* Cog dropdown — top right */}
-        <div ref={cogRef} style={{ marginLeft: 'auto', position: 'relative' }}>
+        <div ref={cogRef} style={{ position: 'relative' }}>
           <button
             onClick={() => setMenuOpen(o => !o)}
             style={{
-              background: 'none', border: 'none', color: menuOpen ? 'var(--theme)' : '#555',
-              cursor: 'pointer', fontSize: '1.15rem', padding: '6px 8px',
+              background: 'none', border: 'none', color: menuOpen ? 'var(--theme)' : '#666',
+              cursor: 'pointer', fontSize: '1.1rem', padding: '6px 8px',
               lineHeight: 1, borderRadius: 8, transition: 'color 0.15s',
             }}
             aria-label="Settings"
@@ -581,9 +586,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           {menuOpen && (
             <div style={{
               position: 'absolute', top: 'calc(100% + 6px)', right: 0,
-              background: '#0e1022', border: '1px solid #1e2245',
+              background: '#0E0E14', border: '1px solid #252532',
               borderRadius: 12, minWidth: 160, overflow: 'hidden',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.5)', zIndex: 300,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.6)', zIndex: 300,
             }}>
               <button
                 onClick={() => { setHabitsModalOpen(true); setMenuOpen(false); }}
@@ -591,7 +596,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                   display: 'block', width: '100%', padding: '12px 16px',
                   background: 'none', border: 'none', color: '#ccc',
                   textAlign: 'left', cursor: 'pointer', fontSize: '0.85rem',
-                  fontFamily: 'inherit', borderBottom: '1px solid #35345A',
+                  fontFamily: 'inherit', borderBottom: '1px solid #252532',
                 }}
               >
                 Edit Habits
@@ -814,6 +819,32 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         );
       })()}
 
+      {/* ── Today hero: greeting + habit pills ── */}
+      <div className="today-hero">
+        <p className="today-eyebrow">{todayLabel.toUpperCase()}</p>
+        <h1 className="today-greeting">
+          {greeting}{name.trim() ? `, ${name.trim()}` : ''} <span className="today-wave">👋</span>
+        </h1>
+        {habits.length > 0 && (
+          <div className="today-pills">
+            {habits.map(h => {
+              const done = tracker[todayKey]?.habits[h] === true;
+              return (
+                <button
+                  key={h}
+                  type="button"
+                  className={`today-pill${done ? ' done' : ''}`}
+                  onClick={() => handleCheck(todayKey, h)}
+                >
+                  <span className="today-pill-tick">{done ? '✓' : '+'}</span>
+                  {h}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       <div className="dashboard-scroll">
       {/* Week selector bar */}
       <div className="week-bar">
@@ -840,8 +871,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             <div className="legend-item"><span className="legend-swatch legend-bar"></span>Habits Done</div>
             <div className="legend-item"><span className="legend-swatch" style={{background:'rgba(255,69,58,0.75)'}}></span>Habits Failed</div>
             <div className="legend-item"><span className="legend-swatch legend-weight"></span>Weight (kg)</div>
-            <div className="legend-item"><span className="legend-swatch legend-prediction"></span>Goal Curve</div>
-            <div className="legend-item"><span className="legend-swatch legend-trend"></span>Trend</div>
+            <div className="legend-item"><span className="legend-swatch" style={{background:'#FFD233'}}></span>Goal Curve</div>
+            <div className="legend-item"><span className="legend-swatch" style={{background:'#FF8A00'}}></span>Trend</div>
           </div>
         </button>
         <button className="header-btn" onClick={() => setWeightPlanOpen(true)} aria-label="Weight settings">⚖</button>
@@ -874,7 +905,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             <CartesianGrid stroke={themeColor + '1a'} strokeDasharray="3 3" />
             <XAxis dataKey="day" stroke={themeColor} tick={{ fill: themeColor, fontSize: 10 }} interval={xAxisInterval} tickLine={false} padding={{ left: 10 }} />
             <YAxis yAxisId="left" stroke={themeColor} tick={{ fill: themeColor, fontSize: 10 }} allowDecimals={false} width={30} axisLine={false} tickLine={false} domain={[0, habits.length]} />
-            <YAxis yAxisId="right" orientation="right" stroke="#ccff00" tick={{ fill: '#ccff00', fontSize: 10 }} domain={(() => {
+            <YAxis yAxisId="right" orientation="right" stroke="#FFD233" tick={{ fill: '#FFD233', fontSize: 10 }} domain={(() => {
               const weights = chartData.map(d => d.weight).filter(Boolean) as number[];
               const preds   = chartData.map(d => d.prediction).filter(Boolean) as number[];
               const gw      = parseFloat(goalWeight) || 0;
@@ -883,7 +914,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               return [floor, 'auto'] as [number, string];
             })()} width={50} axisLine={false} tickLine={false} />
             <Tooltip
-              contentStyle={{ background: '#111', border: `1px solid ${themeColor}`, color: themeColor }}
+              contentStyle={{ background: '#0E0E14', border: `1px solid ${themeColor}`, color: themeColor }}
               labelStyle={{ color: themeColor }}
               itemStyle={{ color: themeColor }}
             />
@@ -894,17 +925,17 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 stroke="#ff00ff"
                 strokeWidth={1}
                 strokeDasharray="8 4"
-                label={{ value: `Goal: ${goalWeight}kg`, fill: '#ff00ff', fontSize: 11, position: 'right' }}
+                label={{ value: `Goal: ${goalWeight}kg`, fill: '#FFD233', fontSize: 11, position: 'right' }}
               />
             )}
             {goalDayVisible && (
               <ReferenceLine
                 yAxisId="left"
                 x={goalDayVisible}
-                stroke="#ff00ff"
+                stroke="#B84DFF"
                 strokeWidth={1}
                 strokeDasharray="8 4"
-                label={{ value: `🎯 ${goalDayVisible}`, fill: '#ff00ff', fontSize: 11, position: 'top' }}
+                label={{ value: `🎯 ${goalDayVisible}`, fill: '#B84DFF', fontSize: 11, position: 'top' }}
               />
             )}
             <Bar yAxisId="left" dataKey="completed" stackId="habits" fill="url(#barGradient)" name="Done" />
@@ -942,7 +973,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               yAxisId="right"
               type="monotone"
               dataKey="prediction"
-              stroke="#ccff00"
+              stroke="#FFD233"
               strokeWidth={2}
               strokeDasharray="5 5"
               dot={false}
@@ -953,7 +984,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               yAxisId="right"
               type="monotone"
               dataKey="trend"
-              stroke="#ff6600"
+              stroke="#FF8A00"
               strokeWidth={2}
               strokeDasharray="3 3"
               dot={false}

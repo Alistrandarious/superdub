@@ -9,6 +9,13 @@ html, body, #root {
   width: 100%;
 }
 
+/* Root is a flex column so the bottom nav always sits at the bottom in-flow */
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
 body {
   background: #070810;
   color: #e2e8f0;

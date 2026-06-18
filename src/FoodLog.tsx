@@ -182,16 +182,12 @@ const FoodLog: React.FC = () => {
   };
 
   return (
-    <div className="app" style={{ '--theme': '#22C55E', '--theme-dim': '#22C55E66', '--theme-glow': '#22C55E22' } as React.CSSProperties}>
-      <header className="header">
-        <div className="header-left"><Link to="/" className="back-link">← Back</Link></div>
-        <h1 className="title">Food Log</h1>
-        {hasKey === false && (
-          <button className="settings-gear-btn" onClick={() => navigate('/profile')} title="Add AI key in Profile">⚙</button>
-        )}
-      </header>
-
+    <div className="app flush" style={{ '--theme': '#FF4D8D', '--theme-dim': '#FF4D8D66', '--theme-glow': '#FF4D8D22' } as React.CSSProperties}>
       <div className="fl-page page-content">
+        <div className="page-intro-row">
+          <Link to="/diet" className="page-back"><span className="page-back-arrow">‹</span> Diet</Link>
+          <h1 className="page-intro-title">Food Log</h1>
+        </div>
 
         {/* No key notice */}
         {hasKey === false && (
@@ -230,7 +226,7 @@ const FoodLog: React.FC = () => {
               <span className="fl-progress-kcal">{Math.round(totals.kcal)} / {target.calories} kcal</span>
             </div>
             {macroBar('Protein', totals.p, target.protein, '#ff6ec7')}
-            {macroBar('Carbs', totals.c, target.carbs, '#7C5CFF')}
+            {macroBar('Carbs', totals.c, target.carbs, '#7C3AED')}
             {macroBar('Fat', totals.f, target.fats, '#ffd60a')}
           </div>
         )}

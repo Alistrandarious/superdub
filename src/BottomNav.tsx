@@ -113,19 +113,20 @@ const BottomNav: React.FC = () => {
           <span className="bottom-nav-label">Lists</span>
         </button>
 
-        {/* Profile */}
+        {/* More */}
         <button
           className={`bottom-nav-item${isActive('/profile') ? ' active' : ''}`}
           onClick={() => goTo('/profile')}
-          aria-label="Profile"
+          aria-label="More"
         >
           <span className="bottom-nav-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
+              <circle cx="5" cy="12" r="1.6" />
+              <circle cx="12" cy="12" r="1.6" />
+              <circle cx="19" cy="12" r="1.6" />
             </svg>
           </span>
-          <span className="bottom-nav-label">Profile</span>
+          <span className="bottom-nav-label">More</span>
         </button>
       </nav>
     </>

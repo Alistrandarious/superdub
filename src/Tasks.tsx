@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import './App.css';
 import { api } from './api';
 
@@ -61,22 +60,15 @@ const Tasks: React.FC = () => {
   const doneCount = visible.filter(t => t.done).length;
 
   const isShopping = tab === 'shopping';
-  const accent = isShopping ? '#F59E0B' : '#22C55E';
+  const accent = isShopping ? '#FFD233' : '#FF4D8D';
   const themeVars = isShopping
-    ? { '--theme': '#F59E0B', '--theme-dim': '#F59E0B66', '--theme-glow': '#F59E0B22' }
-    : { '--theme': '#22C55E', '--theme-dim': '#22C55E66', '--theme-glow': '#22C55E22' };
+    ? { '--theme': '#FFD233', '--theme-dim': '#FFD23366', '--theme-glow': '#FFD23322' }
+    : { '--theme': '#FF4D8D', '--theme-dim': '#FF4D8D66', '--theme-glow': '#FF4D8D22' };
 
   return (
-    <div className="app" style={themeVars as React.CSSProperties}>
-      <header className="header">
-        <div className="header-left">
-          <Link to="/" className="back-link">← Back</Link>
-        </div>
-        <h1 className="title">Lists</h1>
-      </header>
-
+    <div className="app flush" style={themeVars as React.CSSProperties}>
       {/* Tab bar */}
-      <div className="lists-tab-bar">
+      <div className="lists-tab-bar lists-tab-bar--top">
         <button
           className={`lists-tab${tab === 'todo' ? ' lists-tab--active lists-tab--green' : ''}`}
           onClick={() => setTab('todo')}

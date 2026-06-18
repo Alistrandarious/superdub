@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import './App.css';
 import { api, clearToken } from './api';
 import { computeActivity, JOB_OPTS } from './Auth';
@@ -83,18 +83,6 @@ function fmtWeight(kg: number, unit: 'kg' | 'lbs' | 'st'): string {
 
 interface ProfileProps { onLogout?: () => void; }
 
-function useSettingsMenu() {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
-  return { open, setOpen, ref };
-}
-
 function useDeleteAccount(onLogout?: () => void) {
   const [step, setStep] = useState<'idle' | 'confirm' | 'deleting'>('idle');
   const [error, setError] = useState('');
@@ -111,7 +99,6 @@ function useDeleteAccount(onLogout?: () => void) {
 const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
   const navigate = useNavigate();
   const deleteAccount = useDeleteAccount(onLogout);
-  const settings = useSettingsMenu();
 
   const [name, setName] = useState('');
   const [profile, setProfile] = useState<ProfileData>(DEFAULT_PROFILE);
@@ -144,6 +131,10 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
   const [aiKeyMasked, setAiKeyMasked] = useState<string | null>(null);
   const [aiKeySaving, setAiKeySaving] = useState(false);
   const [aiKeyDone, setAiKeyDone] = useState(false);
+
+  // Quick weight log
+  const [weightInput, setWeightInput] = useState('');
+  const [weightSaved, setWeightSaved] = useState(false);
 
   // Unit preferences
   const [heightUnit, setHeightUnit] = useState<'cm' | 'ftin'>('cm');
@@ -409,14 +400,25 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
     api.updateHabits(newHabits).catch(() => {});
   };
 
+  // Quick weight log → saves to today's tracker entry
+  const weightLogUnit: 'kg' | 'lbs' = weightUnit === 'lbs' ? 'lbs' : 'kg';
+  const logWeight = () => {
+    const val = parseFloat(weightInput);
+    if (!val || val <= 0) return;
+    const kg = weightLogUnit === 'lbs' ? lbsToKg(val) : val;
+    const now = new Date();
+    const todayKey = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}`;
+    api.updateTrackerDay(todayKey, { weight: String(kg) }).catch(() => {});
+    setProfile(p => ({ ...p, weightKg: String(kg) }));
+    setWeightSaved(true);
+    setWeightInput('');
+    setTimeout(() => setWeightSaved(false), 2200);
+  };
+
   if (!loaded) {
     return (
-      <div className="app" style={{ '--theme': '#F59E0B', '--theme-dim': '#F59E0B66', '--theme-glow': '#F59E0B33' } as React.CSSProperties}>
-        <header className="header">
-          <div className="header-left"><Link to="/" className="back-link">← Back</Link></div>
-          <h1 className="title">Profile</h1>
-        </header>
-        <div className="page-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '4rem', color: '#F59E0B' }}>Loading…</div>
+      <div className="app flush" style={{ '--theme': '#FFD233', '--theme-dim': '#FFD23366', '--theme-glow': '#FFD23333' } as React.CSSProperties}>
+        <div className="page-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '4rem', color: '#FFD233' }}>Loading…</div>
       </div>
     );
   }
@@ -426,29 +428,40 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
   const rateLabel = isGain ? 'Gain per week' : 'Lose per week';
 
   return (
-    <div className="app" style={{ '--theme': '#F59E0B', '--theme-dim': '#F59E0B66', '--theme-glow': '#F59E0B33' } as React.CSSProperties}>
-      <header className="header">
-        <div className="header-left"><Link to="/" className="back-link">← Back</Link></div>
-        <h1 className="title">Profile</h1>
-        <div className="settings-menu-wrap" ref={settings.ref} style={{ marginLeft: 'auto' }}>
-          <button className="settings-gear-btn" onClick={() => settings.setOpen(o => !o)} aria-label="Settings">⚙</button>
-          {settings.open && (
-            <div className="settings-dropdown">
-              <button className="settings-dropdown-item" onClick={() => { settings.setOpen(false); navigate('/about'); }}><span>📖</span> About</button>
-              <button className="settings-dropdown-item" onClick={() => { settings.setOpen(false); navigate('/privacy'); }}><span>🔏</span> Privacy Policy</button>
-              <div className="settings-dropdown-divider" />
-              {onLogout && (
-                <button className="settings-dropdown-item" onClick={() => { settings.setOpen(false); onLogout(); }}><span>🚪</span> Log out</button>
-              )}
-              <button className="settings-dropdown-item settings-dropdown-danger" onClick={() => { settings.setOpen(false); }}>
-                <a href="#danger-zone" style={{ color: 'inherit', textDecoration: 'none', display: 'flex', gap: 8, alignItems: 'center' }}><span>⚠️</span> Delete account</a>
-              </button>
-            </div>
-          )}
-        </div>
-      </header>
-
+    <div className="app flush" style={{ '--theme': '#FFD233', '--theme-dim': '#FFD23366', '--theme-glow': '#FFD23333' } as React.CSSProperties}>
       <div className="profile-content page-content">
+
+        <div className="page-intro">
+          <h1 className="page-intro-title">More</h1>
+          <p className="page-intro-sub">Profile, settings & quick actions</p>
+        </div>
+
+        {/* Quick: Log Weight */}
+        <div className="log-weight-card">
+          <div className="log-weight-head">
+            <span className="log-weight-icon">⚖️</span>
+            <div>
+              <div className="log-weight-title">Log Weight</div>
+              <div className="log-weight-sub">Save today's weigh-in</div>
+            </div>
+          </div>
+          <div className="log-weight-row">
+            <div className="log-weight-input-unit">
+              <input
+                type="text"
+                inputMode="decimal"
+                value={weightInput}
+                onChange={e => setWeightInput(e.target.value.replace(/[^0-9.]/g, ''))}
+                onKeyDown={e => { if (e.key === 'Enter') logWeight(); }}
+                placeholder={profile.weightKg ? (weightLogUnit === 'lbs' ? String(kgToLbs(parseFloat(profile.weightKg))) : profile.weightKg) : '0'}
+              />
+              <span className="log-weight-unit">{weightLogUnit}</span>
+            </div>
+            <button className="log-weight-btn" onClick={logWeight} disabled={!weightInput}>
+              {weightSaved ? '✓ Saved' : 'Save'}
+            </button>
+          </div>
+        </div>
 
         {/* Identity */}
         <div className="profile-identity">
@@ -889,7 +902,28 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
                 catch { } finally { setAiKeySaving(false); }
               }}>{aiKeySaving ? '…' : aiKeyDone ? '✓' : 'Save'}</button>
           </div>
-          <p className="diet-hint" style={{ marginTop: 6 }}>Get your key at <span style={{ color: '#0a84ff' }}>console.anthropic.com</span></p>
+          <p className="diet-hint" style={{ marginTop: 6 }}>Get your key at <span style={{ color: '#7C3AED' }}>console.anthropic.com</span></p>
+        </div>
+
+        {/* ── More menu ── */}
+        <div className="more-menu">
+          <button className="more-menu-item" onClick={() => navigate('/about')}>
+            <span className="more-menu-icon">📖</span>
+            <span className="more-menu-label">About Superdub</span>
+            <span className="more-menu-arrow">›</span>
+          </button>
+          <button className="more-menu-item" onClick={() => navigate('/privacy')}>
+            <span className="more-menu-icon">🔏</span>
+            <span className="more-menu-label">Privacy Policy</span>
+            <span className="more-menu-arrow">›</span>
+          </button>
+          {onLogout && (
+            <button className="more-menu-item" onClick={onLogout}>
+              <span className="more-menu-icon">🚪</span>
+              <span className="more-menu-label">Log out</span>
+              <span className="more-menu-arrow">›</span>
+            </button>
+          )}
         </div>
 
         {/* ── Danger Zone ── */}
