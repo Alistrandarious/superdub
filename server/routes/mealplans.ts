@@ -23,6 +23,42 @@ const HARAM_PATTERN =
   `beer|wine|whiskey|vodka|rum|liquor|bourbon|sake|champagne|` +
   `alcohol|mirin|sherry|brandy|kahlua|baileys)%`;
 
+// Fetch + cache ingredients for a single recipe
+router.get('/recipe/:id/ingredients', requireAuth as any, async (req: AuthRequest, res: Response) => {
+  const id = parseInt(req.params.id);
+  if (!id) return res.status(400).json({ error: 'Invalid id' });
+
+  try {
+    // Return cached ingredients if we have them
+    const { rows } = await pool.query('SELECT ingredients FROM recipes WHERE id = $1', [id]);
+    const cached: any[] = rows[0]?.ingredients ?? [];
+    if (cached.length > 0) return res.json({ ingredients: cached });
+
+    // Fetch from Spoonacular
+    if (!SPOONACULAR_KEY) return res.json({ ingredients: [] });
+    const resp = await fetch(
+      `https://api.spoonacular.com/recipes/${id}/information?apiKey=${SPOONACULAR_KEY}&includeNutrition=false`
+    );
+    if (!resp.ok) return res.json({ ingredients: [] });
+
+    const data: any = await resp.json();
+    const ingredients = (data.extendedIngredients ?? []).map((ing: any) => ({
+      id:       ing.id,
+      name:     ing.name,
+      original: ing.original,
+      amount:   ing.amount,
+      unit:     ing.unit,
+    }));
+
+    // Cache for next time
+    await pool.query('UPDATE recipes SET ingredients = $1 WHERE id = $2', [JSON.stringify(ingredients), id]);
+
+    res.json({ ingredients });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // How many recipes are in the local DB
 router.get('/recipe-count', requireAuth as any, async (_req: AuthRequest, res: Response) => {
   try {

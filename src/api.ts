@@ -97,6 +97,7 @@ export const api = {
   // meal plans
   getMealPlanRecipeCount: () => request('/meal-plans/recipe-count'),
   seedMealPlanRecipes: () => request('/meal-plans/seed', { method: 'POST' }),
+  getRecipeIngredients: (recipeId: number) => request(`/meal-plans/recipe/${recipeId}/ingredients`),
   generateMealPlan: (body: { mealCount: number; diets: string[]; excludeIds: number[]; includeShake: boolean; halal: boolean }) =>
     request('/meal-plans/generate', { method: 'POST', body: JSON.stringify(body) }),
   swapMeal: (body: { slotName: string; targetCal: number; diets: string[]; excludeIds: number[]; halal: boolean }) =>

@@ -5,6 +5,14 @@ import { api } from './api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+interface Ingredient {
+  id: number;
+  name: string;
+  original: string;
+  amount: number;
+  unit: string;
+}
+
 interface Recipe {
   id: number;
   title: string;
@@ -82,6 +90,88 @@ function MacroPill({ label, value, unit = 'g', target, color }: {
   );
 }
 
+function IngredientPanel({ recipeId, scale }: { recipeId: number; scale: number }) {
+  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [loading, setLoading]         = useState(false);
+  const [loaded, setLoaded]           = useState(false);
+  const [selected, setSelected]       = useState<Set<number>>(new Set());
+  const [added, setAdded]             = useState(false);
+
+  const fetchIngredients = async () => {
+    if (loaded) return;
+    setLoading(true);
+    try {
+      const r: any = await api.getRecipeIngredients(recipeId);
+      setIngredients(r.ingredients ?? []);
+      setSelected(new Set((r.ingredients ?? []).map((i: Ingredient) => i.id)));
+    } catch {
+      // silent
+    } finally {
+      setLoading(false);
+      setLoaded(true);
+    }
+  };
+
+  const toggle = (id: number) =>
+    setSelected(prev => {
+      const s = new Set(prev);
+      s.has(id) ? s.delete(id) : s.add(id);
+      return s;
+    });
+
+  const addToList = async () => {
+    const toAdd = ingredients.filter(i => selected.has(i.id));
+    for (const ing of toAdd) {
+      const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const scaled = scale !== 1
+        ? `${(ing.amount * scale).toFixed(1).replace(/\.0$/, '')} ${ing.unit} ${ing.name}`
+        : ing.original;
+      await api.createShoppingItem(id, scaled).catch(() => {});
+    }
+    setAdded(true);
+    setTimeout(() => setAdded(false), 2500);
+  };
+
+  return (
+    <div className="mp-ing-panel">
+      {!loaded ? (
+        <button className="mp-ing-load-btn" onClick={fetchIngredients} disabled={loading}>
+          {loading ? 'Loading…' : '🧾 Show ingredients'}
+        </button>
+      ) : ingredients.length === 0 ? (
+        <p className="mp-ing-empty">No ingredients found.</p>
+      ) : (
+        <>
+          <div className="mp-ing-list">
+            {ingredients.map(ing => (
+              <label key={ing.id} className="mp-ing-row">
+                <input
+                  type="checkbox"
+                  className="mp-ing-check"
+                  checked={selected.has(ing.id)}
+                  onChange={() => toggle(ing.id)}
+                />
+                <span className="mp-ing-text">
+                  {scale !== 1
+                    ? `${(ing.amount * scale).toFixed(1).replace(/\.0$/, '')} ${ing.unit} ${ing.name}`
+                    : ing.original}
+                </span>
+              </label>
+            ))}
+          </div>
+          <button
+            className="mp-ing-add-btn"
+            onClick={addToList}
+            disabled={selected.size === 0 || added}
+          >
+            {added ? '✓ Added to shopping list' : `🛒 Add ${selected.size} item${selected.size !== 1 ? 's' : ''} to list`}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 function MealCard({
   entry,
   onSwap,
@@ -151,6 +241,7 @@ function MealCard({
           )}
         </div>
       </div>
+      {recipe && <IngredientPanel recipeId={recipe.id} scale={scale} />}
       <button className="mp-swap-btn" onClick={() => onSwap(entry)} disabled={swapping}>
         {swapping ? '…' : '↺ Swap'}
       </button>
@@ -165,24 +256,7 @@ function SavedPlanCard({
   plan: SavedPlan;
   onDelete: (id: string) => void;
 }) {
-  const [open, setOpen]           = useState(false);
-  const [exported, setExported]   = useState(false);
-  const [exporting, setExporting] = useState(false);
-
-  const exportToShoppingList = async () => {
-    setExporting(true);
-    for (const m of plan.meals) {
-      if (!m.recipe) continue;
-      const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      const label = m.scale !== 1
-        ? `${m.recipe.title} (×${m.scale})`
-        : m.recipe.title;
-      await api.createShoppingItem(id, label).catch(() => {});
-    }
-    setExporting(false);
-    setExported(true);
-    setTimeout(() => setExported(false), 2500);
-  };
+  const [open, setOpen] = useState(false);
 
   return (
     <div className="mp-saved-card">
@@ -197,22 +271,18 @@ function SavedPlanCard({
       {open && (
         <div className="mp-saved-meals">
           {plan.meals.map(m => (
-            <div key={m.slot} className="mp-saved-meal-row">
-              <span className="mp-saved-meal-slot">{m.slot}</span>
-              <span className="mp-saved-meal-name">{m.recipe?.title ?? 'Protein Shake'}</span>
-              <span className="mp-saved-meal-cal">{m.macros.calories} kcal</span>
+            <div key={m.slot}>
+              <div className="mp-saved-meal-row">
+                <span className="mp-saved-meal-slot">{m.slot}</span>
+                <span className="mp-saved-meal-name">{m.recipe?.title ?? 'Protein Shake'}</span>
+                <span className="mp-saved-meal-cal">{m.macros.calories} kcal</span>
+              </div>
+              {m.recipe && <IngredientPanel recipeId={m.recipe.id} scale={m.scale} />}
             </div>
           ))}
           <div className="mp-saved-actions">
-            <button
-              className="mp-export-btn"
-              onClick={exportToShoppingList}
-              disabled={exporting || exported}
-            >
-              {exported ? '✓ Added to shopping list' : exporting ? 'Adding…' : '🛒 Add to shopping list'}
-            </button>
             <button className="mp-delete-btn" onClick={() => onDelete(plan.id)}>
-              Delete
+              Delete plan
             </button>
           </div>
         </div>
