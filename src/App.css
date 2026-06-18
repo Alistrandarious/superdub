@@ -1,5 +1,5 @@
 ﻿/* =====================================================================
-   SUPERDUB 窶・App.css
+   SUPERDUB —App.css
    Deep navy-black dark theme with per-page CSS variable theming,
    glass morphism surfaces, and monospace fonts only in data grids.
    ===================================================================== */
@@ -1557,7 +1557,7 @@ h1, h2, h3, h4, .sora {
 }
 
 /* =====================================================================
-   TRACKER 窶・TABS & GRID
+   TRACKER —TABS & GRID
    ===================================================================== */
 .tracker {
   flex: 1;
@@ -1627,7 +1627,7 @@ h1, h2, h3, h4, .sora {
   overflow: auto;
 }
 
-/* Data grid 窶・monospace font only here */
+/* Data grid —monospace font only here */
 .tracker-grid {
   display: grid;
   grid-auto-rows: 36px;
@@ -1695,7 +1695,7 @@ h1, h2, h3, h4, .sora {
   box-sizing: border-box;
 }
 
-/* Tracker inputs 窶・monospace */
+/* Tracker inputs —monospace */
 .weight-input {
   background: transparent;
   border: none;
@@ -2034,7 +2034,7 @@ h1, h2, h3, h4, .sora {
 }
 
 /* =====================================================================
-   HOME DASHBOARD 窶・no outer scroll; tracker body scrolls internally
+   HOME DASHBOARD —no outer scroll; tracker body scrolls internally
    ===================================================================== */
 
 /* Check-in overlay (daily popup) */
@@ -2750,7 +2750,7 @@ h1, h2, h3, h4, .sora {
 }
 
 /* =====================================================================
-   RESPONSIVE 窶・MOBILE
+   RESPONSIVE —MOBILE
    ===================================================================== */
 @media (max-width: 640px) {
   .header {
@@ -3050,7 +3050,7 @@ h1, h2, h3, h4, .sora {
 }
 
 /* =====================================================================
-   DIET 窶・TAB SWITCHER
+   DIET —TAB SWITCHER
    ===================================================================== */
 .diet-tabs {
   display: flex;
@@ -3084,7 +3084,7 @@ h1, h2, h3, h4, .sora {
 }
 
 /* =====================================================================
-   DIET 窶・MAINTENANCE CARD & MACRO LINK
+   DIET —MAINTENANCE CARD & MACRO LINK
    ===================================================================== */
 .diet-maintenance-card {
   background: linear-gradient(135deg, #1E1B2E 0%, rgba(0,229,255,0.08) 100%);
@@ -3378,7 +3378,7 @@ h1, h2, h3, h4, .sora {
 }
 
 /* =====================================================================
-   HABITS PAGE 窶・scroll shell
+   HABITS PAGE —scroll shell
    ===================================================================== */
 .habits-page-scroll {
   flex: 1;
@@ -4070,7 +4070,7 @@ h1, h2, h3, h4, .sora {
 }
 
 /* =====================================================================
-   RESPONSIVE 窶・HABITS PAGE
+   RESPONSIVE —HABITS PAGE
    ===================================================================== */
 @media (max-width: 640px) {
   .featured-wrap {
@@ -4105,7 +4105,7 @@ h1, h2, h3, h4, .sora {
 }
 
 /* =====================================================================
-   FEATURED 窶・YOGA CARD
+   FEATURED —YOGA CARD
    ===================================================================== */
 .featured-bg-yoga {
   background: linear-gradient(135deg, #2E1A2E 0%, #3D1038 60%, #2E1A2E 100%);
@@ -4601,14 +4601,14 @@ h1, h2, h3, h4, .sora {
 .about-name-link:hover { border-color: var(--theme); }
 
 /* =====================================================================
-   PAGE CONTENT 窶・bottom padding to clear fixed nav
+   PAGE CONTENT —bottom padding to clear fixed nav
    ===================================================================== */
 .page-content {
   padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
 }
 
 /* =====================================================================
-   BOTTOM NAV 窶・CENTRE CIRCLE BUTTON (Habits)
+   BOTTOM NAV —CENTRE CIRCLE BUTTON (Habits)
    ===================================================================== */
 .bottom-nav-center {
   position: relative;
@@ -4823,7 +4823,7 @@ h1, h2, h3, h4, .sora {
 }
 
 /* =====================================================================
-   DIET 窶・CASCADE TARGETS LAYOUT
+   DIET —CASCADE TARGETS LAYOUT
    ===================================================================== */
 .target-cascade {
   display: flex;
@@ -4837,7 +4837,7 @@ h1, h2, h3, h4, .sora {
 }
 
 /* =====================================================================
-   DIET 窶・FILTER CHIPS
+   DIET —FILTER CHIPS
    ===================================================================== */
 .diet-filter-chips {
   display: flex;
@@ -4873,7 +4873,7 @@ h1, h2, h3, h4, .sora {
 }
 
 /* =====================================================================
-   DIET 窶・PLAN LABEL RENAME
+   DIET —PLAN LABEL RENAME
    ===================================================================== */
 .plan-label-text {
   margin: 0;
@@ -4912,7 +4912,7 @@ h1, h2, h3, h4, .sora {
 }
 
 /* =====================================================================
-   DIET 窶・PER-MEAL REGENERATE BUTTON
+   DIET —PER-MEAL REGENERATE BUTTON
    ===================================================================== */
 .meal-regen-btn {
   background: rgba(0,229,255,0.1);
@@ -4938,7 +4938,7 @@ h1, h2, h3, h4, .sora {
 }
 
 /* =====================================================================
-   LEVEL PAGE 窶・fix blue gradients for hero card
+   LEVEL PAGE —fix blue gradients for hero card
    ===================================================================== */
 .level-hero-card {
   background: linear-gradient(135deg, #1E1B2E 0%, rgba(10,132,255,0.12) 100%) !important;
@@ -5109,7 +5109,7 @@ h1, h2, h3, h4, .sora {
 .ai-key-save-btn:disabled { opacity: 0.4; cursor: default; }
 
 /* =====================================================================
-   GOAL PICKER 窶・Auth signup step 3
+   GOAL PICKER —Auth signup step 3
    ===================================================================== */
 .auth-goal-picker { display: flex; flex-direction: column; gap: 10px; }
 .auth-goal-card {
@@ -5127,7 +5127,7 @@ h1, h2, h3, h4, .sora {
 .auth-goal-card.selected .auth-goal-label { color: #7C5CFF; }
 
 /* =====================================================================
-   GOAL SELECTOR 窶・Diet Maker tab
+   GOAL SELECTOR —Diet Maker tab
    ===================================================================== */
 .diet-goal-card {
   display: flex; gap: 8px;
@@ -5175,7 +5175,7 @@ h1, h2, h3, h4, .sora {
   border-color: var(--theme, #7C5CFF); background: rgba(0,229,255,0.1); color: var(--theme, #7C5CFF);
 }
 
-/* 笏笏 Frequency segmented selector 笏笏 */
+/* ── Frequency segmented selector ── */
 .freq-selector {
   display: flex;
   background: #1E1B2E;
@@ -5206,7 +5206,7 @@ h1, h2, h3, h4, .sora {
 .freq-option.active .freq-main { color: #000; }
 .freq-option.active .freq-sub  { color: rgba(0,0,0,0.5); }
 
-/* 笏笏 Step counter 笏笏 */
+/* ── Step counter ── */
 .step-counter-row {
   display: flex; align-items: center; gap: 6px;
 }
@@ -5225,7 +5225,7 @@ h1, h2, h3, h4, .sora {
   font-variant-numeric: tabular-nums;
 }
 
-/* 笏笏 Daily Check-In Modal 笏笏 */
+/* ── Daily Check-In Modal ── */
 .checkin-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1200;
   display: flex; align-items: flex-end; justify-content: center;
@@ -5285,7 +5285,7 @@ h1, h2, h3, h4, .sora {
   border: 1px solid rgba(255,69,58,0.25);
 }
 
-/* 笏笏 Wheel Picker 笏笏 */
+/* ── Wheel Picker ── */
 .wheel-picker-wrap {
   position: relative; width: 100%; height: 240px; overflow: hidden; border-radius: 12px;
 }
@@ -5319,7 +5319,7 @@ h1, h2, h3, h4, .sora {
   border-radius: 4px; pointer-events: none; z-index: 1;
 }
 
-/* 笏笏 Profile Body Goals 笏笏 */
+/* ── Profile Body Goals ── */
 .profile-body-goals {
   background: var(--glass-bg, rgba(255,255,255,0.04));
   border: 1px solid var(--glass-border, rgba(255,255,255,0.08));
@@ -5340,7 +5340,7 @@ h1, h2, h3, h4, .sora {
 .pbg-bar-fill { height: 100%; border-radius: 4px; background: var(--theme, #7C5CFF); transition: width 0.4s ease; }
 .pbg-hint { font-size: 0.72rem; color: #555; text-align: center; margin-top: 4px; }
 
-/* 笏笏 Step Performance (Diet Targets Tab) 笏笏 */
+/* ── Step Performance (Diet Targets Tab) ── */
 .step-perf-card {
   background: var(--glass-bg, rgba(255,255,255,0.04));
   border: 1px solid var(--glass-border, rgba(255,255,255,0.08));
@@ -5372,7 +5372,7 @@ h1, h2, h3, h4, .sora {
 .step-perf-badge.hit  { background: rgba(48,209,88,0.15); color: #22C55E; }
 .step-perf-badge.miss { background: rgba(255,159,10,0.15); color: #F59E0B; }
 
-/* 笏笏 Habits header cog 笏笏 */
+/* ── Habits header cog ── */
 .habits-header-actions {
   display: flex; align-items: center; gap: 8px; margin-left: auto;
 }
@@ -5397,7 +5397,7 @@ h1, h2, h3, h4, .sora {
 }
 .cog-menu-item:hover { background: rgba(255,255,255,0.07); color: #fff; }
 
-/* 笏笏 Add Habits section (bottom) 笏笏 */
+/* ── Add Habits section (bottom) ── */
 .habit-add-section {
   margin: 24px 16px 0;
   padding: 20px;
@@ -5406,7 +5406,7 @@ h1, h2, h3, h4, .sora {
   border-radius: 18px;
 }
 
-/* 笏笏 Step Logger inline 笏笏 */
+/* ── Step Logger inline ── */
 .step-logger-row {
   display: flex; gap: 8px; align-items: center; margin-top: 12px;
 }
@@ -5427,13 +5427,13 @@ h1, h2, h3, h4, .sora {
 .checkin-wheels-single { justify-content: center; }
 .checkin-wheels-single .checkin-wheel-col { max-width: 200px; }
 
-/* 笏笏 Plan page section labels 笏笏 */
+/* ── Plan page section labels ── */
 .plan-section-label {
   font-size: 0.65rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
   color: #444; padding: 18px 4px 6px; margin: 0;
 }
 
-/* 笏笏 Strategy card 笏笏 */
+/* ── Strategy card ── */
 .strategy-macro-row {
   display: flex; gap: 8px; margin-top: 14px; flex-wrap: nowrap;
 }
@@ -5453,7 +5453,7 @@ h1, h2, h3, h4, .sora {
 }
 .strategy-eb { color: #7C5CFF; font-weight: 600; }
 
-/* 笏笏 Weekly Plan card 笏笏 */
+/* ── Weekly Plan card ── */
 .weekly-plan-card {}
 .weekly-plan-row {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
@@ -5464,7 +5464,7 @@ h1, h2, h3, h4, .sora {
 }
 .weekly-plan-unit { font-size: 0.76rem; color: #555; margin-left: 4px; }
 
-/* 笏笏 Gym sessions stepper 笏笏 */
+/* ── Gym sessions stepper ── */
 .gym-stepper {
   display: flex; align-items: center; gap: 12px;
 }
@@ -5483,13 +5483,13 @@ h1, h2, h3, h4, .sora {
 }
 .gym-step-x { font-size: 0.78rem; color: #666; margin-left: 1px; }
 
-/* 笏笏 Step target inline 笏笏 */
+/* ── Step target inline ── */
 .step-target-inline { display: flex; align-items: center; gap: 6px; }
 .step-target-inline .step-target-input {
   width: 88px; text-align: right; padding: 7px 10px;
 }
 
-/* 笏笏 Plan advice box 笏笏 */
+/* ── Plan advice box ── */
 .plan-advice-box {
   display: flex; gap: 10px; align-items: flex-start;
   background: rgba(0,229,255,0.05); border: 1px solid rgba(0,229,255,0.13);
@@ -5498,7 +5498,7 @@ h1, h2, h3, h4, .sora {
 .plan-advice-icon { font-size: 1rem; flex-shrink: 0; line-height: 1.5; }
 .plan-advice-text { font-size: 0.8rem; color: #999; line-height: 1.6; margin: 0; }
 
-/* 笏笏 Dashboard scroll shell 笏笏 */
+/* ── Dashboard scroll shell ── */
 .dashboard-scroll {
   flex: 1;
   min-height: 0;
@@ -5506,7 +5506,7 @@ h1, h2, h3, h4, .sora {
   -webkit-overflow-scrolling: touch;
 }
 
-/* 笏笏 Weekly Performance (Diet Targets Tab) 笏笏 */
+/* ── Weekly Performance (Diet Targets Tab) ── */
 .weekly-perf-grid {
   display: flex; gap: 8px; align-items: flex-end; margin-bottom: 12px;
 }
@@ -5547,18 +5547,18 @@ h1, h2, h3, h4, .sora {
   display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 2px;
 }
 
-/* 笏笏 Profile calorie warning 笏笏 */
+/* ── Profile calorie warning ── */
 .profile-cal-warn {
   font-size: 0.72rem; color: #F59E0B; margin-top: 4px; display: block;
 }
 
-/* 笏笏 Profile body goals updated layout 笏笏 */
+/* ── Profile body goals updated layout ── */
 .pbg-col { display: flex; flex-direction: column; gap: 2px; }
 .pbg-label { font-size: 0.7rem; color: #666; }
 .pbg-arrow { color: #555; font-size: 1.1rem; align-self: center; }
 .pbg-diff  { font-size: 0.72rem; color: #888; margin-top: 6px; text-align: right; }
 
-/* 笏笏 Two-wheel weight picker 笏笏 */
+/* ── Two-wheel weight picker ── */
 .checkin-weight-display {
   text-align: center; font-size: 2rem; font-weight: 700; color: #e0e0e0;
   margin-bottom: 16px; letter-spacing: 0.02em;
@@ -5569,7 +5569,7 @@ h1, h2, h3, h4, .sora {
   align-self: center; padding-bottom: 4px;
 }
 
-/* 笏笏 Profile goal weight inline input 笏笏 */
+/* ── Profile goal weight inline input ── */
 .pbg-goal-input {
   background: var(--glass-bg-strong, rgba(255,255,255,0.07));
   border: 1px solid var(--glass-border, rgba(255,255,255,0.12));
@@ -5578,7 +5578,7 @@ h1, h2, h3, h4, .sora {
 }
 .pbg-goal-input::placeholder { color: #444; font-weight: 400; }
 
-/* 笏笏 Food Log 窶・no key onboarding 笏笏 */
+/* ── Food Log —no key onboarding ── */
 .fl-no-key-icon { font-size: 2rem; display: block; text-align: center; margin-bottom: 8px; }
 .fl-no-key-title {
   font-size: 1rem; font-weight: 700; color: #e0e0e0;
@@ -5606,7 +5606,7 @@ h1, h2, h3, h4, .sora {
 }
 .fl-console-btn:hover { opacity: 0.85; }
 
-/* 笏笏 Biographics redesign 笏笏 */
+/* ── Biographics redesign ── */
 .bio-field {
   display: flex; flex-direction: column; gap: 7px; margin-bottom: 20px;
 }
@@ -5650,7 +5650,7 @@ h1, h2, h3, h4, .sora {
   color: #000; font-weight: 700;
 }
 
-/* 笏笏 Biographics 窶・loss per week row 笏笏 */
+/* ── Biographics —loss per week row ── */
 .bio-loss-row {
   display: flex; align-items: center; justify-content: space-between;
   margin-top: 14px; padding-top: 14px; border-top: 1px solid #2A2D3A;
@@ -5676,7 +5676,7 @@ h1, h2, h3, h4, .sora {
 .profile-rate-hint strong { color: #aaa; }
 .profile-rate-floored { color: #F59E0B; font-size: 0.68rem; }
 
-/* 笏笏 Profile: maintenance + strategy 笏笏 */
+/* ── Profile: maintenance + strategy ── */
 .profile-maintenance-row {
   display: flex; align-items: center; justify-content: space-between;
   background: rgba(255,255,255,0.04); border: 1px solid #3A3A52; border-radius: 12px;
@@ -5709,7 +5709,7 @@ h1, h2, h3, h4, .sora {
 .profile-apply-delta { font-size: 0.65rem; color: #666; }
 .profile-apply-btn.active .profile-apply-delta { color: var(--theme, #F59E0B); opacity: 0.8; }
 
-/* 笏笏 Profile: macro grid with locks 笏笏 */
+/* ── Profile: macro grid with locks ── */
 .profile-macro-grid {
   display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;
 }
@@ -5754,7 +5754,7 @@ h1, h2, h3, h4, .sora {
 }
 .profile-cal-warn { font-size: 0.72rem; color: #ff453a; }
 .profile-cal-vs { font-size: 0.72rem; color: #666; }
-/* 笏笏 Unit prefs 笏笏 */
+/* ── Unit prefs ── */
 .unit-pref-row { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end; }
 .unit-pref-group { display: flex; flex-direction: column; gap: 5px; }
 .unit-pref-title { font-size: 0.65rem; color: #555; text-transform: uppercase; letter-spacing: 0.07em; }
@@ -5785,11 +5785,11 @@ h1, h2, h3, h4, .sora {
   color: #000;
 }
 
-/* 笏笏 ftﾂｷin height row 笏笏 */
+/* ── ftﾂｷin height row ── */
 .bio-ftin-row { display: flex; gap: 8px; }
 .bio-ftin-row .bio-input-unit { flex: 1; }
 
-/* 笏笏 Maintenance output 笏笏 */
+/* ── Maintenance output ── */
 .maintenance-output {
   display: flex; align-items: center; justify-content: space-between;
   background: rgba(0,229,255,0.05); border: 1px solid rgba(0,229,255,0.18);
@@ -5804,7 +5804,7 @@ h1, h2, h3, h4, .sora {
   font-size: 0.75rem; color: #555; text-align: center;
 }
 
-/* 笏笏 Calorie cascade 笏笏 */
+/* ── Calorie cascade ── */
 .cal-cascade {
   margin-top: 16px;
   background: rgba(255,255,255,0.03);
@@ -5841,7 +5841,7 @@ h1, h2, h3, h4, .sora {
   border-radius: 8px; padding: 6px 10px; line-height: 1.5;
 }
 
-/* 笏笏 Plan levers 笏笏 */
+/* ── Plan levers ── */
 .plan-levers {
   margin-top: 16px;
   background: rgba(255,255,255,0.02);
@@ -5860,7 +5860,7 @@ h1, h2, h3, h4, .sora {
 .plan-lever-row--sub { background: rgba(0,0,0,0.2); }
 .plan-lever-label { font-size: 0.78rem; color: #888; }
 
-/* 笏笏 Plan macros section 笏笏 */
+/* ── Plan macros section ── */
 .plan-macros-section { margin-top: 20px; }
 .plan-macros-header {
   display: flex; align-items: center; justify-content: space-between;
@@ -5882,7 +5882,7 @@ h1, h2, h3, h4, .sora {
 .profile-macro-rebalance-btn:hover { background: rgba(255,69,58,0.25); }
 
 /* 笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武
-   Profile 窶・Account Meta Strip
+   Profile —Account Meta Strip
 笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武 */
 .profile-identity {
   display: flex; align-items: center; gap: 16px;
@@ -5920,7 +5920,7 @@ h1, h2, h3, h4, .sora {
 .pam-icon { font-size: 0.8rem; }
 
 /* 笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武
-   Profile 窶・Training Plan section
+   Profile —Training Plan section
 笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武 */
 .training-sessions-row {
   display: flex; align-items: center; gap: 10px;
@@ -6000,7 +6000,7 @@ h1, h2, h3, h4, .sora {
 .aaf-save-btn:hover { background: rgba(255,159,10,0.22); }
 .aaf-save-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* 笏笏 Mandatory (pinned) habits section 笏笏 */
+/* ── Mandatory (pinned) habits section ── */
 .habits-pinned-section {
   padding: 0 16px; margin-bottom: 4px;
 }
@@ -6304,7 +6304,7 @@ h1, h2, h3, h4, .sora {
 .atc-covered-sub { font-size: 0.75rem; color: #555; margin-top: 4px; }
 .atc-steps-hint { font-size: 0.78rem; color: #444; padding: 8px 0; }
 
-/* 笏笏 Diet tab bar 笏笏 */
+/* ── Diet tab bar ── */
 .diet-tab-bar {
   display: flex; gap: 0; border-bottom: 1px solid #2A2D3A;
   background: #1E1B2E; flex-shrink: 0; padding: 0 16px;
@@ -6316,7 +6316,7 @@ h1, h2, h3, h4, .sora {
 }
 .diet-tab-btn.active { color: #7C5CFF; border-bottom-color: #7C5CFF; }
 
-/* 笏笏 Meal Plans tab 笏笏 */
+/* ── Meal Plans tab ── */
 .meal-plan-day-card {
   background: #2A2D3A; border: 1px solid #35345A; border-radius: 14px;
   overflow: hidden; margin-bottom: 16px;
@@ -6359,7 +6359,7 @@ h1, h2, h3, h4, .sora {
   font-size: 0.82rem; font-weight: 600; cursor: pointer; font-family: inherit;
 }
 
-/* 笏笏 DailyCheckIn steps section 笏笏 */
+/* ── DailyCheckIn steps section ── */
 .checkin-steps-section {
   margin: 20px 0 4px;
   padding-top: 18px;
@@ -6398,7 +6398,7 @@ h1, h2, h3, h4, .sora {
   background: #7C5CFF18; border-color: #7C5CFF66; color: #7C5CFF;
 }
 
-/* 笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊・   MEAL PLANS 窶・full generator UI
+/* 笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊・   MEAL PLANS —full generator UI
    笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊・*/
 
 .mp-tab-bar {
@@ -6660,7 +6660,7 @@ h1, h2, h3, h4, .sora {
   cursor: pointer; font-family: inherit;
 }
 
-/* 笏笏 Week grid 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏 */
+/* ── Week grid ─────────────────────────────────────────────────────────── */
 
 .mp-grid-wrapper {
   overflow-x: auto; margin: 0 -16px; padding: 0 16px 4px;
@@ -6742,7 +6742,7 @@ h1, h2, h3, h4, .sora {
   padding: 6px 0 2px; border-bottom: 1px solid #242038; margin-bottom: 4px;
 }
 
-/* 笏笏 Detail sheet (bottom sheet modal) 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏 */
+/* ── Detail sheet (bottom sheet modal) ──────────────────────────────────── */
 
 .mp-detail-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.75);
