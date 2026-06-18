@@ -738,6 +738,13 @@ const Diet: React.FC = () => {
   const [gymMinutes, setGymMinutes] = useState(60);
   const [weeklyActivities, setWeeklyActivities] = useState<WeeklyActivity[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [latestPlan, setLatestPlan] = useState<any | null>(null);
+
+  useEffect(() => {
+    api.getDietPlans().then((plans: any[]) => {
+      if (plans.length > 0) setLatestPlan(plans[0]);
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -1024,6 +1031,50 @@ const Diet: React.FC = () => {
           </div>
         )}
       </div>
+
+        {/* Today's Meal Plan */}
+        {latestPlan && (
+          <div style={{
+            background: '#0a0f1a', border: '1px solid #1a2535',
+            borderRadius: 14, overflow: 'hidden',
+          }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '12px 16px 10px',
+              borderBottom: '1px solid #111d2a',
+            }}>
+              <span style={{ fontSize: '0.72rem', color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                Today's Meal Plan
+              </span>
+              <span style={{ fontSize: '0.72rem', color: '#333' }}>{latestPlan.label}</span>
+            </div>
+            {(latestPlan.meals ?? []).map((m: any) => (
+              <div key={m.slot} style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '9px 16px', borderBottom: '1px solid #0e1520',
+              }}>
+                <span style={{ fontSize: '0.65rem', color: '#00e5ff', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', width: 68, flexShrink: 0 }}>
+                  {m.slot}
+                </span>
+                <span style={{ flex: 1, fontSize: '0.8rem', color: '#ccc', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {m.recipe?.title ?? 'Protein Shake'}
+                </span>
+                <span style={{ fontSize: '0.72rem', color: '#444', flexShrink: 0 }}>
+                  {m.macros?.calories} kcal
+                </span>
+              </div>
+            ))}
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', padding: '10px 16px',
+              background: 'rgba(0,0,0,0.2)',
+            }}>
+              <span style={{ fontSize: '0.72rem', color: '#555' }}>Total</span>
+              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#00e5ff' }}>
+                {latestPlan.totals?.calories} kcal · P {latestPlan.totals?.protein}g · C {latestPlan.totals?.carbs}g · F {latestPlan.totals?.fat}g
+              </span>
+            </div>
+          </div>
+        )}
 
         <WeightSparkline
           allTrackerDays={allTrackerDays}

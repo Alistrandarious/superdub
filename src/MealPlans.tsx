@@ -165,7 +165,24 @@ function SavedPlanCard({
   plan: SavedPlan;
   onDelete: (id: string) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen]           = useState(false);
+  const [exported, setExported]   = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  const exportToShoppingList = async () => {
+    setExporting(true);
+    for (const m of plan.meals) {
+      if (!m.recipe) continue;
+      const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const label = m.scale !== 1
+        ? `${m.recipe.title} (×${m.scale})`
+        : m.recipe.title;
+      await api.createShoppingItem(id, label).catch(() => {});
+    }
+    setExporting(false);
+    setExported(true);
+    setTimeout(() => setExported(false), 2500);
+  };
 
   return (
     <div className="mp-saved-card">
@@ -186,9 +203,18 @@ function SavedPlanCard({
               <span className="mp-saved-meal-cal">{m.macros.calories} kcal</span>
             </div>
           ))}
-          <button className="mp-delete-btn" onClick={() => onDelete(plan.id)}>
-            Delete plan
-          </button>
+          <div className="mp-saved-actions">
+            <button
+              className="mp-export-btn"
+              onClick={exportToShoppingList}
+              disabled={exporting || exported}
+            >
+              {exported ? '✓ Added to shopping list' : exporting ? 'Adding…' : '🛒 Add to shopping list'}
+            </button>
+            <button className="mp-delete-btn" onClick={() => onDelete(plan.id)}>
+              Delete
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -384,7 +410,7 @@ const MealPlans: React.FC = () => {
         >Saved Plans</button>
       </div>
 
-      <div className="page-content" style={{ padding: '16px 16px 100px' }}>
+      <div className="page-content" style={{ padding: '16px 16px 100px', flex: 1, overflowY: 'auto' }}>
 
         {/* ── Setup banner ─────────────────────────────────────────────── */}
         {tab === 'generate' && (

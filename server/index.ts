@@ -64,6 +64,7 @@ const migrations = [
     THEN ALTER TABLE profile RENAME COLUMN antophic_api_key TO anthropic_api_key;
     END IF;
   END $$`,
+  `ALTER TABLE tasks ADD COLUMN IF NOT EXISTS type TEXT DEFAULT 'todo'`,
   `CREATE TABLE IF NOT EXISTS recipes (
     id INTEGER PRIMARY KEY,
     title TEXT NOT NULL,

@@ -61,10 +61,12 @@ export const api = {
   toggleTrackerHabit: (day: string, habitName: string, state: 'done' | 'failed' | null) =>
     request('/tracker/habit', { method: 'PATCH', body: JSON.stringify({ day, habitName, state }) }),
 
-  // tasks
+  // tasks & lists
   getTasks: () => request('/tasks'),
   createTask: (id: string, text: string) =>
-    request('/tasks', { method: 'POST', body: JSON.stringify({ id, text }) }),
+    request('/tasks', { method: 'POST', body: JSON.stringify({ id, text, type: 'todo' }) }),
+  createShoppingItem: (id: string, text: string) =>
+    request('/tasks', { method: 'POST', body: JSON.stringify({ id, text, type: 'shopping' }) }),
   updateTask: (id: string, done: boolean) =>
     request(`/tasks/${id}`, { method: 'PUT', body: JSON.stringify({ done }) }),
   deleteTask: (id: string) => request(`/tasks/${id}`, { method: 'DELETE' }),
