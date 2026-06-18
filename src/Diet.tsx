@@ -310,6 +310,19 @@ const PlanSummaryCard: React.FC<{
 
 const DAY_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+const DayCircleTick = (props: any) => {
+  const { x, y, payload } = props;
+  const letter = (payload.value as string)?.[0] ?? '';
+  return (
+    <g transform={`translate(${x},${y + 10})`}>
+      <circle r={10} fill="#0d1520" stroke="#1e2a3a" strokeWidth={1} />
+      <text textAnchor="middle" dominantBaseline="central" fill="#555" fontSize={10} fontWeight={700}>
+        {letter}
+      </text>
+    </g>
+  );
+};
+
 // ── WeightSparkline ───────────────────────────────────────────────────────────
 const WeightSparkline: React.FC<{
   allTrackerDays: any[];
@@ -386,7 +399,7 @@ const WeightSparkline: React.FC<{
       {hasAny || weekData.some(d => d.expected !== undefined) ? (
         <ResponsiveContainer width="100%" height={160}>
           <ComposedChart data={weekData} margin={{ top: 8, right: 4, bottom: 0, left: -18 }}>
-            <XAxis dataKey="label" tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
+            <XAxis dataKey="label" tick={<DayCircleTick />} axisLine={false} tickLine={false} height={28} />
             <YAxis domain={[minW, maxW]} tick={{ fill: '#444', fontSize: 10 }} axisLine={false} tickLine={false} width={38} />
             <Tooltip
               contentStyle={{ background: '#0d0d1a', border: '1px solid #1e2a3a', borderRadius: 8, fontSize: 12 }}
