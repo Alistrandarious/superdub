@@ -874,7 +874,14 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             <CartesianGrid stroke={themeColor + '1a'} strokeDasharray="3 3" />
             <XAxis dataKey="day" stroke={themeColor} tick={{ fill: themeColor, fontSize: 10 }} interval={xAxisInterval} tickLine={false} padding={{ left: 10 }} />
             <YAxis yAxisId="left" stroke={themeColor} tick={{ fill: themeColor, fontSize: 10 }} allowDecimals={false} width={30} axisLine={false} tickLine={false} domain={[0, habits.length]} />
-            <YAxis yAxisId="right" orientation="right" stroke="#ccff00" tick={{ fill: '#ccff00', fontSize: 10 }} domain={[60, 'auto']} width={50} axisLine={false} tickLine={false} />
+            <YAxis yAxisId="right" orientation="right" stroke="#ccff00" tick={{ fill: '#ccff00', fontSize: 10 }} domain={(() => {
+              const weights = chartData.map(d => d.weight).filter(Boolean) as number[];
+              const preds   = chartData.map(d => d.prediction).filter(Boolean) as number[];
+              const gw      = parseFloat(goalWeight) || 0;
+              const allVals = [...weights, ...preds, ...(gw > 0 ? [gw] : [])];
+              const floor   = allVals.length > 0 ? Math.floor(Math.min(...allVals)) - 3 : 55;
+              return [floor, 'auto'] as [number, string];
+            })()} width={50} axisLine={false} tickLine={false} />
             <Tooltip
               contentStyle={{ background: '#111', border: `1px solid ${themeColor}`, color: themeColor }}
               labelStyle={{ color: themeColor }}
