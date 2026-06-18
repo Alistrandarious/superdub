@@ -11,6 +11,7 @@ import MacroAnalysis from './MacroAnalysis';
 import PrivacyPolicy from './PrivacyPolicy';
 import LevelPage from './LevelPage';
 import FoodLog from './FoodLog';
+import MealPlans from './MealPlans';
 import DailyCheckIn from './DailyCheckIn';
 import BottomNav from './BottomNav';
 import { Auth } from './Auth';
@@ -71,6 +72,7 @@ function AppRouter() {
         <Route path="/diet/macro" element={<MacroAnalysis />} />
         <Route path="/level" element={<LevelPage />} />
         <Route path="/food-log" element={<FoodLog />} />
+        <Route path="/meal-plans" element={<MealPlans />} />
       </Routes>
       <DailyCheckIn />
       <BottomNav />

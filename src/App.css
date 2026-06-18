@@ -5079,6 +5079,56 @@
   border-color: var(--theme, #00e5ff); background: rgba(0,229,255,0.1); color: var(--theme, #00e5ff);
 }
 
+/* ── Frequency segmented selector ── */
+.freq-selector {
+  display: flex;
+  background: #07090f;
+  border: 1px solid #1a1e30;
+  border-radius: 14px;
+  padding: 4px;
+  gap: 3px;
+}
+.freq-option {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 2px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s;
+  gap: 3px;
+  font-family: inherit;
+}
+.freq-option:active { opacity: 0.7; }
+.freq-option.active { background: var(--theme, #ff9f0a); }
+.freq-main { font-size: 0.92rem; font-weight: 700; color: #444; line-height: 1; }
+.freq-sub  { font-size: 0.6rem; color: #333; letter-spacing: 0.02em; }
+.freq-option.active .freq-main { color: #000; }
+.freq-option.active .freq-sub  { color: rgba(0,0,0,0.5); }
+
+/* ── Step counter ── */
+.step-counter-row {
+  display: flex; align-items: center; gap: 6px;
+}
+.step-counter-btn {
+  width: 36px; height: 36px; border-radius: 9px;
+  background: rgba(255,255,255,0.05); border: 1px solid #1e2a3a;
+  color: #aaa; font-size: 1rem; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s; font-family: inherit; flex-shrink: 0;
+}
+.step-counter-btn--big { width: 44px; font-size: 0.85rem; letter-spacing: -1px; }
+.step-counter-btn:hover { background: rgba(255,255,255,0.1); border-color: #2a3a4a; color: #fff; }
+.step-counter-val {
+  font-size: 1.3rem; font-weight: 800; color: #ddd;
+  min-width: 64px; text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
 /* ── Daily Check-In Modal ── */
 .checkin-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1200;
@@ -5525,8 +5575,10 @@
 
 .profile-rate-hint {
   font-size: 0.72rem; color: #555; margin-top: 6px; line-height: 1.5;
+  display: flex; flex-direction: column; gap: 4px;
 }
 .profile-rate-hint strong { color: #aaa; }
+.profile-rate-floored { color: #ff9f0a; font-size: 0.68rem; }
 
 /* ── Profile: maintenance + strategy ── */
 .profile-maintenance-row {
@@ -5606,6 +5658,132 @@
 }
 .profile-cal-warn { font-size: 0.72rem; color: #ff453a; }
 .profile-cal-vs { font-size: 0.72rem; color: #666; }
+/* ── Unit prefs ── */
+.unit-pref-row { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end; }
+.unit-pref-group { display: flex; flex-direction: column; gap: 5px; }
+.unit-pref-title { font-size: 0.65rem; color: #555; text-transform: uppercase; letter-spacing: 0.07em; }
+.unit-seg {
+  display: inline-flex;
+  background: #07090f;
+  border: 1px solid #1a1e30;
+  border-radius: 10px;
+  padding: 3px;
+  gap: 2px;
+}
+.unit-seg-btn {
+  padding: 5px 13px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: #444;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s, color 0.12s;
+  white-space: nowrap;
+  line-height: 1;
+}
+.unit-seg-btn.active {
+  background: var(--theme, #ff9f0a);
+  color: #000;
+}
+
+/* ── ft·in height row ── */
+.bio-ftin-row { display: flex; gap: 8px; }
+.bio-ftin-row .bio-input-unit { flex: 1; }
+
+/* ── Maintenance output ── */
+.maintenance-output {
+  display: flex; align-items: center; justify-content: space-between;
+  background: rgba(0,229,255,0.05); border: 1px solid rgba(0,229,255,0.18);
+  border-radius: 14px; padding: 14px 16px; margin-top: 18px;
+}
+.maintenance-output-label { font-size: 0.72rem; color: #888; margin-bottom: 2px; }
+.maintenance-output-val { font-size: 1.15rem; font-weight: 800; color: #00e5ff; }
+.maintenance-factors { font-size: 0.65rem; color: #444; }
+.maintenance-incomplete {
+  margin-top: 16px; padding: 12px 16px; border-radius: 12px;
+  background: rgba(255,255,255,0.03); border: 1px solid #1e2245;
+  font-size: 0.75rem; color: #555; text-align: center;
+}
+
+/* ── Calorie cascade ── */
+.cal-cascade {
+  margin-top: 16px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid #1e2245;
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cal-cascade-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.cal-cascade-label { font-size: 0.8rem; color: #666; }
+.cal-cascade-sub { font-size: 0.7rem; color: #444; }
+.cal-cascade-val { font-size: 0.85rem; color: #888; font-weight: 600; }
+.cal-cascade-delta .cal-cascade-label { color: #555; font-size: 0.75rem; }
+.cal-cascade-divider { height: 1px; background: #1e2245; margin: 2px 0; }
+.cal-cascade-target-row { margin-top: 2px; }
+.cal-cascade-target-row .cal-cascade-label { font-size: 0.85rem; color: #ccc; font-weight: 600; }
+.cal-cascade-target-val {
+  font-size: 1.1rem; font-weight: 800; color: var(--theme, #ff9f0a);
+  display: flex; align-items: center; gap: 6px;
+}
+.cal-floor-badge {
+  font-size: 0.6rem; font-weight: 700; background: rgba(255,69,58,0.2);
+  color: #ff453a; border: 1px solid rgba(255,69,58,0.4);
+  border-radius: 5px; padding: 1px 5px; text-transform: uppercase; letter-spacing: 0.05em;
+}
+.cal-floor-msg {
+  font-size: 0.7rem; color: #ff9f0a; background: rgba(255,159,10,0.07);
+  border-radius: 8px; padding: 6px 10px; line-height: 1.5;
+}
+
+/* ── Plan levers ── */
+.plan-levers {
+  margin-top: 16px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid #1a1e30;
+  border-radius: 14px;
+  overflow: hidden;
+}
+.plan-lever-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #12152a;
+}
+.plan-lever-row:last-child { border-bottom: none; }
+.plan-lever-row--sub { background: rgba(0,0,0,0.2); }
+.plan-lever-label { font-size: 0.78rem; color: #888; }
+
+/* ── Plan macros section ── */
+.plan-macros-section { margin-top: 20px; }
+.plan-macros-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.plan-macros-title { font-size: 0.75rem; color: #555; text-transform: uppercase; letter-spacing: 0.06em; }
+
+.profile-macro-mismatch {
+  display: flex; align-items: center; justify-content: space-between;
+  background: rgba(255,69,58,0.08); border: 1px solid rgba(255,69,58,0.25);
+  border-radius: 10px; padding: 8px 12px; font-size: 0.72rem; color: #ff453a;
+}
+.profile-macro-rebalance-btn {
+  background: rgba(255,69,58,0.15); border: 1px solid rgba(255,69,58,0.4);
+  border-radius: 8px; padding: 4px 10px; font-size: 0.72rem; color: #ff453a;
+  cursor: pointer; font-family: inherit; white-space: nowrap;
+  transition: background 0.15s;
+}
+.profile-macro-rebalance-btn:hover { background: rgba(255,69,58,0.25); }
 
 /* ══════════════════════════════════════════════════════════════
    Profile — Account Meta Strip
@@ -5624,13 +5802,14 @@
 }
 .profile-identity-info { flex: 1; min-width: 0; }
 .profile-name-input {
-  background: none; border: none; outline: none;
+  background: none; border: none; border-bottom: 1px solid #2a2a2a; outline: none;
   font-size: 1.3rem; font-weight: 700; color: #e0e4f0;
-  font-family: inherit; width: 100%; padding: 0;
-  caret-color: #ff9f0a;
+  font-family: inherit; width: 100%; padding: 0 0 2px;
+  caret-color: #ff9f0a; transition: border-color 0.15s;
 }
-.profile-name-input::placeholder { color: #444; }
-.profile-name-hint { font-size: 0.65rem; color: #444; margin-top: 2px; }
+.profile-name-input:focus { border-bottom-color: #ff9f0a; }
+.profile-name-input::placeholder { color: #333; }
+.profile-name-hint { font-size: 0.65rem; color: #444; margin-top: 4px; cursor: pointer; display: inline-block; }
 
 .profile-account-meta {
   display: flex; flex-wrap: wrap; gap: 6px 16px;
@@ -6028,3 +6207,97 @@
 .atc-covered-main { font-size: 0.82rem; color: #aaa; line-height: 1.4; }
 .atc-covered-sub { font-size: 0.75rem; color: #555; margin-top: 4px; }
 .atc-steps-hint { font-size: 0.78rem; color: #444; padding: 8px 0; }
+
+/* ── Diet tab bar ── */
+.diet-tab-bar {
+  display: flex; gap: 0; border-bottom: 1px solid #0d1520;
+  background: #060810; flex-shrink: 0; padding: 0 16px;
+}
+.diet-tab-btn {
+  flex: 1; padding: 11px 0; font-size: 0.82rem; font-weight: 600;
+  color: #444; background: none; border: none; border-bottom: 2px solid transparent;
+  cursor: pointer; transition: color 0.15s, border-color 0.15s; font-family: inherit;
+}
+.diet-tab-btn.active { color: #00e5ff; border-bottom-color: #00e5ff; }
+
+/* ── Meal Plans tab ── */
+.meal-plan-day-card {
+  background: #0d1520; border: 1px solid #1a2535; border-radius: 14px;
+  overflow: hidden; margin-bottom: 16px;
+}
+.meal-plan-day-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px 12px; border-bottom: 1px solid #1a2535;
+}
+.meal-plan-day-title { font-size: 0.82rem; font-weight: 700; color: #ccc; }
+.meal-plan-day-total { font-size: 0.82rem; font-weight: 700; color: #00e5ff; }
+.meal-plan-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 16px; border-bottom: 1px solid #0d1a27;
+}
+.meal-plan-row:last-child { border-bottom: none; }
+.meal-plan-row-left { display: flex; align-items: center; gap: 12px; }
+.meal-plan-icon { font-size: 1.3rem; line-height: 1; }
+.meal-plan-name { font-size: 0.85rem; font-weight: 600; color: #ccc; margin-bottom: 2px; }
+.meal-plan-macros { font-size: 0.72rem; color: #555; }
+.meal-plan-kcal { font-size: 0.88rem; font-weight: 700; color: #00e5ff; }
+
+.meal-plan-tips {
+  background: #0d1520; border: 1px solid #1a2535; border-radius: 14px;
+  padding: 14px 16px; margin-bottom: 16px;
+}
+.meal-plan-tip-title { font-size: 0.75rem; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; }
+.meal-plan-tip { font-size: 0.8rem; color: #666; line-height: 1.5; padding: 5px 0; border-top: 1px solid #0d1a27; }
+.meal-plan-tip:first-of-type { border-top: none; }
+
+.meal-plan-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 60px 20px; text-align: center; gap: 10px;
+}
+.meal-plan-empty-icon { font-size: 2.5rem; margin-bottom: 4px; }
+.meal-plan-empty-title { font-size: 1rem; font-weight: 700; color: #ccc; }
+.meal-plan-empty-sub { font-size: 0.8rem; color: #555; max-width: 260px; line-height: 1.5; }
+.meal-plan-empty-btn {
+  margin-top: 12px; padding: 10px 22px; background: #00e5ff18;
+  border: 1px solid #00e5ff44; color: #00e5ff; border-radius: 10px;
+  font-size: 0.82rem; font-weight: 600; cursor: pointer; font-family: inherit;
+}
+
+/* ── DailyCheckIn steps section ── */
+.checkin-steps-section {
+  margin: 20px 0 4px;
+  padding-top: 18px;
+  border-top: 1px solid #1a2535;
+}
+.checkin-steps-label {
+  font-size: 0.72rem; font-weight: 700; color: #555;
+  text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 12px; text-align: center;
+}
+.checkin-steps-row {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.checkin-steps-val {
+  min-width: 90px; text-align: center;
+  font-size: 1.6rem; font-weight: 800; color: #00e5ff;
+  font-variant-numeric: tabular-nums; line-height: 1;
+}
+.checkin-steps-placeholder { color: #333; }
+.checkin-step-btn {
+  background: #0d1520; border: 1px solid #1e2a3a; color: #aaa;
+  border-radius: 8px; padding: 8px 10px; font-size: 0.85rem;
+  font-weight: 700; cursor: pointer; font-family: inherit;
+  transition: background 0.12s, color 0.12s;
+}
+.checkin-step-btn--big { font-size: 0.75rem; color: #555; }
+.checkin-step-btn:active { background: #1a2a3a; color: #00e5ff; }
+.checkin-steps-presets {
+  display: flex; gap: 6px; justify-content: center; margin-top: 12px;
+}
+.checkin-steps-preset {
+  padding: 5px 12px; background: #0d1520; border: 1px solid #1e2a3a;
+  border-radius: 20px; color: #555; font-size: 0.75rem; font-weight: 600;
+  cursor: pointer; font-family: inherit; transition: all 0.12s;
+}
+.checkin-steps-preset.active {
+  background: #00e5ff18; border-color: #00e5ff66; color: #00e5ff;
+}

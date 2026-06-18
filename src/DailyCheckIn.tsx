@@ -10,13 +10,21 @@ function todayStr() {
   return `${String(n.getDate()).padStart(2, '0')}/${String(n.getMonth() + 1).padStart(2, '0')}`;
 }
 
+function yesterdayStr() {
+  const d = new Date(); d.setDate(d.getDate() - 1);
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
 const KG_VALUES  = Array.from({ length: 161 }, (_, i) => 40 + i);
 const DEC_VALUES = Array.from({ length: 20  }, (_, i) => Math.round(i * 0.05 * 100) / 100);
+
+const STEP_PRESETS = [5000, 7500, 10000, 12500, 15000];
 
 const DailyCheckIn: React.FC = () => {
   const [show, setShow] = useState(false);
   const [wholeKg, setWholeKg] = useState(75);
   const [decKg, setDecKg]   = useState(0);
+  const [steps, setSteps]   = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [done, setDone]     = useState(false);
   const [error, setError]   = useState<string | null>(null);
@@ -42,6 +50,7 @@ const DailyCheckIn: React.FC = () => {
     const handler = () => {
       setDone(false);
       setError(null);
+      setSteps(null);
       applyProfileWeight();
       setShow(true);
     };
@@ -54,6 +63,10 @@ const DailyCheckIn: React.FC = () => {
     setShow(false);
   };
 
+  const adjustSteps = (delta: number) => {
+    setSteps(prev => Math.max(0, (prev ?? 0) + delta));
+  };
+
   const save = async () => {
     setSaving(true);
     setError(null);
@@ -61,12 +74,14 @@ const DailyCheckIn: React.FC = () => {
     try {
       await api.updateTrackerDay(todayStr(), { weight });
       await api.updateProfile({ weightKg: weight }).catch(() => {});
+      if (steps !== null) {
+        await api.updateTrackerDay(yesterdayStr(), { steps }).catch(() => {});
+      }
       window.dispatchEvent(new CustomEvent('superdub:tracker-updated'));
       setDone(true);
       setTimeout(dismiss, 900);
     } catch (err: any) {
-      // Don't dismiss — let user see the error and retry
-      console.error('[DailyCheckIn] weight save failed:', err?.message ?? err);
+      console.error('[DailyCheckIn] save failed:', err?.message ?? err);
       setError(err?.message ?? 'Could not save. Tap to retry.');
     } finally {
       setSaving(false);
@@ -81,7 +96,7 @@ const DailyCheckIn: React.FC = () => {
     <div className="checkin-overlay">
       <div className="checkin-modal">
         <h2 className="checkin-title">Morning Check-in</h2>
-        <p className="checkin-subtitle">Weigh yourself first thing in the morning, after using the bathroom and before eating — this gives you the most consistent reading. Daily fluctuations of 0.5–2 kg are completely normal.</p>
+        <p className="checkin-subtitle">Weigh yourself first thing in the morning, after using the bathroom and before eating — this gives you the most consistent reading.</p>
 
         <div className="checkin-weight-display">{displayWeight} <span>kg</span></div>
 
@@ -107,14 +122,37 @@ const DailyCheckIn: React.FC = () => {
           </div>
         </div>
 
+        {/* Yesterday's steps */}
+        <div className="checkin-steps-section">
+          <div className="checkin-steps-label">Yesterday's steps</div>
+          <div className="checkin-steps-row">
+            <button className="checkin-step-btn checkin-step-btn--big" onClick={() => adjustSteps(-1000)}>−−</button>
+            <button className="checkin-step-btn" onClick={() => adjustSteps(-100)}>−</button>
+            <div className="checkin-steps-val">
+              {steps === null ? <span className="checkin-steps-placeholder">—</span> : steps.toLocaleString()}
+            </div>
+            <button className="checkin-step-btn" onClick={() => adjustSteps(100)}>+</button>
+            <button className="checkin-step-btn checkin-step-btn--big" onClick={() => adjustSteps(1000)}>++</button>
+          </div>
+          <div className="checkin-steps-presets">
+            {STEP_PRESETS.map(p => (
+              <button
+                key={p}
+                className={`checkin-steps-preset${steps === p ? ' active' : ''}`}
+                onClick={() => setSteps(p)}
+              >
+                {(p / 1000).toFixed(p % 1000 === 0 ? 0 : 1)}k
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="checkin-actions">
           {done ? (
             <div className="checkin-done">✓ Logged!</div>
           ) : (
             <>
-              {error && (
-                <p className="checkin-error">{error}</p>
-              )}
+              {error && <p className="checkin-error">{error}</p>}
               <button className="checkin-save-btn" onClick={save} disabled={saving}>
                 {saving ? 'Saving…' : error ? 'Retry' : 'Log it'}
               </button>

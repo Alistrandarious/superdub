@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './App.css';
 import { api, clearToken } from './api';
-import { computeActivity, JOB_OPTS, GYM_OPTS, WALK_OPTS } from './Auth';
+import { computeActivity, JOB_OPTS } from './Auth';
 
 interface ProfileData {
   dob: string;
@@ -24,36 +24,23 @@ function ageFromDob(dob: string): number {
   return Math.max(0, age);
 }
 
-interface MacroSet {
-  calories: number;
-  protein: number;
-  carbs: number;
-  fats: number;
-}
+interface MacroSet { calories: number; protein: number; carbs: number; fats: number; }
 
 const DEFAULT_PROFILE: ProfileData = {
   dob: '', heightCm: '', weightKg: '', sex: 'male', activity: '1.55', steps: '', vestKg: '',
 };
-
 const DEFAULT_TARGET: MacroSet = { calories: 2003, protein: 150, carbs: 200, fats: 67 };
-
 const DEFAULT_HABITS = ['Walking', 'Praying', 'Duolingo'];
-
 const GYM_MET_P: Record<string, number> = { light: 4, moderate: 6, hard: 8 };
 
 interface WeeklyActivity {
-  id: string;
-  name: string;
-  sessionsPerWeek: number;
-  minutesPerSession: number;
+  id: string; name: string; sessionsPerWeek: number; minutesPerSession: number;
   intensity: 'light' | 'moderate' | 'hard';
 }
 
 function formatRelativeTime(iso: string): string {
-  const then = new Date(iso);
-  const now = new Date();
-  const diffMs = now.getTime() - then.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
+  const then = new Date(iso); const now = new Date();
+  const diffMins = Math.floor((now.getTime() - then.getTime()) / 60000);
   if (diffMins < 1) return 'just now';
   if (diffMins < 60) return `${diffMins}m ago`;
   const diffHrs = Math.floor(diffMins / 60);
@@ -62,55 +49,70 @@ function formatRelativeTime(iso: string): string {
   if (diffDays < 7) return `${diffDays}d ago`;
   return then.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
-
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+function stepsToWalkFreq(steps: number): string {
+  if (steps < 3000) return 'barely';
+  if (steps < 5000) return 'little';
+  if (steps < 10000) return 'moderate';
+  return 'alot';
+}
+
+function cmToFtIn(cm: number) {
+  const totalIn = Math.round(cm / 2.54);
+  return { ft: Math.floor(totalIn / 12), inch: totalIn % 12 };
+}
+function ftInToCm(ft: number, inch: number) { return Math.round((ft * 12 + inch) * 2.54); }
+function kgToLbs(kg: number) { return Math.round(kg * 2.20462 * 10) / 10; }
+function lbsToKg(lbs: number) { return Math.round(lbs / 2.20462 * 10) / 10; }
+function kgToStLb(kg: number) {
+  const totalLbs = kg * 2.20462;
+  const st = Math.floor(totalLbs / 14);
+  const lb = Math.round((totalLbs % 14) * 10) / 10;
+  return { st, lb };
+}
+function stLbToKg(st: number, lb: number) { return Math.round((st * 14 + lb) / 2.20462 * 10) / 10; }
+function fmtWeight(kg: number, unit: 'kg' | 'lbs' | 'st'): string {
+  if (!kg) return '—';
+  if (unit === 'lbs') return `${kgToLbs(kg)} lbs`;
+  if (unit === 'st') { const { st, lb } = kgToStLb(kg); return `${st} st ${lb} lb`; }
+  return `${kg} kg`;
+}
+
 interface ProfileProps { onLogout?: () => void; }
 
-function useSettingsMenu(onLogout?: () => void) {
+function useSettingsMenu() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
+    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
-
   return { open, setOpen, ref };
 }
 
 function useDeleteAccount(onLogout?: () => void) {
   const [step, setStep] = useState<'idle' | 'confirm' | 'deleting'>('idle');
   const [error, setError] = useState('');
-
   const request = () => setStep('confirm');
   const cancel = () => { setStep('idle'); setError(''); };
   const confirm = async () => {
     setStep('deleting');
-    try {
-      await api.deleteAccount();
-      clearToken();
-      if (onLogout) onLogout();
-      else window.location.href = '/';
-    } catch {
-      setError('Something went wrong. Please try again.');
-      setStep('confirm');
-    }
+    try { await api.deleteAccount(); clearToken(); if (onLogout) onLogout(); else window.location.href = '/'; }
+    catch { setError('Something went wrong. Please try again.'); setStep('confirm'); }
   };
-
   return { step, error, request, cancel, confirm };
 }
 
 const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
   const navigate = useNavigate();
   const deleteAccount = useDeleteAccount(onLogout);
-  const settings = useSettingsMenu(onLogout);
+  const settings = useSettingsMenu();
+
   const [name, setName] = useState('');
   const [profile, setProfile] = useState<ProfileData>(DEFAULT_PROFILE);
   const [target, setTarget] = useState<MacroSet>(DEFAULT_TARGET);
@@ -121,7 +123,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
   const [walkFreq, setWalkFreq] = useState('moderate');
   const [goalWeight, setGoalWeight] = useState('');
   const [wsRef, setWsRef] = useState<any>({});
-  const [stepTarget, setStepTarget] = useState('10000');
+  const [stepTarget, setStepTarget] = useState('5000');
   const [dietGoal, setDietGoal] = useState<'cut' | 'maintain' | 'bulk'>('cut');
   const [lossPerWeek, setLossPerWeek] = useState('');
   const [locks, setLocks] = useState({ calories: false, protein: false, carbs: false, fats: false });
@@ -143,6 +145,16 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
   const [aiKeySaving, setAiKeySaving] = useState(false);
   const [aiKeyDone, setAiKeyDone] = useState(false);
 
+  // Unit preferences
+  const [heightUnit, setHeightUnit] = useState<'cm' | 'ftin'>('cm');
+  const [weightUnit, setWeightUnit] = useState<'kg' | 'lbs' | 'st'>('kg');
+  const [heightFt, setHeightFt] = useState('5');
+  const [heightIn, setHeightIn] = useState('9');
+  // Goal weight drafts for non-kg modes
+  const [goalWeightLbs, setGoalWeightLbs] = useState('');
+  const [goalWeightSt, setGoalWeightSt] = useState('');
+  const [goalWeightStLb, setGoalWeightStLb] = useState('');
+
   const [draft, setDraft] = useState({
     calories: String(DEFAULT_TARGET.calories),
     protein: String(DEFAULT_TARGET.protein),
@@ -150,13 +162,20 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
     fats: String(DEFAULT_TARGET.fats),
   });
 
+  // Sync goal weight drafts when goalWeight or weightUnit changes
+  useEffect(() => {
+    const kg = parseFloat(goalWeight);
+    if (!kg) { setGoalWeightLbs(''); setGoalWeightSt(''); setGoalWeightStLb(''); return; }
+    setGoalWeightLbs(String(kgToLbs(kg)));
+    const { st, lb } = kgToStLb(kg);
+    setGoalWeightSt(String(st));
+    setGoalWeightStLb(String(lb));
+  }, [goalWeight, weightUnit]);
+
   useEffect(() => {
     Promise.all([
-      api.getProfile(),
-      api.getDietTarget(),
-      api.getHabits(),
-      api.getWeightSettings(),
-      api.getDietSettings(),
+      api.getProfile(), api.getDietTarget(), api.getHabits(),
+      api.getWeightSettings(), api.getDietSettings(),
     ]).then(([profileData, targetData, habitsData, wsData, settingsData]) => {
       const ws = wsData as any;
       setWsRef(ws);
@@ -167,20 +186,17 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
       setLocks({ calories: !!s.calorieLock, protein: !!s.lockProtein, carbs: !!s.lockCarbs, fats: !!s.lockFats });
       const p = profileData as ProfileData & { name: string };
       setName(p.name ?? '');
-      setProfile({
-        dob: p.dob ?? '',
-        heightCm: p.heightCm ?? '',
-        weightKg: p.weightKg ?? '',
-        sex: p.sex ?? 'male',
-        activity: p.activity ?? '1.55',
-        steps: p.steps ?? '',
-        vestKg: p.vestKg ?? '',
-      });
+      setProfile({ dob: p.dob ?? '', heightCm: p.heightCm ?? '', weightKg: p.weightKg ?? '', sex: p.sex ?? 'male', activity: p.activity ?? '1.55', steps: p.steps ?? '', vestKg: p.vestKg ?? '' });
       const pa = p as any;
       if (pa.jobType) setJobType(pa.jobType);
       if (pa.gymFreq) setGymFreq(pa.gymFreq);
-      if (pa.walkFreq) setWalkFreq(pa.walkFreq);
-      if (pa.stepTarget) setStepTarget(String(pa.stepTarget));
+      if (pa.stepTarget) {
+        const steps = parseInt(pa.stepTarget) || 5000;
+        setStepTarget(String(steps));
+        setWalkFreq(stepsToWalkFreq(steps));
+      } else if (pa.walkFreq) {
+        setWalkFreq(pa.walkFreq);
+      }
       if (pa.gymSessionsPerWeek != null) setGymSessionsPerWeek(Number(pa.gymSessionsPerWeek));
       if (pa.gymIntensity) setGymIntensity(pa.gymIntensity as 'light' | 'moderate' | 'hard');
       if (pa.gymMinutes) setGymMinutes(Number(pa.gymMinutes));
@@ -188,14 +204,16 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
       if (pa.accountCreatedAt) setAccountCreatedAt(pa.accountCreatedAt);
       if (pa.lastLoginAt) setLastLoginAt(pa.lastLoginAt);
       if (pa.lastActiveAt) setLastActiveAt(pa.lastActiveAt);
+      // Unit prefs
+      if (pa.heightUnit) setHeightUnit(pa.heightUnit as 'cm' | 'ftin');
+      if (pa.weightUnit) setWeightUnit(pa.weightUnit as 'kg' | 'lbs' | 'st');
+      if (pa.heightUnit === 'ftin' && p.heightCm) {
+        const { ft, inch } = cmToFtIn(parseFloat(p.heightCm));
+        setHeightFt(String(ft)); setHeightIn(String(inch));
+      }
       const t = targetData as MacroSet;
       setTarget(t);
-      setDraft({
-        calories: String(t.calories),
-        protein: String(t.protein),
-        carbs: String(t.carbs),
-        fats: String(t.fats),
-      });
+      setDraft({ calories: String(t.calories), protein: String(t.protein), carbs: String(t.carbs), fats: String(t.fats) });
       const habitObjs = habitsData as { name: string }[];
       setHabits(habitObjs.length > 0 ? habitObjs.map(h => h.name) : DEFAULT_HABITS);
       setLoaded(true);
@@ -203,7 +221,6 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
     api.getAiKeyStatus().then((d: any) => { if (d.masked) setAiKeyMasked(d.masked); }).catch(() => {});
   }, []);
 
-  // Refresh current weight when DailyCheckIn saves a new weight
   useEffect(() => {
     const handler = () => {
       api.getProfile().then((p: any) => {
@@ -214,7 +231,6 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
     return () => window.removeEventListener('superdub:tracker-updated', handler);
   }, []);
 
-  // Debounced profile save
   const profileSaveTimer = useRef<ReturnType<typeof setTimeout>>();
   const profileRef = useRef(profile);
   const nameRef = useRef(name);
@@ -228,19 +244,13 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
     }, 800);
   };
 
-  // Debounced target save
   const targetSaveTimer = useRef<ReturnType<typeof setTimeout>>();
   const targetRef = useRef(target);
   useEffect(() => { targetRef.current = target; }, [target]);
-
   const scheduleTargetSave = () => {
     clearTimeout(targetSaveTimer.current);
-    targetSaveTimer.current = setTimeout(() => {
-      api.updateDietTarget(targetRef.current).catch(() => {});
-    }, 800);
+    targetSaveTimer.current = setTimeout(() => { api.updateDietTarget(targetRef.current).catch(() => {}); }, 800);
   };
-
-  const title = 'Profile';
 
   const currentKg = parseFloat(profile.weightKg) || 0;
   const currentAge = ageFromDob(profile.dob);
@@ -250,13 +260,6 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
         ? 10 * currentKg + 6.25 * parseFloat(profile.heightCm) - 5 * currentAge - 161
         : 10 * currentKg + 6.25 * parseFloat(profile.heightCm) - 5 * currentAge + 5) * actMult)
     : 0;
-  const autoGoal: 'cut' | 'maintain' | 'bulk' | null = (() => {
-    const gw = parseFloat(goalWeight) || 0;
-    if (currentKg <= 0 || gw <= 0) return null;
-    if (gw > currentKg) return 'bulk';
-    if (gw < currentKg) return 'cut';
-    return 'maintain';
-  })();
 
   const MIN_SAFE_CALORIES = 1200;
   const MAX_SAFE_CALORIES = 6000;
@@ -319,6 +322,24 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
     scheduleProfileSave();
   };
 
+  const gymCountToFreq = (n: number): string => {
+    if (n === 0) return 'never';
+    if (n <= 2) return '1-2';
+    if (n <= 4) return '3-4';
+    if (n <= 6) return '5-6';
+    return 'daily';
+  };
+
+  const adjustSteps = (delta: number) => {
+    const current = parseInt(stepTarget) || 5000;
+    const next = Math.max(0, Math.min(50000, current + delta));
+    const newWalk = stepsToWalkFreq(next);
+    setStepTarget(String(next));
+    setWalkFreq(newWalk);
+    updateActivityPicker(jobType, gymFreq, newWalk);
+    api.updateProfile({ ...profileRef.current, name: nameRef.current, stepTarget: next }).catch(() => {});
+  };
+
   const updateActivityPicker = (job: string, gym: string, walk: string) => {
     const computed = String(computeActivity(job, gym, walk));
     setProfile(prev => ({ ...prev, activity: computed }));
@@ -328,33 +349,45 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
     }, 600);
   };
 
+  const changeHeightUnit = (unit: 'cm' | 'ftin') => {
+    setHeightUnit(unit);
+    if (unit === 'ftin') {
+      const cm = parseFloat(profile.heightCm) || 175;
+      const { ft, inch } = cmToFtIn(cm);
+      setHeightFt(String(ft)); setHeightIn(String(inch));
+    }
+    api.updateProfile({ ...profileRef.current, name: nameRef.current, heightUnit: unit }).catch(() => {});
+  };
+
+  const changeWeightUnit = (unit: 'kg' | 'lbs' | 'st') => {
+    setWeightUnit(unit);
+    api.updateProfile({ ...profileRef.current, name: nameRef.current, weightUnit: unit }).catch(() => {});
+  };
+
+  const saveGoalWeightKg = (kg: number) => {
+    if (isNaN(kg) || kg <= 0) return;
+    const cur = currentKg;
+    setGoalWeight(String(kg));
+    api.updateWeightSettings({ ...wsRef, goalWeight: String(kg), currentWeight: profile.weightKg }).catch(() => {});
+    setWsRef((prev: any) => ({ ...prev, goalWeight: String(kg) }));
+    const derived: 'cut' | 'maintain' | 'bulk' = kg < cur ? 'cut' : kg > cur ? 'bulk' : 'maintain';
+    setDietGoal(derived);
+    api.updateDietSettings({ goal: derived, calorieLock: locks.calories, lockProtein: locks.protein, lockCarbs: locks.carbs, lockFats: locks.fats }).catch(() => {});
+    if (!locks.calories) applyGoalCalories(derived);
+  };
+
   const saveTrainingSettings = (spw: number, intensity: string, minutes: number, activities: WeeklyActivity[]) => {
-    api.updateProfile({
-      gymSessionsPerWeek: spw,
-      gymIntensity: intensity,
-      gymMinutes: minutes,
-      weeklyActivities: JSON.stringify(activities),
-    }).catch(() => {});
+    api.updateProfile({ gymSessionsPerWeek: spw, gymIntensity: intensity, gymMinutes: minutes, weeklyActivities: JSON.stringify(activities) }).catch(() => {});
   };
 
   const addActivity = () => {
-    const name = newActivityName.trim();
-    if (!name) return;
-    const activity: WeeklyActivity = {
-      id: Date.now().toString(),
-      name,
-      sessionsPerWeek: newActivitySessions,
-      minutesPerSession: newActivityMinutes,
-      intensity: newActivityIntensity,
-    };
+    const n = newActivityName.trim();
+    if (!n) return;
+    const activity: WeeklyActivity = { id: Date.now().toString(), name: n, sessionsPerWeek: newActivitySessions, minutesPerSession: newActivityMinutes, intensity: newActivityIntensity };
     const next = [...weeklyActivities, activity];
     setWeeklyActivities(next);
     saveTrainingSettings(gymSessionsPerWeek, gymIntensity, gymMinutes, next);
-    setNewActivityName('');
-    setNewActivitySessions(2);
-    setNewActivityMinutes(45);
-    setNewActivityIntensity('moderate');
-    setShowAddActivity(false);
+    setNewActivityName(''); setNewActivitySessions(2); setNewActivityMinutes(45); setNewActivityIntensity('moderate'); setShowAddActivity(false);
   };
 
   const removeActivity = (id: string) => {
@@ -367,11 +400,9 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
     const h = newHabit.trim();
     if (!h || habits.includes(h)) return;
     const newHabits = [...habits, h];
-    setHabits(newHabits);
-    setNewHabit('');
+    setHabits(newHabits); setNewHabit('');
     api.updateHabits(newHabits).catch(() => {});
   };
-
   const removeHabit = (h: string) => {
     const newHabits = habits.filter(x => x !== h);
     setHabits(newHabits);
@@ -385,46 +416,32 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
           <div className="header-left"><Link to="/" className="back-link">← Back</Link></div>
           <h1 className="title">Profile</h1>
         </header>
-        <div className="page-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '4rem', color: '#ff9f0a' }}>
-          Loading…
-        </div>
+        <div className="page-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '4rem', color: '#ff9f0a' }}>Loading…</div>
       </div>
     );
   }
 
+  const goalKg = parseFloat(goalWeight) || 0;
+  const isGain = goalKg > 0 && currentKg > 0 && goalKg > currentKg;
+  const rateLabel = isGain ? 'Gain per week' : 'Lose per week';
+
   return (
     <div className="app" style={{ '--theme': '#ff9f0a', '--theme-dim': '#ff9f0a66', '--theme-glow': '#ff9f0a33' } as React.CSSProperties}>
       <header className="header">
-        <div className="header-left">
-          <Link to="/" className="back-link">← Back</Link>
-        </div>
-        <h1 className="title">{title}</h1>
+        <div className="header-left"><Link to="/" className="back-link">← Back</Link></div>
+        <h1 className="title">Profile</h1>
         <div className="settings-menu-wrap" ref={settings.ref} style={{ marginLeft: 'auto' }}>
-          <button
-            className="settings-gear-btn"
-            onClick={() => settings.setOpen(o => !o)}
-            aria-label="Settings"
-          >
-            ⚙
-          </button>
+          <button className="settings-gear-btn" onClick={() => settings.setOpen(o => !o)} aria-label="Settings">⚙</button>
           {settings.open && (
             <div className="settings-dropdown">
-              <button className="settings-dropdown-item" onClick={() => { settings.setOpen(false); navigate('/about'); }}>
-                <span>📖</span> About
-              </button>
-              <button className="settings-dropdown-item" onClick={() => { settings.setOpen(false); navigate('/privacy'); }}>
-                <span>🔏</span> Privacy Policy
-              </button>
+              <button className="settings-dropdown-item" onClick={() => { settings.setOpen(false); navigate('/about'); }}><span>📖</span> About</button>
+              <button className="settings-dropdown-item" onClick={() => { settings.setOpen(false); navigate('/privacy'); }}><span>🔏</span> Privacy Policy</button>
               <div className="settings-dropdown-divider" />
               {onLogout && (
-                <button className="settings-dropdown-item" onClick={() => { settings.setOpen(false); onLogout(); }}>
-                  <span>🚪</span> Log out
-                </button>
+                <button className="settings-dropdown-item" onClick={() => { settings.setOpen(false); onLogout(); }}><span>🚪</span> Log out</button>
               )}
               <button className="settings-dropdown-item settings-dropdown-danger" onClick={() => { settings.setOpen(false); }}>
-                <a href="#danger-zone" style={{ color: 'inherit', textDecoration: 'none', display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <span>⚠️</span> Delete account
-                </a>
+                <a href="#danger-zone" style={{ color: 'inherit', textDecoration: 'none', display: 'flex', gap: 8, alignItems: 'center' }}><span>⚠️</span> Delete account</a>
               </button>
             </div>
           )}
@@ -433,57 +450,75 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
 
       <div className="profile-content page-content">
 
-        {/* Identity header */}
+        {/* Identity */}
         <div className="profile-identity">
           <div className="profile-avatar">{name ? name.trim()[0].toUpperCase() : '?'}</div>
           <div className="profile-identity-info">
-            <input
-              className="profile-name-input"
-              type="text"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="Your name"
-              maxLength={40}
-            />
-            <div className="profile-name-hint">Tap to edit</div>
+            <input id="profile-name-field" className="profile-name-input" type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Your name" maxLength={40} />
+            <label htmlFor="profile-name-field" className="profile-name-hint">Tap to edit</label>
           </div>
         </div>
 
-        {/* Account meta */}
         {(lastActiveAt || lastLoginAt || accountCreatedAt) && (
           <div className="profile-account-meta">
-            {lastActiveAt && (
-              <span className="pam-item">
-                <span className="pam-icon">⏱</span>
-                Last active: <strong>{formatRelativeTime(lastActiveAt)}</strong>
-              </span>
-            )}
-            {lastLoginAt && (
-              <span className="pam-item">
-                <span className="pam-icon">🔐</span>
-                Last login: <strong>{formatDate(lastLoginAt)}</strong>
-              </span>
-            )}
-            {accountCreatedAt && (
-              <span className="pam-item">
-                <span className="pam-icon">📅</span>
-                Member since <strong>{formatDate(accountCreatedAt)}</strong>
-              </span>
-            )}
+            {lastActiveAt && <span className="pam-item"><span className="pam-icon">⏱</span>Last active: <strong>{formatRelativeTime(lastActiveAt)}</strong></span>}
+            {lastLoginAt && <span className="pam-item"><span className="pam-icon">🔐</span>Last login: <strong>{formatDate(lastLoginAt)}</strong></span>}
+            {accountCreatedAt && <span className="pam-item"><span className="pam-icon">📅</span>Member since <strong>{formatDate(accountCreatedAt)}</strong></span>}
           </div>
         )}
 
-        {/* Biographics */}
+        {/* ── About You ── */}
         <div className="diet-section">
-          <h2 className="diet-heading">Biographics</h2>
+          <h2 className="diet-heading">About You</h2>
+
+          {/* Unit preferences */}
+          <div className="bio-field">
+            <label className="bio-label">Units</label>
+            <div className="unit-pref-row">
+              <div className="unit-pref-group">
+                <div className="unit-pref-title">Height</div>
+                <div className="unit-seg">
+                  <button type="button" className={`unit-seg-btn${heightUnit === 'cm' ? ' active' : ''}`} onClick={() => changeHeightUnit('cm')}>cm</button>
+                  <button type="button" className={`unit-seg-btn${heightUnit === 'ftin' ? ' active' : ''}`} onClick={() => changeHeightUnit('ftin')}>ft · in</button>
+                </div>
+              </div>
+              <div className="unit-pref-group">
+                <div className="unit-pref-title">Weight</div>
+                <div className="unit-seg">
+                  <button type="button" className={`unit-seg-btn${weightUnit === 'kg' ? ' active' : ''}`} onClick={() => changeWeightUnit('kg')}>kg</button>
+                  <button type="button" className={`unit-seg-btn${weightUnit === 'lbs' ? ' active' : ''}`} onClick={() => changeWeightUnit('lbs')}>lbs</button>
+                  <button type="button" className={`unit-seg-btn${weightUnit === 'st' ? ' active' : ''}`} onClick={() => changeWeightUnit('st')}>st</button>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <div className="bio-pair">
             <div className="bio-field">
               <label className="bio-label">Height</label>
-              <div className="bio-input-unit">
-                <input type="text" inputMode="decimal" value={profile.heightCm} onChange={e => updateProfile('heightCm', e.target.value)} placeholder="175" />
-                <span className="bio-unit">cm</span>
-              </div>
+              {heightUnit === 'cm' ? (
+                <div className="bio-input-unit">
+                  <input type="text" inputMode="decimal" value={profile.heightCm} onChange={e => updateProfile('heightCm', e.target.value)} placeholder="175" />
+                  <span className="bio-unit">cm</span>
+                </div>
+              ) : (
+                <div className="bio-ftin-row">
+                  <div className="bio-input-unit">
+                    <input type="text" inputMode="numeric" value={heightFt} placeholder="5"
+                      onChange={e => setHeightFt(e.target.value)}
+                      onBlur={() => updateProfile('heightCm', String(ftInToCm(parseInt(heightFt) || 0, parseInt(heightIn) || 0)))}
+                      onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
+                    <span className="bio-unit">ft</span>
+                  </div>
+                  <div className="bio-input-unit">
+                    <input type="text" inputMode="numeric" value={heightIn} placeholder="9"
+                      onChange={e => setHeightIn(e.target.value)}
+                      onBlur={() => updateProfile('heightCm', String(ftInToCm(parseInt(heightFt) || 0, parseInt(heightIn) || 0)))}
+                      onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
+                    <span className="bio-unit">in</span>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="bio-field">
               <label className="bio-label">Date of Birth</label>
@@ -495,14 +530,26 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
             <label className="bio-label">Sex</label>
             <div className="bio-pills">
               {(['male', 'female', 'other'] as const).map(s => (
-                <button key={s} type="button"
-                  className={`bio-pill${profile.sex === s ? ' active' : ''}`}
-                  onClick={() => updateProfile('sex', s)}>
+                <button key={s} type="button" className={`bio-pill${profile.sex === s ? ' active' : ''}`} onClick={() => updateProfile('sex', s)}>
                   {s === 'male' ? 'Male' : s === 'female' ? 'Female' : 'Other'}
                 </button>
               ))}
             </div>
           </div>
+
+          <div className="bio-field">
+            <label className="bio-label">Vest weight</label>
+            <div className="bio-input-unit" style={{ maxWidth: 120 }}>
+              <input type="text" inputMode="decimal" value={profile.vestKg} onChange={e => updateProfile('vestKg', e.target.value)} placeholder="0" />
+              <span className="bio-unit">kg</span>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Activity ── */}
+        <div className="diet-section">
+          <h2 className="diet-heading">Activity</h2>
+          <p className="diet-hint" style={{ marginBottom: 14 }}>These three factors feed your maintenance calorie calculation.</p>
 
           <div className="bio-field">
             <label className="bio-label">Job type</label>
@@ -517,402 +564,294 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
             </div>
           </div>
 
-          <div className="bio-field">
-            <label className="bio-label">Gym / Training / Climbing</label>
-            <div className="activity-picker activity-picker--row">
-              {GYM_OPTS.map((o: any) => (
-                <button key={o.id} type="button" className={`activity-pick-chip${gymFreq === o.id ? ' active' : ''}`}
-                  onClick={() => { setGymFreq(o.id); updateActivityPicker(jobType, o.id, walkFreq); }}>{o.label}</button>
-              ))}
-            </div>
-          </div>
-
-          <div className="bio-field">
-            <label className="bio-label">Walking / Steps</label>
-            <div className="activity-picker">
-              {WALK_OPTS.map((o: any) => (
-                <button key={o.id} type="button" className={`activity-pick-btn${walkFreq === o.id ? ' active' : ''}`}
-                  onClick={() => { setWalkFreq(o.id); updateActivityPicker(jobType, gymFreq, o.id); }}>
-                  <span className="apb-label">{o.label}</span>
-                  <span className="apb-desc">{o.desc}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="bio-pair">
-            <div className="bio-field">
-              <label className="bio-label">Daily Steps</label>
-              <input type="text" inputMode="numeric" value={profile.steps} onChange={e => updateProfile('steps', e.target.value)} placeholder="e.g. 10000" />
-            </div>
-            <div className="bio-field">
-              <label className="bio-label">Vest Weight</label>
-              <div className="bio-input-unit">
-                <input type="text" inputMode="decimal" value={profile.vestKg} onChange={e => updateProfile('vestKg', e.target.value)} placeholder="0" />
-                <span className="bio-unit">kg</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Training Plan */}
-        <div className="diet-section">
-          <h2 className="diet-heading">Training Plan</h2>
-
-          <div className="bio-field">
-            <label className="bio-label">Gym sessions / week</label>
-            <div className="training-sessions-row">
-              <button className="training-step-btn" onClick={() => {
-                const n = Math.max(0, gymSessionsPerWeek - 1);
-                setGymSessionsPerWeek(n);
-                saveTrainingSettings(n, gymIntensity, gymMinutes, weeklyActivities);
-              }}>−</button>
-              <span className="training-step-val">{gymSessionsPerWeek}</span>
-              <button className="training-step-btn" onClick={() => {
-                const n = Math.min(7, gymSessionsPerWeek + 1);
-                setGymSessionsPerWeek(n);
-                saveTrainingSettings(n, gymIntensity, gymMinutes, weeklyActivities);
-              }}>+</button>
-              <span className="training-step-unit">{gymSessionsPerWeek === 1 ? 'session' : 'sessions'}/week</span>
-            </div>
-          </div>
-
-          {gymSessionsPerWeek > 0 && (
-            <>
-              <div className="bio-pair">
-                <div className="bio-field">
-                  <label className="bio-label">Duration per session</label>
-                  <div className="bio-input-unit">
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      value={gymMinutes}
-                      onChange={e => setGymMinutes(parseInt(e.target.value) || 60)}
-                      onBlur={() => saveTrainingSettings(gymSessionsPerWeek, gymIntensity, gymMinutes, weeklyActivities)}
-                      onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-                    />
-                    <span className="bio-unit">min</span>
+          {weeklyActivities.length > 0 || showAddActivity ? (
+            <div className="bio-field" style={{ marginTop: 16 }}>
+              <label className="bio-label">Other activities</label>
+              {weeklyActivities.map(a => {
+                const aMet = GYM_MET_P[a.intensity] ?? 6;
+                const bps = currentKg > 0 ? Math.round(aMet * currentKg * a.minutesPerSession / 60) : 0;
+                return (
+                  <div key={a.id} className="activity-entry-row">
+                    <div className="aer-info">
+                      <span className="aer-name">{a.name}</span>
+                      <span className="aer-detail">{a.sessionsPerWeek}×/week · {a.minutesPerSession} min · {a.intensity}{currentKg > 0 ? ` · ~${bps} kcal/session` : ''}</span>
+                    </div>
+                    <button className="aer-remove" onClick={() => removeActivity(a.id)} title="Remove">✕</button>
                   </div>
-                </div>
-                <div className="bio-field">
-                  <label className="bio-label">Intensity</label>
-                  <div className="bio-pills">
+                );
+              })}
+              {showAddActivity ? (
+                <div className="add-activity-form">
+                  <input className="aaf-name-input" type="text" placeholder="Activity name (e.g. Swimming, Cycling)" value={newActivityName}
+                    onChange={e => setNewActivityName(e.target.value)} onKeyDown={e => e.key === 'Enter' && addActivity()} autoFocus />
+                  <div className="aaf-row">
+                    <div className="aaf-col">
+                      <label className="aaf-label">Sessions/week</label>
+                      <div className="training-sessions-row" style={{ gap: 6 }}>
+                        <button className="training-step-btn" onClick={() => setNewActivitySessions(Math.max(1, newActivitySessions - 1))}>−</button>
+                        <span className="training-step-val">{newActivitySessions}</span>
+                        <button className="training-step-btn" onClick={() => setNewActivitySessions(Math.min(7, newActivitySessions + 1))}>+</button>
+                      </div>
+                    </div>
+                    <div className="aaf-col">
+                      <label className="aaf-label">Duration (min)</label>
+                      <input className="aaf-mins-input" type="text" inputMode="numeric" value={newActivityMinutes} onChange={e => setNewActivityMinutes(parseInt(e.target.value) || 45)} />
+                    </div>
+                  </div>
+                  <div className="bio-pills" style={{ marginBottom: 10 }}>
                     {(['light', 'moderate', 'hard'] as const).map(i => (
-                      <button
-                        key={i}
-                        type="button"
-                        className={`bio-pill${gymIntensity === i ? ' active' : ''}`}
-                        onClick={() => {
-                          setGymIntensity(i);
-                          saveTrainingSettings(gymSessionsPerWeek, i, gymMinutes, weeklyActivities);
-                        }}
-                      >
+                      <button key={i} type="button" className={`bio-pill${newActivityIntensity === i ? ' active' : ''}`} onClick={() => setNewActivityIntensity(i)}>
                         {i.charAt(0).toUpperCase() + i.slice(1)}
                       </button>
                     ))}
                   </div>
+                  <div className="aaf-actions">
+                    <button className="aaf-cancel-btn" onClick={() => { setShowAddActivity(false); setNewActivityName(''); }}>Cancel</button>
+                    <button className="aaf-save-btn" onClick={addActivity} disabled={!newActivityName.trim()}>Add Activity</button>
+                  </div>
                 </div>
-              </div>
-              {currentKg > 0 && (
-                <div className="training-burn-est">
-                  ~{Math.round(GYM_MET_P[gymIntensity] * currentKg * gymMinutes / 60).toLocaleString()} kcal/session
-                  <span className="tbe-sep">·</span>
-                  ~{Math.round(gymSessionsPerWeek * GYM_MET_P[gymIntensity] * currentKg * gymMinutes / 60 / 7).toLocaleString()} kcal/day avg
-                </div>
+              ) : (
+                <button className="add-activity-trigger" onClick={() => setShowAddActivity(true)}>+ Add activity</button>
               )}
-            </>
+            </div>
+          ) : (
+            <button className="add-activity-trigger" style={{ marginTop: 16 }} onClick={() => setShowAddActivity(true)}>+ Add other activity (swimming, cycling…)</button>
           )}
-
-          {/* Extra activities */}
-          <div className="bio-field" style={{ marginTop: 18 }}>
-            <label className="bio-label">Other weekly activities</label>
-            {weeklyActivities.length === 0 && !showAddActivity && (
-              <p className="diet-hint" style={{ marginBottom: 8 }}>Add swimming, cycling, football — anything you commit to weekly.</p>
-            )}
-            {weeklyActivities.map(a => {
-              const aMet = GYM_MET_P[a.intensity] ?? 6;
-              const bps = currentKg > 0 ? Math.round(aMet * currentKg * a.minutesPerSession / 60) : 0;
-              return (
-                <div key={a.id} className="activity-entry-row">
-                  <div className="aer-info">
-                    <span className="aer-name">{a.name}</span>
-                    <span className="aer-detail">{a.sessionsPerWeek}×/week · {a.minutesPerSession} min · {a.intensity}{currentKg > 0 ? ` · ~${bps} kcal/session` : ''}</span>
-                  </div>
-                  <button className="aer-remove" onClick={() => removeActivity(a.id)} title="Remove">✕</button>
-                </div>
-              );
-            })}
-
-            {showAddActivity ? (
-              <div className="add-activity-form">
-                <input
-                  className="aaf-name-input"
-                  type="text"
-                  placeholder="Activity name (e.g. Swimming, Cycling)"
-                  value={newActivityName}
-                  onChange={e => setNewActivityName(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && addActivity()}
-                  autoFocus
-                />
-                <div className="aaf-row">
-                  <div className="aaf-col">
-                    <label className="aaf-label">Sessions/week</label>
-                    <div className="training-sessions-row" style={{ gap: 6 }}>
-                      <button className="training-step-btn" onClick={() => setNewActivitySessions(Math.max(1, newActivitySessions - 1))}>−</button>
-                      <span className="training-step-val">{newActivitySessions}</span>
-                      <button className="training-step-btn" onClick={() => setNewActivitySessions(Math.min(7, newActivitySessions + 1))}>+</button>
-                    </div>
-                  </div>
-                  <div className="aaf-col">
-                    <label className="aaf-label">Duration (min)</label>
-                    <input
-                      className="aaf-mins-input"
-                      type="text"
-                      inputMode="numeric"
-                      value={newActivityMinutes}
-                      onChange={e => setNewActivityMinutes(parseInt(e.target.value) || 45)}
-                    />
-                  </div>
-                </div>
-                <div className="bio-pills" style={{ marginBottom: 10 }}>
-                  {(['light', 'moderate', 'hard'] as const).map(i => (
-                    <button
-                      key={i}
-                      type="button"
-                      className={`bio-pill${newActivityIntensity === i ? ' active' : ''}`}
-                      onClick={() => setNewActivityIntensity(i)}
-                    >
-                      {i.charAt(0).toUpperCase() + i.slice(1)}
-                    </button>
-                  ))}
-                </div>
-                <div className="aaf-actions">
-                  <button className="aaf-cancel-btn" onClick={() => { setShowAddActivity(false); setNewActivityName(''); }}>Cancel</button>
-                  <button className="aaf-save-btn" onClick={addActivity} disabled={!newActivityName.trim()}>Add Activity</button>
-                </div>
-              </div>
-            ) : (
-              <button className="add-activity-trigger" onClick={() => setShowAddActivity(true)}>+ Add activity</button>
-            )}
-          </div>
         </div>
 
-        {/* Targets */}
+        {/* ── Plan ── */}
         <div className="diet-section">
-          <h2 className="diet-heading">Goal & Targets</h2>
+          <h2 className="diet-heading">Plan</h2>
 
-          {/* Maintenance — shown first so rate inputs make sense */}
-          {maintenance > 0 && (
-            <div className="profile-maintenance-row">
-              <span className="profile-maintenance-label">Maintenance calories</span>
-              <span className="profile-maintenance-val">{maintenance.toLocaleString()} kcal/day</span>
+          {/* Goal weight */}
+          <div className="pbg-row">
+            <div className="pbg-col">
+              <span className="pbg-label">Current</span>
+              <span className="pbg-val">{fmtWeight(currentKg, weightUnit)}</span>
+            </div>
+            <div className="pbg-arrow">→</div>
+            <div className="pbg-col">
+              <span className="pbg-label">Goal ({weightUnit === 'st' ? 'st + lb' : weightUnit})</span>
+              {weightUnit === 'st' ? (
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <div className="bio-input-unit" style={{ flex: 1 }}>
+                    <input className="pbg-goal-input" type="text" inputMode="numeric" value={goalWeightSt} placeholder="12"
+                      onChange={e => setGoalWeightSt(e.target.value)}
+                      onBlur={() => saveGoalWeightKg(stLbToKg(parseInt(goalWeightSt) || 0, parseFloat(goalWeightStLb) || 0))}
+                      onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
+                    <span className="bio-unit">st</span>
+                  </div>
+                  <div className="bio-input-unit" style={{ flex: 1 }}>
+                    <input className="pbg-goal-input" type="text" inputMode="decimal" value={goalWeightStLb} placeholder="0"
+                      onChange={e => setGoalWeightStLb(e.target.value)}
+                      onBlur={() => saveGoalWeightKg(stLbToKg(parseInt(goalWeightSt) || 0, parseFloat(goalWeightStLb) || 0))}
+                      onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
+                    <span className="bio-unit">lb</span>
+                  </div>
+                </div>
+              ) : (
+                <input className="pbg-goal-input" type="text" inputMode="decimal"
+                  value={weightUnit === 'lbs' ? goalWeightLbs : goalWeight}
+                  placeholder={weightUnit === 'lbs' ? 'e.g. 154' : 'e.g. 70'}
+                  onChange={e => { if (weightUnit === 'lbs') setGoalWeightLbs(e.target.value); else setGoalWeight(e.target.value); }}
+                  onBlur={() => { const kg = weightUnit === 'lbs' ? lbsToKg(parseFloat(goalWeightLbs)) : parseFloat(goalWeight); saveGoalWeightKg(kg); }}
+                  onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                />
+              )}
+            </div>
+          </div>
+          {currentKg > 0 && goalKg > 0 && (
+            <div className="pbg-bar-wrap">
+              <div className="pbg-bar">
+                <div className="pbg-fill" style={{ width: `${Math.max(0, Math.min(100, isGain ? (currentKg / goalKg) * 100 : ((currentKg - goalKg) / currentKg) * 100))}%` }} />
+              </div>
+              <span className="pbg-diff">
+                {currentKg > goalKg ? `${fmtWeight(currentKg - goalKg, weightUnit)} to lose` : currentKg < goalKg ? `${fmtWeight(goalKg - currentKg, weightUnit)} to gain` : 'At goal!'}
+              </span>
             </div>
           )}
 
-          {/* Current → Goal weight */}
+          {/* Rate */}
+          <div className="bio-loss-row" style={{ marginTop: 16 }}>
+            <span className="bio-loss-label">{rateLabel}</span>
+            <div className="bio-loss-right">
+              <input type="text" inputMode="decimal" className="bio-loss-input" value={lossPerWeek} placeholder="0.5"
+                onChange={e => setLossPerWeek(e.target.value)}
+                onBlur={() => {
+                  const lpw = parseFloat(lossPerWeek);
+                  const val = isNaN(lpw) || lpw < 0 ? '' : String(Math.min(2, lpw));
+                  setLossPerWeek(val);
+                  if (val) {
+                    const updated = { ...wsRef, lossPerWeek: val };
+                    api.updateWeightSettings(updated).catch(() => {}); setWsRef(updated);
+                    if (!locks.calories) applyGoalCalories(dietGoal, parseFloat(val));
+                  }
+                }}
+                onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
+              <span className="bio-loss-unit">kg / week</span>
+            </div>
+          </div>
+
+          {/* Calorie cascade */}
           {(() => {
-            const cur = currentKg;
-            const goal = parseFloat(goalWeight) || 0;
-            const isGain = goal > 0 && cur > 0 && goal > cur;
-            const rateLabel = isGain ? 'Gain per week' : 'Lose per week';
-            const pct = cur > 0 && goal > 0 && cur !== goal
-              ? Math.max(0, Math.min(100, isGain
-                  ? Math.min(100, (cur / goal) * 100)
-                  : ((cur - goal) / cur) * 100))
-              : 0;
+            const rate = parseFloat(lossPerWeek) || 0;
+            const dailyDelta = rate > 0 ? Math.round(rate * 7700 / 7) : 0;
+            const rawTarget = maintenance > 0
+              ? (isGain ? maintenance + dailyDelta : maintenance - dailyDelta)
+              : target.calories;
+            const floorHit = !isGain && rawTarget < 1200 && maintenance > 0 && rate > 0;
+            const planTarget = floorHit ? 1200 : rawTarget;
+            const actualRate = floorHit ? Math.round((maintenance - 1200) / 7700 * 7 * 10) / 10 : rate;
             return (
-              <div className="profile-body-goals">
-                <div className="pbg-row">
-                  <div className="pbg-col">
-                    <span className="pbg-label">Current weight</span>
-                    <span className="pbg-val">{cur > 0 ? `${cur} kg` : '—'}</span>
-                  </div>
-                  <div className="pbg-arrow">→</div>
-                  <div className="pbg-col">
-                    <span className="pbg-label">Goal weight (kg)</span>
-                    <input
-                      className="pbg-goal-input"
-                      type="text"
-                      inputMode="decimal"
-                      value={goalWeight}
-                      placeholder="e.g. 70"
-                      onChange={e => setGoalWeight(e.target.value)}
-                      onBlur={() => {
-                        const gw = parseFloat(goalWeight);
-                        if (!isNaN(gw) && gw > 0) {
-                          api.updateWeightSettings({ ...wsRef, goalWeight: String(gw), currentWeight: profile.weightKg }).catch(() => {});
-                          setWsRef((prev: any) => ({ ...prev, goalWeight: String(gw) }));
-                          // Derive goal direction and recalculate
-                          const derived: 'cut' | 'maintain' | 'bulk' = gw < cur ? 'cut' : gw > cur ? 'bulk' : 'maintain';
-                          setDietGoal(derived);
-                          api.updateDietSettings({ goal: derived, calorieLock: locks.calories, lockProtein: locks.protein, lockCarbs: locks.carbs, lockFats: locks.fats }).catch(() => {});
-                          if (!locks.calories) applyGoalCalories(derived);
-                        }
-                      }}
-                      onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-                    />
-                  </div>
+              <div className="cal-cascade">
+                <div className="cal-cascade-row">
+                  <span className="cal-cascade-label">Maintenance</span>
+                  <span className="cal-cascade-val">{maintenance > 0 ? `${maintenance.toLocaleString()} kcal` : '—'}</span>
                 </div>
-                {cur > 0 && goal > 0 && (
-                  <div className="pbg-bar-wrap">
-                    <div className="pbg-bar">
-                      <div className="pbg-fill" style={{ width: `${pct}%` }} />
-                    </div>
-                    <span className="pbg-diff">{cur > goal ? `${(cur - goal).toFixed(1)} kg to lose` : cur < goal ? `${(goal - cur).toFixed(1)} kg to gain` : 'At goal!'}</span>
+                {rate > 0 && maintenance > 0 && (
+                  <div className="cal-cascade-row cal-cascade-delta">
+                    <span className="cal-cascade-label">{isGain ? '+' : '−'} {dailyDelta.toLocaleString()} kcal/day <span className="cal-cascade-sub">({rate} kg/wk {isGain ? 'surplus' : 'deficit'})</span></span>
                   </div>
                 )}
-
-                {/* Rate — label flips with direction */}
-                <div className="bio-loss-row">
-                  <span className="bio-loss-label">{rateLabel}</span>
-                  <div className="bio-loss-right">
-                    <input
-                      type="text"
-                      inputMode="decimal"
-                      className="bio-loss-input"
-                      value={lossPerWeek}
-                      placeholder="0.5"
-                      onChange={e => setLossPerWeek(e.target.value)}
-                      onBlur={() => {
-                        const lpw = parseFloat(lossPerWeek);
-                        const val = isNaN(lpw) || lpw < 0 ? '' : String(Math.min(2, lpw));
-                        setLossPerWeek(val);
-                        if (val) {
-                          const updated = { ...wsRef, lossPerWeek: val };
-                          api.updateWeightSettings(updated).catch(() => {});
-                          setWsRef(updated);
-                          if (!locks.calories) applyGoalCalories(dietGoal, parseFloat(val));
-                        }
-                      }}
-                      onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-                    />
-                    <span className="bio-loss-unit">kg / week</span>
-                  </div>
+                <div className="cal-cascade-divider" />
+                <div className="cal-cascade-row cal-cascade-target-row">
+                  <span className="cal-cascade-label">Target</span>
+                  <span className="cal-cascade-target-val">
+                    {planTarget > 0 ? `${planTarget.toLocaleString()} kcal` : '—'}
+                    {floorHit && <span className="cal-floor-badge">floor</span>}
+                  </span>
                 </div>
-                {/* Show what that rate means in calories */}
-                {lossPerWeek && parseFloat(lossPerWeek) > 0 && maintenance > 0 && (
-                  <div className="profile-rate-hint">
-                    {parseFloat(lossPerWeek)} kg/wk = {isGain ? '+' : '−'}{Math.round(parseFloat(lossPerWeek) * 7700 / 7).toLocaleString()} kcal/day → goal: <strong>{(isGain ? maintenance + Math.round(parseFloat(lossPerWeek) * 7700 / 7) : Math.max(1200, maintenance - Math.round(parseFloat(lossPerWeek) * 7700 / 7))).toLocaleString()} kcal</strong>
+                {floorHit && (
+                  <div className="cal-floor-msg">
+                    ⚠ At 1,200 kcal you'll lose ~{actualRate} kg/wk, not {rate}. Raise gym or steps below to get more room.
                   </div>
                 )}
               </div>
             );
           })()}
 
-          <div className="profile-macro-grid">
-            {/* Calories */}
-            <div className="profile-macro-field">
-              <div className="profile-macro-label-row">
-                <label className="profile-macro-label">Calories <span className="profile-macro-unit">kcal</span></label>
-                <button className={`profile-lock-btn${locks.calories ? ' locked' : ''}`} onClick={() => toggleLock('calories')} title={locks.calories ? 'Unlock calories' : 'Lock calories'}>
-                  {locks.calories ? '🔒' : '🔓'}
-                </button>
+          {/* Activity levers */}
+          <div className="plan-levers">
+            <div className="plan-lever-row">
+              <span className="plan-lever-label">Gym sessions / week</span>
+              <div className="training-sessions-row">
+                <button className="training-step-btn" onClick={() => {
+                  const n = Math.max(0, gymSessionsPerWeek - 1);
+                  const freq = gymCountToFreq(n);
+                  setGymSessionsPerWeek(n); setGymFreq(freq);
+                  updateActivityPicker(jobType, freq, walkFreq);
+                  saveTrainingSettings(n, gymIntensity, gymMinutes, weeklyActivities);
+                }}>−</button>
+                <span className="training-step-val">{gymSessionsPerWeek}</span>
+                <button className="training-step-btn" onClick={() => {
+                  const n = Math.min(7, gymSessionsPerWeek + 1);
+                  const freq = gymCountToFreq(n);
+                  setGymSessionsPerWeek(n); setGymFreq(freq);
+                  updateActivityPicker(jobType, freq, walkFreq);
+                  saveTrainingSettings(n, gymIntensity, gymMinutes, weeklyActivities);
+                }}>+</button>
               </div>
-              <div className="profile-macro-input-row">
-                <input
-                  className="profile-macro-input"
-                  type="text" inputMode="numeric"
-                  value={draft.calories}
+            </div>
+            <div className="plan-lever-row">
+              <span className="plan-lever-label">Daily steps</span>
+              <div className="step-counter-row">
+                <button className="step-counter-btn step-counter-btn--big" onClick={() => adjustSteps(-1000)}>−−</button>
+                <button className="step-counter-btn" onClick={() => adjustSteps(-100)}>−</button>
+                <span className="step-counter-val">{parseInt(stepTarget || '5000').toLocaleString()}</span>
+                <button className="step-counter-btn" onClick={() => adjustSteps(100)}>+</button>
+                <button className="step-counter-btn step-counter-btn--big" onClick={() => adjustSteps(1000)}>++</button>
+              </div>
+            </div>
+            {gymSessionsPerWeek > 0 && (
+              <div className="plan-lever-row plan-lever-row--sub">
+                <span className="plan-lever-label" style={{ color: '#444' }}>Session details</span>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <div className="bio-input-unit" style={{ width: 72 }}>
+                    <input type="text" inputMode="numeric" value={gymMinutes}
+                      onChange={e => setGymMinutes(parseInt(e.target.value) || 60)}
+                      onBlur={() => saveTrainingSettings(gymSessionsPerWeek, gymIntensity, gymMinutes, weeklyActivities)}
+                      onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
+                    <span className="bio-unit">min</span>
+                  </div>
+                  <div className="bio-pills" style={{ gap: 4 }}>
+                    {(['light', 'moderate', 'hard'] as const).map(i => (
+                      <button key={i} type="button" className={`bio-pill${gymIntensity === i ? ' active' : ''}`}
+                        onClick={() => { setGymIntensity(i); saveTrainingSettings(gymSessionsPerWeek, i, gymMinutes, weeklyActivities); }}>
+                        {i.charAt(0).toUpperCase() + i.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Macros */}
+          <div className="plan-macros-section">
+            <div className="plan-macros-header">
+              <span className="plan-macros-title">Macros</span>
+              <button className={`profile-lock-btn${locks.calories ? ' locked' : ''}`} onClick={() => toggleLock('calories')} title={locks.calories ? 'Unlock calorie target' : 'Lock calorie target'} style={{ fontSize: '0.85rem' }}>
+                {locks.calories ? '🔒' : '🔓'} kcal
+              </button>
+            </div>
+            {locks.calories && (
+              <div className="profile-macro-input-row" style={{ marginBottom: 12 }}>
+                <input className="profile-macro-input" type="text" inputMode="numeric" value={draft.calories}
                   onChange={e => setDraft(d => ({ ...d, calories: e.target.value }))}
-                  onBlur={commitDraft}
-                  onKeyDown={e => e.key === 'Enter' && commitDraft()}
-                />
+                  onBlur={commitDraft} onKeyDown={e => e.key === 'Enter' && commitDraft()} />
+                <span style={{ fontSize: '0.75rem', color: '#555', whiteSpace: 'nowrap' }}>kcal override</span>
               </div>
-              {parseInt(draft.calories) > 0 && parseInt(draft.calories) < 1200 && (
-                <span className="profile-cal-warn">⚠ Min 1,200 kcal</span>
-              )}
-              {maintenance > 0 && target.calories > 0 && (
-                <span className="profile-cal-vs">
-                  vs {maintenance.toLocaleString()} maint.&nbsp;
-                  <span style={{ color: target.calories < maintenance ? '#30d158' : target.calories > maintenance ? '#ff453a' : '#888' }}>
-                    ({target.calories > maintenance ? '+' : ''}{(target.calories - maintenance).toLocaleString()} kcal)
-                  </span>
-                </span>
-              )}
-              {!locks.calories && lossPerWeek && parseFloat(lossPerWeek) > 0 && maintenance > 0 && (
-                <span className="profile-cal-vs" style={{ color: '#666' }}>
-                  {parseFloat(lossPerWeek)} kg/wk = −{Math.round(parseFloat(lossPerWeek) * 7700 / 7).toLocaleString()} kcal/day
-                </span>
-              )}
-            </div>
+            )}
+            <div className="profile-macro-grid">
+              <div className="profile-macro-field">
+                <div className="profile-macro-label-row">
+                  <label className="profile-macro-label">Protein <span className="profile-macro-unit">g</span></label>
+                  {currentKg > 0 && target.protein > 0 && <span className="profile-per-kg">{(target.protein / currentKg).toFixed(1)} g/kg</span>}
+                </div>
+                <div className="profile-macro-input-row">
+                  <input className="profile-macro-input" type="text" inputMode="numeric" value={draft.protein}
+                    onChange={e => setDraft(d => ({ ...d, protein: e.target.value }))}
+                    onBlur={commitDraft} onKeyDown={e => e.key === 'Enter' && commitDraft()} />
+                  <button className={`profile-lock-btn${locks.protein ? ' locked' : ''}`} onClick={() => toggleLock('protein')}>{locks.protein ? '🔒' : '🔓'}</button>
+                </div>
+              </div>
 
-            {/* Protein */}
-            <div className="profile-macro-field">
-              <div className="profile-macro-label-row">
-                <label className="profile-macro-label">Protein <span className="profile-macro-unit">g</span></label>
-                {currentKg > 0 && target.protein > 0 && (
-                  <span className="profile-per-kg">{(target.protein / currentKg).toFixed(1)} g/kg</span>
-                )}
+              <div className="profile-macro-field">
+                <label className="profile-macro-label">Carbs <span className="profile-macro-unit">g</span></label>
+                <div className="profile-macro-input-row">
+                  <input className="profile-macro-input" type="text" inputMode="numeric" value={draft.carbs}
+                    onChange={e => setDraft(d => ({ ...d, carbs: e.target.value }))}
+                    onBlur={commitDraft} onKeyDown={e => e.key === 'Enter' && commitDraft()} />
+                  <button className={`profile-lock-btn${locks.carbs ? ' locked' : ''}`} onClick={() => toggleLock('carbs')}>{locks.carbs ? '🔒' : '🔓'}</button>
+                </div>
               </div>
-              <div className="profile-macro-input-row">
-                <input
-                  className="profile-macro-input"
-                  type="text" inputMode="numeric"
-                  value={draft.protein}
-                  onChange={e => setDraft(d => ({ ...d, protein: e.target.value }))}
-                  onBlur={commitDraft}
-                  onKeyDown={e => e.key === 'Enter' && commitDraft()}
-                />
-                <button className={`profile-lock-btn${locks.protein ? ' locked' : ''}`} onClick={() => toggleLock('protein')} title={locks.protein ? 'Unlock protein' : 'Lock protein'}>
-                  {locks.protein ? '🔒' : '🔓'}
-                </button>
+
+              <div className="profile-macro-field">
+                <label className="profile-macro-label">Fats <span className="profile-macro-unit">g</span></label>
+                <div className="profile-macro-input-row">
+                  <input className="profile-macro-input" type="text" inputMode="numeric" value={draft.fats}
+                    onChange={e => setDraft(d => ({ ...d, fats: e.target.value }))}
+                    onBlur={commitDraft} onKeyDown={e => e.key === 'Enter' && commitDraft()} />
+                  <button className={`profile-lock-btn${locks.fats ? ' locked' : ''}`} onClick={() => toggleLock('fats')}>{locks.fats ? '🔒' : '🔓'}</button>
+                </div>
               </div>
             </div>
 
-            {/* Carbs */}
-            <div className="profile-macro-field">
-              <label className="profile-macro-label">Carbs <span className="profile-macro-unit">g</span></label>
-              <div className="profile-macro-input-row">
-                <input
-                  className="profile-macro-input"
-                  type="text" inputMode="numeric"
-                  value={draft.carbs}
-                  onChange={e => setDraft(d => ({ ...d, carbs: e.target.value }))}
-                  onBlur={commitDraft}
-                  onKeyDown={e => e.key === 'Enter' && commitDraft()}
-                />
-                <button className={`profile-lock-btn${locks.carbs ? ' locked' : ''}`} onClick={() => toggleLock('carbs')} title={locks.carbs ? 'Unlock carbs' : 'Lock carbs'}>
-                  {locks.carbs ? '🔒' : '🔓'}
-                </button>
-              </div>
-            </div>
+            {(() => {
+              const totalFromMacros = target.protein * 4 + target.carbs * 4 + target.fats * 9;
+              const diff = Math.abs(totalFromMacros - target.calories);
+              if (diff < 50 || target.calories <= 0) return null;
+              return (
+                <div className="profile-macro-mismatch">
+                  <span>Macros add up to {totalFromMacros.toLocaleString()} kcal, not {target.calories.toLocaleString()}</span>
+                  <button className="profile-macro-rebalance-btn" onClick={advisableSplit}>Fix</button>
+                </div>
+              );
+            })()}
+          </div>{/* end plan-macros-section */}
+        </div>{/* end Plan diet-section */}
 
-            {/* Fats */}
-            <div className="profile-macro-field">
-              <label className="profile-macro-label">Fats <span className="profile-macro-unit">g</span></label>
-              <div className="profile-macro-input-row">
-                <input
-                  className="profile-macro-input"
-                  type="text" inputMode="numeric"
-                  value={draft.fats}
-                  onChange={e => setDraft(d => ({ ...d, fats: e.target.value }))}
-                  onBlur={commitDraft}
-                  onKeyDown={e => e.key === 'Enter' && commitDraft()}
-                />
-                <button className={`profile-lock-btn${locks.fats ? ' locked' : ''}`} onClick={() => toggleLock('fats')} title={locks.fats ? 'Unlock fats' : 'Lock fats'}>
-                  {locks.fats ? '🔒' : '🔓'}
-                </button>
-              </div>
-            </div>
-          </div>
-          <div className="target-field" style={{ marginTop: 12 }}>
-            <label>Daily step target</label>
-            <input
-              type="text" inputMode="numeric"
-              value={stepTarget}
-              onChange={e => setStepTarget(e.target.value)}
-              onBlur={() => {
-                const n = parseInt(stepTarget) || 10000;
-                setStepTarget(String(n));
-                api.updateProfile({ ...profileRef.current, name: nameRef.current, stepTarget: n }).catch(() => {});
-              }}
-              onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-              placeholder="e.g. 10000"
-            />
-          </div>
-        </div>
-
-        {/* Habits */}
+        {/* ── Habits ── */}
         <div className="diet-section">
           <h2 className="diet-heading">Habits</h2>
           <ul className="habit-list">
@@ -924,59 +863,36 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
             ))}
           </ul>
           <div className="habit-add">
-            <input
-              type="text"
-              value={newHabit}
-              onChange={e => setNewHabit(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && addHabit()}
-              placeholder="New habit name"
-              className="habit-add-input"
-            />
+            <input type="text" value={newHabit} onChange={e => setNewHabit(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && addHabit()} placeholder="New habit name" className="habit-add-input" />
             <button className="habit-add-btn" onClick={addHabit}>+</button>
           </div>
         </div>
 
-        {/* AI Key */}
+        {/* ── Settings ── */}
         <div id="ai-key" className="diet-section">
-          <h2 className="diet-heading">AI Key</h2>
-          <p className="diet-hint">Your personal Anthropic API key is stored securely on our server and used only to power food logging. We never see the key in plaintext responses.</p>
+          <h2 className="diet-heading">Settings</h2>
+          <p className="diet-hint" style={{ marginBottom: 12 }}>Your Anthropic API key powers AI food logging. Stored encrypted — never logged in plaintext.</p>
           {aiKeyMasked && !aiKeyInput && (
             <div className="ai-key-connected">
               <span className="ai-key-badge">Connected: {aiKeyMasked}</span>
-              <button className="ai-key-remove-btn" onClick={async () => {
-                await api.saveAiKey('').catch(() => {});
-                setAiKeyMasked(null);
-              }}>Remove</button>
+              <button className="ai-key-remove-btn" onClick={async () => { await api.saveAiKey('').catch(() => {}); setAiKeyMasked(null); }}>Remove</button>
             </div>
           )}
           <div className="ai-key-row">
-            <input
-              className="ai-key-input"
-              type="password"
-              placeholder={aiKeyMasked ? 'Enter new key to replace…' : 'sk-ant-…'}
-              value={aiKeyInput}
-              onChange={e => { setAiKeyInput(e.target.value); setAiKeyDone(false); }}
-              autoComplete="off"
-            />
-            <button
-              className="ai-key-save-btn"
-              disabled={!aiKeyInput.trim() || aiKeySaving}
+            <input className="ai-key-input" type="password" placeholder={aiKeyMasked ? 'Enter new key to replace…' : 'sk-ant-…'}
+              value={aiKeyInput} onChange={e => { setAiKeyInput(e.target.value); setAiKeyDone(false); }} autoComplete="off" />
+            <button className="ai-key-save-btn" disabled={!aiKeyInput.trim() || aiKeySaving}
               onClick={async () => {
                 setAiKeySaving(true);
-                try {
-                  await api.saveAiKey(aiKeyInput.trim());
-                  const d = await api.getAiKeyStatus() as any;
-                  setAiKeyMasked(d.masked ?? null);
-                  setAiKeyInput('');
-                  setAiKeyDone(true);
-                } catch { /* ignore */ } finally { setAiKeySaving(false); }
-              }}
-            >{aiKeySaving ? '…' : aiKeyDone ? '✓' : 'Save'}</button>
+                try { await api.saveAiKey(aiKeyInput.trim()); const d = await api.getAiKeyStatus() as any; setAiKeyMasked(d.masked ?? null); setAiKeyInput(''); setAiKeyDone(true); }
+                catch { } finally { setAiKeySaving(false); }
+              }}>{aiKeySaving ? '…' : aiKeyDone ? '✓' : 'Save'}</button>
           </div>
           <p className="diet-hint" style={{ marginTop: 6 }}>Get your key at <span style={{ color: '#0a84ff' }}>console.anthropic.com</span></p>
         </div>
 
-        {/* Delete account */}
+        {/* ── Danger Zone ── */}
         <div id="danger-zone" className="diet-section delete-account-section">
           <h2 className="diet-heading" style={{ color: '#ff453a' }}>Danger Zone</h2>
           {deleteAccount.step === 'idle' && (
@@ -990,24 +906,15 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
               <p className="delete-account-desc">Are you sure? Every habit, log, meal plan, and task will be wiped forever.</p>
               {deleteAccount.error && <p className="delete-account-error">{deleteAccount.error}</p>}
               <div className="delete-account-actions">
-                <button
-                  className="delete-account-cancel"
-                  onClick={deleteAccount.cancel}
-                  disabled={deleteAccount.step === 'deleting'}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="delete-account-confirm-btn"
-                  onClick={deleteAccount.confirm}
-                  disabled={deleteAccount.step === 'deleting'}
-                >
+                <button className="delete-account-cancel" onClick={deleteAccount.cancel} disabled={deleteAccount.step === 'deleting'}>Cancel</button>
+                <button className="delete-account-confirm-btn" onClick={deleteAccount.confirm} disabled={deleteAccount.step === 'deleting'}>
                   {deleteAccount.step === 'deleting' ? 'Deleting…' : 'Yes, delete everything'}
                 </button>
               </div>
             </div>
           )}
         </div>
+
       </div>
     </div>
   );

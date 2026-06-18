@@ -575,10 +575,20 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
                   </div>
                   <div className="auth-field">
                     <label>Gym / training</label>
-                    <div className="activity-picker activity-picker--row">
-                      {GYM_OPTS.map(o => (
-                        <button key={o.id} type="button" className={`activity-pick-chip${gymFreq === o.id ? ' active' : ''}`} onClick={() => setGymFreq(o.id)}>{o.label}</button>
-                      ))}
+                    <div className="freq-selector">
+                      {GYM_OPTS.map(o => {
+                        const [main, sub] = o.id === 'never' ? ['—', 'Never']
+                          : o.id === 'daily' ? ['7+', 'Daily']
+                          : [o.label.split('×')[0], '/wk'];
+                        return (
+                          <button key={o.id} type="button"
+                            className={`freq-option${gymFreq === o.id ? ' active' : ''}`}
+                            onClick={() => setGymFreq(o.id)}>
+                            <span className="freq-main">{main}</span>
+                            <span className="freq-sub">{sub}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                   <div className="auth-field">
