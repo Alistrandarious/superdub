@@ -411,12 +411,12 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
 
   if (!loaded) {
     return (
-      <div className="app" style={{ '--theme': '#ff9f0a', '--theme-dim': '#ff9f0a66', '--theme-glow': '#ff9f0a33' } as React.CSSProperties}>
+      <div className="app" style={{ '--theme': '#F59E0B', '--theme-dim': '#F59E0B66', '--theme-glow': '#F59E0B33' } as React.CSSProperties}>
         <header className="header">
           <div className="header-left"><Link to="/" className="back-link">← Back</Link></div>
           <h1 className="title">Profile</h1>
         </header>
-        <div className="page-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '4rem', color: '#ff9f0a' }}>Loading…</div>
+        <div className="page-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '4rem', color: '#F59E0B' }}>Loading…</div>
       </div>
     );
   }
@@ -426,7 +426,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
   const rateLabel = isGain ? 'Gain per week' : 'Lose per week';
 
   return (
-    <div className="app" style={{ '--theme': '#ff9f0a', '--theme-dim': '#ff9f0a66', '--theme-glow': '#ff9f0a33' } as React.CSSProperties}>
+    <div className="app" style={{ '--theme': '#F59E0B', '--theme-dim': '#F59E0B66', '--theme-glow': '#F59E0B33' } as React.CSSProperties}>
       <header className="header">
         <div className="header-left"><Link to="/" className="back-link">← Back</Link></div>
         <h1 className="title">Profile</h1>

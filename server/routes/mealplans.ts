@@ -31,15 +31,26 @@ router.get('/recipe/:id/ingredients', requireAuth as any, async (req: AuthReques
   try {
     // Return cached ingredients if we have them
     const { rows } = await pool.query('SELECT ingredients FROM recipes WHERE id = $1', [id]);
+    console.log(`[ingredients] id=${id} rows=${rows.length} cached=${rows[0]?.ingredients?.length ?? 'null'}`);
     const cached: any[] = rows[0]?.ingredients ?? [];
-    if (cached.length > 0) return res.json({ ingredients: cached });
+    if (cached.length > 0) {
+      console.log(`[ingredients] returning ${cached.length} cached`);
+      return res.json({ ingredients: cached });
+    }
 
     // Fetch from Spoonacular
-    if (!SPOONACULAR_KEY) return res.json({ ingredients: [] });
-    const resp = await fetch(
-      `https://api.spoonacular.com/recipes/${id}/information?apiKey=${SPOONACULAR_KEY}&includeNutrition=false`
-    );
-    if (!resp.ok) return res.json({ ingredients: [] });
+    if (!SPOONACULAR_KEY) {
+      console.log('[ingredients] no SPOONACULAR_KEY');
+      return res.json({ ingredients: [] });
+    }
+    const url = `https://api.spoonacular.com/recipes/${id}/information?apiKey=${SPOONACULAR_KEY}&includeNutrition=false`;
+    const resp = await fetch(url);
+    console.log(`[ingredients] spoonacular status=${resp.status}`);
+    if (!resp.ok) {
+      const txt = await resp.text();
+      console.log(`[ingredients] spoonacular error: ${txt.slice(0, 200)}`);
+      return res.json({ ingredients: [] });
+    }
 
     const data: any = await resp.json();
     const ingredients = (data.extendedIngredients ?? []).map((ing: any) => ({
@@ -49,12 +60,14 @@ router.get('/recipe/:id/ingredients', requireAuth as any, async (req: AuthReques
       amount:   ing.amount,
       unit:     ing.unit,
     }));
+    console.log(`[ingredients] spoonacular returned ${ingredients.length} ingredients`);
 
     // Cache for next time
     await pool.query('UPDATE recipes SET ingredients = $1 WHERE id = $2', [JSON.stringify(ingredients), id]);
 
     res.json({ ingredients });
   } catch (err: any) {
+    console.error('[ingredients] error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -137,31 +150,97 @@ router.post('/seed', requireAuth as any, async (_req: AuthRequest, res: Response
   }
 });
 
+// Build one day's meals from the recipe DB
+async function buildDay(
+  dayName: string,
+  slots: { name: string; pct: number; dishTypes: string[] }[],
+  availableCal: number,
+  diets: string[],
+  includeShake: boolean,
+  halal: boolean,
+  globalExclude: number[] = []
+): Promise<{ day: string; meals: any[]; totals: any }> {
+  const usedIds = new Set<number>(globalExclude);
+  const meals: any[] = [];
+
+  for (const slot of slots) {
+    const targetCal = Math.round(availableCal * slot.pct);
+    const min = targetCal * 0.55;
+    const max = targetCal * 1.55;
+    const excluded = Array.from(usedIds);
+
+    let recipe = await pickRecipe(excluded, min, max, diets, slot.dishTypes, halal);
+    if (!recipe) recipe = await pickRecipe(excluded, min, max, diets, [], halal);
+    if (!recipe) recipe = await pickRecipe(excluded, min, max, [], slot.dishTypes, halal);
+    if (!recipe) recipe = await pickRecipe(excluded, min, max, [], [], halal);
+    if (!recipe) recipe = await pickRecipe(excluded, 0, 999999, [], [], halal);
+
+    if (recipe) {
+      usedIds.add(recipe.id);
+      const scale  = recipe.calories > 0 ? targetCal / recipe.calories : 1;
+      const scaled = Math.round(scale * 100) / 100;
+      meals.push({
+        slot: slot.name,
+        targetCal,
+        recipe: {
+          id: recipe.id, title: recipe.title, image: recipe.image,
+          sourceUrl: recipe.source_url, servings: recipe.servings, diets: recipe.diets ?? [],
+        },
+        scale: scaled,
+        macros: {
+          calories: Math.round(recipe.calories * scaled),
+          protein:  Math.round(recipe.protein  * scaled * 10) / 10,
+          carbs:    Math.round(recipe.carbs     * scaled * 10) / 10,
+          fat:      Math.round(recipe.fat       * scaled * 10) / 10,
+        },
+      });
+    }
+  }
+
+  if (includeShake) meals.push({ ...SHAKE });
+
+  const totals = meals.reduce(
+    (acc, m) => ({
+      calories: acc.calories + m.macros.calories,
+      protein:  acc.protein  + m.macros.protein,
+      carbs:    acc.carbs    + m.macros.carbs,
+      fat:      acc.fat      + m.macros.fat,
+    }),
+    { calories: 0, protein: 0, carbs: 0, fat: 0 }
+  );
+
+  return {
+    day: dayName,
+    meals,
+    totals: {
+      calories: Math.round(totals.calories),
+      protein:  Math.round(totals.protein  * 10) / 10,
+      carbs:    Math.round(totals.carbs    * 10) / 10,
+      fat:      Math.round(totals.fat      * 10) / 10,
+    },
+  };
+}
+
 // Generate a full meal plan from the local recipe DB
 router.post('/generate', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
     const {
       mealCount    = 3,
+      days         = 1,
       diets        = [],
       excludeIds   = [],
       includeShake = false,
       halal        = false,
     } = req.body as {
-      mealCount: number;
-      diets: string[];
-      excludeIds: number[];
-      includeShake: boolean;
-      halal: boolean;
+      mealCount: number; days: number; diets: string[];
+      excludeIds: number[]; includeShake: boolean; halal: boolean;
     };
 
-    // Load user's macro targets
     const { rows: trows } = await pool.query(
       'SELECT calories, protein, carbs, fats FROM diet_target WHERE user_id = $1',
       [req.userId]
     );
     const t = trows[0] ?? { calories: 2000, protein: 150, carbs: 200, fats: 67 };
-
-    // If shake is included, reserve its calories from the total before distributing
     const availableCal = includeShake ? t.calories - SHAKE.macros.calories : t.calories;
 
     type Slot = { name: string; pct: number; dishTypes: string[] };
@@ -172,74 +251,23 @@ router.post('/generate', requireAuth as any, async (req: AuthRequest, res: Respo
       { name: 'Snack 1',  pct: 0.08, dishTypes: ['snack', 'appetizer', 'fingerfood', 'side dish'] },
       { name: 'Snack 2',  pct: 0.07, dishTypes: ['snack', 'appetizer', 'fingerfood'] },
     ];
-
     const slots = allSlots.slice(0, Math.min(Math.max(mealCount, 2), 5));
     const totalPct = slots.reduce((s, sl) => s + sl.pct, 0);
     slots.forEach(sl => { sl.pct = sl.pct / totalPct; });
 
-    const usedIds = new Set<number>(excludeIds);
-    const meals: any[] = [];
+    const DAY_NAMES = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+    const dayCount = Math.min(Math.max(days, 1), 7);
+    const planDays: any[] = [];
 
-    for (const slot of slots) {
-      const targetCal = Math.round(availableCal * slot.pct);
-      const min = targetCal * 0.55;
-      const max = targetCal * 1.55;
-      const excluded = Array.from(usedIds);
-
-      let recipe = await pickRecipe(excluded, min, max, diets, slot.dishTypes, halal);
-      if (!recipe) recipe = await pickRecipe(excluded, min, max, diets, [], halal);
-      if (!recipe) recipe = await pickRecipe(excluded, min, max, [], slot.dishTypes, halal);
-      if (!recipe) recipe = await pickRecipe(excluded, min, max, [], [], halal);
-      if (!recipe) recipe = await pickRecipe(excluded, 0, 999999, [], [], halal);
-
-      if (recipe) {
-        usedIds.add(recipe.id);
-        const scale = recipe.calories > 0 ? targetCal / recipe.calories : 1;
-        const scaled = Math.round(scale * 100) / 100;
-
-        meals.push({
-          slot: slot.name,
-          targetCal,
-          recipe: {
-            id: recipe.id,
-            title: recipe.title,
-            image: recipe.image,
-            sourceUrl: recipe.source_url,
-            servings: recipe.servings,
-            diets: recipe.diets ?? [],
-          },
-          scale: scaled,
-          macros: {
-            calories: Math.round(recipe.calories * scaled),
-            protein:  Math.round(recipe.protein  * scaled * 10) / 10,
-            carbs:    Math.round(recipe.carbs     * scaled * 10) / 10,
-            fat:      Math.round(recipe.fat       * scaled * 10) / 10,
-          },
-        });
-      }
+    for (let d = 0; d < dayCount; d++) {
+      const dayPlan = await buildDay(
+        DAY_NAMES[d], slots, availableCal, diets, includeShake, halal, excludeIds
+      );
+      planDays.push(dayPlan);
     }
 
-    // Append the shake at the end if requested
-    if (includeShake) meals.push(SHAKE);
-
-    const totals = meals.reduce(
-      (acc, m) => ({
-        calories: acc.calories + m.macros.calories,
-        protein:  acc.protein  + m.macros.protein,
-        carbs:    acc.carbs    + m.macros.carbs,
-        fat:      acc.fat      + m.macros.fat,
-      }),
-      { calories: 0, protein: 0, carbs: 0, fat: 0 }
-    );
-
     res.json({
-      meals,
-      totals: {
-        calories: Math.round(totals.calories),
-        protein:  Math.round(totals.protein  * 10) / 10,
-        carbs:    Math.round(totals.carbs    * 10) / 10,
-        fat:      Math.round(totals.fat      * 10) / 10,
-      },
+      days: planDays,
       targets: { calories: t.calories, protein: t.protein, carbs: t.carbs, fat: t.fats },
     });
   } catch (err: any) {

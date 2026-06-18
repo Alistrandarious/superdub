@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import './App.css';
 import { api } from './api';
 
@@ -31,24 +31,29 @@ interface MealEntry {
   macros: { calories: number; protein: number; carbs: number; fat: number };
 }
 
-interface PlanTotals {
+interface MacroTotals {
   calories: number;
   protein: number;
   carbs: number;
   fat: number;
 }
 
-interface GeneratedPlan {
+interface DayPlan {
+  day: string;
   meals: MealEntry[];
-  totals: PlanTotals;
-  targets: PlanTotals;
+  totals: MacroTotals;
+}
+
+interface WeekPlan {
+  days: DayPlan[];
+  targets: MacroTotals;
 }
 
 interface SavedPlan {
   id: string;
   label: string;
-  meals: MealEntry[];
-  totals: PlanTotals;
+  days: DayPlan[];
+  totals: MacroTotals;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -62,33 +67,13 @@ const DIET_FILTERS = [
   { key: 'paleo',       label: 'Paleo' },
 ];
 
-const SHAKE_MACROS = { calories: 150, protein: 30, carbs: 5, fat: 2 };
-
 const THEME = {
-  '--theme': '#00e5ff',
-  '--theme-dim': '#00e5ff66',
-  '--theme-glow': '#00e5ff33',
+  '--theme': '#7C5CFF',
+  '--theme-dim': '#7C5CFF66',
+  '--theme-glow': '#7C5CFF33',
 } as React.CSSProperties;
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-function MacroPill({ label, value, unit = 'g', target, color }: {
-  label: string; value: number; unit?: string; target?: number; color: string;
-}) {
-  const pct = target ? Math.min(100, Math.round((value / target) * 100)) : null;
-  return (
-    <div className="mp-macro-pill">
-      <div className="mp-macro-bar-track">
-        <div
-          className="mp-macro-bar-fill"
-          style={{ width: pct !== null ? `${pct}%` : '0%', background: color }}
-        />
-      </div>
-      <span className="mp-macro-label">{label}</span>
-      <span className="mp-macro-val">{value}{unit}</span>
-    </div>
-  );
-}
+// ─── IngredientPanel ──────────────────────────────────────────────────────────
 
 function IngredientPanel({ recipeId, scale }: { recipeId: number; scale: number }) {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
@@ -96,16 +81,24 @@ function IngredientPanel({ recipeId, scale }: { recipeId: number; scale: number 
   const [loaded, setLoaded]           = useState(false);
   const [selected, setSelected]       = useState<Set<number>>(new Set());
   const [added, setAdded]             = useState(false);
+  const [fetchError, setFetchError]   = useState<string | null>(null);
+
+  useEffect(() => {
+    setIngredients([]);
+    setLoaded(false);
+    setFetchError(null);
+    setSelected(new Set());
+  }, [recipeId]);
 
   const fetchIngredients = async () => {
-    if (loaded) return;
     setLoading(true);
+    setFetchError(null);
     try {
       const r: any = await api.getRecipeIngredients(recipeId);
       setIngredients(r.ingredients ?? []);
       setSelected(new Set((r.ingredients ?? []).map((i: Ingredient) => i.id)));
-    } catch {
-      // silent
+    } catch (err: any) {
+      setFetchError(err.message ?? 'Unknown error');
     } finally {
       setLoading(false);
       setLoaded(true);
@@ -132,158 +125,208 @@ function IngredientPanel({ recipeId, scale }: { recipeId: number; scale: number 
     setTimeout(() => setAdded(false), 2500);
   };
 
-  return (
-    <div className="mp-ing-panel">
-      {!loaded ? (
-        <button className="mp-ing-load-btn" onClick={fetchIngredients} disabled={loading}>
-          {loading ? 'Loading…' : '🧾 Show ingredients'}
-        </button>
-      ) : ingredients.length === 0 ? (
-        <p className="mp-ing-empty">No ingredients found.</p>
-      ) : (
-        <>
-          <div className="mp-ing-list">
-            {ingredients.map(ing => (
-              <label key={ing.id} className="mp-ing-row">
-                <input
-                  type="checkbox"
-                  className="mp-ing-check"
-                  checked={selected.has(ing.id)}
-                  onChange={() => toggle(ing.id)}
-                />
-                <span className="mp-ing-text">
-                  {scale !== 1
-                    ? `${(ing.amount * scale).toFixed(1).replace(/\.0$/, '')} ${ing.unit} ${ing.name}`
-                    : ing.original}
-                </span>
-              </label>
-            ))}
-          </div>
-          <button
-            className="mp-ing-add-btn"
-            onClick={addToList}
-            disabled={selected.size === 0 || added}
-          >
-            {added ? '✓ Added to shopping list' : `🛒 Add ${selected.size} item${selected.size !== 1 ? 's' : ''} to list`}
-          </button>
-        </>
-      )}
-    </div>
-  );
-}
-
-function MealCard({
-  entry,
-  onSwap,
-  swapping,
-}: {
-  entry: MealEntry;
-  onSwap: (entry: MealEntry) => void;
-  swapping: boolean;
-}) {
-  const { slot, recipe, scale, macros, isShake } = entry;
-
-  if (isShake) {
+  if (!loaded && !loading) {
     return (
-      <div className="mp-meal-card mp-meal-card--shake">
-        <div className="mp-meal-slot">Protein Shake</div>
-        <div className="mp-meal-body">
-          <div className="mp-shake-icon">🥛</div>
-          <div className="mp-meal-info">
-            <div className="mp-meal-title">Whey protein shake</div>
-            <div className="mp-meal-serving">1 scoop with water (~240ml)</div>
-            <div className="mp-meal-macros">
-              <span className="mp-meal-cal">{macros.calories} kcal</span>
-              <span className="mp-meal-macro">P {macros.protein}g</span>
-              <span className="mp-meal-macro">C {macros.carbs}g</span>
-              <span className="mp-meal-macro">F {macros.fat}g</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <button className="mp-ing-load-btn" onClick={fetchIngredients}>
+        Show ingredients
+      </button>
     );
   }
-
-  if (!recipe) return null;
-
-  const servingNote = scale !== 1
-    ? `${scale.toFixed(2)}× serving${recipe.servings > 1 ? `s (recipe makes ${recipe.servings})` : ''}`
-    : `1 serving`;
+  if (loading) return <button className="mp-ing-load-btn" disabled>Loading...</button>;
+  if (fetchError) return (
+    <div>
+      <p className="mp-ing-empty" style={{ color: '#ff453a' }}>Error: {fetchError}</p>
+      <button className="mp-ing-load-btn" onClick={() => { setLoaded(false); fetchIngredients(); }}>Retry</button>
+    </div>
+  );
+  if (ingredients.length === 0) return (
+    <div>
+      <p className="mp-ing-empty">No ingredients found.</p>
+      <button className="mp-ing-load-btn" onClick={() => { setLoaded(false); fetchIngredients(); }}>Retry</button>
+    </div>
+  );
 
   return (
-    <div className={`mp-meal-card${swapping ? ' mp-meal-card--swapping' : ''}`}>
-      <div className="mp-meal-slot">{slot}</div>
-      <div className="mp-meal-body">
-        {recipe.image && (
-          <img className="mp-meal-img" src={recipe.image} alt={recipe.title} loading="lazy" />
-        )}
-        <div className="mp-meal-info">
-          <div className="mp-meal-title">
-            {recipe.sourceUrl ? (
-              <a href={recipe.sourceUrl} target="_blank" rel="noopener noreferrer" className="mp-meal-link">
-                {recipe.title}
-              </a>
-            ) : recipe.title}
-          </div>
-          <div className="mp-meal-serving">{servingNote}</div>
-          <div className="mp-meal-macros">
-            <span className="mp-meal-cal">{macros.calories} kcal</span>
-            <span className="mp-meal-macro">P {macros.protein}g</span>
-            <span className="mp-meal-macro">C {macros.carbs}g</span>
-            <span className="mp-meal-macro">F {macros.fat}g</span>
-          </div>
-          {recipe.diets.length > 0 && (
-            <div className="mp-meal-diets">
-              {recipe.diets.slice(0, 3).map(d => (
-                <span key={d} className="mp-diet-tag">{d}</span>
-              ))}
-            </div>
-          )}
-        </div>
+    <div className="mp-ing-panel">
+      <div className="mp-ing-list">
+        {ingredients.map(ing => (
+          <label key={ing.id} className="mp-ing-row">
+            <input
+              type="checkbox"
+              className="mp-ing-check"
+              checked={selected.has(ing.id)}
+              onChange={() => toggle(ing.id)}
+            />
+            <span className="mp-ing-text">
+              {scale !== 1
+                ? `${(ing.amount * scale).toFixed(1).replace(/\.0$/, '')} ${ing.unit} ${ing.name}`
+                : ing.original}
+            </span>
+          </label>
+        ))}
       </div>
-      {recipe && <IngredientPanel recipeId={recipe.id} scale={scale} />}
-      <button className="mp-swap-btn" onClick={() => onSwap(entry)} disabled={swapping}>
-        {swapping ? '…' : '↺ Swap'}
+      <button
+        className="mp-ing-add-btn"
+        onClick={addToList}
+        disabled={selected.size === 0 || added}
+      >
+        {added ? 'Added to shopping list' : `Add ${selected.size} item${selected.size !== 1 ? 's' : ''} to list`}
       </button>
     </div>
   );
 }
 
-function SavedPlanCard({
-  plan,
-  onDelete,
-}: {
-  plan: SavedPlan;
-  onDelete: (id: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
+// ─── Detail Sheet (bottom-sheet modal) ───────────────────────────────────────
 
+function DetailSheet({
+  entry, dayName, onClose, onSwap, swapping,
+}: {
+  entry: MealEntry; dayName: string; onClose: () => void; onSwap: () => void; swapping: boolean;
+}) {
+  const { slot, recipe, scale, macros, isShake } = entry;
+  const backdropRef = useRef<HTMLDivElement>(null);
+  const handleBackdrop = (e: React.MouseEvent) => {
+    if (e.target === backdropRef.current) onClose();
+  };
+
+  return (
+    <div className="mp-detail-overlay" ref={backdropRef} onClick={handleBackdrop}>
+      <div className="mp-detail-sheet">
+        <button className="mp-detail-close" onClick={onClose}>x</button>
+        <div className="mp-detail-day">{dayName} &middot; {slot}</div>
+
+        {isShake ? (
+          <>
+            <div className="mp-detail-shake-icon">&#x1F95B;</div>
+            <div className="mp-detail-title">Whey protein shake</div>
+            <div className="mp-detail-serving">1 scoop with water (~240ml)</div>
+          </>
+        ) : recipe ? (
+          <>
+            {recipe.image && <img className="mp-detail-img" src={recipe.image} alt={recipe.title} />}
+            <div className="mp-detail-title">
+              {recipe.sourceUrl
+                ? <a href={recipe.sourceUrl} target="_blank" rel="noopener noreferrer" className="mp-meal-link">{recipe.title}</a>
+                : recipe.title}
+            </div>
+            <div className="mp-detail-serving">
+              {scale !== 1
+                ? `${scale.toFixed(2)}x serving${recipe.servings > 1 ? ` (recipe makes ${recipe.servings})` : ''}`
+                : '1 serving'}
+            </div>
+          </>
+        ) : null}
+
+        <div className="mp-detail-macros">
+          <div className="mp-detail-macro mp-detail-macro--cal">
+            <span className="mp-detail-macro-val">{macros.calories}</span>
+            <span className="mp-detail-macro-label">kcal</span>
+          </div>
+          <div className="mp-detail-macro">
+            <span className="mp-detail-macro-val">{macros.protein}g</span>
+            <span className="mp-detail-macro-label">protein</span>
+          </div>
+          <div className="mp-detail-macro">
+            <span className="mp-detail-macro-val">{macros.carbs}g</span>
+            <span className="mp-detail-macro-label">carbs</span>
+          </div>
+          <div className="mp-detail-macro">
+            <span className="mp-detail-macro-val">{macros.fat}g</span>
+            <span className="mp-detail-macro-label">fat</span>
+          </div>
+        </div>
+
+        {recipe && !isShake && (
+          <>
+            {recipe.diets.length > 0 && (
+              <div className="mp-meal-diets" style={{ marginBottom: 16 }}>
+                {recipe.diets.slice(0, 4).map(d => <span key={d} className="mp-diet-tag">{d}</span>)}
+              </div>
+            )}
+            <IngredientPanel recipeId={recipe.id} scale={scale} />
+            <button className="mp-swap-btn" style={{ marginTop: 16, width: '100%' }} onClick={onSwap} disabled={swapping}>
+              {swapping ? '...' : 'Swap meal'}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Grid Cell ────────────────────────────────────────────────────────────────
+
+function GridCell({ entry, onClick }: { entry: MealEntry; onClick: () => void }) {
+  const { recipe, macros, isShake } = entry;
+  if (isShake) {
+    return (
+      <div className="mp-grid-cell mp-grid-cell--shake" onClick={onClick}>
+        <div className="mp-grid-cell-icon">&#x1F95B;</div>
+        <div className="mp-grid-cell-name">Shake</div>
+        <div className="mp-grid-cell-cal">{macros.calories} kcal</div>
+      </div>
+    );
+  }
+  if (!recipe) return <div className="mp-grid-cell mp-grid-cell--empty">-</div>;
+  return (
+    <div className="mp-grid-cell" onClick={onClick}>
+      {recipe.image && <img className="mp-grid-cell-img" src={recipe.image} alt={recipe.title} loading="lazy" />}
+      <div className="mp-grid-cell-name">{recipe.title}</div>
+      <div className="mp-grid-cell-cal">{macros.calories} kcal</div>
+    </div>
+  );
+}
+
+// ─── MacroPill ───────────────────────────────────────────────────────────────
+
+function MacroPill({ label, value, unit = 'g', target, color }: {
+  label: string; value: number; unit?: string; target?: number; color: string;
+}) {
+  const pct = target ? Math.min(100, Math.round((value / target) * 100)) : null;
+  const ok  = pct !== null ? pct >= 80 && pct <= 120 : null;
+  return (
+    <div className="mp-macro-pill">
+      <div className="mp-macro-bar-track">
+        <div className="mp-macro-bar-fill" style={{ width: pct !== null ? `${pct}%` : '0%', background: color }} />
+      </div>
+      <span className="mp-macro-label">{label}</span>
+      <span className="mp-macro-val">
+        {value}{unit}
+        {target != null && <span className="mp-macro-target"> / {target}{unit}</span>}
+      </span>
+      {ok !== null && <span className={ok ? 'mp-macro-ok' : 'mp-macro-warn'}>{ok ? '✓' : '⚠'}</span>}
+    </div>
+  );
+}
+
+// ─── SavedPlanCard ────────────────────────────────────────────────────────────
+
+function SavedPlanCard({ plan, onDelete }: { plan: SavedPlan; onDelete: (id: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const totals = plan.totals ?? plan.days?.[0]?.totals;
   return (
     <div className="mp-saved-card">
       <div className="mp-saved-header" onClick={() => setOpen(o => !o)}>
         <div className="mp-saved-title">{plan.label}</div>
-        <div className="mp-saved-summary">
-          {plan.totals.calories} kcal · P {plan.totals.protein}g · C {plan.totals.carbs}g · F {plan.totals.fat}g
-        </div>
+        <div className="mp-saved-summary">{plan.days?.length ?? 1}d &middot; {totals?.calories ?? '?'} kcal/day</div>
         <span className="mp-saved-chevron">{open ? '▲' : '▼'}</span>
       </div>
-
       {open && (
         <div className="mp-saved-meals">
-          {plan.meals.map(m => (
-            <div key={m.slot}>
-              <div className="mp-saved-meal-row">
-                <span className="mp-saved-meal-slot">{m.slot}</span>
-                <span className="mp-saved-meal-name">{m.recipe?.title ?? 'Protein Shake'}</span>
-                <span className="mp-saved-meal-cal">{m.macros.calories} kcal</span>
-              </div>
-              {m.recipe && <IngredientPanel recipeId={m.recipe.id} scale={m.scale} />}
+          {(plan.days ?? []).map(d => (
+            <div key={d.day} className="mp-saved-day-section">
+              <div className="mp-saved-day-label">{d.day}</div>
+              {d.meals.map(m => (
+                <div key={m.slot} className="mp-saved-meal-row">
+                  <span className="mp-saved-meal-slot">{m.slot}</span>
+                  <span className="mp-saved-meal-name">{m.recipe?.title ?? 'Protein Shake'}</span>
+                  <span className="mp-saved-meal-cal">{m.macros.calories} kcal</span>
+                </div>
+              ))}
             </div>
           ))}
           <div className="mp-saved-actions">
-            <button className="mp-delete-btn" onClick={() => onDelete(plan.id)}>
-              Delete plan
-            </button>
+            <button className="mp-delete-btn" onClick={() => onDelete(plan.id)}>Delete plan</button>
           </div>
         </div>
       )}
@@ -294,379 +337,307 @@ function SavedPlanCard({
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const MealPlans: React.FC = () => {
-  const navigate = useNavigate();
-
   const [tab, setTab]                 = useState<'generate' | 'saved'>('generate');
   const [recipeCount, setRecipeCount] = useState<number | null>(null);
   const [seeding, setSeeding]         = useState(false);
   const [seedError, setSeedError]     = useState<string | null>(null);
+  const [dietTarget, setDietTarget]   = useState<{ calories: number; protein: number; carbs: number; fats: number } | null>(null);
 
-  // Generator form state
+  const [dayCount, setDayCount]         = useState(7);
   const [mealCount, setMealCount]       = useState(3);
   const [diets, setDiets]               = useState<string[]>([]);
   const [includeShake, setIncludeShake] = useState(false);
   const [halal, setHalal]               = useState(false);
 
-  // Plan state
-  const [generating, setGenerating] = useState(false);
-  const [genError, setGenError]     = useState<string | null>(null);
-  const [plan, setPlan]             = useState<GeneratedPlan | null>(null);
-  const [swappingSlot, setSwappingSlot] = useState<string | null>(null);
+  const [generating, setGenerating]     = useState(false);
+  const [genError, setGenError]         = useState<string | null>(null);
+  const [plan, setPlan]                 = useState<WeekPlan | null>(null);
+  const [swappingCell, setSwappingCell] = useState<{ dayIdx: number; slot: string } | null>(null);
+  const [selectedCell, setSelectedCell] = useState<{ dayIdx: number; entry: MealEntry } | null>(null);
 
-  // Save state
-  const [saveMode, setSaveMode]     = useState(false);
-  const [planName, setPlanName]     = useState('');
-  const [saving, setSaving]         = useState(false);
+  const [saveMode, setSaveMode]         = useState(false);
+  const [planName, setPlanName]         = useState('');
+  const [saving, setSaving]             = useState(false);
+  const [addingToList, setAddingToList] = useState(false);
+  const [addedToList, setAddedToList]   = useState(false);
 
-  // Saved plans
-  const [savedPlans, setSavedPlans] = useState<SavedPlan[]>([]);
+  const [savedPlans, setSavedPlans]     = useState<SavedPlan[]>([]);
   const [loadingSaved, setLoadingSaved] = useState(false);
 
-  // ── Load recipe count on mount
   useEffect(() => {
-    api.getMealPlanRecipeCount()
-      .then((r: any) => setRecipeCount(r.count))
-      .catch(() => setRecipeCount(0));
+    api.getMealPlanRecipeCount().then((r: any) => setRecipeCount(r.count)).catch(() => setRecipeCount(0));
+    api.getDietTarget().then((t: any) => setDietTarget(t)).catch(() => {});
   }, []);
 
-  // ── Load saved plans when tab switches
   useEffect(() => {
     if (tab !== 'saved') return;
     setLoadingSaved(true);
-    api.getDietPlans()
-      .then((rows: any[]) => setSavedPlans(rows as SavedPlan[]))
-      .catch(() => {})
-      .finally(() => setLoadingSaved(false));
+    api.getDietPlans().then((rows: any[]) => setSavedPlans(rows as SavedPlan[])).catch(() => {}).finally(() => setLoadingSaved(false));
   }, [tab]);
 
-  // ── Seed recipes
   const handleSeed = async () => {
-    setSeeding(true);
-    setSeedError(null);
+    setSeeding(true); setSeedError(null);
     try {
       const r: any = await api.seedMealPlanRecipes();
       setRecipeCount(prev => (prev ?? 0) + r.seeded);
     } catch (err: any) {
       setSeedError(err.message ?? 'Seed failed');
-    } finally {
-      setSeeding(false);
-    }
+    } finally { setSeeding(false); }
   };
 
-  // ── Generate plan
   const handleGenerate = async () => {
-    setGenerating(true);
-    setGenError(null);
-    setPlan(null);
-    setSaveMode(false);
+    setGenerating(true); setGenError(null); setPlan(null); setSaveMode(false);
     try {
-      const result: any = await api.generateMealPlan({
-        mealCount,
-        diets,
-        excludeIds: [],
-        includeShake,
-        halal,
-      });
-      setPlan(result as GeneratedPlan);
+      const result: any = await api.generateMealPlan({ mealCount, days: dayCount, diets, excludeIds: [], includeShake, halal });
+      setPlan(result as WeekPlan);
     } catch (err: any) {
       setGenError(err.message ?? 'Generation failed');
-    } finally {
-      setGenerating(false);
-    }
+    } finally { setGenerating(false); }
   };
 
-  // ── Swap a single meal
-  const handleSwap = useCallback(async (entry: MealEntry) => {
+  const handleSwap = useCallback(async (dayIdx: number, entry: MealEntry) => {
     if (!plan) return;
-    setSwappingSlot(entry.slot);
+    setSwappingCell({ dayIdx, slot: entry.slot });
     try {
-      const excludeIds = plan.meals
+      const excludeIds = plan.days[dayIdx].meals
         .filter(m => m.slot !== entry.slot && m.recipe !== null)
         .map(m => m.recipe!.id);
-
-      const swapped: any = await api.swapMeal({
-        slotName:   entry.slot,
-        targetCal:  entry.targetCal,
-        diets,
-        excludeIds,
-        halal,
-      });
-
+      const swapped: any = await api.swapMeal({ slotName: entry.slot, targetCal: entry.targetCal, diets, excludeIds, halal });
       setPlan(prev => {
         if (!prev) return prev;
-        const meals = prev.meals.map(m => m.slot === entry.slot ? swapped : m);
-        const totals = meals.reduce(
-          (acc, m) => ({
-            calories: acc.calories + m.macros.calories,
-            protein:  acc.protein  + m.macros.protein,
-            carbs:    acc.carbs    + m.macros.carbs,
-            fat:      acc.fat      + m.macros.fat,
-          }),
-          { calories: 0, protein: 0, carbs: 0, fat: 0 }
-        );
-        return {
-          ...prev,
-          meals,
-          totals: {
-            calories: Math.round(totals.calories),
-            protein:  Math.round(totals.protein  * 10) / 10,
-            carbs:    Math.round(totals.carbs    * 10) / 10,
-            fat:      Math.round(totals.fat      * 10) / 10,
-          },
-        };
+        const days = prev.days.map((d, i) => {
+          if (i !== dayIdx) return d;
+          const meals = d.meals.map(m => m.slot === entry.slot ? swapped : m);
+          const t = meals.reduce((acc, m) => ({
+            calories: acc.calories + m.macros.calories, protein: acc.protein + m.macros.protein,
+            carbs: acc.carbs + m.macros.carbs, fat: acc.fat + m.macros.fat,
+          }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+          return { ...d, meals, totals: {
+            calories: Math.round(t.calories), protein: Math.round(t.protein * 10) / 10,
+            carbs: Math.round(t.carbs * 10) / 10, fat: Math.round(t.fat * 10) / 10,
+          }};
+        });
+        return { ...prev, days };
       });
-    } catch {
-      // silent — old meal stays
-    } finally {
-      setSwappingSlot(null);
-    }
-  }, [plan, diets]);
+      setSelectedCell(prev => prev && prev.dayIdx === dayIdx && prev.entry.slot === entry.slot
+        ? { dayIdx, entry: swapped } : prev);
+    } catch { /* old meal stays */ } finally { setSwappingCell(null); }
+  }, [plan, diets, halal]);
 
-  // ── Save plan
+  const handleAddPlanToList = async () => {
+    if (!plan) return;
+    setAddingToList(true);
+    try {
+      for (const day of plan.days) {
+        for (const meal of day.meals) {
+          if (!meal.recipe || meal.isShake) continue;
+          const r: any = await api.getRecipeIngredients(meal.recipe.id).catch(() => ({ ingredients: [] }));
+          for (const ing of (r.ingredients ?? [])) {
+            const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+            const text = meal.scale !== 1
+              ? `${(ing.amount * meal.scale).toFixed(1).replace(/\.0$/, '')} ${ing.unit} ${ing.name} (${day.day})`
+              : `${ing.original} (${day.day})`;
+            await api.createShoppingItem(id, text).catch(() => {});
+          }
+        }
+      }
+      setAddedToList(true);
+      setTimeout(() => setAddedToList(false), 3000);
+    } finally { setAddingToList(false); }
+  };
+
   const handleSave = async () => {
     if (!plan || !planName.trim()) return;
     setSaving(true);
     try {
       const id = crypto.randomUUID();
-      await api.createDietPlan({
-        id,
-        label: planName.trim(),
-        meals: plan.meals,
-        totals: plan.totals,
-      });
-      setSaveMode(false);
-      setPlanName('');
-      setTab('saved');
-    } catch {
-      // silent
-    } finally {
-      setSaving(false);
-    }
+      const n = plan.days.length;
+      const avgTotals = {
+        calories: Math.round(plan.days.reduce((s, d) => s + d.totals.calories, 0) / n),
+        protein:  Math.round(plan.days.reduce((s, d) => s + d.totals.protein,  0) / n * 10) / 10,
+        carbs:    Math.round(plan.days.reduce((s, d) => s + d.totals.carbs,    0) / n * 10) / 10,
+        fat:      Math.round(plan.days.reduce((s, d) => s + d.totals.fat,      0) / n * 10) / 10,
+      };
+      await api.createDietPlan({ id, label: planName.trim(), days: plan.days, totals: avgTotals });
+      setSaveMode(false); setPlanName(''); setTab('saved');
+    } catch { /* silent */ } finally { setSaving(false); }
   };
 
-  // ── Delete saved plan
   const handleDelete = async (id: string) => {
     await api.deleteDietPlan(id).catch(() => {});
     setSavedPlans(prev => prev.filter(p => p.id !== id));
   };
 
-  // ── Toggle diet filter
-  const toggleDiet = (key: string) => {
+  const toggleDiet = (key: string) =>
     setDiets(prev => prev.includes(key) ? prev.filter(d => d !== key) : [...prev, key]);
-  };
-
-  // ─── Render ───────────────────────────────────────────────────────────────
 
   const dbReady = recipeCount !== null && recipeCount > 0;
+  const slotNames = plan?.days[0]?.meals.map(m => m.slot) ?? [];
+  const n = plan?.days.length ?? 1;
+  const avgTotals = plan ? {
+    calories: Math.round(plan.days.reduce((s, d) => s + d.totals.calories, 0) / n),
+    protein:  Math.round(plan.days.reduce((s, d) => s + d.totals.protein,  0) / n * 10) / 10,
+    carbs:    Math.round(plan.days.reduce((s, d) => s + d.totals.carbs,    0) / n * 10) / 10,
+    fat:      Math.round(plan.days.reduce((s, d) => s + d.totals.fat,      0) / n * 10) / 10,
+  } : null;
 
   return (
     <div className="app" style={THEME}>
       <header className="header">
         <div className="header-left">
-          <Link to="/diet" className="back-link">← Back</Link>
+          <Link to="/diet" className="back-link">&larr; Back</Link>
         </div>
         <h1 className="title">Meal Plans</h1>
       </header>
 
-      {/* Tab bar */}
       <div className="mp-tab-bar">
-        <button
-          className={`mp-tab${tab === 'generate' ? ' mp-tab--active' : ''}`}
-          onClick={() => setTab('generate')}
-        >Generate</button>
-        <button
-          className={`mp-tab${tab === 'saved' ? ' mp-tab--active' : ''}`}
-          onClick={() => setTab('saved')}
-        >Saved Plans</button>
+        <button className={`mp-tab${tab === 'generate' ? ' mp-tab--active' : ''}`} onClick={() => setTab('generate')}>Generate</button>
+        <button className={`mp-tab${tab === 'saved' ? ' mp-tab--active' : ''}`} onClick={() => setTab('saved')}>Saved Plans</button>
       </div>
 
       <div className="page-content" style={{ padding: '16px 16px 100px', flex: 1, overflowY: 'auto' }}>
 
-        {/* ── Setup banner ─────────────────────────────────────────────── */}
         {tab === 'generate' && (
           <div className="mp-setup-banner">
             {recipeCount === null ? (
-              <span className="mp-setup-loading">Checking recipe database…</span>
+              <span className="mp-setup-loading">Checking recipe database...</span>
             ) : recipeCount === 0 ? (
               <>
                 <span className="mp-setup-label">Recipe database is empty.</span>
-                <button className="mp-setup-btn" onClick={handleSeed} disabled={seeding}>
-                  {seeding ? 'Fetching recipes…' : 'Load recipes'}
-                </button>
+                <button className="mp-setup-btn" onClick={handleSeed} disabled={seeding}>{seeding ? 'Fetching recipes...' : 'Load recipes'}</button>
                 {seedError && <span className="mp-setup-error">{seedError}</span>}
               </>
             ) : (
               <span className="mp-setup-count">
                 {recipeCount} recipes loaded
-                <button className="mp-setup-refresh" onClick={handleSeed} disabled={seeding}>
-                  {seeding ? '…' : '+ More'}
-                </button>
+                <button className="mp-setup-refresh" onClick={handleSeed} disabled={seeding}>{seeding ? '...' : '+ More'}</button>
               </span>
             )}
           </div>
         )}
 
-        {/* ── Generate tab ─────────────────────────────────────────────── */}
         {tab === 'generate' && (
           <>
-            {/* Form */}
             <div className="mp-form-card">
-              {/* Meal count */}
               <div className="mp-form-row">
-                <span className="mp-form-label">Meals per day</span>
+                <span className="mp-form-label">Days</span>
                 <div className="mp-count-btns">
-                  {[2, 3, 4, 5].map(n => (
-                    <button
-                      key={n}
-                      className={`mp-count-btn${mealCount === n ? ' mp-count-btn--active' : ''}`}
-                      onClick={() => setMealCount(n)}
-                    >{n}</button>
+                  {[1,2,3,4,5,6,7].map(n => (
+                    <button key={n} className={`mp-count-btn${dayCount === n ? ' mp-count-btn--active' : ''}`} onClick={() => setDayCount(n)}>{n}</button>
                   ))}
                 </div>
               </div>
 
-              {/* Diet filters */}
+              <div className="mp-form-row">
+                <span className="mp-form-label">Meals / day</span>
+                <div className="mp-count-btns">
+                  {[2,3,4,5].map(n => (
+                    <button key={n} className={`mp-count-btn${mealCount === n ? ' mp-count-btn--active' : ''}`} onClick={() => setMealCount(n)}>{n}</button>
+                  ))}
+                </div>
+              </div>
+
               <div className="mp-form-row mp-form-row--wrap">
-                <span className="mp-form-label">Dietary filters</span>
+                <span className="mp-form-label">Filters</span>
                 <div className="mp-diet-pills">
                   {DIET_FILTERS.map(f => (
-                    <button
-                      key={f.key}
-                      className={`mp-diet-pill${diets.includes(f.key) ? ' mp-diet-pill--active' : ''}`}
-                      onClick={() => toggleDiet(f.key)}
-                    >{f.label}</button>
+                    <button key={f.key} className={`mp-diet-pill${diets.includes(f.key) ? ' mp-diet-pill--active' : ''}`} onClick={() => toggleDiet(f.key)}>{f.label}</button>
                   ))}
+                  <button className={`mp-diet-pill${halal ? ' mp-diet-pill--active' : ''}`} onClick={() => setHalal(v => !v)}>Halal</button>
+                  <button className={`mp-diet-pill${includeShake ? ' mp-diet-pill--active' : ''}`} onClick={() => setIncludeShake(v => !v)}>+ Shake</button>
                 </div>
               </div>
 
-              {/* Toggles row */}
-              <div className="mp-toggles-row">
-                <button
-                  className={`mp-toggle-btn${includeShake ? ' mp-toggle-btn--active' : ''}`}
-                  onClick={() => setIncludeShake(v => !v)}
-                >
-                  🥛 Protein Shake
-                </button>
-                <button
-                  className={`mp-toggle-btn${halal ? ' mp-toggle-btn--active' : ''}`}
-                  onClick={() => setHalal(v => !v)}
-                >
-                  ☪️ Halal
-                </button>
-              </div>
+              {dietTarget && (
+                <div className="mp-target-summary">
+                  Targeting {dietTarget.calories} kcal &middot; P {dietTarget.protein}g &middot; C {dietTarget.carbs}g &middot; F {dietTarget.fats}g
+                </div>
+              )}
 
-              <button
-                className="mp-generate-btn"
-                onClick={handleGenerate}
-                disabled={generating || !dbReady}
-              >
-                {generating ? 'Generating…' : !dbReady ? 'Load recipes first' : 'Generate Plan'}
+              <button className="mp-generate-btn" onClick={handleGenerate} disabled={generating || !dbReady}>
+                {generating ? 'Generating...' : !dbReady ? 'Load recipes first' : `Generate ${dayCount}-day Plan`}
               </button>
-
               {genError && <p className="mp-gen-error">{genError}</p>}
             </div>
 
-            {/* Generated plan */}
             {plan && (
               <>
-                {/* Totals vs targets */}
-                <div className="mp-totals-card">
-                  <div className="mp-totals-title">Today's plan</div>
-                  <MacroPill
-                    label="Calories"
-                    value={plan.totals.calories}
-                    unit=" kcal"
-                    target={plan.targets.calories}
-                    color="#00e5ff"
-                  />
-                  <MacroPill
-                    label="Protein"
-                    value={plan.totals.protein}
-                    target={plan.targets.protein}
-                    color="#a78bfa"
-                  />
-                  <MacroPill
-                    label="Carbs"
-                    value={plan.totals.carbs}
-                    target={plan.targets.carbs}
-                    color="#34d399"
-                  />
-                  <MacroPill
-                    label="Fat"
-                    value={plan.totals.fat}
-                    target={plan.targets.fat}
-                    color="#fb923c"
-                  />
-                </div>
-
-                {/* Meal cards */}
-                <div className="mp-meals-list">
-                  {plan.meals.map(entry => (
-                    <MealCard
-                      key={entry.slot}
-                      entry={entry}
-                      onSwap={handleSwap}
-                      swapping={swappingSlot === entry.slot}
-                    />
-                  ))}
-                </div>
-
-                {/* Save controls */}
-                {!saveMode ? (
-                  <button className="mp-save-plan-btn" onClick={() => setSaveMode(true)}>
-                    Save this plan
-                  </button>
-                ) : (
-                  <div className="mp-save-row">
-                    <input
-                      className="mp-save-input"
-                      placeholder="Plan name…"
-                      value={planName}
-                      onChange={e => setPlanName(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && handleSave()}
-                      autoFocus
-                    />
-                    <button
-                      className="mp-save-confirm"
-                      onClick={handleSave}
-                      disabled={saving || !planName.trim()}
-                    >
-                      {saving ? '…' : 'Save'}
-                    </button>
-                    <button className="mp-save-cancel" onClick={() => setSaveMode(false)}>
-                      ✕
-                    </button>
+                {avgTotals && (
+                  <div className="mp-totals-card">
+                    <div className="mp-totals-title">Avg daily totals vs targets</div>
+                    <MacroPill label="Calories" value={avgTotals.calories} unit=" kcal" target={plan.targets.calories} color="#7C5CFF" />
+                    <MacroPill label="Protein"  value={avgTotals.protein}               target={plan.targets.protein}  color="#885CF6" />
+                    <MacroPill label="Carbs"    value={avgTotals.carbs}                 target={plan.targets.carbs}    color="#22C55E" />
+                    <MacroPill label="Fat"      value={avgTotals.fat}                   target={plan.targets.fat}      color="#F59E0B" />
                   </div>
                 )}
+
+                <div className="mp-grid-wrapper">
+                  <div className="mp-grid" style={{ gridTemplateColumns: `56px repeat(${slotNames.length}, minmax(100px, 1fr))` }}>
+                    <div className="mp-grid-corner" />
+                    {slotNames.map(s => <div key={s} className="mp-grid-col-header">{s}</div>)}
+                    {plan.days.map((day, dayIdx) => (
+                      <React.Fragment key={day.day}>
+                        <div className="mp-grid-day-label">
+                          <span className="mp-grid-day-name">{day.day.slice(0, 3)}</span>
+                          <span className="mp-grid-day-cal">{day.totals.calories}</span>
+                        </div>
+                        {day.meals.map(entry => (
+                          <GridCell key={entry.slot} entry={entry} onClick={() => setSelectedCell({ dayIdx, entry })} />
+                        ))}
+                      </React.Fragment>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mp-plan-actions">
+                  <button className="mp-add-list-btn" onClick={handleAddPlanToList} disabled={addingToList || addedToList}>
+                    {addedToList ? 'Added to shopping list' : addingToList ? 'Adding...' : 'Add plan to shopping list'}
+                  </button>
+                  {!saveMode ? (
+                    <button className="mp-save-plan-btn" onClick={() => setSaveMode(true)}>Save plan</button>
+                  ) : (
+                    <div className="mp-save-row">
+                      <input className="mp-save-input" placeholder="Plan name..." value={planName} onChange={e => setPlanName(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSave()} autoFocus />
+                      <button className="mp-save-confirm" onClick={handleSave} disabled={saving || !planName.trim()}>{saving ? '...' : 'Save'}</button>
+                      <button className="mp-save-cancel" onClick={() => setSaveMode(false)}>x</button>
+                    </div>
+                  )}
+                </div>
               </>
             )}
           </>
         )}
 
-        {/* ── Saved tab ────────────────────────────────────────────────── */}
         {tab === 'saved' && (
           <>
             {loadingSaved ? (
-              <div className="mp-loading">Loading saved plans…</div>
+              <div className="mp-loading">Loading saved plans...</div>
             ) : savedPlans.length === 0 ? (
               <div className="mp-empty">
-                <div className="mp-empty-icon">📋</div>
+                <div className="mp-empty-icon">&#x1F4CB;</div>
                 <div className="mp-empty-title">No saved plans yet</div>
-                <div className="mp-empty-sub">Generate a plan and tap "Save this plan" to keep it here.</div>
-                <button className="mp-empty-btn" onClick={() => setTab('generate')}>
-                  Generate a plan →
-                </button>
+                <div className="mp-empty-sub">Generate a plan and tap "Save plan" to keep it here.</div>
+                <button className="mp-empty-btn" onClick={() => setTab('generate')}>Generate a plan &rarr;</button>
               </div>
             ) : (
               <div className="mp-saved-list">
-                {savedPlans.map(p => (
-                  <SavedPlanCard key={p.id} plan={p} onDelete={handleDelete} />
-                ))}
+                {savedPlans.map(p => <SavedPlanCard key={p.id} plan={p} onDelete={handleDelete} />)}
               </div>
             )}
           </>
         )}
       </div>
+
+      {selectedCell && (
+        <DetailSheet
+          entry={selectedCell.entry}
+          dayName={plan?.days[selectedCell.dayIdx]?.day ?? ''}
+          onClose={() => setSelectedCell(null)}
+          onSwap={() => handleSwap(selectedCell.dayIdx, selectedCell.entry)}
+          swapping={swappingCell?.dayIdx === selectedCell.dayIdx && swappingCell?.slot === selectedCell.entry.slot}
+        />
+      )}
     </div>
   );
 };

@@ -20,7 +20,7 @@ const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Se
 const MONTH_COLORS: Record<number, string> = {
   0: '#00ff41',  // Jan - matrix green
   1: '#ff6ec7',  // Feb - hot pink
-  2: '#00e5ff',  // Mar - electric cyan
+  2: '#7C5CFF',  // Mar - electric cyan
   3: '#ff9500',  // Apr - amber
   4: '#b4ff00',  // May - lime
   5: '#ff2d55',  // Jun - coral red
@@ -28,7 +28,7 @@ const MONTH_COLORS: Record<number, string> = {
   7: '#64d2ff',  // Aug - sky blue
   8: '#ffd60a',  // Sep - gold
   9: '#ff453a',  // Oct - red
-  10: '#30d158', // Nov - apple green
+  10: '#22C55E', // Nov - apple green
   11: '#ac8e68', // Dec - copper
 };
 
@@ -524,8 +524,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
   if (!loaded) {
     return (
-      <div className="app" style={{ '--theme': '#00e5ff', '--theme-dim': '#00e5ff66', '--theme-glow': '#00e5ff33' } as React.CSSProperties}>
-        <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', color: '#00e5ff', fontSize: '1.2rem', letterSpacing: '0.1em' }}>
+      <div className="app" style={{ '--theme': '#7C5CFF', '--theme-dim': '#7C5CFF66', '--theme-glow': '#7C5CFF33' } as React.CSSProperties}>
+        <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', color: '#7C5CFF', fontSize: '1.2rem', letterSpacing: '0.1em' }}>
           Loading…
         </div>
       </div>
@@ -591,7 +591,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                   display: 'block', width: '100%', padding: '12px 16px',
                   background: 'none', border: 'none', color: '#ccc',
                   textAlign: 'left', cursor: 'pointer', fontSize: '0.85rem',
-                  fontFamily: 'inherit', borderBottom: '1px solid #1a2535',
+                  fontFamily: 'inherit', borderBottom: '1px solid #35345A',
                 }}
               >
                 Edit Habits

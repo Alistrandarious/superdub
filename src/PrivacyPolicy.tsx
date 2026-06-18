@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './App.css';
 
-const THEME = '#00e5ff';
+const THEME = '#7C5CFF';
 
 const PrivacyPolicy: React.FC = () => {
   const navigate = useNavigate();

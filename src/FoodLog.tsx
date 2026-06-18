@@ -182,7 +182,7 @@ const FoodLog: React.FC = () => {
   };
 
   return (
-    <div className="app" style={{ '--theme': '#30d158', '--theme-dim': '#30d15866', '--theme-glow': '#30d15822' } as React.CSSProperties}>
+    <div className="app" style={{ '--theme': '#22C55E', '--theme-dim': '#22C55E66', '--theme-glow': '#22C55E22' } as React.CSSProperties}>
       <header className="header">
         <div className="header-left"><Link to="/" className="back-link">← Back</Link></div>
         <h1 className="title">Food Log</h1>
@@ -230,7 +230,7 @@ const FoodLog: React.FC = () => {
               <span className="fl-progress-kcal">{Math.round(totals.kcal)} / {target.calories} kcal</span>
             </div>
             {macroBar('Protein', totals.p, target.protein, '#ff6ec7')}
-            {macroBar('Carbs', totals.c, target.carbs, '#00e5ff')}
+            {macroBar('Carbs', totals.c, target.carbs, '#7C5CFF')}
             {macroBar('Fat', totals.f, target.fats, '#ffd60a')}
           </div>
         )}

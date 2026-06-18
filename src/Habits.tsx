@@ -95,7 +95,7 @@ function getRank(totalDays: number): { title: string; color: string } {
   if (totalDays >= 100) return { title: 'In the Hundreds', color: '#0a84ff' };
   if (totalDays >= 50)  return { title: 'Habit Tracking Superstar', color: '#ff9500' };
   if (totalDays >= 30)  return { title: 'Rising Star', color: '#ff6ec7' };
-  if (totalDays >= 10)  return { title: 'Gathering Momentum', color: '#00e5ff' };
+  if (totalDays >= 10)  return { title: 'Gathering Momentum', color: '#7C5CFF' };
   return { title: 'Habitteaur', color: '#888' };
 }
 
@@ -216,7 +216,7 @@ const FEATURED = [
     name: '10K Walks',
     tagline: "Ali's doing steps — join him",
     icon: '🚶‍♂️',
-    accent: '#00e5ff',
+    accent: '#7C5CFF',
     bgClass: 'featured-bg-walk',
   },
   {
@@ -232,7 +232,7 @@ const FEATURED = [
     name: 'Petting Iggy',
     tagline: 'Daily love for your sweet fury baby girl.',
     icon: '🐶',
-    accent: '#30d158',
+    accent: '#22C55E',
     bgClass: 'featured-bg-iggy',
   },
   {

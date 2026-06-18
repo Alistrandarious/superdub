@@ -61,10 +61,10 @@ const Tasks: React.FC = () => {
   const doneCount = visible.filter(t => t.done).length;
 
   const isShopping = tab === 'shopping';
-  const accent = isShopping ? '#ff9f0a' : '#30d158';
+  const accent = isShopping ? '#F59E0B' : '#22C55E';
   const themeVars = isShopping
-    ? { '--theme': '#ff9f0a', '--theme-dim': '#ff9f0a66', '--theme-glow': '#ff9f0a22' }
-    : { '--theme': '#30d158', '--theme-dim': '#30d15866', '--theme-glow': '#30d15822' };
+    ? { '--theme': '#F59E0B', '--theme-dim': '#F59E0B66', '--theme-glow': '#F59E0B22' }
+    : { '--theme': '#22C55E', '--theme-dim': '#22C55E66', '--theme-glow': '#22C55E22' };
 
   return (
     <div className="app" style={themeVars as React.CSSProperties}>
