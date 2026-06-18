@@ -182,7 +182,7 @@ function SavedPlanCard({
           {plan.meals.map(m => (
             <div key={m.slot} className="mp-saved-meal-row">
               <span className="mp-saved-meal-slot">{m.slot}</span>
-              <span className="mp-saved-meal-name">{m.recipe.title}</span>
+              <span className="mp-saved-meal-name">{m.recipe?.title ?? 'Protein Shake'}</span>
               <span className="mp-saved-meal-cal">{m.macros.calories} kcal</span>
             </div>
           ))}
@@ -285,8 +285,8 @@ const MealPlans: React.FC = () => {
     setSwappingSlot(entry.slot);
     try {
       const excludeIds = plan.meals
-        .filter(m => m.slot !== entry.slot)
-        .map(m => m.recipe.id);
+        .filter(m => m.slot !== entry.slot && m.recipe !== null)
+        .map(m => m.recipe!.id);
 
       const swapped: any = await api.swapMeal({
         slotName:   entry.slot,
