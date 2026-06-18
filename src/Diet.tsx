@@ -889,8 +889,11 @@ const Diet: React.FC = () => {
         </button>
       </header>
 
-      {/* ── Plan summary — pinned above the scroll area, always visible ── */}
-      <div style={{ borderBottom: '1px solid #0d1520', background: '#08091400', flexShrink: 0 }}>
+      {/* ── Full scrollable content ── */}
+      <div className="diet-content page-content">
+
+      {/* Plan summary */}
+      <div style={{ borderBottom: '1px solid #0d1520', margin: '-20px -20px 20px', background: '#08091400' }}>
         {/* Accent bar */}
         <div style={{ height: 3, background: `linear-gradient(90deg, ${accent}, ${accent}22)` }} />
 
@@ -1022,8 +1025,6 @@ const Diet: React.FC = () => {
         )}
       </div>
 
-      {/* ── Scrollable detail area ── */}
-      <div className="diet-content page-content">
         <WeightSparkline
           allTrackerDays={allTrackerDays}
           currentWeight={todayWeight ?? kg}

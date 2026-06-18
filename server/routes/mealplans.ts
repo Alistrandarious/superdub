@@ -6,6 +6,23 @@ const router = Router();
 
 const SPOONACULAR_KEY = process.env.SPOONACULAR_API_KEY;
 
+// Protein shake — fixed macros (1 scoop whey + water)
+const SHAKE = {
+  slot: 'Protein Shake',
+  isShake: true,
+  targetCal: 150,
+  recipe: null,
+  scale: 1,
+  macros: { calories: 150, protein: 30, carbs: 5, fat: 2 },
+};
+
+// Keywords that make a recipe non-halal
+const HARAM_PATTERN =
+  `%(pork|bacon|ham|lard|prosciutto|salami|pepperoni|chorizo|` +
+  `pancetta|ribs|pulled pork|pork chop|` +
+  `beer|wine|whiskey|vodka|rum|liquor|bourbon|sake|champagne|` +
+  `alcohol|mirin|sherry|brandy|kahlua|baileys)%`;
+
 // How many recipes are in the local DB
 router.get('/recipe-count', requireAuth as any, async (_req: AuthRequest, res: Response) => {
   try {
@@ -21,9 +38,9 @@ router.post('/seed', requireAuth as any, async (_req: AuthRequest, res: Response
   if (!SPOONACULAR_KEY) return res.status(400).json({ error: 'SPOONACULAR_API_KEY not set' });
 
   const batches = [
-    { type: 'breakfast',    number: 30, minProtein: 15 },
-    { type: 'main course',  number: 60, minProtein: 20 },
-    { type: 'snack',        number: 30, minProtein: 8  },
+    { type: 'breakfast',   number: 30, minProtein: 15 },
+    { type: 'main course', number: 60, minProtein: 20 },
+    { type: 'snack',       number: 30, minProtein: 8  },
   ];
 
   let seeded = 0;
@@ -54,11 +71,10 @@ router.post('/seed', requireAuth as any, async (_req: AuthRequest, res: Response
           nutrients.find((n: any) => n.name === name)?.amount ?? 0;
 
         const cal  = Math.round(get('Calories'));
-        const prot = Math.round(get('Protein')        * 10) / 10;
-        const carb = Math.round(get('Carbohydrates')  * 10) / 10;
-        const fat  = Math.round(get('Fat')            * 10) / 10;
+        const prot = Math.round(get('Protein')       * 10) / 10;
+        const carb = Math.round(get('Carbohydrates') * 10) / 10;
+        const fat  = Math.round(get('Fat')           * 10) / 10;
 
-        // Skip recipes with no meaningful calorie data
         if (cal < 50) { skipped++; continue; }
 
         await pool.query(
@@ -68,14 +84,10 @@ router.post('/seed', requireAuth as any, async (_req: AuthRequest, res: Response
            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
            ON CONFLICT (id) DO NOTHING`,
           [
-            r.id,
-            r.title,
-            r.image ?? null,
+            r.id, r.title, r.image ?? null,
             cal, prot, carb, fat,
-            r.servings ?? 1,
-            r.readyInMinutes ?? null,
-            r.dishTypes ?? [],
-            r.diets ?? [],
+            r.servings ?? 1, r.readyInMinutes ?? null,
+            r.dishTypes ?? [], r.diets ?? [],
             r.sourceUrl ?? null,
           ]
         );
@@ -92,10 +104,18 @@ router.post('/seed', requireAuth as any, async (_req: AuthRequest, res: Response
 // Generate a full meal plan from the local recipe DB
 router.post('/generate', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
-    const { mealCount = 3, diets = [], excludeIds = [] } = req.body as {
+    const {
+      mealCount    = 3,
+      diets        = [],
+      excludeIds   = [],
+      includeShake = false,
+      halal        = false,
+    } = req.body as {
       mealCount: number;
       diets: string[];
       excludeIds: number[];
+      includeShake: boolean;
+      halal: boolean;
     };
 
     // Load user's macro targets
@@ -105,7 +125,9 @@ router.post('/generate', requireAuth as any, async (req: AuthRequest, res: Respo
     );
     const t = trows[0] ?? { calories: 2000, protein: 150, carbs: 200, fats: 67 };
 
-    // Define meal slots based on meal count
+    // If shake is included, reserve its calories from the total before distributing
+    const availableCal = includeShake ? t.calories - SHAKE.macros.calories : t.calories;
+
     type Slot = { name: string; pct: number; dishTypes: string[] };
     const allSlots: Slot[] = [
       { name: 'Breakfast', pct: 0.25, dishTypes: ['breakfast', 'morning meal', 'brunch'] },
@@ -116,8 +138,6 @@ router.post('/generate', requireAuth as any, async (req: AuthRequest, res: Respo
     ];
 
     const slots = allSlots.slice(0, Math.min(Math.max(mealCount, 2), 5));
-
-    // Re-normalise percentages
     const totalPct = slots.reduce((s, sl) => s + sl.pct, 0);
     slots.forEach(sl => { sl.pct = sl.pct / totalPct; });
 
@@ -125,22 +145,16 @@ router.post('/generate', requireAuth as any, async (req: AuthRequest, res: Respo
     const meals: any[] = [];
 
     for (const slot of slots) {
-      const targetCal = Math.round(t.calories * slot.pct);
+      const targetCal = Math.round(availableCal * slot.pct);
       const min = targetCal * 0.55;
       const max = targetCal * 1.55;
-
       const excluded = Array.from(usedIds);
 
-      // Try: filtered by diet AND matching dish type
-      let recipe = await pickRecipe(excluded, min, max, diets, slot.dishTypes);
-      // Fallback: any dish type matching diet
-      if (!recipe) recipe = await pickRecipe(excluded, min, max, diets, []);
-      // Fallback: ignore diet filter
-      if (!recipe) recipe = await pickRecipe(excluded, min, max, [], slot.dishTypes);
-      // Last resort: anything in calorie range
-      if (!recipe) recipe = await pickRecipe(excluded, min, max, [], []);
-      // Absolute last resort: random
-      if (!recipe) recipe = await pickRecipe(excluded, 0, 999999, [], []);
+      let recipe = await pickRecipe(excluded, min, max, diets, slot.dishTypes, halal);
+      if (!recipe) recipe = await pickRecipe(excluded, min, max, diets, [], halal);
+      if (!recipe) recipe = await pickRecipe(excluded, min, max, [], slot.dishTypes, halal);
+      if (!recipe) recipe = await pickRecipe(excluded, min, max, [], [], halal);
+      if (!recipe) recipe = await pickRecipe(excluded, 0, 999999, [], [], halal);
 
       if (recipe) {
         usedIds.add(recipe.id);
@@ -168,6 +182,9 @@ router.post('/generate', requireAuth as any, async (req: AuthRequest, res: Respo
         });
       }
     }
+
+    // Append the shake at the end if requested
+    if (includeShake) meals.push(SHAKE);
 
     const totals = meals.reduce(
       (acc, m) => ({
@@ -197,23 +214,30 @@ router.post('/generate', requireAuth as any, async (req: AuthRequest, res: Respo
 // Swap a single meal slot
 router.post('/swap', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
-    const { slotName, targetCal, diets = [], excludeIds = [] } = req.body as {
+    const {
+      slotName,
+      targetCal,
+      diets      = [],
+      excludeIds = [],
+      halal      = false,
+    } = req.body as {
       slotName: string;
       targetCal: number;
       diets: string[];
       excludeIds: number[];
+      halal: boolean;
     };
 
-    const min = Math.floor(targetCal * 0.55);
-    const max = Math.ceil(targetCal * 1.55);
-    const excluded: number[] = excludeIds.map(id => Math.round(Number(id)));
+    const min      = Math.floor(targetCal * 0.55);
+    const max      = Math.ceil(targetCal  * 1.55);
+    const excluded = excludeIds.map(id => Math.round(Number(id)));
 
-    let recipe = await pickRecipe(excluded, min, max, diets, []);
-    if (!recipe) recipe = await pickRecipe(excluded, min, max, [], []);
-    if (!recipe) recipe = await pickRecipe(excluded, 0, 999999, [], []);
+    let recipe = await pickRecipe(excluded, min, max, diets, [], halal);
+    if (!recipe) recipe = await pickRecipe(excluded, min, max, [], [], halal);
+    if (!recipe) recipe = await pickRecipe(excluded, 0, 999999, [], [], halal);
     if (!recipe) return res.status(404).json({ error: 'No recipe found' });
 
-    const scale = recipe.calories > 0 ? targetCal / recipe.calories : 1;
+    const scale  = recipe.calories > 0 ? targetCal / recipe.calories : 1;
     const scaled = Math.round(scale * 100) / 100;
 
     res.json({
@@ -245,7 +269,8 @@ async function pickRecipe(
   minCal: number,
   maxCal: number,
   diets: string[],
-  dishTypes: string[]
+  dishTypes: string[],
+  halal: boolean
 ): Promise<any | null> {
   const conditions: string[] = [
     'calories BETWEEN $1 AND $2',
@@ -255,6 +280,9 @@ async function pickRecipe(
   const params: any[] = [Math.floor(minCal), Math.ceil(maxCal), safeExcluded];
   let idx = 4;
 
+  if (halal) {
+    conditions.push(`LOWER(title) NOT SIMILAR TO '${HARAM_PATTERN}'`);
+  }
   if (diets.length > 0) {
     conditions.push(`diets && $${idx}::text[]`);
     params.push(diets);

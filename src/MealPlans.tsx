@@ -17,8 +17,9 @@ interface Recipe {
 interface MealEntry {
   slot: string;
   targetCal: number;
-  recipe: Recipe;
+  recipe: Recipe | null;
   scale: number;
+  isShake?: boolean;
   macros: { calories: number; protein: number; carbs: number; fat: number };
 }
 
@@ -52,6 +53,8 @@ const DIET_FILTERS = [
   { key: 'ketogenic',   label: 'Keto' },
   { key: 'paleo',       label: 'Paleo' },
 ];
+
+const SHAKE_MACROS = { calories: 150, protein: 30, carbs: 5, fat: 2 };
 
 const THEME = {
   '--theme': '#00e5ff',
@@ -88,7 +91,31 @@ function MealCard({
   onSwap: (entry: MealEntry) => void;
   swapping: boolean;
 }) {
-  const { slot, recipe, scale, macros } = entry;
+  const { slot, recipe, scale, macros, isShake } = entry;
+
+  if (isShake) {
+    return (
+      <div className="mp-meal-card mp-meal-card--shake">
+        <div className="mp-meal-slot">Protein Shake</div>
+        <div className="mp-meal-body">
+          <div className="mp-shake-icon">🥛</div>
+          <div className="mp-meal-info">
+            <div className="mp-meal-title">Whey protein shake</div>
+            <div className="mp-meal-serving">1 scoop with water (~240ml)</div>
+            <div className="mp-meal-macros">
+              <span className="mp-meal-cal">{macros.calories} kcal</span>
+              <span className="mp-meal-macro">P {macros.protein}g</span>
+              <span className="mp-meal-macro">C {macros.carbs}g</span>
+              <span className="mp-meal-macro">F {macros.fat}g</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!recipe) return null;
+
   const servingNote = scale !== 1
     ? `${scale.toFixed(2)}× serving${recipe.servings > 1 ? `s (recipe makes ${recipe.servings})` : ''}`
     : `1 serving`;
@@ -179,8 +206,10 @@ const MealPlans: React.FC = () => {
   const [seedError, setSeedError]     = useState<string | null>(null);
 
   // Generator form state
-  const [mealCount, setMealCount]   = useState(3);
-  const [diets, setDiets]           = useState<string[]>([]);
+  const [mealCount, setMealCount]       = useState(3);
+  const [diets, setDiets]               = useState<string[]>([]);
+  const [includeShake, setIncludeShake] = useState(false);
+  const [halal, setHalal]               = useState(false);
 
   // Plan state
   const [generating, setGenerating] = useState(false);
@@ -239,6 +268,8 @@ const MealPlans: React.FC = () => {
         mealCount,
         diets,
         excludeIds: [],
+        includeShake,
+        halal,
       });
       setPlan(result as GeneratedPlan);
     } catch (err: any) {
@@ -262,6 +293,7 @@ const MealPlans: React.FC = () => {
         targetCal:  entry.targetCal,
         diets,
         excludeIds,
+        halal,
       });
 
       setPlan(prev => {
@@ -409,6 +441,22 @@ const MealPlans: React.FC = () => {
                     >{f.label}</button>
                   ))}
                 </div>
+              </div>
+
+              {/* Toggles row */}
+              <div className="mp-toggles-row">
+                <button
+                  className={`mp-toggle-btn${includeShake ? ' mp-toggle-btn--active' : ''}`}
+                  onClick={() => setIncludeShake(v => !v)}
+                >
+                  🥛 Protein Shake
+                </button>
+                <button
+                  className={`mp-toggle-btn${halal ? ' mp-toggle-btn--active' : ''}`}
+                  onClick={() => setHalal(v => !v)}
+                >
+                  ☪️ Halal
+                </button>
               </div>
 
               <button

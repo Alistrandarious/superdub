@@ -95,9 +95,9 @@ export const api = {
   // meal plans
   getMealPlanRecipeCount: () => request('/meal-plans/recipe-count'),
   seedMealPlanRecipes: () => request('/meal-plans/seed', { method: 'POST' }),
-  generateMealPlan: (body: { mealCount: number; diets: string[]; excludeIds: number[] }) =>
+  generateMealPlan: (body: { mealCount: number; diets: string[]; excludeIds: number[]; includeShake: boolean; halal: boolean }) =>
     request('/meal-plans/generate', { method: 'POST', body: JSON.stringify(body) }),
-  swapMeal: (body: { slotName: string; targetCal: number; diets: string[]; excludeIds: number[] }) =>
+  swapMeal: (body: { slotName: string; targetCal: number; diets: string[]; excludeIds: number[]; halal: boolean }) =>
     request('/meal-plans/swap', { method: 'POST', body: JSON.stringify(body) }),
 
   // food log

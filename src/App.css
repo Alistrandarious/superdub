@@ -6368,6 +6368,21 @@
 }
 .mp-diet-pill--active { background: #00e5ff18; border-color: #00e5ff66; color: #00e5ff; }
 
+.mp-toggles-row {
+  display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
+}
+.mp-toggle-btn {
+  padding: 8px 16px; border-radius: 20px; background: #0d1520;
+  border: 1px solid #1e2a3a; color: #555; font-size: 0.8rem; font-weight: 600;
+  cursor: pointer; font-family: inherit; transition: all 0.12s;
+}
+.mp-toggle-btn--active {
+  background: #00e5ff18; border-color: #00e5ff66; color: #00e5ff;
+}
+.mp-meal-card--shake { border-color: #a78bfa33; }
+.mp-meal-card--shake .mp-meal-slot { color: #a78bfa; }
+.mp-shake-icon { font-size: 2rem; flex-shrink: 0; display: flex; align-items: center; padding: 4px; }
+
 .mp-generate-btn {
   width: 100%; padding: 14px; background: #00e5ff; color: #000;
   border: none; border-radius: 10px; font-size: 0.9rem; font-weight: 800;
