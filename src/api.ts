@@ -92,6 +92,14 @@ export const api = {
   getAiKeyStatus: () => request('/profile/ai-key'),
   saveAiKey: (key: string) => request('/profile/ai-key', { method: 'PUT', body: JSON.stringify({ key }) }),
 
+  // meal plans
+  getMealPlanRecipeCount: () => request('/meal-plans/recipe-count'),
+  seedMealPlanRecipes: () => request('/meal-plans/seed', { method: 'POST' }),
+  generateMealPlan: (body: { mealCount: number; diets: string[]; excludeIds: number[] }) =>
+    request('/meal-plans/generate', { method: 'POST', body: JSON.stringify(body) }),
+  swapMeal: (body: { slotName: string; targetCal: number; diets: string[]; excludeIds: number[] }) =>
+    request('/meal-plans/swap', { method: 'POST', body: JSON.stringify(body) }),
+
   // food log
   parseFoodLog: (transcript: string) =>
     request('/food-log/parse', { method: 'POST', body: JSON.stringify({ transcript }) }),

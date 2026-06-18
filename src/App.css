@@ -6301,3 +6301,195 @@
 .checkin-steps-preset.active {
   background: #00e5ff18; border-color: #00e5ff66; color: #00e5ff;
 }
+
+/* ═══════════════════════════════════════════════════════
+   MEAL PLANS — full generator UI
+   ═══════════════════════════════════════════════════════ */
+
+.mp-tab-bar {
+  display: flex; gap: 0; border-bottom: 1px solid #1a2030; background: #080c14;
+}
+.mp-tab {
+  flex: 1; padding: 12px 0; background: none; border: none;
+  color: #444; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.05em;
+  text-transform: uppercase; cursor: pointer; font-family: inherit;
+  border-bottom: 2px solid transparent; transition: color 0.15s, border-color 0.15s;
+}
+.mp-tab--active { color: #00e5ff; border-bottom-color: #00e5ff; }
+
+.mp-setup-banner {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  background: #0d1520; border: 1px solid #1a2535; border-radius: 10px;
+  padding: 10px 14px; margin-bottom: 14px; font-size: 0.8rem;
+}
+.mp-setup-loading { color: #444; }
+.mp-setup-label { color: #666; }
+.mp-setup-count { color: #3a9965; display: flex; align-items: center; gap: 8px; }
+.mp-setup-error { color: #f87171; font-size: 0.75rem; }
+.mp-setup-btn {
+  padding: 5px 14px; background: #00e5ff18; border: 1px solid #00e5ff44;
+  color: #00e5ff; border-radius: 6px; font-size: 0.78rem; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+}
+.mp-setup-refresh {
+  background: none; border: 1px solid #1a2535; color: #555;
+  border-radius: 6px; padding: 2px 8px; font-size: 0.72rem;
+  cursor: pointer; font-family: inherit;
+}
+.mp-setup-refresh:disabled { opacity: 0.4; }
+
+.mp-form-card {
+  background: #0a0f1a; border: 1px solid #1a2535; border-radius: 14px;
+  padding: 18px 16px; margin-bottom: 16px;
+}
+.mp-form-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.mp-form-row--wrap { flex-wrap: wrap; gap: 10px; }
+.mp-form-label {
+  font-size: 0.78rem; color: #666; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.06em; flex-shrink: 0;
+}
+
+.mp-count-btns { display: flex; gap: 6px; }
+.mp-count-btn {
+  width: 40px; height: 40px; border-radius: 50%; background: #0d1520;
+  border: 1px solid #1e2a3a; color: #555; font-size: 0.9rem; font-weight: 700;
+  cursor: pointer; font-family: inherit; transition: all 0.12s;
+}
+.mp-count-btn--active { background: #00e5ff1a; border-color: #00e5ff; color: #00e5ff; }
+
+.mp-diet-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.mp-diet-pill {
+  padding: 5px 12px; border-radius: 20px; background: #0d1520;
+  border: 1px solid #1e2a3a; color: #555; font-size: 0.75rem; font-weight: 600;
+  cursor: pointer; font-family: inherit; transition: all 0.12s;
+}
+.mp-diet-pill--active { background: #00e5ff18; border-color: #00e5ff66; color: #00e5ff; }
+
+.mp-generate-btn {
+  width: 100%; padding: 14px; background: #00e5ff; color: #000;
+  border: none; border-radius: 10px; font-size: 0.9rem; font-weight: 800;
+  cursor: pointer; font-family: inherit; letter-spacing: 0.03em; transition: opacity 0.15s;
+}
+.mp-generate-btn:disabled { opacity: 0.4; cursor: default; }
+.mp-gen-error { color: #f87171; font-size: 0.8rem; margin-top: 8px; text-align: center; }
+
+.mp-totals-card {
+  background: #0a0f1a; border: 1px solid #1a2535; border-radius: 14px;
+  padding: 16px; margin-bottom: 14px;
+}
+.mp-totals-title {
+  font-size: 0.72rem; color: #555; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 14px;
+}
+.mp-macro-pill { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.mp-macro-bar-track { flex: 1; height: 4px; background: #111a2a; border-radius: 2px; overflow: hidden; }
+.mp-macro-bar-fill { height: 100%; border-radius: 2px; transition: width 0.4s; }
+.mp-macro-label { font-size: 0.72rem; color: #555; width: 52px; }
+.mp-macro-val { font-size: 0.8rem; font-weight: 700; color: #ccc; width: 60px; text-align: right; }
+
+.mp-meals-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+
+.mp-meal-card {
+  background: #0a0f1a; border: 1px solid #1a2535; border-radius: 14px;
+  overflow: hidden; transition: opacity 0.2s;
+}
+.mp-meal-card--swapping { opacity: 0.5; pointer-events: none; }
+.mp-meal-slot {
+  padding: 8px 14px 0;
+  font-size: 0.68rem; color: #00e5ff; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+.mp-meal-body { display: flex; gap: 12px; padding: 10px 14px; }
+.mp-meal-img {
+  width: 72px; height: 72px; border-radius: 8px;
+  object-fit: cover; flex-shrink: 0; background: #111a2a;
+}
+.mp-meal-info { flex: 1; min-width: 0; }
+.mp-meal-title {
+  font-size: 0.88rem; font-weight: 700; color: #e0e0e0;
+  line-height: 1.3; margin-bottom: 3px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mp-meal-link { color: inherit; text-decoration: none; }
+.mp-meal-link:hover { color: #00e5ff; }
+.mp-meal-serving { font-size: 0.7rem; color: #444; margin-bottom: 5px; }
+.mp-meal-macros { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+.mp-meal-cal { font-size: 0.78rem; font-weight: 700; color: #00e5ff; }
+.mp-meal-macro { font-size: 0.73rem; color: #555; }
+.mp-meal-diets { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+.mp-diet-tag {
+  font-size: 0.62rem; color: #3a9965; background: #0a2010;
+  border: 1px solid #1a3520; border-radius: 4px; padding: 1px 5px; text-transform: capitalize;
+}
+.mp-swap-btn {
+  width: 100%; padding: 9px; background: #0d1520;
+  border: none; border-top: 1px solid #1a2535; color: #555;
+  font-size: 0.78rem; font-weight: 600; cursor: pointer;
+  font-family: inherit; transition: color 0.12s, background 0.12s;
+}
+.mp-swap-btn:hover { background: #111d2e; color: #00e5ff; }
+.mp-swap-btn:disabled { opacity: 0.4; }
+
+.mp-save-plan-btn {
+  width: 100%; padding: 13px; background: none;
+  border: 1px solid #1e2a3a; color: #666; border-radius: 10px;
+  font-size: 0.85rem; font-weight: 600; cursor: pointer;
+  font-family: inherit; margin-bottom: 16px; transition: border-color 0.15s, color 0.15s;
+}
+.mp-save-plan-btn:hover { border-color: #00e5ff44; color: #00e5ff; }
+.mp-save-row { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
+.mp-save-input {
+  flex: 1; padding: 11px 14px; background: #0d1520;
+  border: 1px solid #1e2a3a; border-radius: 8px; color: #e0e0e0;
+  font-size: 0.88rem; font-family: inherit; outline: none;
+}
+.mp-save-input:focus { border-color: #00e5ff44; }
+.mp-save-confirm {
+  padding: 11px 18px; background: #00e5ff; color: #000;
+  border: none; border-radius: 8px; font-weight: 700; cursor: pointer;
+  font-family: inherit; font-size: 0.88rem;
+}
+.mp-save-confirm:disabled { opacity: 0.4; }
+.mp-save-cancel {
+  padding: 11px 12px; background: #0d1520; border: 1px solid #1e2a3a;
+  color: #555; border-radius: 8px; cursor: pointer; font-family: inherit;
+}
+
+.mp-saved-list { display: flex; flex-direction: column; gap: 10px; }
+.mp-saved-card { background: #0a0f1a; border: 1px solid #1a2535; border-radius: 12px; overflow: hidden; }
+.mp-saved-header { display: flex; align-items: center; gap: 10px; padding: 14px 16px; cursor: pointer; }
+.mp-saved-title { flex: 1; font-size: 0.9rem; font-weight: 700; color: #e0e0e0; }
+.mp-saved-summary { font-size: 0.72rem; color: #555; white-space: nowrap; }
+.mp-saved-chevron { font-size: 0.65rem; color: #444; }
+.mp-saved-meals { border-top: 1px solid #1a2535; padding: 10px 16px; }
+.mp-saved-meal-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 0; border-bottom: 1px solid #0e1520; font-size: 0.8rem;
+}
+.mp-saved-meal-row:last-of-type { border-bottom: none; }
+.mp-saved-meal-slot {
+  width: 72px; flex-shrink: 0; font-size: 0.68rem;
+  color: #00e5ff; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+}
+.mp-saved-meal-name { flex: 1; color: #ccc; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mp-saved-meal-cal { font-size: 0.75rem; color: #555; flex-shrink: 0; }
+.mp-delete-btn {
+  margin-top: 12px; padding: 8px 16px; background: none;
+  border: 1px solid #2a1a1a; color: #f87171; border-radius: 7px;
+  font-size: 0.75rem; font-weight: 600; cursor: pointer; font-family: inherit;
+}
+.mp-delete-btn:hover { background: #1a0a0a; }
+
+.mp-loading { text-align: center; padding: 40px 0; color: #444; font-size: 0.85rem; }
+.mp-empty { text-align: center; padding: 48px 16px; }
+.mp-empty-icon { font-size: 2.5rem; margin-bottom: 12px; }
+.mp-empty-title { font-size: 1rem; font-weight: 700; color: #ccc; margin-bottom: 6px; }
+.mp-empty-sub { font-size: 0.8rem; color: #555; margin-bottom: 20px; line-height: 1.5; }
+.mp-empty-btn {
+  padding: 11px 24px; background: #00e5ff1a; border: 1px solid #00e5ff44;
+  color: #00e5ff; border-radius: 10px; font-size: 0.85rem; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+}

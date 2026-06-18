@@ -10,6 +10,7 @@ import tasksRoutes from './routes/tasks';
 import dietRoutes from './routes/diet';
 import weightSettingsRoutes from './routes/weightSettings';
 import foodlogRoutes from './routes/foodlog';
+import mealplansRoutes from './routes/mealplans';
 import { pool } from './db';
 
 dotenv.config();
@@ -28,6 +29,7 @@ app.use('/api/tasks', tasksRoutes);
 app.use('/api/diet', dietRoutes);
 app.use('/api/weight-settings', weightSettingsRoutes);
 app.use('/api/food-log', foodlogRoutes);
+app.use('/api/meal-plans', mealplansRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
@@ -62,6 +64,21 @@ const migrations = [
     THEN ALTER TABLE profile RENAME COLUMN antophic_api_key TO anthropic_api_key;
     END IF;
   END $$`,
+  `CREATE TABLE IF NOT EXISTS recipes (
+    id INTEGER PRIMARY KEY,
+    title TEXT NOT NULL,
+    image TEXT,
+    calories INTEGER DEFAULT 0,
+    protein REAL DEFAULT 0,
+    carbs REAL DEFAULT 0,
+    fat REAL DEFAULT 0,
+    servings INTEGER DEFAULT 1,
+    ready_in_minutes INTEGER,
+    dish_types TEXT[] DEFAULT '{}',
+    diets TEXT[] DEFAULT '{}',
+    source_url TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+  )`,
   // Backdate habit start_date to earliest logged activity when start_date was
   // clobbered forward (updateHabits bug that overrode NULL with today).
   // day is stored as DD/MM text — reconstruct as 2026-MM-DD date.
