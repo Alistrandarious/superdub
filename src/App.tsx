@@ -105,6 +105,19 @@ interface AppProps { onLogout?: () => void; }
 const App: React.FC<AppProps> = ({ onLogout }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const cogRef = useRef<HTMLDivElement>(null);
+  const trackerBodyRef = useRef<HTMLDivElement>(null);
+
+  const scrollTrackerToToday = () => {
+    setTimeout(() => {
+      const el = trackerBodyRef.current?.querySelector('.today-col') as HTMLElement | null;
+      el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }, 60);
+  };
+  const jumpToToday = () => {
+    setSelectedMonth(currentMonth);
+    setSelectedWeek(currentWeek);
+    scrollTrackerToToday();
+  };
   useEffect(() => {
     if (!menuOpen) return;
     const handler = (e: MouseEvent) => {
@@ -187,7 +200,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
   // Chart state
   const [chartRange, setChartRange] = useState<'7d' | '1m' | '3m' | 'all'>('all');
-  const [weightModalOpen, setWeightModalOpen] = useState(false);
+  const [weightZoom, setWeightZoom] = useState(false);
 
   // Weight plan state
   const [currentWeight, setCurrentWeight] = useState('');
@@ -658,41 +671,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </div>
       )}
 
-      {weightModalOpen && (
-        <div className="modal-overlay weight-modal-overlay" onClick={() => setWeightModalOpen(false)}>
-          <div className="weight-modal" onClick={e => e.stopPropagation()}>
-            <div className="weight-modal-head">
-              <div>
-                <p className="weight-modal-eyebrow">Weight · trend & prediction</p>
-                <h2 className="weight-modal-title">Weight over time</h2>
-              </div>
-              <button className="modal-close" onClick={() => setWeightModalOpen(false)}>✕</button>
-            </div>
-            <div className="weight-modal-chart">
-              <ResponsiveContainer width="100%" height={340}>
-                <ComposedChart data={chartData} margin={{ left: 0, right: 14, top: 10, bottom: 6 }}>
-                  <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
-                  <XAxis dataKey="day" stroke="rgba(255,255,255,0.25)" tick={{ fill: '#FFFFFF', fontSize: 10 }} interval={xAxisInterval} tickLine={false} />
-                  <YAxis stroke="rgba(255,255,255,0.25)" tick={{ fill: '#FFFFFF', fontSize: 10 }} domain={['dataMin - 2', 'dataMax + 2']} width={40} axisLine={false} tickLine={false} allowDecimals={false} />
-                  <Tooltip contentStyle={{ background: '#0E0E14', border: `1px solid ${themeColor}`, borderRadius: 10 }} labelStyle={{ color: '#fff' }} />
-                  {parseFloat(goalWeight) > 0 && (
-                    <ReferenceLine y={parseFloat(goalWeight)} stroke="#FFD233" strokeWidth={1.5} strokeDasharray="8 4" label={{ value: `Goal: ${goalWeight}kg`, fill: '#FFD233', fontSize: 11, position: 'insideTopRight' }} />
-                  )}
-                  <Line type="monotone" dataKey="prediction" stroke="#FFD233" strokeWidth={2} strokeDasharray="5 5" dot={false} name="Prediction" connectNulls />
-                  <Line type="monotone" dataKey="trend" stroke="#B84DFF" strokeWidth={2} strokeDasharray="4 3" dot={false} name="Trend" connectNulls />
-                  <Line type="monotone" dataKey="weight" stroke={themeColor} strokeWidth={2.5} dot={{ r: 3, fill: '#fff', stroke: themeColor, strokeWidth: 2 } as any} name="Weight" connectNulls />
-                </ComposedChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="weight-modal-legend">
-              <span className="wml-item"><span className="wml-dot" style={{ background: themeColor }} /> Weight</span>
-              <span className="wml-item"><span className="wml-dot" style={{ background: '#B84DFF' }} /> Trend analysis</span>
-              <span className="wml-item"><span className="wml-dot" style={{ background: '#FFD233' }} /> Prediction</span>
-            </div>
-          </div>
-        </div>
-      )}
-
       {weightPlanOpen && (
         <div className="modal-overlay" onClick={closeWeightModal}>
           <div className="modal" onClick={e => e.stopPropagation()}>
@@ -900,30 +878,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           )}
         </div>
       </div>
-      {/* Week selector bar */}
-      <div className="week-bar">
-        <button
-          className="week-btn today-jump-btn"
-          onClick={() => { setSelectedMonth(currentMonth); setSelectedWeek(currentWeek); }}
-          title="Jump to today"
-        >Today</button>
-        <button
-          className={`week-btn ${selectedWeek === null ? 'active' : ''}`}
-          onClick={() => setSelectedWeek(null)}
-        >All</button>
-        {Array.from({ length: weeksInMonth }, (_, i) => i + 1).map(w => (
-          <button
-            key={w}
-            className={`week-btn ${selectedWeek === w ? 'active' : ''} ${w === currentWeek ? 'current' : ''}`}
-            onClick={() => setSelectedWeek(w)}
-          >W{w}</button>
-        ))}
-      </div>
 
       <section className="chart-section">
         <div className="chart-range-tabs">
-          <button className="chart-expand-btn" onClick={() => setWeightModalOpen(true)}>
-            Weight trend <span aria-hidden>⤢</span>
+          <button className={`chart-expand-btn${weightZoom ? ' active' : ''}`} onClick={() => setWeightZoom(z => !z)}>
+            {weightZoom ? 'Habits' : 'Weight trend'} <span aria-hidden>{weightZoom ? '✕' : '⤢'}</span>
           </button>
           <div className="chart-range-spacer" />
           {(['7d', '1m', '3m', 'all'] as const).map(r => (
@@ -937,7 +896,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           ))}
         </div>
         <div className="chart-section-inner">
-        <div className="chart-labels-spacer"></div>
         <div className="chart-container">
         <ResponsiveContainer width="100%" height={300}>
           <ComposedChart data={chartData} margin={{ left: 0, right: 0, top: 5, bottom: 20 }}>
@@ -950,19 +908,23 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             </defs>
             <CartesianGrid stroke={themeColor + '1a'} strokeDasharray="3 3" />
             <XAxis dataKey="day" stroke="rgba(255,255,255,0.25)" tick={{ fill: '#FFFFFF', fontSize: 10 }} interval={xAxisInterval} tickLine={false} padding={{ left: 10 }} />
-            <YAxis yAxisId="left" stroke="rgba(255,255,255,0.25)" tick={{ fill: '#FFFFFF', fontSize: 10 }} allowDecimals={false} width={30} axisLine={false} tickLine={false} domain={[0, habits.length]} />
+            <YAxis yAxisId="left" hide={weightZoom} stroke="rgba(255,255,255,0.25)" tick={{ fill: '#FFFFFF', fontSize: 10 }} allowDecimals={false} width={30} axisLine={false} tickLine={false} domain={[0, habits.length]} />
             <YAxis yAxisId="right" orientation="right" stroke="rgba(255,255,255,0.25)" tick={{ fill: '#FFFFFF', fontSize: 10 }} domain={(() => {
               const weights = chartData.map(d => d.weight).filter(Boolean) as number[];
               const preds   = chartData.map(d => d.prediction).filter(Boolean) as number[];
+              const trends  = chartData.map(d => d.trend).filter(Boolean) as number[];
               const gw      = parseFloat(goalWeight) || 0;
-              const allVals = [...weights, ...preds, ...(gw > 0 ? [gw] : [])];
-              const floor   = allVals.length > 0 ? Math.floor(Math.min(...allVals)) - 3 : 55;
-              return [floor, 'auto'] as [number, string];
-            })()} width={50} axisLine={false} tickLine={false} />
+              const allVals = [...weights, ...preds, ...trends, ...(gw > 0 ? [gw] : [])];
+              if (allVals.length === 0) return [55, 60] as [number, number];
+              const lo = Math.floor(Math.min(...allVals)) - 1;
+              const hi = Math.ceil(Math.max(...allVals)) + 1;
+              return [lo, hi] as [number, number];
+            })()} width={42} axisLine={false} tickLine={false} />
             <Tooltip
-              contentStyle={{ background: '#0E0E14', border: `1px solid ${themeColor}`, color: themeColor }}
-              labelStyle={{ color: themeColor }}
-              itemStyle={{ color: themeColor }}
+              cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+              contentStyle={{ background: 'rgba(14,14,20,0.96)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, boxShadow: '0 10px 30px rgba(0,0,0,0.55)', padding: '9px 12px' }}
+              labelStyle={{ color: '#FFFFFF', fontWeight: 700, fontFamily: "'Space Mono', monospace", fontSize: 12, marginBottom: 5 }}
+              itemStyle={{ color: '#C4C4D0', fontFamily: "'Sora', sans-serif", fontSize: 12, padding: '2px 0' }}
             />
             {parseFloat(goalWeight) > 0 && (
               <ReferenceLine
@@ -984,20 +946,20 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 label={{ value: `🎯 ${goalDayVisible}`, fill: '#B84DFF', fontSize: 11, position: 'top' }}
               />
             )}
-            <Bar yAxisId="left" dataKey="completed" stackId="habits" fill={themeColor} name="Done" />
-            <Bar yAxisId="left" dataKey="failed" stackId="habits" fill="rgba(255,69,58,0.75)" name="Failed" radius={[3,3,0,0]} />
+            {!weightZoom && <Bar yAxisId="left" dataKey="completed" stackId="habits" fill={themeColor} name="Done" />}
+            {!weightZoom && <Bar yAxisId="left" dataKey="failed" stackId="habits" fill="rgba(255,69,58,0.75)" name="Failed" radius={[3,3,0,0]} />}
             <Line
               yAxisId="right"
               type="monotone"
               dataKey="weight"
               stroke={themeColor}
-              strokeWidth={2}
+              strokeWidth={weightZoom ? 3 : 2}
               style={{ cursor: 'pointer' }}
-              onClick={() => setWeightModalOpen(true)}
+              onClick={() => setWeightZoom(z => !z)}
               dot={(props: any) => {
                 const { cx, cy, payload, index } = props;
                 if (payload.weight == null) return <g key={`dot-empty-${index}`} />;
-                return <circle key={`dot-${index}`} cx={cx} cy={cy} r={4.5} fill="#FFFFFF" stroke={themeColor} strokeWidth={2} style={{ cursor: 'pointer' }} onClick={() => setWeightModalOpen(true)} />;
+                return <circle key={`dot-${index}`} cx={cx} cy={cy} r={weightZoom ? 5 : 4.5} fill="#FFFFFF" stroke={themeColor} strokeWidth={2} style={{ cursor: 'pointer' }} onClick={() => setWeightZoom(z => !z)} />;
               }}
               name="Weight (kg)"
               connectNulls
@@ -1017,9 +979,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               yAxisId="right"
               type="monotone"
               dataKey="trend"
-              stroke="#FF8A00"
+              stroke="#B84DFF"
               strokeWidth={2}
-              strokeDasharray="3 3"
+              strokeDasharray="4 3"
               dot={false}
               name="Trend"
               connectNulls
@@ -1066,6 +1028,26 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </div>
       </section>
 
+      {/* Week selector — filters the tracker below */}
+      <div className="week-bar">
+        <button
+          className="week-btn today-jump-btn"
+          onClick={jumpToToday}
+          title="Jump to today"
+        >Today</button>
+        <button
+          className={`week-btn ${selectedWeek === null ? 'active' : ''}`}
+          onClick={() => setSelectedWeek(null)}
+        >All</button>
+        {Array.from({ length: weeksInMonth }, (_, i) => i + 1).map(w => (
+          <button
+            key={w}
+            className={`week-btn ${selectedWeek === w ? 'active' : ''} ${w === currentWeek ? 'current' : ''}`}
+            onClick={() => setSelectedWeek(w)}
+          >W{w}</button>
+        ))}
+      </div>
+
       <section className="tracker">
         <div className="tracker-tabs">
           <button className={`tracker-tab ${trackerTab === 'habits' ? 'active' : ''}`} onClick={() => setTrackerTab('habits')}>Habits</button>
@@ -1078,7 +1060,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             <button className="tab-action-btn" onClick={() => setNutritionOpen(true)} aria-label="Nutrition">🍎</button>
           )}
         </div>
-        <div className="tracker-body">
+        <div className="tracker-body" ref={trackerBodyRef}>
         <div className="tracker-grid" style={{ gridTemplateColumns: `148px repeat(${visibleDays.length}, 56px)` }}>
           {/* Header row */}
           <div className="tracker-corner"></div>

@@ -245,9 +245,10 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
     return (
       <div className="app auth-page" style={themeStyle}>
         <div className="auth-center">
-          <div className="auth-card">
-            <h1 className="auth-logo">Superdub</h1>
-            <p className="auth-tagline">Track habits. Hit goals. Every day.</p>
+          <div className="auth-card auth-card--landing">
+            <img className="auth-logo-img" src="/superdub-logo.png" alt="Superdub" />
+            <h1 className="auth-logo">super<span className="hb-brand-dub">dub</span></h1>
+            <p className="auth-tagline">eat well. live better. level up.</p>
             <div className="auth-landing-btns">
               <button className="auth-btn-primary" onClick={() => setMode('signup')}>Create account</button>
               <button className="auth-btn-ghost" onClick={() => setMode('login')}>Log in</button>

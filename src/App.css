@@ -12,10 +12,21 @@
   --glass-border-strong: #3D2070;
   --glass-shadow: 0 4px 24px rgba(0,0,0,0.5);
   --glass-blur: none;
-  /* Superdub brand gradient — green → lime → gold (from the logo), harmonized */
-  --sd-gradient: linear-gradient(135deg, #22C55E 0%, #84CC16 50%, #FFD233 100%);
-  /* Level / XP gold gradient (achievement) */
-  --gold-gradient: linear-gradient(135deg, #FFE15A 0%, #FFC42E 100%);
+  /* ── Superdub V2 "Ascension" signature gradients ── */
+  --grad-brand: linear-gradient(135deg, #2FD27E 0%, #2E8BFF 100%);   /* flagship */
+  --grad-health: linear-gradient(135deg, #3CF98E 0%, #2FD27E 100%);  /* green = health */
+  --grad-growth: linear-gradient(135deg, #48C2FF 0%, #2E8BFF 100%);  /* blue = growth */
+  --grad-ascension: linear-gradient(135deg, #FFB928 0%, #FFE08A 100%); /* gold = ascension */
+  /* dub wordmark — Brand gradient, weighted greener */
+  --sd-gradient: linear-gradient(110deg, #2FD27E 0%, #2FD27E 42%, #2E8BFF 100%);
+  --gold-gradient: var(--grad-ascension);
+  /* neutrals */
+  --void: #07090C;
+  --bg: #080F12;
+  --surface: #0E1418;
+  --surface-2: #0C1320;
+  --line: #132820;
+  --line-soft: #101E1A;
 }
 
 /* Animatable CSS custom property for the ring */
@@ -1784,7 +1795,7 @@ h1, h2, h3, h4, .sora {
 .chart-section-inner {
   display: flex;
   align-items: stretch;
-  padding: 0 16px 16px 0;
+  padding: 0 10px 8px;
 }
 
 .chart-labels-spacer {
@@ -1797,7 +1808,7 @@ h1, h2, h3, h4, .sora {
 .chart-container {
   flex: 1;
   min-width: 0;
-  margin-left: -30px;
+  margin-left: 0;
   overflow: visible;
 }
 
@@ -2598,6 +2609,11 @@ h1, h2, h3, h4, .sora {
   align-items: center;
   justify-content: flex-start;
   padding: 16px 0 32px;
+  background:
+    radial-gradient(720px 520px at 50% -12%, rgba(124,58,237,0.28), transparent 60%),
+    radial-gradient(620px 520px at 102% 8%, rgba(255,77,141,0.16), transparent 55%),
+    radial-gradient(620px 520px at -2% 32%, rgba(255,138,0,0.12), transparent 55%),
+    #0E0E14;
 }
 
 .auth-center {
@@ -2621,16 +2637,32 @@ h1, h2, h3, h4, .sora {
   font-family: inherit;
 }
 
+.auth-logo-img {
+  width: 76px;
+  height: 76px;
+  object-fit: contain;
+  margin: 0 auto 4px;
+  display: block;
+  filter: drop-shadow(0 6px 18px rgba(34,197,94,0.35));
+}
+
+.auth-card--landing {
+  align-items: center;
+  gap: 14px;
+  padding-top: 34px;
+  padding-bottom: 30px;
+}
+
 .auth-logo {
-  font-size: 2.2rem;
+  font-family: var(--font-display, 'Kanit', sans-serif);
+  font-style: italic;
   font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: capitalize;
-  color: var(--theme);
-  text-shadow: 0 0 20px var(--theme-dim);
+  font-size: 2.6rem;
+  letter-spacing: -0.01em;
+  text-transform: none;
+  color: #F0F0F8;
   margin: 0;
   text-align: center;
-  font-family: inherit;
 }
 
 .auth-tagline {
@@ -2649,22 +2681,22 @@ h1, h2, h3, h4, .sora {
 }
 
 .auth-btn-primary {
-  background: var(--theme);
-  color: #0E0E14;
+  background: var(--grad-brand);
+  color: #06121A;
   border: none;
-  border-radius: 12px;
-  padding: 14px 20px;
-  font-family: inherit;
+  border-radius: 14px;
+  padding: 15px 20px;
+  font-family: 'Sora', sans-serif;
   font-size: 0.95rem;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
   cursor: pointer;
   transition: opacity 0.15s, box-shadow 0.15s;
 }
 
 .auth-btn-primary:hover:not(:disabled) {
-  opacity: 0.88;
-  box-shadow: 0 0 20px var(--theme-glow);
+  opacity: 0.92;
+  box-shadow: 0 6px 26px rgba(255,77,141,0.35);
 }
 
 .auth-btn-primary:disabled {
@@ -7870,6 +7902,7 @@ h3, h4,
    ===================================================================== */
 .chart-range-tabs { align-items: center; }
 .chart-range-spacer { flex: 1; }
+.chart-range-tabs { padding-top: 16px; }
 .chart-expand-btn {
   display: inline-flex;
   align-items: center;
@@ -7880,13 +7913,14 @@ h3, h4,
   font-family: 'Sora', sans-serif;
   font-size: 0.72rem;
   font-weight: 600;
-  padding: 5px 12px;
+  padding: 6px 13px;
   border-radius: 999px;
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 .chart-expand-btn:hover { background: var(--theme); color: #0E0E14; }
+.chart-expand-btn.active { background: var(--theme); border-color: var(--theme); color: #0E0E14; }
 
 .weight-modal-overlay {
   z-index: 800;
