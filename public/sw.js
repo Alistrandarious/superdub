@@ -1,5 +1,11 @@
-const CACHE = 'superdub-v1';
-const PRECACHE = ['/', '/index.html', '/manifest.json'];
+const CACHE = 'superdub-v2';
+const PRECACHE = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/superdub-icon-192.png',
+  '/superdub-icon-512.png',
+];
 
 self.addEventListener('install', e => {
   e.waitUntil(

@@ -9,17 +9,18 @@ html, body, #root {
   width: 100%;
 }
 
-/* Root is a flex column so the bottom nav always sits at the bottom in-flow */
+/* Root is a fixed-height flex column: content scrolls inside, nav pinned at bottom in-flow */
 #root {
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
+  height: 100%;
+  overflow: hidden;
 }
 
 body {
   background: #070810;
   color: #e2e8f0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', system-ui, sans-serif;
+  font-family: 'Sora', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-size: 15px;
@@ -30,10 +31,10 @@ button, input, select, textarea {
   font-family: inherit;
 }
 
-/* Monospace only for tracker data cells */
+/* Space Mono — data/metric cells */
 .tracker-grid,
 .weight-input,
 .macro-input,
 .steps-input {
-  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  font-family: 'Space Mono', 'Courier New', monospace;
 }

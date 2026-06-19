@@ -438,7 +438,6 @@ const FeaturedSheet: React.FC<{
 
 /* ── main page ───────────────────────────────────────────── */
 
-const FEATURED_NAMES = new Set(FEATURED.map(f => f.name));
 const MANDATORY_HABIT = 'Logging into Superdub';
 
 const Habits: React.FC = () => {

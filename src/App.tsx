@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
 import {
   ComposedChart,
   Line,
@@ -142,7 +141,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
 
-  const themeColor = MONTH_COLORS[selectedMonth];
+  // Progress page is fixed "growth blue" (month colours still drive the month picker)
+  const themeColor = '#3B9EFF';
 
   // Chart state
   const [accountCreatedAt, setAccountCreatedAt] = useState<string>('');
@@ -442,6 +442,50 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     return { day: ddmm, completed, failed, weight: d.weight ? Number(d.weight) : null, prediction, trend };
   });
 
+  // ── Reporting: consistency heatmap (from start date → today, grows over time) ──
+  const nowMs = Date.now();
+  const hmEnd = new Date(); hmEnd.setHours(0, 0, 0, 0);
+  const startDay = new Date(accountCreatedDate); startDay.setHours(0, 0, 0, 0);
+  let hmStart = new Date(startDay);
+  // back up to the Monday on/before the start date so columns align to weeks
+  hmStart.setDate(hmStart.getDate() - ((hmStart.getDay() + 6) % 7));
+  const MAX_WEEKS = 30;
+  let weeks = Math.ceil((Math.floor((hmEnd.getTime() - hmStart.getTime()) / 86400000) + 1) / 7);
+  if (weeks < 1) weeks = 1;
+  if (weeks > MAX_WEEKS) {
+    weeks = MAX_WEEKS;
+    hmStart = new Date(hmEnd);
+    hmStart.setDate(hmEnd.getDate() - (MAX_WEEKS * 7 - 1));
+    hmStart.setDate(hmStart.getDate() - ((hmStart.getDay() + 6) % 7));
+    weeks = Math.ceil((Math.floor((hmEnd.getTime() - hmStart.getTime()) / 86400000) + 1) / 7);
+  }
+  const heatmapCells: { ddmm: string; ratio: number; monthIdx: number; inactive: boolean }[] = [];
+  let kDone = 0, kPoss = 0;
+  for (let w = 0; w < weeks; w++) {
+    for (let dow = 0; dow < 7; dow++) {
+      const dt = new Date(hmStart);
+      dt.setDate(hmStart.getDate() + w * 7 + dow);
+      const ddmm = `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth() + 1).padStart(2, '0')}`;
+      const inactive = dt.getTime() > nowMs || dt.getTime() < startDay.getTime();
+      const d = tracker[ddmm];
+      const done = d ? habits.filter(h => d.habits[h] === true).length : 0;
+      const ratio = habits.length > 0 ? done / habits.length : 0;
+      heatmapCells.push({ ddmm, ratio, monthIdx: dt.getMonth(), inactive });
+      const hasMark = !!d && habits.some(h => d.habits[h] === true || d.habits[h] === ('failed' as any));
+      if (hasMark && !inactive) { kDone += done; kPoss += habits.length; }
+    }
+  }
+  const consistencyPct = kPoss > 0 ? Math.round((kDone / kPoss) * 100) : 0;
+  const daysLogged = Object.values(tracker).filter((d: any) =>
+    d && (d.weight || (d.habits && habits.some(h => d.habits[h] === true || d.habits[h] === 'failed')) || d.calories || d.steps)
+  ).length;
+  // month labels positioned under their first column
+  const heatmapMonths: { idx: number; col: number }[] = [];
+  for (let w = 0; w < weeks; w++) {
+    const m = heatmapCells[w * 7].monthIdx;
+    if (w === 0 || heatmapCells[(w - 1) * 7].monthIdx !== m) heatmapMonths.push({ idx: m, col: w });
+  }
+
   const handleWeight = (day: string, value: string) => {
     if (value !== '' && !/^\d*\.?\d*$/.test(value)) return;
     setTracker(prev => ({ ...prev, [day]: { ...prev[day], weight: value } }));
@@ -459,8 +503,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     const agVal = parseFloat(age) || 0;
     const alVal = parseFloat(activityLevel) || 1.4;
     if (htVal === 0 || agVal === 0 || startWeight === 0) return null;
-
-    const day = visibleDays[dayIndex];
 
     let dayWeight = startWeight;
     for (let d = dayIndex - 1; d >= 0; d--) {
@@ -524,10 +566,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
   if (!loaded) {
     return (
-      <div className="app" style={{ '--theme': '#7C3AED', '--theme-dim': '#7C3AED66', '--theme-glow': '#7C3AED33' } as React.CSSProperties}>
-        <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', color: '#7C3AED', fontSize: '1.2rem', letterSpacing: '0.1em' }}>
-          Loading…
-        </div>
+      <div className="app" style={{ '--theme': '#3B9EFF', '--theme-dim': '#3B9EFF66', '--theme-glow': '#3B9EFF33' } as React.CSSProperties}>
+        <div className="sd-loader-wrap"><div className="sd-loader" /></div>
       </div>
     );
   }
@@ -535,43 +575,13 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   return (
     <div className="app" style={{ '--theme': themeColor, '--theme-dim': themeColor + '66', '--theme-glow': themeColor + '33' } as React.CSSProperties}>
       <header className="header">
-        <div className="header-left">
-          <div className="calendar-picker">
-            <button className="calendar-btn" onClick={() => setCalendarOpen(!calendarOpen)}>
-              {MONTH_NAMES[selectedMonth]} {YEAR}
-              {selectedWeek !== null && ` · W${selectedWeek}`}
-              <span className="calendar-arrow">{calendarOpen ? '▲' : '▾'}</span>
-            </button>
-            {calendarOpen && (
-              <div className="calendar-dropdown">
-                <div className="calendar-grid">
-                  {MONTH_SHORT.map((m, i) => {
-                    const isBeforeJoin = i < joinMonth;
-                    return (
-                      <button
-                        key={m}
-                        className={`calendar-month ${i === selectedMonth ? 'selected' : ''} ${i === currentMonth ? 'current' : ''} ${isBeforeJoin ? 'disabled' : ''}`}
-                        style={{ '--month-color': MONTH_COLORS[i] } as React.CSSProperties}
-                        disabled={isBeforeJoin}
-                        onClick={() => { setSelectedMonth(i); setSelectedWeek(null); setCalendarOpen(false); }}
-                      >
-                        {m}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="header-brand">
+        <div className="header-brand header-brand--left">
           <img className="header-brand-logo" src="/superdub-logo.png" alt="" />
           <span className="header-brand-name">super<span className="hb-brand-dub">dub</span></span>
         </div>
 
         {/* Cog dropdown — top right */}
-        <div ref={cogRef} style={{ position: 'relative' }}>
+        <div ref={cogRef} style={{ marginLeft: 'auto', position: 'relative' }}>
           <button
             onClick={() => setMenuOpen(o => !o)}
             style={{
@@ -819,33 +829,41 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         );
       })()}
 
-      {/* ── Today hero: greeting + habit pills ── */}
-      <div className="today-hero">
-        <p className="today-eyebrow">{todayLabel.toUpperCase()}</p>
-        <h1 className="today-greeting">
-          {greeting}{name.trim() ? `, ${name.trim()}` : ''} <span className="today-wave">👋</span>
-        </h1>
-        {habits.length > 0 && (
-          <div className="today-pills">
-            {habits.map(h => {
-              const done = tracker[todayKey]?.habits[h] === true;
-              return (
-                <button
-                  key={h}
-                  type="button"
-                  className={`today-pill${done ? ' done' : ''}`}
-                  onClick={() => handleCheck(todayKey, h)}
-                >
-                  <span className="today-pill-tick">{done ? '✓' : '+'}</span>
-                  {h}
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
       <div className="dashboard-scroll">
+      {/* Overview heading + month picker */}
+      <div className="progress-overview">
+        <div className="progress-overview-titles">
+          <p className="progress-eyebrow">{YEAR} OVERVIEW</p>
+          <h1 className="progress-title">Progress</h1>
+        </div>
+        <div className="calendar-picker">
+          <button className="calendar-btn" onClick={() => setCalendarOpen(!calendarOpen)}>
+            {MONTH_NAMES[selectedMonth]} {YEAR}
+            {selectedWeek !== null && ` · W${selectedWeek}`}
+            <span className="calendar-arrow">{calendarOpen ? '▲' : '▾'}</span>
+          </button>
+          {calendarOpen && (
+            <div className="calendar-dropdown">
+              <div className="calendar-grid">
+                {MONTH_SHORT.map((m, i) => {
+                  const isBeforeJoin = i < joinMonth;
+                  return (
+                    <button
+                      key={m}
+                      className={`calendar-month ${i === selectedMonth ? 'selected' : ''} ${i === currentMonth ? 'current' : ''} ${isBeforeJoin ? 'disabled' : ''}`}
+                      style={{ '--month-color': MONTH_COLORS[i] } as React.CSSProperties}
+                      disabled={isBeforeJoin}
+                      onClick={() => { setSelectedMonth(i); setSelectedWeek(null); setCalendarOpen(false); }}
+                    >
+                      {m}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
       {/* Week selector bar */}
       <div className="week-bar">
         <button
@@ -864,18 +882,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             onClick={() => setSelectedWeek(w)}
           >W{w}</button>
         ))}
-        <div className="week-bar-spacer"></div>
-        <button className="legend-info-btn" aria-label="Chart legend">
-          i
-          <div className="legend-tooltip">
-            <div className="legend-item"><span className="legend-swatch legend-bar"></span>Habits Done</div>
-            <div className="legend-item"><span className="legend-swatch" style={{background:'rgba(255,69,58,0.75)'}}></span>Habits Failed</div>
-            <div className="legend-item"><span className="legend-swatch legend-weight"></span>Weight (kg)</div>
-            <div className="legend-item"><span className="legend-swatch" style={{background:'#FFD233'}}></span>Goal Curve</div>
-            <div className="legend-item"><span className="legend-swatch" style={{background:'#FF8A00'}}></span>Trend</div>
-          </div>
-        </button>
-        <button className="header-btn" onClick={() => setWeightPlanOpen(true)} aria-label="Weight settings">⚖</button>
       </div>
 
       <section className="chart-section">
@@ -997,6 +1003,42 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </div>{/* /chart-section-inner */}
       </section>
 
+      {/* ── KPI cards ── */}
+      <div className="kpi-row">
+        <div className="kpi-card">
+          <p className="kpi-label">Consistency</p>
+          <p className="kpi-value kpi-good">{consistencyPct}%</p>
+        </div>
+        <div className="kpi-card">
+          <p className="kpi-label">Days logged</p>
+          <p className="kpi-value">{daysLogged}</p>
+        </div>
+      </div>
+
+      {/* ── Consistency heatmap (from start date → grows over time) ── */}
+      <section className="report-card">
+        <p className="report-eyebrow">Consistency · since {MONTH_SHORT[joinMonth]} {YEAR}</p>
+        <div className="heatmap">
+          <div className="heatmap-grid">
+            {heatmapCells.map((c, i) => (
+              <div
+                key={i}
+                className={`heatmap-cell${c.inactive ? ' inactive' : ''}`}
+                style={{ '--lvl': c.inactive ? 0 : (c.ratio > 0 ? Math.max(c.ratio, 0.3) : 0) } as React.CSSProperties}
+                title={`${c.ddmm}: ${Math.round(c.ratio * 100)}%`}
+              />
+            ))}
+          </div>
+          <div className="heatmap-months" style={{ gridTemplateColumns: `repeat(${heatmapCells.length / 7}, 1fr)` }}>
+            {heatmapMonths.map(m => (
+              <span key={m.idx + '-' + m.col} className="heatmap-month" style={{ gridColumn: `${m.col + 1} / span 1` }}>
+                {MONTH_SHORT[m.idx]}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="tracker">
         <div className="tracker-tabs">
           <button className={`tracker-tab ${trackerTab === 'habits' ? 'active' : ''}`} onClick={() => setTrackerTab('habits')}>Habits</button>
@@ -1010,7 +1052,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           )}
         </div>
         <div className="tracker-body">
-        <div className="tracker-grid" style={{ gridTemplateColumns: `120px repeat(${visibleDays.length}, 60px)` }}>
+        <div className="tracker-grid" style={{ gridTemplateColumns: `148px repeat(${visibleDays.length}, 56px)` }}>
           {/* Header row */}
           <div className="tracker-corner"></div>
           {visibleDays.map(day => (

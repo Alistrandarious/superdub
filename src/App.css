@@ -41,7 +41,7 @@ html, body, #root {
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 16px;
   font-weight: 400;
   line-height: 1.5;
@@ -51,7 +51,7 @@ body {
 
 /* ─ Sora heading scale ─────────────────────────────────── */
 h1, h2, h3, h4, .sora {
-  font-family: 'Sora', 'Inter', sans-serif;
+  font-family: 'Sora', 'Sora', sans-serif;
   margin: 0;
 }
 
@@ -257,8 +257,8 @@ h1, h2, h3, h4, .sora {
 
 .calendar-month:hover {
   background: rgba(255,255,255,0.08);
-  color: var(--month-color, var(--theme));
-  border-color: var(--month-color, var(--theme));
+  color: var(--theme);
+  border-color: var(--theme);
 }
 
 .calendar-month.selected {
@@ -269,7 +269,7 @@ h1, h2, h3, h4, .sora {
 }
 
 .calendar-month.current {
-  box-shadow: inset 0 0 0 1px var(--month-color, var(--theme));
+  box-shadow: inset 0 0 0 1px var(--theme);
 }
 
 /* =====================================================================
@@ -351,37 +351,78 @@ h1, h2, h3, h4, .sora {
   font-weight: 700;
 }
 
+/* Brand pinned left (matches other pages) */
+.header-brand--left {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* Progress overview heading + month picker */
+.progress-overview {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px 4px;
+}
+.progress-overview-titles { min-width: 0; }
+.progress-eyebrow {
+  font-family: var(--font-data, 'Space Mono', monospace);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #6A6A78;
+  margin: 0 0 3px;
+}
+.progress-title {
+  font-family: var(--font-display, 'Kanit', sans-serif);
+  font-style: italic;
+  font-weight: 800;
+  font-size: 1.9rem;
+  line-height: 1;
+  color: #F0F0F8;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.progress-overview .calendar-picker { flex-shrink: 0; }
+
 .week-bar {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 8px 16px;
-  background: rgba(255,255,255,0.02);
-  border-bottom: 1px solid var(--glass-border);
+  gap: 7px;
+  padding: 10px 16px 6px;
   flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+.week-bar::-webkit-scrollbar { display: none; }
 
 .week-bar-spacer {
   flex: 1;
 }
 
 .week-btn {
-  background: none;
-  border: 1px solid transparent;
-  color: var(--theme-dim);
-  font-family: inherit;
-  font-size: 0.75rem;
-  padding: 5px 14px;
-  border-radius: 8px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #B0B0C0;
+  font-family: 'Sora', sans-serif;
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 7px 15px;
+  border-radius: 999px;
   cursor: pointer;
-  transition: all 0.15s;
-  letter-spacing: 0.05em;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .week-btn:hover {
-  border-color: var(--glass-border-strong);
-  color: var(--theme);
-  background: var(--glass-bg);
+  border-color: rgba(255,255,255,0.2);
+  color: #E0E0F0;
+  background: rgba(255,255,255,0.08);
 }
 
 .week-btn.active {
@@ -391,8 +432,21 @@ h1, h2, h3, h4, .sora {
 }
 
 .week-btn.current:not(.active) {
-  border-color: var(--glass-border-strong);
-  box-shadow: inset 0 0 0 1px var(--glass-border-strong);
+  border-color: var(--theme-dim);
+}
+
+/* Jump-to-today — highlighted action pill */
+.today-jump-btn {
+  background: var(--theme);
+  border-color: var(--theme);
+  color: #0E0E14;
+  font-weight: 700;
+}
+.today-jump-btn:hover {
+  background: var(--theme);
+  border-color: var(--theme);
+  color: #0E0E14;
+  filter: brightness(1.08);
 }
 
 /* =====================================================================
@@ -1690,11 +1744,15 @@ h1, h2, h3, h4, .sora {
    CHART SECTION
    ===================================================================== */
 .chart-section {
-  padding: 0 0 0 0;
-  border-bottom: 1px solid var(--glass-border);
+  margin: 6px 16px 0;
+  padding: 6px 0 14px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .chart-range-tabs {
@@ -1730,8 +1788,8 @@ h1, h2, h3, h4, .sora {
 }
 
 .chart-labels-spacer {
-  width: 120px;
-  min-width: 120px;
+  width: 148px;
+  min-width: 148px;
   flex-shrink: 0;
   border-right: 2px solid rgba(255,255,255,0.1);
 }
@@ -1747,11 +1805,14 @@ h1, h2, h3, h4, .sora {
    TRACKER —TABS & GRID
    ===================================================================== */
 .tracker {
-  flex: 1;
+  margin: 14px 16px 20px;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  border-top: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  overflow: hidden;
 }
 
 .tracker-tabs {
@@ -1817,23 +1878,23 @@ h1, h2, h3, h4, .sora {
 /* Data grid —monospace font only here */
 .tracker-grid {
   display: grid;
-  grid-auto-rows: 36px;
+  grid-auto-rows: minmax(42px, auto);
   width: max-content;
-  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  font-family: 'Space Mono', 'Courier New', monospace;
 }
 
 .tracker-label {
   display: flex;
   align-items: center;
-  padding: 0 12px;
-  height: 36px;
-  min-height: 36px;
-  font-size: 0.8rem;
+  padding: 6px 12px;
+  min-height: 42px;
+  font-size: 0.72rem;
   font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 120px;
+  line-height: 1.15;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  width: 148px;
+  max-width: 148px;
   border-bottom: 1px solid var(--glass-border);
   border-right: 2px solid rgba(255,255,255,0.12);
   box-sizing: border-box;
@@ -1841,7 +1902,7 @@ h1, h2, h3, h4, .sora {
   position: sticky;
   left: 0;
   z-index: 3;
-  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  font-family: 'Space Mono', 'Courier New', monospace;
   color: rgba(255,255,255,0.7);
 }
 
@@ -1859,7 +1920,7 @@ h1, h2, h3, h4, .sora {
   position: sticky;
   top: 0;
   z-index: 2;
-  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  font-family: 'Space Mono', 'Courier New', monospace;
   color: rgba(255,255,255,0.6);
 }
 
@@ -1888,7 +1949,7 @@ h1, h2, h3, h4, .sora {
   border: none;
   border-bottom: 1px solid rgba(255,255,255,0.12);
   color: var(--theme);
-  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  font-family: 'Space Mono', 'Courier New', monospace;
   font-size: 0.85rem;
   width: 56px;
   text-align: center;
@@ -1910,7 +1971,7 @@ h1, h2, h3, h4, .sora {
   border: none;
   border-bottom: 1px solid rgba(255,255,255,0.12);
   color: var(--theme);
-  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  font-family: 'Space Mono', 'Courier New', monospace;
   font-size: 0.7rem;
   width: 48px;
   text-align: center;
@@ -1933,7 +1994,7 @@ h1, h2, h3, h4, .sora {
   border: none;
   border-bottom: 1px solid rgba(255,255,255,0.12);
   color: var(--theme);
-  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  font-family: 'Space Mono', 'Courier New', monospace;
   font-size: 0.8rem;
   width: 64px;
   text-align: center;
@@ -7610,3 +7671,196 @@ h1, h2, h3, h4, .sora {
   font-size: 0.58rem; color: #556; text-transform: uppercase; letter-spacing: 0.06em;
 }
 
+
+
+/* =====================================================================
+   TYPOGRAPHY SYSTEM
+   Kanit (display · italic 800 signature) · Sora (UI / body) · Space Mono (data)
+   ===================================================================== */
+:root {
+  --font-display: 'Kanit', 'Sora', sans-serif;
+  --font-ui: 'Sora', system-ui, sans-serif;
+  --font-data: 'Space Mono', 'Courier New', monospace;
+}
+
+body, button, input, select, textarea {
+  font-family: var(--font-ui);
+}
+
+/* H1 / Display — Kanit italic 800 (signature voice) */
+h1,
+.today-greeting,
+.checkin-greeting {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+/* Wordmark — Kanit italic 800 */
+.hb-brand-name,
+.header-brand-name {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+/* H2 / Title — Kanit 700 upright */
+h2,
+.title,
+.page-intro-title,
+.hb-sheet-title,
+.diet-heading,
+.level-hero-title,
+.lvl-ring-title {
+  font-family: var(--font-display);
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+}
+
+/* H3 / Heading + UI titles — Sora 600 */
+h3, h4,
+.habits-section-title,
+.habits-pinned-title,
+.hcard-name,
+.hrow-name,
+.hb-featured-cta,
+.more-menu-label,
+.log-weight-title {
+  font-family: var(--font-ui);
+  font-weight: 600;
+}
+
+/* Label / eyebrow — Space Mono 700 uppercase */
+.today-eyebrow,
+.lvl-ring-eyebrow,
+.hb-featured-eyebrow,
+.checkin-eyebrow {
+  font-family: var(--font-data);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* Metric / number / data — Space Mono */
+.lvl-ring-num,
+.hcard-xp-total,
+.hcard-xp-rate,
+.hcard-streak,
+.hcard-gate-label,
+.hrow-gate,
+.pwa-reward,
+.player-level-badge,
+.hb-xp-scale,
+.hb-xp-to,
+.hb-week-dow,
+.hb-week-caption {
+  font-family: var(--font-data);
+}
+
+
+/* =====================================================================
+   PROGRESS REPORTING — consistency heatmap + KPIs
+   ===================================================================== */
+.report-card {
+  margin: 14px 16px 0;
+  padding: 16px 18px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+}
+.report-eyebrow {
+  font-family: var(--font-data, 'Space Mono', monospace);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6A6A78;
+  margin: 0 0 14px;
+}
+.heatmap { display: flex; flex-direction: column; gap: 8px; }
+.heatmap-grid {
+  display: grid;
+  grid-template-rows: repeat(7, 14px);
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 3px;
+}
+.heatmap-cell {
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--theme) calc(var(--lvl, 0) * 100%), rgba(255,255,255,0.05));
+}
+.heatmap-cell.inactive { background: rgba(255,255,255,0.018); }
+.heatmap-months {
+  display: grid;
+  font-family: var(--font-data, 'Space Mono', monospace);
+  font-size: 0.6rem;
+  color: #5A5A66;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.heatmap-month { grid-row: 1; }
+
+.kpi-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 12px 16px 0;
+}
+.kpi-card {
+  padding: 16px 18px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 18px;
+}
+.kpi-label {
+  font-family: var(--font-data, 'Space Mono', monospace);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #6A6A78;
+  margin: 0 0 8px;
+}
+.kpi-value {
+  font-family: var(--font-data, 'Space Mono', monospace);
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: var(--theme);
+  margin: 0;
+  line-height: 1;
+}
+.kpi-good { color: #22C55E; }
+
+/* =====================================================================
+   LOADING SPINNER
+   ===================================================================== */
+.sd-loader-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 60vh;
+  width: 100%;
+}
+.sd-loader {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 3px solid rgba(255,255,255,0.08);
+  border-top-color: var(--theme, #3B9EFF);
+  animation: sd-spin 0.75s linear infinite;
+}
+.sd-loader::after {
+  content: '';
+  position: absolute;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  border-top-color: var(--theme-dim, rgba(59,158,255,0.4));
+  animation: sd-spin 1.4s linear infinite reverse;
+}
+@keyframes sd-spin { to { transform: rotate(360deg); } }

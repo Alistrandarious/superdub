@@ -53,7 +53,6 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
   const [resetEmail, setResetEmail] = useState('');
   const [resetCode, setResetCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [resetSuccess, setResetSuccess] = useState(false);
 
   // Sign-up fields
   const [email, setEmail] = useState('');
