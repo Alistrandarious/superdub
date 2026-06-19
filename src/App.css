@@ -7864,3 +7864,93 @@ h3, h4,
   animation: sd-spin 1.4s linear infinite reverse;
 }
 @keyframes sd-spin { to { transform: rotate(360deg); } }
+
+/* =====================================================================
+   WEIGHT TREND — expand button + modal
+   ===================================================================== */
+.chart-range-tabs { align-items: center; }
+.chart-range-spacer { flex: 1; }
+.chart-expand-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--theme-glow);
+  border: 1px solid var(--theme-dim);
+  color: var(--theme);
+  font-family: 'Sora', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+}
+.chart-expand-btn:hover { background: var(--theme); color: #0E0E14; }
+
+.weight-modal-overlay {
+  z-index: 800;
+  align-items: flex-end;
+  padding: 0;
+}
+@media (min-width: 560px) {
+  .weight-modal-overlay { align-items: center; padding: 24px; }
+}
+.weight-modal {
+  width: 100%;
+  max-width: 560px;
+  background: #15151E;
+  border: 1px solid var(--glass-border);
+  border-radius: 22px 22px 0 0;
+  padding: 18px 18px calc(20px + env(safe-area-inset-bottom, 0px));
+  animation: hb-sheet-in 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (min-width: 560px) {
+  .weight-modal { border-radius: 22px; }
+}
+.weight-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.weight-modal-eyebrow {
+  font-family: var(--font-data, 'Space Mono', monospace);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6A6A78;
+  margin: 0 0 3px;
+}
+.weight-modal-title {
+  font-family: var(--font-display, 'Kanit', sans-serif);
+  font-style: normal;
+  font-weight: 700;
+  font-size: 1.3rem;
+  color: #F0F0F8;
+  margin: 0;
+}
+.weight-modal-chart { margin: 0 -4px; }
+.weight-modal-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--glass-border);
+}
+.wml-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.78rem;
+  color: #B0B0C0;
+  font-family: 'Sora', sans-serif;
+}
+.wml-dot {
+  width: 12px;
+  height: 3px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}

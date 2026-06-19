@@ -187,6 +187,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
   // Chart state
   const [chartRange, setChartRange] = useState<'7d' | '1m' | '3m' | 'all'>('all');
+  const [weightModalOpen, setWeightModalOpen] = useState(false);
 
   // Weight plan state
   const [currentWeight, setCurrentWeight] = useState('');
@@ -657,6 +658,41 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </div>
       )}
 
+      {weightModalOpen && (
+        <div className="modal-overlay weight-modal-overlay" onClick={() => setWeightModalOpen(false)}>
+          <div className="weight-modal" onClick={e => e.stopPropagation()}>
+            <div className="weight-modal-head">
+              <div>
+                <p className="weight-modal-eyebrow">Weight · trend & prediction</p>
+                <h2 className="weight-modal-title">Weight over time</h2>
+              </div>
+              <button className="modal-close" onClick={() => setWeightModalOpen(false)}>✕</button>
+            </div>
+            <div className="weight-modal-chart">
+              <ResponsiveContainer width="100%" height={340}>
+                <ComposedChart data={chartData} margin={{ left: 0, right: 14, top: 10, bottom: 6 }}>
+                  <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+                  <XAxis dataKey="day" stroke="rgba(255,255,255,0.25)" tick={{ fill: '#FFFFFF', fontSize: 10 }} interval={xAxisInterval} tickLine={false} />
+                  <YAxis stroke="rgba(255,255,255,0.25)" tick={{ fill: '#FFFFFF', fontSize: 10 }} domain={['dataMin - 2', 'dataMax + 2']} width={40} axisLine={false} tickLine={false} allowDecimals={false} />
+                  <Tooltip contentStyle={{ background: '#0E0E14', border: `1px solid ${themeColor}`, borderRadius: 10 }} labelStyle={{ color: '#fff' }} />
+                  {parseFloat(goalWeight) > 0 && (
+                    <ReferenceLine y={parseFloat(goalWeight)} stroke="#FFD233" strokeWidth={1.5} strokeDasharray="8 4" label={{ value: `Goal: ${goalWeight}kg`, fill: '#FFD233', fontSize: 11, position: 'insideTopRight' }} />
+                  )}
+                  <Line type="monotone" dataKey="prediction" stroke="#FFD233" strokeWidth={2} strokeDasharray="5 5" dot={false} name="Prediction" connectNulls />
+                  <Line type="monotone" dataKey="trend" stroke="#B84DFF" strokeWidth={2} strokeDasharray="4 3" dot={false} name="Trend" connectNulls />
+                  <Line type="monotone" dataKey="weight" stroke={themeColor} strokeWidth={2.5} dot={{ r: 3, fill: '#fff', stroke: themeColor, strokeWidth: 2 } as any} name="Weight" connectNulls />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="weight-modal-legend">
+              <span className="wml-item"><span className="wml-dot" style={{ background: themeColor }} /> Weight</span>
+              <span className="wml-item"><span className="wml-dot" style={{ background: '#B84DFF' }} /> Trend analysis</span>
+              <span className="wml-item"><span className="wml-dot" style={{ background: '#FFD233' }} /> Prediction</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {weightPlanOpen && (
         <div className="modal-overlay" onClick={closeWeightModal}>
           <div className="modal" onClick={e => e.stopPropagation()}>
@@ -886,6 +922,10 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
       <section className="chart-section">
         <div className="chart-range-tabs">
+          <button className="chart-expand-btn" onClick={() => setWeightModalOpen(true)}>
+            Weight trend <span aria-hidden>⤢</span>
+          </button>
+          <div className="chart-range-spacer" />
           {(['7d', '1m', '3m', 'all'] as const).map(r => (
             <button
               key={r}
@@ -944,7 +984,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 label={{ value: `🎯 ${goalDayVisible}`, fill: '#B84DFF', fontSize: 11, position: 'top' }}
               />
             )}
-            <Bar yAxisId="left" dataKey="completed" stackId="habits" fill="url(#barGradient)" name="Done" />
+            <Bar yAxisId="left" dataKey="completed" stackId="habits" fill={themeColor} name="Done" />
             <Bar yAxisId="left" dataKey="failed" stackId="habits" fill="rgba(255,69,58,0.75)" name="Failed" radius={[3,3,0,0]} />
             <Line
               yAxisId="right"
@@ -952,25 +992,12 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               dataKey="weight"
               stroke={themeColor}
               strokeWidth={2}
+              style={{ cursor: 'pointer' }}
+              onClick={() => setWeightModalOpen(true)}
               dot={(props: any) => {
                 const { cx, cy, payload, index } = props;
                 if (payload.weight == null) return <g key={`dot-empty-${index}`} />;
-                if (payload.prediction == null) return <circle key={`dot-${index}`} cx={cx} cy={cy} r={4} fill={themeColor} />;
-                const diff = payload.weight - payload.prediction;
-                const maxDiff = 5;
-                const ratio = Math.min(Math.abs(diff) / maxDiff, 1);
-                let fill: string;
-                if (diff > 0) {
-                  const r = Math.round(255);
-                  const g = Math.round(255 * (1 - ratio));
-                  fill = `rgb(${r},${g},0)`;
-                } else {
-                  const r = 0;
-                  const g = Math.round(150 + 105 * ratio);
-                  const b = Math.round(65 * (1 - ratio));
-                  fill = `rgb(${r},${g},${b})`;
-                }
-                return <circle key={`dot-${index}`} cx={cx} cy={cy} r={5} fill={fill} stroke={fill} strokeWidth={1} />;
+                return <circle key={`dot-${index}`} cx={cx} cy={cy} r={4.5} fill="#FFFFFF" stroke={themeColor} strokeWidth={2} style={{ cursor: 'pointer' }} onClick={() => setWeightModalOpen(true)} />;
               }}
               name="Weight (kg)"
               connectNulls
