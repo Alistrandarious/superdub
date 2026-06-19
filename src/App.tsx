@@ -909,9 +909,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               </linearGradient>
             </defs>
             <CartesianGrid stroke={themeColor + '1a'} strokeDasharray="3 3" />
-            <XAxis dataKey="day" stroke={themeColor} tick={{ fill: themeColor, fontSize: 10 }} interval={xAxisInterval} tickLine={false} padding={{ left: 10 }} />
-            <YAxis yAxisId="left" stroke={themeColor} tick={{ fill: themeColor, fontSize: 10 }} allowDecimals={false} width={30} axisLine={false} tickLine={false} domain={[0, habits.length]} />
-            <YAxis yAxisId="right" orientation="right" stroke="#FFD233" tick={{ fill: '#FFD233', fontSize: 10 }} domain={(() => {
+            <XAxis dataKey="day" stroke="rgba(255,255,255,0.25)" tick={{ fill: '#FFFFFF', fontSize: 10 }} interval={xAxisInterval} tickLine={false} padding={{ left: 10 }} />
+            <YAxis yAxisId="left" stroke="rgba(255,255,255,0.25)" tick={{ fill: '#FFFFFF', fontSize: 10 }} allowDecimals={false} width={30} axisLine={false} tickLine={false} domain={[0, habits.length]} />
+            <YAxis yAxisId="right" orientation="right" stroke="rgba(255,255,255,0.25)" tick={{ fill: '#FFFFFF', fontSize: 10 }} domain={(() => {
               const weights = chartData.map(d => d.weight).filter(Boolean) as number[];
               const preds   = chartData.map(d => d.prediction).filter(Boolean) as number[];
               const gw      = parseFloat(goalWeight) || 0;
@@ -928,8 +928,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               <ReferenceLine
                 yAxisId="right"
                 y={parseFloat(goalWeight)}
-                stroke="#ff00ff"
-                strokeWidth={1}
+                stroke="#FFD233"
+                strokeWidth={1.5}
                 strokeDasharray="8 4"
                 label={{ value: `Goal: ${goalWeight}kg`, fill: '#FFD233', fontSize: 11, position: 'right' }}
               />
