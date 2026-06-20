@@ -79,6 +79,14 @@ const migrations = [
     recorded_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE (user_id, day, source)
   )`,
+  // Login history: one row per successful login, so we can see how many times
+  // and at what time each user logged in (users.last_login_at only keeps the latest).
+  `CREATE TABLE IF NOT EXISTS login_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    logged_in_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`,
+  `CREATE INDEX IF NOT EXISTS login_events_user_idx ON login_events (user_id, logged_in_at DESC)`,
   `ALTER TABLE recipes ADD COLUMN IF NOT EXISTS ingredients JSONB DEFAULT '[]'`,
   `CREATE TABLE IF NOT EXISTS recipes (
     id INTEGER PRIMARY KEY,

@@ -156,6 +156,8 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 
     pool.query('UPDATE users SET last_login_at = NOW() WHERE id = $1', [rows[0].id]).catch(() => {});
+    // Record this login in the history table (count + timestamps per user).
+    pool.query('INSERT INTO login_events (user_id) VALUES ($1)', [rows[0].id]).catch(() => {});
     res.json({ token: makeToken(rows[0].id), userId: rows[0].id });
   } catch (err) {
     console.error(err);

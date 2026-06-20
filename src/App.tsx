@@ -628,35 +628,23 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             </svg>
           </button>
           {menuOpen && (
-            <div style={{
-              position: 'absolute', top: 'calc(100% + 6px)', right: 0,
-              background: '#0E0E14', border: '1px solid #252532',
-              borderRadius: 12, minWidth: 160, overflow: 'hidden',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.6)', zIndex: 300,
-            }}>
-              <button
-                onClick={() => { setHabitsModalOpen(true); setMenuOpen(false); }}
-                style={{
-                  display: 'block', width: '100%', padding: '12px 16px',
-                  background: 'none', border: 'none', color: '#ccc',
-                  textAlign: 'left', cursor: 'pointer', fontSize: '0.85rem',
-                  fontFamily: 'inherit', borderBottom: '1px solid #252532',
-                }}
-              >
-                Edit Habits
-              </button>
-              <button
-                onClick={() => { setWeightPlanOpen(true); setMenuOpen(false); }}
-                style={{
-                  display: 'block', width: '100%', padding: '12px 16px',
-                  background: 'none', border: 'none', color: '#ccc',
-                  textAlign: 'left', cursor: 'pointer', fontSize: '0.85rem',
-                  fontFamily: 'inherit',
-                }}
-              >
-                Weight Settings
-              </button>
-            </div>
+            <>
+              <div className="cog-menu-overlay" onClick={() => setMenuOpen(false)} />
+              <div className="cog-menu">
+                <button className="cog-menu-item" onClick={() => { setMenuOpen(false); setHabitsModalOpen(true); }}>
+                  <span>✎</span> Edit Habits
+                </button>
+                <button className="cog-menu-item" onClick={() => { setMenuOpen(false); setWeightPlanOpen(true); }}>
+                  <span>🎯</span> Weight Settings
+                </button>
+                <button className="cog-menu-item" onClick={() => { setMenuOpen(false); window.dispatchEvent(new CustomEvent('superdub:show-checkin')); }}>
+                  <span>⚖️</span> Log Weight
+                </button>
+                <button className="cog-menu-item" onClick={() => { setMenuOpen(false); window.dispatchEvent(new CustomEvent('superdub:show-step-entry')); }}>
+                  <span>👟</span> Log Steps
+                </button>
+              </div>
+            </>
           )}
         </div>
       </div>
