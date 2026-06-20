@@ -432,7 +432,6 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
       <div className="profile-content page-content">
 
         <div className="page-intro">
-          <h1 className="page-intro-title">More</h1>
           <p className="page-intro-sub">Profile, settings & quick actions</p>
         </div>
 

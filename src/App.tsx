@@ -858,9 +858,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="dashboard-scroll">
       {/* Overview heading + month picker */}
       <div className="progress-overview">
-        <div className="progress-overview-titles">
-          <h1 className="progress-title">Progress</h1>
-        </div>
+        {/* title removed (redundant with nav); empty wrapper kept as a flex spacer
+            so space-between keeps the month picker on the right */}
+        <div className="progress-overview-titles" />
         <div className="calendar-picker">
           <button className="calendar-btn" onClick={() => setCalendarOpen(!calendarOpen)}>
             {MONTH_NAMES[selectedMonth]} {YEAR}
