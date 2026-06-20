@@ -9,6 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   ReferenceLine,
+  Cell,
 } from 'recharts';
 import './App.css';
 import { api } from './api';
@@ -210,6 +211,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const [height, setHeight] = useState('');
   const [age, setAge] = useState('');
   const [activityLevel, setActivityLevel] = useState('1.4');
+  const [stepTarget, setStepTarget] = useState(10000);
 
   // Load all data on mount
   const loadData = useCallback((currentHabits?: string[]) => {
@@ -221,6 +223,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     ]).then(([profile, loadedHabits, trackerData, ws]) => {
       setName(profile.name ?? '');
       if (profile.accountCreatedAt) setAccountCreatedAt(profile.accountCreatedAt);
+      setStepTarget(parseInt(profile.stepTarget) || 10000);
 
       const habitObjs = loadedHabits as { name: string }[];
       const activeHabits = habitObjs.length > 0 ? habitObjs.map(h => h.name) : (currentHabits ?? DEFAULT_HABITS);
@@ -496,6 +499,31 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     const m = heatmapCells[w * 7].monthIdx;
     if (w === 0 || heatmapCells[(w - 1) * 7].monthIdx !== m) heatmapMonths.push({ idx: m, col: w });
   }
+
+  // ── Walking stats (driven by tracker.steps — populated by phone sync or manual) ──
+  const walkAll: { ddmm: string; steps: number }[] = [];
+  {
+    const wd = new Date(startDay);
+    while (wd.getTime() <= hmEnd.getTime()) {
+      const ddmm = `${String(wd.getDate()).padStart(2, '0')}/${String(wd.getMonth() + 1).padStart(2, '0')}`;
+      walkAll.push({ ddmm, steps: parseInt(tracker[ddmm]?.steps ?? '') || 0 });
+      wd.setDate(wd.getDate() + 1);
+    }
+  }
+  const walkLogged = walkAll.filter(d => d.steps > 0);
+  const walkTotal = walkLogged.reduce((s, d) => s + d.steps, 0);
+  const walkAvg = walkLogged.length ? Math.round(walkTotal / walkLogged.length) : 0;
+  const walkDaysHit = walkLogged.filter(d => d.steps >= stepTarget).length;
+  const walkDaysMissed = walkLogged.length - walkDaysHit;
+  // current streak: consecutive most-recent days that hit the target
+  let walkStreak = 0;
+  for (let i = walkAll.length - 1; i >= 0; i--) {
+    if (walkAll[i].steps > 0 && walkAll[i].steps >= stepTarget) walkStreak++;
+    else break;
+  }
+  // chart: last 14 days, coloured by hit/miss
+  const walkChart = walkAll.slice(-14).map(d => ({ day: d.ddmm, steps: d.steps, hit: d.steps >= stepTarget }));
+  const walkHasData = walkLogged.length > 0;
 
   const handleWeight = (day: string, value: string) => {
     if (value !== '' && !/^\d*\.?\d*$/.test(value)) return;
@@ -1001,6 +1029,54 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* ── Walking stats (steps from phone sync or manual entry) ── */}
+      <section className="report-card walk-card">
+        <p className="report-eyebrow">Walking · target {stepTarget.toLocaleString()} steps</p>
+        {walkHasData ? (
+          <>
+            <div className="walk-kpi-row">
+              <div className="walk-kpi">
+                <span className="walk-kpi-val">{walkAvg.toLocaleString()}</span>
+                <span className="walk-kpi-label">Avg / day</span>
+              </div>
+              <div className="walk-kpi">
+                <span className="walk-kpi-val kpi-good">{walkDaysHit}</span>
+                <span className="walk-kpi-label">Days hit</span>
+              </div>
+              <div className="walk-kpi">
+                <span className="walk-kpi-val">{walkDaysMissed}</span>
+                <span className="walk-kpi-label">Days missed</span>
+              </div>
+              <div className="walk-kpi">
+                <span className="walk-kpi-val">{walkStreak}{walkStreak > 0 ? ' 🔥' : ''}</span>
+                <span className="walk-kpi-label">Streak</span>
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height={170}>
+              <ComposedChart data={walkChart} margin={{ left: 0, right: 10, top: 8, bottom: 4 }}>
+                <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+                <XAxis dataKey="day" stroke="rgba(255,255,255,0.25)" tick={{ fill: '#FFFFFF', fontSize: 9 }} interval="preserveStartEnd" tickLine={false} padding={{ left: 6, right: 6 }} />
+                <YAxis stroke="rgba(255,255,255,0.25)" tick={{ fill: '#FFFFFF', fontSize: 9 }} width={36} axisLine={false} tickLine={false} tickFormatter={(v: number) => v >= 1000 ? `${Math.round(v / 1000)}k` : String(v)} />
+                <Tooltip
+                  cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                  contentStyle={{ background: '#0E1418', border: '1px solid #132820', borderRadius: 10, fontSize: 12 }}
+                  labelStyle={{ color: '#9aa' }}
+                  formatter={(v: any) => [Number(v).toLocaleString() + ' steps', '']}
+                />
+                <ReferenceLine y={stepTarget} stroke="#FFD233" strokeDasharray="4 4" label={{ value: 'Target', fill: '#FFD233', fontSize: 10, position: 'insideTopRight' }} />
+                <Bar dataKey="steps" radius={[4, 4, 0, 0]} isAnimationActive={false}>
+                  {walkChart.map((d, i) => (
+                    <Cell key={i} fill={d.hit ? '#2FD27E' : '#2E8BFF'} />
+                  ))}
+                </Bar>
+              </ComposedChart>
+            </ResponsiveContainer>
+          </>
+        ) : (
+          <p className="walk-empty">No step data yet. Once steps sync from your phone (or you add them manually), your walking stats appear here.</p>
+        )}
       </section>
 
       {/* Week selector — filters the tracker below */}

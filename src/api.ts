@@ -1,4 +1,19 @@
-const BASE = '/api';
+// Inside a Capacitor native shell the webview origin is capacitor://localhost, so the
+// relative '/api' + CRA dev proxy don't apply — point at the hosted backend directly.
+// We read the injected window.Capacitor global rather than importing @capacitor/core so
+// the plain web/PWA build has no dependency on the native package.
+const isNative =
+  typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.() === true;
+const BASE = isNative ? 'https://superdub.onrender.com/api' : '/api';
+
+export type StepSource = 'health_connect' | 'healthkit' | 'manual';
+export interface StepEntry {
+  day: string;
+  source: StepSource;
+  steps: number;
+  active: boolean;
+  recorded_at: string;
+}
 
 function getToken() {
   return localStorage.getItem('superdub.token');
@@ -60,6 +75,14 @@ export const api = {
     request('/tracker', { method: 'PATCH', body: JSON.stringify({ day, ...data }) }),
   toggleTrackerHabit: (day: string, habitName: string, state: 'done' | 'failed' | null) =>
     request('/tracker/habit', { method: 'PATCH', body: JSON.stringify({ day, habitName, state }) }),
+
+  // steps (provenance-aware)
+  getSteps: (day?: string): Promise<{ entries: StepEntry[] }> =>
+    request(`/steps${day ? `?day=${encodeURIComponent(day)}` : ''}`),
+  addSteps: (day: string, steps: number, source: StepSource = 'manual') =>
+    request('/steps', { method: 'POST', body: JSON.stringify({ day, steps, source }) }),
+  bulkSteps: (entries: { day: string; source: StepSource; steps: number }[]) =>
+    request('/steps/bulk', { method: 'POST', body: JSON.stringify({ entries }) }),
 
   // tasks & lists
   getTasks: () => request('/tasks'),

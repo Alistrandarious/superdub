@@ -13,9 +13,11 @@ import LevelPage from './LevelPage';
 import FoodLog from './FoodLog';
 import MealPlans from './MealPlans';
 import DailyCheckIn from './DailyCheckIn';
+import StepEntry from './StepEntry';
 import BottomNav from './BottomNav';
 import { Auth } from './Auth';
 import { isLoggedIn, clearToken, api } from './api';
+import { initStepSync } from './stepSync';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 
 const NO_NAV_PATHS = ['/privacy'];
@@ -38,6 +40,8 @@ function AppRouter() {
     const ping = () => api.heartbeat().catch(() => {});
 
     ping(); // immediate on app open / login
+
+    initStepSync(); // native-only: pull phone steps on launch/resume (no-op on web)
 
     const onVisible = () => {
       if (document.visibilityState === 'visible') ping();
@@ -75,6 +79,7 @@ function AppRouter() {
         <Route path="/meal-plans" element={<MealPlans />} />
       </Routes>
       <DailyCheckIn />
+      <StepEntry />
       <BottomNav />
     </>
   );

@@ -11,6 +11,7 @@ import dietRoutes from './routes/diet';
 import weightSettingsRoutes from './routes/weightSettings';
 import foodlogRoutes from './routes/foodlog';
 import mealplansRoutes from './routes/mealplans';
+import stepsRoutes from './routes/steps';
 import { pool } from './db';
 
 dotenv.config();
@@ -30,6 +31,7 @@ app.use('/api/diet', dietRoutes);
 app.use('/api/weight-settings', weightSettingsRoutes);
 app.use('/api/food-log', foodlogRoutes);
 app.use('/api/meal-plans', mealplansRoutes);
+app.use('/api/steps', stepsRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
@@ -65,6 +67,18 @@ const migrations = [
     END IF;
   END $$`,
   `ALTER TABLE tasks ADD COLUMN IF NOT EXISTS type TEXT DEFAULT 'todo'`,
+  // Per-source step provenance: keep every value per (day, source), flag the active one.
+  // tracker.steps stays as a denormalized cache of the active value so charts/KPIs are untouched.
+  `CREATE TABLE IF NOT EXISTS step_entries (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    day TEXT NOT NULL,
+    source TEXT NOT NULL CHECK (source IN ('health_connect','healthkit','manual')),
+    steps INTEGER NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    recorded_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE (user_id, day, source)
+  )`,
   `ALTER TABLE recipes ADD COLUMN IF NOT EXISTS ingredients JSONB DEFAULT '[]'`,
   `CREATE TABLE IF NOT EXISTS recipes (
     id INTEGER PRIMARY KEY,
