@@ -1395,55 +1395,57 @@ h1, h2, h3, h4, .sora {
 
 /* Lists tab bar */
 .lists-tab-bar {
-  display: flex; border-bottom: 1px solid #252532; background: #0E0E14;
+  display: flex; border-bottom: 1px solid var(--glass-border); background: var(--glass-bg);
 }
 .lists-tab-bar--top {
   padding-top: 8px;
 }
 .lists-tab {
-  flex: 1; padding: 12px 0; background: none; border: none;
-  color: #444; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.05em;
-  text-transform: uppercase; cursor: pointer; font-family: inherit;
+  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 12px 0; background: none; border: none;
+  color: #5A5A6A; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.05em;
+  text-transform: uppercase; cursor: pointer; font-family: var(--font-ui);
   border-bottom: 2px solid transparent; transition: color 0.15s, border-color 0.15s;
 }
-.lists-tab--active.lists-tab--green { color: #FF4D8D; border-bottom-color: #FF4D8D; }
-.lists-tab--active.lists-tab--orange { color: #FFD233; border-bottom-color: #FFD233; }
+.lists-tab--active { color: var(--theme); border-bottom-color: var(--theme); }
 
 /* Input row */
-.lists-input-row { display: flex; gap: 8px; margin-bottom: 16px; }
+.lists-input-row { display: flex; gap: 8px; margin-bottom: var(--gutter); }
 .lists-input {
-  flex: 1; padding: 12px 14px; background: #1A1A24;
-  border: 1px solid #2A2A38; border-radius: 10px; color: #e0e0e0;
-  font-size: 0.9rem; font-family: inherit; outline: none;
+  flex: 1; padding: 12px 14px; background: var(--surface-raised);
+  border: 1px solid var(--glass-border); border-radius: var(--r-sm); color: #e0e0e0;
+  font-size: 0.9rem; font-family: var(--font-ui); outline: none;
   transition: border-color 0.15s;
 }
-.lists-input:focus { border-color: var(--accent, #FF4D8D); }
+.lists-input:focus { border-color: var(--theme); }
 .lists-add-btn {
-  width: 44px; height: 44px; border: none; border-radius: 10px;
+  width: 44px; height: 44px; border: none; border-radius: var(--r-sm);
   color: #000; font-size: 1.3rem; font-weight: 700; cursor: pointer;
   flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  transition: filter 0.15s;
 }
+.lists-add-btn:hover { filter: brightness(1.08); }
 
 /* List items */
 .lists-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .lists-item {
   display: flex; align-items: center; gap: 12px;
-  padding: 12px 14px; background: #15151E;
-  border: 1px solid #252532; border-radius: 10px;
-  transition: opacity 0.15s;
+  padding: 12px 14px; background: var(--surface-raised);
+  border: 1px solid var(--glass-border); border-radius: var(--r-sm);
+  transition: opacity 0.15s, border-color 0.15s;
 }
 .lists-item--done { opacity: 0.45; }
 .lists-check {
-  width: 22px; height: 22px; border-radius: 50%; background: none;
-  border: 2px solid #252532; cursor: pointer; flex-shrink: 0;
+  width: 22px; height: 22px; border-radius: var(--r-pill); background: none;
+  border: 2px solid var(--glass-border); cursor: pointer; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   transition: all 0.15s;
 }
 .lists-check-tick { font-size: 0.7rem; color: #000; font-weight: 900; }
 .lists-text { flex: 1; font-size: 0.88rem; color: #ccc; line-height: 1.4; }
-.lists-item--done .lists-text { text-decoration: line-through; color: #444; }
+.lists-item--done .lists-text { text-decoration: line-through; color: #555; }
 .lists-remove {
-  background: none; border: none; color: #333; cursor: pointer;
+  background: none; border: none; color: #444; cursor: pointer;
   font-size: 0.75rem; padding: 2px 4px; flex-shrink: 0;
   transition: color 0.12s;
 }
@@ -1452,17 +1454,17 @@ h1, h2, h3, h4, .sora {
 /* Clear done */
 .lists-clear-btn {
   width: 100%; margin-top: 12px; padding: 9px;
-  background: none; border: 1px solid #2A2A38; color: #555;
-  border-radius: 8px; font-size: 0.78rem; font-weight: 600;
-  cursor: pointer; font-family: inherit; transition: color 0.12s, border-color 0.12s;
+  background: none; border: 1px solid var(--glass-border); color: #666;
+  border-radius: var(--r-xs); font-size: 0.78rem; font-weight: 600;
+  cursor: pointer; font-family: var(--font-ui); transition: color 0.12s, border-color 0.12s;
 }
-.lists-clear-btn:hover { color: #f87171; border-color: #3A1A2E; }
+.lists-clear-btn:hover { color: #f87171; border-color: rgba(248,113,113,0.3); }
 
 /* Empty state */
 .lists-empty { text-align: center; padding: 48px 16px; }
-.lists-empty-icon { font-size: 2.5rem; margin-bottom: 12px; }
-.lists-empty-title { font-size: 1rem; font-weight: 700; color: #ccc; margin-bottom: 6px; }
-.lists-empty-sub { font-size: 0.8rem; color: #555; line-height: 1.5; }
+.lists-empty-icon { color: var(--theme); opacity: 0.55; margin-bottom: 14px; display: flex; justify-content: center; }
+.lists-empty-title { font-size: 1rem; font-weight: 700; color: #ccc; margin-bottom: 6px; font-family: var(--font-ui); }
+.lists-empty-sub { font-size: 0.8rem; color: #666; line-height: 1.5; }
 
 .task-list {
   list-style: none;

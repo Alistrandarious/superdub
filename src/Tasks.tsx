@@ -9,6 +9,25 @@ interface Task {
   type: 'todo' | 'shopping';
 }
 
+// Brand-family accents — green = To-Do (health/done), blue = Shopping (growth).
+const TODO_ACCENT = '#2FD27E';
+const SHOP_ACCENT = '#2E8BFF';
+
+const CheckIcon: React.FC<{ size?: number }> = ({ size = 16 }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
+    <polyline points="9 11 12 14 22 4" />
+    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+  </svg>
+);
+
+const CartIcon: React.FC<{ size?: number }> = ({ size = 16 }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
+    <circle cx="9" cy="21" r="1" />
+    <circle cx="20" cy="21" r="1" />
+    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+  </svg>
+);
+
 const Tasks: React.FC = () => {
   const [tasks, setTasks]   = useState<Task[]>([]);
   const [tab, setTab]       = useState<'todo' | 'shopping'>('todo');
@@ -60,26 +79,28 @@ const Tasks: React.FC = () => {
   const doneCount = visible.filter(t => t.done).length;
 
   const isShopping = tab === 'shopping';
-  const accent = isShopping ? '#FFD233' : '#FF4D8D';
-  const themeVars = isShopping
-    ? { '--theme': '#FFD233', '--theme-dim': '#FFD23366', '--theme-glow': '#FFD23322' }
-    : { '--theme': '#FF4D8D', '--theme-dim': '#FF4D8D66', '--theme-glow': '#FF4D8D22' };
+  const accent = isShopping ? SHOP_ACCENT : TODO_ACCENT;
+  const themeVars = {
+    '--theme': accent,
+    '--theme-dim': accent + '66',
+    '--theme-glow': accent + '22',
+  } as React.CSSProperties;
 
   return (
-    <div className="app flush" style={themeVars as React.CSSProperties}>
+    <div className="app flush" style={themeVars}>
       {/* Tab bar */}
       <div className="lists-tab-bar lists-tab-bar--top">
         <button
-          className={`lists-tab${tab === 'todo' ? ' lists-tab--active lists-tab--green' : ''}`}
+          className={`lists-tab${tab === 'todo' ? ' lists-tab--active' : ''}`}
           onClick={() => setTab('todo')}
         >
-          ✓ To-Do
+          <CheckIcon /> To-Do
         </button>
         <button
-          className={`lists-tab${tab === 'shopping' ? ' lists-tab--active lists-tab--orange' : ''}`}
+          className={`lists-tab${tab === 'shopping' ? ' lists-tab--active' : ''}`}
           onClick={() => setTab('shopping')}
         >
-          🛒 Shopping
+          <CartIcon /> Shopping
         </button>
       </div>
 
@@ -93,7 +114,6 @@ const Tasks: React.FC = () => {
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && addItem()}
             placeholder={isShopping ? 'Add item to shop for…' : 'New task…'}
-            style={{ '--accent': accent } as React.CSSProperties}
           />
           <button
             className="lists-add-btn"
@@ -107,7 +127,7 @@ const Tasks: React.FC = () => {
           <div className="sd-loader-wrap"><div className="sd-loader"><img className="sd-loader-logo" src="/superdub-logo.png" alt="" /></div></div>
         ) : visible.length === 0 ? (
           <div className="lists-empty">
-            <div className="lists-empty-icon">{isShopping ? '🛒' : '✅'}</div>
+            <div className="lists-empty-icon">{isShopping ? <CartIcon size={40} /> : <CheckIcon size={40} />}</div>
             <div className="lists-empty-title">{isShopping ? 'Shopping list is empty' : 'No tasks yet'}</div>
             <div className="lists-empty-sub">
               {isShopping
