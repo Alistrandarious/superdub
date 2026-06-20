@@ -6206,6 +6206,10 @@ h1, h2, h3, h4, .sora {
 .step-entry-hint strong {
   color: #2FD27E; font-family: 'Space Mono', monospace; font-weight: 700;
 }
+.step-entry-modal { width: min(92vw, 400px); }
+.step-entry-sub {
+  font-size: 0.8rem; color: #6A7A72; line-height: 1.5; margin: 0 0 18px;
+}
 
 /* ── Wheel Picker ── */
 .wheel-picker-wrap {
