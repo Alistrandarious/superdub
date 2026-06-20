@@ -1,4 +1,4 @@
-const CACHE = 'superdub-v3';
+const CACHE = 'superdub-v4';
 const PRECACHE = [
   '/',
   '/index.html',

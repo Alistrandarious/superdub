@@ -859,7 +859,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       {/* Overview heading + month picker */}
       <div className="progress-overview">
         <div className="progress-overview-titles">
-          <p className="progress-eyebrow">{YEAR} OVERVIEW</p>
           <h1 className="progress-title">Progress</h1>
         </div>
         <div className="calendar-picker">
