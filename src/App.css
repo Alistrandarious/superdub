@@ -1567,6 +1567,18 @@ h1, h2, h3, h4, .sora {
   background: var(--glass-bg-strong);
 }
 
+/* Habits & Nutrition tracker, opened from the Progress cog */
+.tracker-modal {
+  width: min(96vw, 760px);
+  max-width: 96vw;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 18px;
+}
+.tracker-modal .tracker { margin: 0; min-height: 0; }
+.tracker-modal .week-bar { margin-top: 0; }
+
 .header-btn {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border-strong);

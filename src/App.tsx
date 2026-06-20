@@ -130,6 +130,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const [weightPlanOpen, setWeightPlanOpen] = useState(false);
   const [habitsModalOpen, setHabitsModalOpen] = useState(false);
   const [nutritionOpen, setNutritionOpen] = useState(false);
+  const [trackerModalOpen, setTrackerModalOpen] = useState(false);
   const [trackerTab, setTrackerTab] = useState<'habits' | 'nutrition'>('habits');
 
   // One-time daily check-in overlay
@@ -643,6 +644,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 <button className="cog-menu-item" onClick={() => { setMenuOpen(false); window.dispatchEvent(new CustomEvent('superdub:show-step-entry')); }}>
                   <span>👟</span> Log Steps
                 </button>
+                <button className="cog-menu-item" onClick={() => { setMenuOpen(false); setTrackerModalOpen(true); }}>
+                  <span>📋</span> Habits &amp; Nutrition
+                </button>
               </div>
             </>
           )}
@@ -1067,6 +1071,14 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         )}
       </section>
 
+      {/* Habits & Nutrition tracker — moved into the cog (opens as a modal) */}
+      {trackerModalOpen && (
+      <div className="modal-overlay" onClick={() => setTrackerModalOpen(false)}>
+      <div className="modal tracker-modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <span className="modal-title">Habits &amp; Nutrition</span>
+          <button className="modal-close" onClick={() => setTrackerModalOpen(false)}>✕</button>
+        </div>
       {/* Week selector — filters the tracker below */}
       <div className="week-bar">
         <button
@@ -1230,6 +1242,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </div>
         </div>
       </section>
+      </div>
+      </div>
+      )}
       <div style={{ height: 100 }} />
       </div>{/* /dashboard-scroll */}
     </div>

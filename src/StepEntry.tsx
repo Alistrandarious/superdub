@@ -77,10 +77,13 @@ const StepEntry: React.FC = () => {
   const active = existing.find(e => e.active);
 
   return (
-    <div className="checkin-overlay">
-      <div className="checkin-modal">
-        <h2 className="checkin-title">Log Steps</h2>
-        <p className="checkin-subtitle">
+    <div className="modal-overlay" onClick={dismiss}>
+      <div className="modal step-entry-modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <span className="modal-title">Log Steps</span>
+          <button className="modal-close" onClick={dismiss}>✕</button>
+        </div>
+        <p className="step-entry-sub">
           Enter your step count for a day. If your phone is synced, a manual entry
           overrides the device value for that day.
         </p>
