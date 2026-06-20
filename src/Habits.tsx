@@ -107,7 +107,7 @@ function getRank(totalDays: number): { title: string; color: string } {
   if (totalDays >= 365) return { title: 'Master', color: '#FFD233' };
   if (totalDays >= 100) return { title: 'In the Hundreds', color: '#2E8BFF' };
   if (totalDays >= 50)  return { title: 'Habit Tracking Superstar', color: '#FF8A00' };
-  if (totalDays >= 30)  return { title: 'Rising Star', color: '#FF4D8D' };
+  if (totalDays >= 30)  return { title: 'Rising Star', color: '#2FD27E' };
   if (totalDays >= 10)  return { title: 'Gathering Momentum', color: '#FFB928' };
   return { title: 'Habitteaur', color: '#888' };
 }
@@ -245,7 +245,7 @@ const FEATURED = [
     name: 'Petting Iggy',
     tagline: 'Daily love for your sweet fury baby girl.',
     icon: '🐶',
-    accent: '#FF4D8D',
+    accent: '#2FD27E',
     bgClass: 'featured-bg-iggy',
   },
   {
