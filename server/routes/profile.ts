@@ -116,9 +116,18 @@ router.put('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   }
 });
 
-// POST /heartbeat — client pings this to keep last_active_at current
-// requireAuth middleware handles the DB update, so this just needs to exist
-router.post('/heartbeat', requireAuth as any, (_req: AuthRequest, res: Response) => {
+// POST /heartbeat — client pings this when the user is interacting with the app
+// (on open, tab focus, and every 5 min). requireAuth updates last_active_at; here we
+// also record an activity event, throttled to at most one per minute per user.
+router.post('/heartbeat', requireAuth as any, (req: AuthRequest, res: Response) => {
+  pool.query(
+    `INSERT INTO activity_events (user_id)
+     SELECT $1 WHERE NOT EXISTS (
+       SELECT 1 FROM activity_events
+       WHERE user_id = $1 AND occurred_at > NOW() - INTERVAL '1 minute'
+     )`,
+    [req.userId]
+  ).catch(() => {});
   res.json({ ok: true });
 });
 

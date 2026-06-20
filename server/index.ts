@@ -79,14 +79,26 @@ const migrations = [
     recorded_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE (user_id, day, source)
   )`,
-  // Login history: one row per successful login, so we can see how many times
-  // and at what time each user logged in (users.last_login_at only keeps the latest).
-  `CREATE TABLE IF NOT EXISTS login_events (
+  // Activity history: one row each time a user actively interacts with the app
+  // (login + heartbeat pings), so we can see how often and when they're active.
+  // Evolved from the earlier login_events table — rename in place only if the new
+  // table doesn't exist yet (preserves the old rows), then drop any leftover.
+  `DO $$
+   BEGIN
+     IF to_regclass('public.activity_events') IS NULL
+        AND to_regclass('public.login_events') IS NOT NULL THEN
+       ALTER TABLE login_events RENAME TO activity_events;
+       ALTER TABLE activity_events RENAME COLUMN logged_in_at TO occurred_at;
+       ALTER INDEX IF EXISTS login_events_user_idx RENAME TO activity_events_user_idx;
+     END IF;
+   END $$`,
+  `DROP TABLE IF EXISTS login_events`,
+  `CREATE TABLE IF NOT EXISTS activity_events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    logged_in_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    occurred_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`,
-  `CREATE INDEX IF NOT EXISTS login_events_user_idx ON login_events (user_id, logged_in_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS activity_events_user_idx ON activity_events (user_id, occurred_at DESC)`,
   `ALTER TABLE recipes ADD COLUMN IF NOT EXISTS ingredients JSONB DEFAULT '[]'`,
   `CREATE TABLE IF NOT EXISTS recipes (
     id INTEGER PRIMARY KEY,
@@ -136,7 +148,7 @@ const migrations = [
 ];
 (async () => {
   for (const sql of migrations) {
-    await pool.query(sql).catch(err => console.error('[migrate]', err?.message, sql.slice(0, 60)));
+    await pool.query(sql).catch((err: any) => console.error('[migrate]', err?.message, sql.slice(0, 60)));
   }
   console.log('[migrate] done');
 })();
