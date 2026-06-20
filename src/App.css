@@ -4389,6 +4389,12 @@ h1, h2, h3, h4, .sora {
 }
 .pwa-banner-btn:hover { opacity: 0.92; }
 .pwa-banner-btn:active { transform: scale(0.98); }
+/* Anchor variant (APK download) */
+.pwa-banner-btn { text-decoration: none; display: flex; align-items: center; justify-content: center; }
+.pwa-banner-note {
+  font-size: 0.72rem; color: #7A7A88; line-height: 1.45;
+  margin: -4px 2px 0; text-align: center;
+}
 
 .pwa-banner-dismiss {
   position: absolute;

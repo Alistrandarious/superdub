@@ -471,20 +471,14 @@ const Habits: React.FC = () => {
   const todayStr = new Date().toDateString();
   const [showInstall, setShowInstall] = useState(() => {
     if (isInStandaloneMode) return false;
+    if ((window as any).Capacitor?.isNativePlatform?.()) return false; // already the native app
     if (localStorage.getItem(pwaKey) === 'dismissed') return false;
     if (localStorage.getItem(pwaDayKey) === todayStr) return false;
     return true;
   });
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [installClosing, setInstallClosing] = useState(false);
   // +100 XP reward for installing to the home screen (granted once the app runs installed)
   const [installBonus, setInstallBonus] = useState(() => localStorage.getItem(INSTALL_XP_KEY) === 'granted');
-
-  useEffect(() => {
-    const handler = (e: Event) => { e.preventDefault(); setDeferredPrompt(e); };
-    window.addEventListener('beforeinstallprompt', handler as any);
-    return () => window.removeEventListener('beforeinstallprompt', handler as any);
-  }, []);
 
   // Grant the install reward when the app is actually running as an installed PWA
   useEffect(() => {
@@ -501,19 +495,6 @@ const Habits: React.FC = () => {
   };
   const dismissInstall = () => animateOutInstall(() => localStorage.setItem(pwaDayKey, todayStr));
   const neverShowInstall = () => animateOutInstall(() => localStorage.setItem(pwaKey, 'dismissed'));
-  const triggerInstall = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const choice = await deferredPrompt.userChoice;
-      setDeferredPrompt(null);
-      if (choice?.outcome === 'accepted' && localStorage.getItem(INSTALL_XP_KEY) !== 'granted') {
-        localStorage.setItem(INSTALL_XP_KEY, 'granted');
-        setInstallBonus(true);
-      }
-    }
-    neverShowInstall();
-  };
-
   const today = todayKey();
   const weekDays = getWeekDays();
   const habitXP = habits.reduce((sum, h) => sum + computeHabitStats(h, ht, today, startDates[h]).totalXP, 0);
@@ -747,19 +728,44 @@ const Habits: React.FC = () => {
             <div className="pwa-banner-main">
               <img className="pwa-banner-icon" src="/superdub-icon-512.png" alt="" />
               <div className="pwa-banner-text">
-                <strong>Add to Home Screen</strong>
-                {isIOS
-                  ? <span>Tap <strong>Share</strong> → <strong>Add to Home Screen</strong></span>
-                  : <span>Install Superdub for the full experience</span>}
+                {isIOS ? (
+                  <>
+                    <strong>Add to Home Screen</strong>
+                    <span>Tap <strong>Share</strong> → <strong>Add to Home Screen</strong></span>
+                  </>
+                ) : (
+                  <>
+                    <strong>Superdub for Android</strong>
+                    <span>The Android app is here — download it now.</span>
+                  </>
+                )}
               </div>
             </div>
-            <div className="pwa-banner-foot">
-              <span className="pwa-reward"><span className="pwa-reward-plus">+</span>100 XP</span>
-              {!isIOS
-                ? <button className="pwa-banner-btn" onClick={triggerInstall}>Install</button>
-                : <button className="pwa-banner-never" onClick={neverShowInstall}>Don't show again</button>}
-            </div>
-            {!isIOS && <button className="pwa-banner-never pwa-banner-never--row" onClick={neverShowInstall}>Don't show again</button>}
+            {isIOS ? (
+              <>
+                <div className="pwa-banner-foot">
+                  <span className="pwa-reward"><span className="pwa-reward-plus">+</span>100 XP</span>
+                  <button className="pwa-banner-never" onClick={neverShowInstall}>Don't show again</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="pwa-banner-foot">
+                  <a
+                    className="pwa-banner-btn"
+                    href="/downloads/superdub.apk"
+                    download="superdub.apk"
+                    onClick={dismissInstall}
+                  >
+                    Download APK
+                  </a>
+                </div>
+                <p className="pwa-banner-note">
+                  Not from the Play Store — Android will ask you to allow “install from unknown sources”. That’s expected, not a problem.
+                </p>
+                <button className="pwa-banner-never pwa-banner-never--row" onClick={neverShowInstall}>Don't show again</button>
+              </>
+            )}
           </div>
         )}
 
