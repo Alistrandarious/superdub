@@ -6573,7 +6573,7 @@ h1, h2, h3, h4, .sora {
 }
 .bio-field input[type="text"],
 .bio-field input[type="date"] {
-  width: 100%; background: #0A0A12; border: 1px solid #252532; border-radius: 10px;
+  width: 100%; background: #0A0A12; border: 1px solid var(--glass-border); border-radius: var(--r-sm);
   padding: 10px 12px; color: #e0e0e0; font-size: 0.92rem; font-family: inherit;
   outline: none; box-sizing: border-box; transition: border-color 0.2s;
   -webkit-appearance: none; appearance: none;
@@ -6582,8 +6582,8 @@ h1, h2, h3, h4, .sora {
 .bio-field input[type="date"]:focus { border-color: var(--theme, #FFD233); }
 .bio-field input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.5); }
 .bio-input-unit {
-  display: flex; align-items: center; background: #0A0A12; border: 1px solid #252532;
-  border-radius: 10px; overflow: hidden; transition: border-color 0.2s;
+  display: flex; align-items: center; background: #0A0A12; border: 1px solid var(--glass-border);
+  border-radius: var(--r-sm); overflow: hidden; transition: border-color 0.2s;
 }
 .bio-input-unit:focus-within { border-color: var(--theme, #FFD233); }
 .bio-input-unit input {
@@ -6866,7 +6866,7 @@ h1, h2, h3, h4, .sora {
   border-radius: 12px; padding: 0 14px;
   transition: border-color 0.15s;
 }
-.log-weight-input-unit:focus-within { border-color: #FFD233; }
+.log-weight-input-unit:focus-within { border-color: var(--theme); }
 .log-weight-input-unit input {
   flex: 1; background: none; border: none; outline: none;
   color: #F0F0F8; font-size: 1.25rem; font-weight: 700; font-family: 'Sora', sans-serif;
@@ -6920,9 +6920,9 @@ h1, h2, h3, h4, .sora {
   background: none; border: none; border-bottom: 1px solid #252532; outline: none;
   font-size: 1.3rem; font-weight: 700; color: #e0e4f0;
   font-family: inherit; width: 100%; padding: 0 0 2px;
-  caret-color: #FFD233; transition: border-color 0.15s;
+  caret-color: var(--theme); transition: border-color 0.15s;
 }
-.profile-name-input:focus { border-bottom-color: #FFD233; }
+.profile-name-input:focus { border-bottom-color: var(--theme); }
 .profile-name-input::placeholder { color: #333; }
 .profile-name-hint { font-size: 0.65rem; color: #444; margin-top: 4px; cursor: pointer; display: inline-block; }
 

@@ -417,7 +417,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
 
   if (!loaded) {
     return (
-      <div className="app flush" style={{ '--theme': '#FFD233', '--theme-dim': '#FFD23366', '--theme-glow': '#FFD23333' } as React.CSSProperties}>
+      <div className="app flush" style={{ '--theme': '#2E8BFF', '--theme-dim': '#2E8BFF66', '--theme-glow': '#2E8BFF33' } as React.CSSProperties}>
         <div className="sd-loader-wrap"><div className="sd-loader"><img className="sd-loader-logo" src="/superdub-logo.png" alt="" /></div></div>
       </div>
     );
@@ -428,7 +428,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
   const rateLabel = isGain ? 'Gain per week' : 'Lose per week';
 
   return (
-    <div className="app flush" style={{ '--theme': '#FFD233', '--theme-dim': '#FFD23366', '--theme-glow': '#FFD23333' } as React.CSSProperties}>
+    <div className="app flush" style={{ '--theme': '#2E8BFF', '--theme-dim': '#2E8BFF66', '--theme-glow': '#2E8BFF33' } as React.CSSProperties}>
       <div className="profile-content page-content">
 
         <div className="page-intro">
