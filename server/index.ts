@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 import authRoutes from './routes/auth';
 import profileRoutes from './routes/profile';
 import habitsRoutes from './routes/habits';
@@ -34,6 +35,19 @@ app.use('/api/meal-plans', mealplansRoutes);
 app.use('/api/steps', stepsRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
+
+// Android companion APK — served as a forced download (not rendered as binary).
+// Drop the real signed build at server/public/downloads/superdub.apk to swap it.
+app.get('/downloads/superdub.apk', (_req, res) => {
+  const apkPath = path.join(__dirname, 'public', 'downloads', 'superdub.apk');
+  if (!fs.existsSync(apkPath)) {
+    res.status(404).send('APK not available yet.');
+    return;
+  }
+  res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+  res.setHeader('Content-Disposition', 'attachment; filename="superdub.apk"');
+  fs.createReadStream(apkPath).pipe(res);
+});
 
 // DB migrations — each statement runs independently so a failure in one doesn't block others
 const migrations = [

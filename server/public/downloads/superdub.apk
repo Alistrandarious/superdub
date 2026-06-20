@@ -1,0 +1,4 @@
+PLACEHOLDER — this is NOT a real APK.
+Replace this file with the real signed Superdub Android build at the same path:
+  server/public/downloads/superdub.apk
+The download route serves whatever bytes are here, so no code change is needed when you swap it.
