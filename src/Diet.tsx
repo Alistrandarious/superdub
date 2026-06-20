@@ -129,8 +129,8 @@ const PlanSummaryCard: React.FC<{
 }> = ({ currentWeight, todayWeight, goalWeight, lossPerWeek, goal, target, maintenance,
         gymSessionsPerWeek, gymIntensity, weeklyActivities, onEdit }) => {
   const GOAL_META: Record<string, { icon: string; label: string; color: string }> = {
-    cut:      { icon: '🔥', label: 'Fat Loss',  color: '#ff6b6b' },
-    maintain: { icon: '⚖️', label: 'Maintain',  color: '#FF4D8D' },
+    cut:      { icon: '🔥', label: 'Fat Loss',  color: '#2FD27E' },
+    maintain: { icon: '⚖️', label: 'Maintain',  color: '#2FD27E' },
     bulk:     { icon: '💪', label: 'Muscle Gain', color: '#2E8BFF' },
   };
   const meta = GOAL_META[goal] ?? GOAL_META.cut;
@@ -175,7 +175,7 @@ const PlanSummaryCard: React.FC<{
           </span>
         )}
         <button onClick={onEdit} style={{
-          marginLeft: 'auto', background: 'none', border: '1px solid #3D3C58',
+          marginLeft: 'auto', background: 'none', border: '1px solid #252532',
           color: '#888', padding: '5px 14px', borderRadius: 8, fontSize: '0.75rem',
           fontWeight: 600, cursor: 'pointer',
         }}>
@@ -196,7 +196,7 @@ const PlanSummaryCard: React.FC<{
           <div style={{ fontSize: '0.8rem', color: '#555', display: 'flex', alignItems: 'center', gap: 5 }}>
             kg
             {todayWeight !== null && (
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#FF4D8D', display: 'inline-block', boxShadow: '0 0 6px #FF4D8D88' }} />
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2FD27E', display: 'inline-block', boxShadow: '0 0 6px #2FD27E88' }} />
             )}
           </div>
         </div>
@@ -250,7 +250,7 @@ const PlanSummaryCard: React.FC<{
         </div>
         {maintenance > 0 && (
           <>
-            <div style={{ width: 1, background: '#35345A', flexShrink: 0 }} />
+            <div style={{ width: 1, background: '#252532', flexShrink: 0 }} />
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
               <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#dde', lineHeight: 1 }}>
                 {maintenance.toLocaleString()}
@@ -259,11 +259,11 @@ const PlanSummaryCard: React.FC<{
                 maintenance
               </span>
             </div>
-            <div style={{ width: 1, background: '#35345A', flexShrink: 0 }} />
+            <div style={{ width: 1, background: '#252532', flexShrink: 0 }} />
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
               <span style={{
                 fontSize: '1.1rem', fontWeight: 800, lineHeight: 1,
-                color: deficit < 0 ? '#FF4D8D' : deficit > 0 ? '#ff453a' : '#888',
+                color: deficit < 0 ? '#2FD27E' : deficit > 0 ? '#ff453a' : '#888',
               }}>
                 {deficit === 0 ? '±0' : `${deficit > 0 ? '+' : ''}${deficit.toLocaleString()}`}
               </span>
@@ -315,7 +315,7 @@ const DayCircleTick = (props: any) => {
   const letter = (payload.value as string)?.[0] ?? '';
   return (
     <g transform={`translate(${x},${y + 10})`}>
-      <circle r={10} fill="#2A2D3A" stroke="#3D3C58" strokeWidth={1} />
+      <circle r={10} fill="#2A2D3A" stroke="#252532" strokeWidth={1} />
       <text textAnchor="middle" dominantBaseline="central" fill="#555" fontSize={10} fontWeight={700}>
         {letter}
       </text>
@@ -402,7 +402,7 @@ const WeightSparkline: React.FC<{
             <XAxis dataKey="label" tick={<DayCircleTick />} axisLine={false} tickLine={false} height={28} />
             <YAxis domain={[minW, maxW]} tick={{ fill: '#444', fontSize: 10 }} axisLine={false} tickLine={false} width={38} />
             <Tooltip
-              contentStyle={{ background: '#0d0d1a', border: '1px solid #3D3C58', borderRadius: 8, fontSize: 12 }}
+              contentStyle={{ background: '#0d0d1a', border: '1px solid #252532', borderRadius: 8, fontSize: 12 }}
               labelStyle={{ color: '#888' }}
               formatter={((val: any, name: string) => [`${val} kg`, name === 'actual' ? 'Logged' : 'Expected']) as any}
             />
@@ -410,7 +410,7 @@ const WeightSparkline: React.FC<{
               dot={(props: any) => {
                 const { cx, cy, payload } = props;
                 if (payload.actual !== undefined) return <g key={cx} />;
-                return <circle key={cx} cx={cx} cy={cy} r={4} fill="none" stroke="#3D3C58" strokeWidth={1.5} />;
+                return <circle key={cx} cx={cx} cy={cy} r={4} fill="none" stroke="#252532" strokeWidth={1.5} />;
               }}
               connectNulls name="expected"
             />
@@ -498,7 +498,7 @@ const SmartAdjustCard: React.FC<{
     : actualWeeklyKg < targetWeeklyKg;  // bulking but not gaining fast enough
 
   const actualDisplay = goal === 'cut' ? (-actualWeeklyKg).toFixed(2) : actualWeeklyKg.toFixed(2);
-  const statusColor = isBehind ? '#FFD233' : '#FF4D8D';
+  const statusColor = isBehind ? '#FFD233' : '#2FD27E';
 
   const handleApply = () => {
     const newTarget = buildTarget();
@@ -537,7 +537,7 @@ const SmartAdjustCard: React.FC<{
       <div className="sa-rec-box">
         <div className="sa-rec-row">
           <span className="sa-rec-lbl">Adjustment</span>
-          <span className="sa-rec-val" style={{ color: cappedAdj < 0 ? '#FFD233' : '#FF4D8D' }}>
+          <span className="sa-rec-val" style={{ color: cappedAdj < 0 ? '#FFD233' : '#2FD27E' }}>
             {cappedAdj > 0 ? '+' : ''}{cappedAdj} kcal/day
           </span>
         </div>
@@ -676,7 +676,7 @@ const ActivityTargetsCard: React.FC<{
           <p className="diet-hint">Complete your biographics in Profile to see personalised step targets.</p>
         ) : alreadyCovered ? (
           <div className="atc-covered">
-            <div className="atc-covered-check" style={{ color: '#FF4D8D' }}>✓</div>
+            <div className="atc-covered-check" style={{ color: '#2FD27E' }}>✓</div>
             <div>
               <p className="atc-covered-main">Food{hasTraining ? ' + training' : ''} already covers your {goal} target.</p>
               <p className="atc-covered-sub">Every step is bonus burn — aim for {stepTarget.toLocaleString()} for health.</p>
@@ -703,7 +703,7 @@ const ActivityTargetsCard: React.FC<{
             <div className="step-perf-bar">
               <div className="step-perf-fill" style={{
                 width: `${Math.min(100, (yesterdaySteps / stepTarget) * 100)}%`,
-                background: yesterdaySteps >= stepTarget ? '#FF4D8D' : '#FFD233',
+                background: yesterdaySteps >= stepTarget ? '#2FD27E' : '#FFD233',
               }} />
             </div>
           </div>
@@ -860,9 +860,9 @@ const Diet: React.FC = () => {
     );
   }
 
-  const GOAL_COLORS: Record<string, string> = { cut: '#ff6b6b', maintain: '#FF4D8D', bulk: '#2E8BFF' };
+  const GOAL_COLORS: Record<string, string> = { cut: '#2FD27E', maintain: '#2FD27E', bulk: '#2E8BFF' };
   const GOAL_LABELS: Record<string, string> = { cut: '🔥 Fat Loss', maintain: '⚖️ Maintain', bulk: '💪 Muscle Gain' };
-  const accent = GOAL_COLORS[goal] ?? '#ff6b6b';
+  const accent = GOAL_COLORS[goal] ?? '#2FD27E';
   const goalLabel = GOAL_LABELS[goal] ?? '🔥 Fat Loss';
   const displayWeight = todayWeight ?? kg;
   const weightDiff = displayWeight > 0 && goalWeight > 0 ? Math.abs(displayWeight - goalWeight) : null;
@@ -892,7 +892,7 @@ const Diet: React.FC = () => {
             <span style={{ fontSize: '0.7rem', color: '#555', flex: 1 }}>~{weeksLeft}w to goal</span>
           )}
           <button onClick={() => navigate('/profile')} style={{
-            marginLeft: 'auto', background: 'none', border: '1px solid #3D3C58',
+            marginLeft: 'auto', background: 'none', border: '1px solid #252532',
             color: '#777', padding: '4px 12px', borderRadius: 7,
             fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer',
           }}>Edit →</button>
@@ -911,7 +911,7 @@ const Diet: React.FC = () => {
             <div style={{ fontSize: '0.75rem', color: '#555', display: 'flex', alignItems: 'center', gap: 4 }}>
               kg
               {todayWeight !== null && (
-                <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#FF4D8D', display: 'inline-block' }} />
+                <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#2FD27E', display: 'inline-block' }} />
               )}
             </div>
           </div>
@@ -948,14 +948,14 @@ const Diet: React.FC = () => {
           </div>
           {maintenance > 0 && (
             <>
-              <div style={{ width: 1, background: '#35345A' }} />
+              <div style={{ width: 1, background: '#252532' }} />
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 0', gap: 2 }}>
                 <span style={{ fontSize: '1rem', fontWeight: 800, color: '#dde' }}>{maintenance.toLocaleString()}</span>
                 <span style={{ fontSize: '0.58rem', color: '#555', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Maintenance</span>
               </div>
-              <div style={{ width: 1, background: '#35345A' }} />
+              <div style={{ width: 1, background: '#252532' }} />
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 0', gap: 2 }}>
-                <span style={{ fontSize: '1rem', fontWeight: 800, color: deficit < 0 ? '#FF4D8D' : deficit > 0 ? '#ff453a' : '#888' }}>
+                <span style={{ fontSize: '1rem', fontWeight: 800, color: deficit < 0 ? '#2FD27E' : deficit > 0 ? '#ff453a' : '#888' }}>
                   {deficit === 0 ? '±0' : `${deficit > 0 ? '+' : ''}${deficit.toLocaleString()}`}
                 </span>
                 <span style={{ fontSize: '0.58rem', color: '#555', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -998,7 +998,7 @@ const Diet: React.FC = () => {
             {maintenance > 0 && (
               <span style={{
                 fontSize: '0.65rem', fontWeight: 700,
-                color: Math.abs(deficit) >= Math.round(lossPerWeek * 7700 / 7) * 0.85 ? '#FF4D8D' : '#FFD233',
+                color: Math.abs(deficit) >= Math.round(lossPerWeek * 7700 / 7) * 0.85 ? '#2FD27E' : '#FFD233',
               }}>
                 {Math.abs(deficit) >= Math.round(lossPerWeek * 7700 / 7) * 0.85 ? '✓ On track' : '⚠ Off target'}
               </span>
@@ -1010,7 +1010,7 @@ const Diet: React.FC = () => {
         {/* Today's Meal Plan */}
         {latestPlan && (
           <div style={{
-            background: '#242038', border: '1px solid #35345A',
+            background: '#15151E', border: '1px solid #252532',
             borderRadius: 14, overflow: 'hidden',
           }}>
             <div style={{
