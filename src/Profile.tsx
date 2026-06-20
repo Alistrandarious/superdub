@@ -418,7 +418,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
   if (!loaded) {
     return (
       <div className="app flush" style={{ '--theme': '#FFD233', '--theme-dim': '#FFD23366', '--theme-glow': '#FFD23333' } as React.CSSProperties}>
-        <div className="page-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '4rem', color: '#FFD233' }}>Loading…</div>
+        <div className="sd-loader-wrap"><div className="sd-loader"><img className="sd-loader-logo" src="/superdub-logo.png" alt="" /></div></div>
       </div>
     );
   }
@@ -902,7 +902,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
                 catch { } finally { setAiKeySaving(false); }
               }}>{aiKeySaving ? '…' : aiKeyDone ? '✓' : 'Save'}</button>
           </div>
-          <p className="diet-hint" style={{ marginTop: 6 }}>Get your key at <span style={{ color: '#7C3AED' }}>console.anthropic.com</span></p>
+          <p className="diet-hint" style={{ marginTop: 6 }}>Get your key at <span style={{ color: '#2E8BFF' }}>console.anthropic.com</span></p>
         </div>
 
         {/* ── More menu ── */}

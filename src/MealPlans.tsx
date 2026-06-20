@@ -68,9 +68,9 @@ const DIET_FILTERS = [
 ];
 
 const THEME = {
-  '--theme': '#7C3AED',
-  '--theme-dim': '#7C3AED66',
-  '--theme-glow': '#7C3AED33',
+  '--theme': '#2E8BFF',
+  '--theme-dim': '#2E8BFF66',
+  '--theme-glow': '#2E8BFF33',
 } as React.CSSProperties;
 
 // ─── IngredientPanel ──────────────────────────────────────────────────────────
@@ -563,8 +563,8 @@ const MealPlans: React.FC = () => {
                 {avgTotals && (
                   <div className="mp-totals-card">
                     <div className="mp-totals-title">Avg daily totals vs targets</div>
-                    <MacroPill label="Calories" value={avgTotals.calories} unit=" kcal" target={plan.targets.calories} color="#7C3AED" />
-                    <MacroPill label="Protein"  value={avgTotals.protein}               target={plan.targets.protein}  color="#B84DFF" />
+                    <MacroPill label="Calories" value={avgTotals.calories} unit=" kcal" target={plan.targets.calories} color="#2E8BFF" />
+                    <MacroPill label="Protein"  value={avgTotals.protein}               target={plan.targets.protein}  color="#FFB928" />
                     <MacroPill label="Carbs"    value={avgTotals.carbs}                 target={plan.targets.carbs}    color="#FF4D8D" />
                     <MacroPill label="Fat"      value={avgTotals.fat}                   target={plan.targets.fat}      color="#FFD233" />
                   </div>
@@ -610,7 +610,7 @@ const MealPlans: React.FC = () => {
         {tab === 'saved' && (
           <>
             {loadingSaved ? (
-              <div className="mp-loading">Loading saved plans...</div>
+              <div className="sd-loader-wrap" style={{ minHeight: '40vh' }}><div className="sd-loader"><img className="sd-loader-logo" src="/superdub-logo.png" alt="" /></div></div>
             ) : savedPlans.length === 0 ? (
               <div className="mp-empty">
                 <div className="mp-empty-icon">&#x1F4CB;</div>

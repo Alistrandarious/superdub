@@ -18,13 +18,13 @@ const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Se
 
 const MONTH_COLORS: Record<number, string> = {
   0: '#FF4D8D',  // Jan - hot pink
-  1: '#B84DFF',  // Feb - violet
-  2: '#7C3AED',  // Mar - deep purple
+  1: '#FFB928',  // Feb - violet
+  2: '#2E8BFF',  // Mar - deep purple
   3: '#FF8A00',  // Apr - orange
   4: '#FFD233',  // May - gold
   5: '#FF4D8D',  // Jun - hot pink
-  6: '#7C3AED',  // Jul - deep purple
-  7: '#B84DFF',  // Aug - violet
+  6: '#2E8BFF',  // Jul - deep purple
+  7: '#FFB928',  // Aug - violet
   8: '#FFD233',  // Sep - gold
   9: '#FF8A00',  // Oct - orange
   10: '#FF4D8D', // Nov - hot pink
@@ -199,7 +199,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     : 'Good night';
 
   // Chart state
-  const [chartRange, setChartRange] = useState<'7d' | '1m' | '3m' | 'all'>('all');
+  const [chartRange, setChartRange] = useState<'7d' | '1m' | '3m' | '1y' | 'all'>('all');
   const [weightZoom, setWeightZoom] = useState(false);
 
   // Weight plan state
@@ -387,29 +387,26 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     if (chartRange === '7d') { from = new Date(now); from.setDate(now.getDate() - 6); }
     else if (chartRange === '1m') { from = new Date(now); from.setDate(now.getDate() - 29); }
     else if (chartRange === '3m') { from = new Date(now); from.setDate(now.getDate() - 89); }
+    else if (chartRange === '1y') { from = new Date(now); from.setDate(now.getDate() - 364); }
     else { from = new Date(accountCreatedDate); } // 'all' — from day 1
     // Never start before account creation
     if (from < accountCreatedDate) from = new Date(accountCreatedDate);
     return getChartDayRange(from, now);
   }, [chartRange, accountCreatedDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Days to reach goal (for goal reference line)
+  // How much history exists → grey out ranges we don't have data for yet
+  const daysSinceCreation = Math.max(1, Math.floor((now.getTime() - accountCreatedDate.getTime()) / 86400000) + 1);
+  const rangeAvailable = (r: string) =>
+    r === '7d' || r === 'all' ? true
+    : r === '1m' ? daysSinceCreation > 7
+    : r === '3m' ? daysSinceCreation > 30
+    : r === '1y' ? daysSinceCreation > 90
+    : true;
+
+  // Days to reach goal (drives the macro/loss math)
   const daysToGoal = activeLoss > 0 && startWeight > goal && goal > 0
     ? Math.ceil((startWeight - goal) / (activeLoss / 7))
     : null;
-
-  // Goal date DD/MM — shown on chart if within current range
-  const goalDateDDMM = useMemo(() => {
-    if (!daysToGoal || !accountCreatedAt) return null;
-    const d = new Date(accountCreatedDate);
-    d.setDate(d.getDate() + daysToGoal);
-    const dd = String(d.getDate()).padStart(2, '0');
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    return `${dd}/${mm}`;
-  }, [daysToGoal, accountCreatedDate, accountCreatedAt]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const goalDayVisible = goalDateDDMM && chartDayRange.some(d => d.ddmm === goalDateDDMM)
-    ? goalDateDDMM : null;
 
   // Trend (linear regression on actual logged weights within the chart range)
   const weightPoints: { i: number; w: number }[] = [];
@@ -580,32 +577,27 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
   if (!loaded) {
     return (
-      <div className="app" style={{ '--theme': '#3B9EFF', '--theme-dim': '#3B9EFF66', '--theme-glow': '#3B9EFF33' } as React.CSSProperties}>
-        <div className="sd-loader-wrap"><div className="sd-loader" /></div>
+      <div className="app" style={{ '--theme': '#3B9EFF', '--theme-dim': '#3B9EFF66', '--theme-glow': '#3B9EFF14' } as React.CSSProperties}>
+        <div className="sd-loader-wrap"><div className="sd-loader"><img className="sd-loader-logo" src="/superdub-logo.png" alt="" /></div></div>
       </div>
     );
   }
 
   return (
-    <div className="app" style={{ '--theme': themeColor, '--theme-dim': themeColor + '66', '--theme-glow': themeColor + '33' } as React.CSSProperties}>
-      <header className="header">
-        <div className="header-brand header-brand--left">
-          <img className="header-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="header-brand-name">super<span className="hb-brand-dub">dub</span></span>
+    <div className="app" style={{ '--theme': themeColor, '--theme-dim': themeColor + '66', '--theme-glow': themeColor + '14' } as React.CSSProperties}>
+      <div className="hb-topbar">
+        <div className="hb-brand">
+          <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span>
         </div>
 
         {/* Cog dropdown — top right */}
-        <div ref={cogRef} style={{ marginLeft: 'auto', position: 'relative' }}>
-          <button
-            onClick={() => setMenuOpen(o => !o)}
-            style={{
-              background: 'none', border: 'none', color: menuOpen ? 'var(--theme)' : '#666',
-              cursor: 'pointer', fontSize: '1.1rem', padding: '6px 8px',
-              lineHeight: 1, borderRadius: 8, transition: 'color 0.15s',
-            }}
-            aria-label="Settings"
-          >
-            ⚙️
+        <div className="hb-topbar-actions" ref={cogRef} style={{ position: 'relative' }}>
+          <button className="hb-cog" onClick={() => setMenuOpen(o => !o)} aria-label="Settings">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="19" height="19">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
           </button>
           {menuOpen && (
             <div style={{
@@ -639,7 +631,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             </div>
           )}
         </div>
-      </header>
+      </div>
 
       {habitsModalOpen && (
         <div className="modal-overlay" onClick={() => setHabitsModalOpen(false)}>
@@ -884,21 +876,27 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           <button className={`chart-expand-btn${weightZoom ? ' active' : ''}`} onClick={() => setWeightZoom(z => !z)}>
             {weightZoom ? 'Habits' : 'Weight trend'} <span aria-hidden>{weightZoom ? '✕' : '⤢'}</span>
           </button>
-          <div className="chart-range-spacer" />
-          {(['7d', '1m', '3m', 'all'] as const).map(r => (
-            <button
-              key={r}
-              className={`chart-range-btn ${chartRange === r ? 'active' : ''}`}
-              onClick={() => setChartRange(r)}
-            >
-              {r === '7d' ? '7D' : r === '1m' ? '1M' : r === '3m' ? '3M' : 'All'}
-            </button>
-          ))}
+          <div className="chart-range-group">
+            {(['7d', '1m', '3m', '1y', 'all'] as const).map(r => {
+              const enabled = rangeAvailable(r);
+              return (
+                <button
+                  key={r}
+                  disabled={!enabled}
+                  className={`chart-range-btn ${chartRange === r ? 'active' : ''}${enabled ? '' : ' chart-range-btn--locked'}`}
+                  onClick={() => enabled && setChartRange(r)}
+                  title={enabled ? undefined : 'Not enough history yet'}
+                >
+                  {r === '7d' ? '7D' : r === '1m' ? '1M' : r === '3m' ? '3M' : r === '1y' ? '1Y' : 'All'}
+                </button>
+              );
+            })}
+          </div>
         </div>
         <div className="chart-section-inner">
         <div className="chart-container">
         <ResponsiveContainer width="100%" height={300}>
-          <ComposedChart data={chartData} margin={{ left: 0, right: 0, top: 5, bottom: 20 }}>
+          <ComposedChart data={chartData} margin={{ left: 0, right: 10, top: 5, bottom: 20 }}>
             <defs>
               <linearGradient id="barGradient" x1="0" y1="1" x2="0" y2="0">
                 <stop offset="0%" stopColor={themeColor + '22'} />
@@ -909,15 +907,15 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             <CartesianGrid stroke={themeColor + '1a'} strokeDasharray="3 3" />
             <XAxis dataKey="day" stroke="rgba(255,255,255,0.25)" tick={{ fill: '#FFFFFF', fontSize: 10 }} interval={xAxisInterval} tickLine={false} padding={{ left: 10 }} />
             <YAxis yAxisId="left" hide={weightZoom} stroke="rgba(255,255,255,0.25)" tick={{ fill: '#FFFFFF', fontSize: 10 }} allowDecimals={false} width={30} axisLine={false} tickLine={false} domain={[0, habits.length]} />
-            <YAxis yAxisId="right" orientation="right" stroke="rgba(255,255,255,0.25)" tick={{ fill: '#FFFFFF', fontSize: 10 }} domain={(() => {
+            <YAxis yAxisId="right" orientation="right" stroke="rgba(255,255,255,0.25)" tick={{ fill: '#FFFFFF', fontSize: 10 }} allowDecimals={false} tickCount={5} domain={(() => {
               const weights = chartData.map(d => d.weight).filter(Boolean) as number[];
               const preds   = chartData.map(d => d.prediction).filter(Boolean) as number[];
               const trends  = chartData.map(d => d.trend).filter(Boolean) as number[];
               const gw      = parseFloat(goalWeight) || 0;
               const allVals = [...weights, ...preds, ...trends, ...(gw > 0 ? [gw] : [])];
               if (allVals.length === 0) return [55, 60] as [number, number];
-              const lo = Math.floor(Math.min(...allVals)) - 1;
-              const hi = Math.ceil(Math.max(...allVals)) + 1;
+              const lo = Math.floor((Math.min(...allVals) - 1) / 2) * 2;
+              const hi = Math.ceil((Math.max(...allVals) + 1) / 2) * 2;
               return [lo, hi] as [number, number];
             })()} width={42} axisLine={false} tickLine={false} />
             <Tooltip
@@ -933,59 +931,36 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 stroke="#FFD233"
                 strokeWidth={1.5}
                 strokeDasharray="8 4"
-                label={{ value: `Goal: ${goalWeight}kg`, fill: '#FFD233', fontSize: 11, position: 'right' }}
+                label={{ value: `Goal ${goalWeight}kg`, fill: '#FFD233', fontSize: 11, fontWeight: 700, position: 'insideTopRight' }}
               />
             )}
-            {goalDayVisible && (
-              <ReferenceLine
-                yAxisId="left"
-                x={goalDayVisible}
-                stroke="#B84DFF"
-                strokeWidth={1}
-                strokeDasharray="8 4"
-                label={{ value: `🎯 ${goalDayVisible}`, fill: '#B84DFF', fontSize: 11, position: 'top' }}
-              />
+            {/* ── Habit bars (hidden when zoomed into weight) ── */}
+            {!weightZoom && <Bar yAxisId="left" dataKey="completed" stackId="habits" fill={themeColor} name="Done" radius={[0,0,0,0]} isAnimationActive={false} />}
+            {!weightZoom && <Bar yAxisId="left" dataKey="failed" stackId="habits" fill="#E04848" name="Failed" radius={[4,4,0,0]} isAnimationActive={false} />}
+            {/* ── Prediction (focused weight view only) ── */}
+            {weightZoom && parseFloat(goalWeight) > 0 && (
+              <Line yAxisId="right" type="monotone" dataKey="prediction" stroke="#FFD233" strokeWidth={2} strokeDasharray="5 5" dot={false} name="Prediction" connectNulls isAnimationActive={false} />
             )}
-            {!weightZoom && <Bar yAxisId="left" dataKey="completed" stackId="habits" fill={themeColor} name="Done" />}
-            {!weightZoom && <Bar yAxisId="left" dataKey="failed" stackId="habits" fill="rgba(255,69,58,0.75)" name="Failed" radius={[3,3,0,0]} />}
+            {/* ── Actual weight line ── */}
             <Line
               yAxisId="right"
               type="monotone"
               dataKey="weight"
-              stroke={themeColor}
-              strokeWidth={weightZoom ? 3 : 2}
+              stroke="#FFFFFF"
+              strokeWidth={weightZoom ? 3 : 2.5}
               style={{ cursor: 'pointer' }}
               onClick={() => setWeightZoom(z => !z)}
               dot={(props: any) => {
                 const { cx, cy, payload, index } = props;
                 if (payload.weight == null) return <g key={`dot-empty-${index}`} />;
-                return <circle key={`dot-${index}`} cx={cx} cy={cy} r={weightZoom ? 5 : 4.5} fill="#FFFFFF" stroke={themeColor} strokeWidth={2} style={{ cursor: 'pointer' }} onClick={() => setWeightZoom(z => !z)} />;
+                return <circle key={`dot-${index}`} cx={cx} cy={cy} r={weightZoom ? 5 : 4} fill="#0E0E14" stroke="#FFFFFF" strokeWidth={2} style={{ cursor: 'pointer' }} onClick={() => setWeightZoom(z => !z)} />;
               }}
               name="Weight (kg)"
               connectNulls
+              isAnimationActive={false}
             />
-            <Line
-              yAxisId="right"
-              type="monotone"
-              dataKey="prediction"
-              stroke="#FFD233"
-              strokeWidth={2}
-              strokeDasharray="5 5"
-              dot={false}
-              name="Goal Curve"
-              connectNulls
-            />
-            <Line
-              yAxisId="right"
-              type="monotone"
-              dataKey="trend"
-              stroke="#B84DFF"
-              strokeWidth={2}
-              strokeDasharray="4 3"
-              dot={false}
-              name="Trend"
-              connectNulls
-            />
+            {/* ── Trend overlaid on top of the weight line for visibility ── */}
+            <Line yAxisId="right" type="monotone" dataKey="trend" stroke="#2FD27E" strokeWidth={2.5} strokeDasharray="5 4" dot={false} name="Trend" connectNulls isAnimationActive={false} />
           </ComposedChart>
         </ResponsiveContainer>
         </div>

@@ -131,7 +131,7 @@ const PlanSummaryCard: React.FC<{
   const GOAL_META: Record<string, { icon: string; label: string; color: string }> = {
     cut:      { icon: '🔥', label: 'Fat Loss',  color: '#ff6b6b' },
     maintain: { icon: '⚖️', label: 'Maintain',  color: '#FF4D8D' },
-    bulk:     { icon: '💪', label: 'Muscle Gain', color: '#7C3AED' },
+    bulk:     { icon: '💪', label: 'Muscle Gain', color: '#2E8BFF' },
   };
   const meta = GOAL_META[goal] ?? GOAL_META.cut;
   const accent = meta.color;
@@ -279,7 +279,7 @@ const PlanSummaryCard: React.FC<{
       <div style={{ display: 'flex', gap: 8, padding: '14px 20px 18px' }}>
         {[
           { val: target.protein, lbl: 'Protein', color: '#ff6ec7' },
-          { val: target.carbs,   lbl: 'Carbs',   color: '#7C3AED' },
+          { val: target.carbs,   lbl: 'Carbs',   color: '#2E8BFF' },
           { val: target.fats,    lbl: 'Fats',     color: '#ffd60a' },
         ].map(m => (
           <div key={m.lbl} style={{
@@ -406,7 +406,7 @@ const WeightSparkline: React.FC<{
               labelStyle={{ color: '#888' }}
               formatter={((val: any, name: string) => [`${val} kg`, name === 'actual' ? 'Logged' : 'Expected']) as any}
             />
-            <Line type="linear" dataKey="expected" stroke="#7C3AED33" strokeWidth={1.5} strokeDasharray="4 3"
+            <Line type="linear" dataKey="expected" stroke="#2E8BFF33" strokeWidth={1.5} strokeDasharray="4 3"
               dot={(props: any) => {
                 const { cx, cy, payload } = props;
                 if (payload.actual !== undefined) return <g key={cx} />;
@@ -414,7 +414,7 @@ const WeightSparkline: React.FC<{
               }}
               connectNulls name="expected"
             />
-            <Line type="monotone" dataKey="actual" stroke="#7C3AED" strokeWidth={2.5} dot={{ fill: '#7C3AED', r: 5, stroke: '#0a0d18', strokeWidth: 2 }} activeDot={{ r: 7 }} connectNulls={false} name="actual" />
+            <Line type="monotone" dataKey="actual" stroke="#2E8BFF" strokeWidth={2.5} dot={{ fill: '#2E8BFF', r: 5, stroke: '#0a0d18', strokeWidth: 2 }} activeDot={{ r: 7 }} connectNulls={false} name="actual" />
           </ComposedChart>
         </ResponsiveContainer>
       ) : (
@@ -854,15 +854,13 @@ const Diet: React.FC = () => {
 
   if (!loaded) {
     return (
-      <div className="app flush" style={{ '--theme': '#7C3AED', '--theme-dim': '#7C3AED66', '--theme-glow': '#7C3AED33' } as React.CSSProperties}>
-        <div className="page-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '4rem', color: '#7C3AED' }}>
-          Loading…
-        </div>
+      <div className="app flush" style={{ '--theme': '#2E8BFF', '--theme-dim': '#2E8BFF66', '--theme-glow': '#2E8BFF33' } as React.CSSProperties}>
+        <div className="sd-loader-wrap"><div className="sd-loader"><img className="sd-loader-logo" src="/superdub-logo.png" alt="" /></div></div>
       </div>
     );
   }
 
-  const GOAL_COLORS: Record<string, string> = { cut: '#ff6b6b', maintain: '#FF4D8D', bulk: '#7C3AED' };
+  const GOAL_COLORS: Record<string, string> = { cut: '#ff6b6b', maintain: '#FF4D8D', bulk: '#2E8BFF' };
   const GOAL_LABELS: Record<string, string> = { cut: '🔥 Fat Loss', maintain: '⚖️ Maintain', bulk: '💪 Muscle Gain' };
   const accent = GOAL_COLORS[goal] ?? '#ff6b6b';
   const goalLabel = GOAL_LABELS[goal] ?? '🔥 Fat Loss';
@@ -872,7 +870,7 @@ const Diet: React.FC = () => {
   const deficit = maintenance > 0 ? macroCalories - maintenance : 0;
 
   return (
-    <div className="app flush" style={{ '--theme': '#7C3AED', '--theme-dim': '#7C3AED66', '--theme-glow': '#7C3AED33' } as React.CSSProperties}>
+    <div className="app flush" style={{ '--theme': '#2E8BFF', '--theme-dim': '#2E8BFF66', '--theme-glow': '#2E8BFF33' } as React.CSSProperties}>
       {/* ── Full scrollable content ── */}
       <div className="diet-content page-content">
 
@@ -972,7 +970,7 @@ const Diet: React.FC = () => {
         <div style={{ display: 'flex', gap: 8, padding: '10px 20px 14px' }}>
           {[
             { val: target.protein, lbl: 'Protein', color: '#ff6ec7' },
-            { val: target.carbs,   lbl: 'Carbs',   color: '#7C3AED' },
+            { val: target.carbs,   lbl: 'Carbs',   color: '#2E8BFF' },
             { val: target.fats,    lbl: 'Fats',     color: '#ffd60a' },
           ].map(m => (
             <div key={m.lbl} style={{
@@ -1030,7 +1028,7 @@ const Diet: React.FC = () => {
                 display: 'flex', alignItems: 'center', gap: 10,
                 padding: '9px 16px', borderBottom: '1px solid #0e1520',
               }}>
-                <span style={{ fontSize: '0.65rem', color: '#7C3AED', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', width: 68, flexShrink: 0 }}>
+                <span style={{ fontSize: '0.65rem', color: '#2E8BFF', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', width: 68, flexShrink: 0 }}>
                   {m.slot}
                 </span>
                 <span style={{ flex: 1, fontSize: '0.8rem', color: '#ccc', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -1046,7 +1044,7 @@ const Diet: React.FC = () => {
               background: 'rgba(0,0,0,0.2)',
             }}>
               <span style={{ fontSize: '0.72rem', color: '#555' }}>Total</span>
-              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#7C3AED' }}>
+              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#2E8BFF' }}>
                 {latestPlan.totals?.calories} kcal · P {latestPlan.totals?.protein}g · C {latestPlan.totals?.carbs}g · F {latestPlan.totals?.fat}g
               </span>
             </div>

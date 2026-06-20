@@ -226,7 +226,7 @@ const FoodLog: React.FC = () => {
               <span className="fl-progress-kcal">{Math.round(totals.kcal)} / {target.calories} kcal</span>
             </div>
             {macroBar('Protein', totals.p, target.protein, '#ff6ec7')}
-            {macroBar('Carbs', totals.c, target.carbs, '#7C3AED')}
+            {macroBar('Carbs', totals.c, target.carbs, '#2E8BFF')}
             {macroBar('Fat', totals.f, target.fats, '#ffd60a')}
           </div>
         )}

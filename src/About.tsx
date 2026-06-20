@@ -22,7 +22,7 @@ const XP_GATES = [
 
 const About: React.FC = () => {
   return (
-    <div className="app flush" style={{ '--theme': '#7C3AED', '--theme-dim': '#7C3AED66', '--theme-glow': '#7C3AED22' } as React.CSSProperties}>
+    <div className="app flush" style={{ '--theme': '#2E8BFF', '--theme-dim': '#2E8BFF66', '--theme-glow': '#2E8BFF22' } as React.CSSProperties}>
       <div className="page-content" style={{ maxWidth: 680, margin: '0 auto', overflowY: 'auto', flex: 1, paddingBottom: 60 }}>
         <div className="page-intro-row">
           <Link to="/profile" className="page-back"><span className="page-back-arrow">‹</span> More</Link>

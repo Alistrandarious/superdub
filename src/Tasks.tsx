@@ -104,7 +104,7 @@ const Tasks: React.FC = () => {
 
         {/* List */}
         {!loaded ? (
-          <p className="diet-empty">Loading…</p>
+          <div className="sd-loader-wrap"><div className="sd-loader"><img className="sd-loader-logo" src="/superdub-logo.png" alt="" /></div></div>
         ) : visible.length === 0 ? (
           <div className="lists-empty">
             <div className="lists-empty-icon">{isShopping ? '🛒' : '✅'}</div>

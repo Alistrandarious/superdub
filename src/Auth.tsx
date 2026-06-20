@@ -37,7 +37,7 @@ export function computeActivity(job: string, gym: string, walk: string): number 
   return Math.min(1.9, parseFloat((1.2 + (JOB_FACTOR[job] ?? 0) + (GYM_FACTOR[gym] ?? 0) + (WALK_FACTOR[walk] ?? 0)).toFixed(4)));
 }
 
-const THEME = '#7C3AED';
+const THEME = '#2E8BFF';
 
 export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
   const [mode, setMode] = useState<Mode>('landing');
@@ -248,7 +248,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
           <div className="auth-card auth-card--landing">
             <img className="auth-logo-img" src="/superdub-logo.png" alt="Superdub" />
             <h1 className="auth-logo">super<span className="hb-brand-dub">dub</span></h1>
-            <p className="auth-tagline">eat well. live better. level up.</p>
+            <p className="auth-tagline">Meet your future self, today.<br />Go super. Go dub.</p>
             <div className="auth-landing-btns">
               <button className="auth-btn-primary" onClick={() => setMode('signup')}>Create account</button>
               <button className="auth-btn-ghost" onClick={() => setMode('login')}>Log in</button>

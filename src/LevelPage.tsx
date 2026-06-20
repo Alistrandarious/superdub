@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { flushSync } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import './App.css';
 import { api } from './api';
+
+function navigateWithTransition(navigate: any, to: string) {
+  const doNav = () => navigate(to);
+  const startVT = (document as any).startViewTransition?.bind(document);
+  if (startVT) startVT(() => flushSync(doNav));
+  else doNav();
+}
 
 const YEAR = 2026;
 
@@ -79,16 +87,43 @@ function computeHabitXP(
   return { totalXP, totalDays, streak, bestStreak };
 }
 
-function getPlayerLevel(totalXP: number): { level: number; title: string; progress: number; xpForNext: number | null; xpForLevel: number } {
+function getPlayerLevel(totalXP: number): { level: number; title: string; progress: number; xpForNext: number | null; xpForLevel: number; nextTitle: string | null } {
   let idx = 0;
   for (let i = LEVEL_GATES.length - 1; i >= 0; i--) {
     if (totalXP >= LEVEL_GATES[i][0]) { idx = i; break; }
   }
   const xpForLevel = LEVEL_GATES[idx][0];
   const xpForNext = idx < LEVEL_GATES.length - 1 ? LEVEL_GATES[idx + 1][0] : null;
+  const nextTitle = idx < LEVEL_GATES.length - 1 ? LEVEL_GATES[idx + 1][1] : null;
   const progress = xpForNext ? (totalXP - xpForLevel) / (xpForNext - xpForLevel) : 1;
-  return { level: idx + 1, title: LEVEL_GATES[idx][1], progress, xpForNext, xpForLevel };
+  return { level: idx + 1, title: LEVEL_GATES[idx][1], progress, xpForNext, xpForLevel, nextTitle };
 }
+
+// Big circular level ring (gold gradient), matching the Habits page
+const LevelRing: React.FC<{ level: number; title: string; progress: number; onClick?: () => void }> = ({ level, title, progress, onClick }) => {
+  const size = 172, stroke = 13, r = (size - stroke) / 2, circ = 2 * Math.PI * r;
+  const offset = circ * (1 - Math.max(0, Math.min(1, progress)));
+  return (
+    <button className="lvl-ring" style={{ width: size, height: size }} onClick={onClick} aria-label="Back to habits">
+      <svg width={size} height={size} className="lvl-ring-svg">
+        <defs>
+          <linearGradient id="lvlGradLP" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FFE15A" />
+            <stop offset="100%" stopColor="#FFC42E" />
+          </linearGradient>
+        </defs>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#33333D" strokeWidth={stroke} />
+        <circle className="lvl-ring-arc" cx={size / 2} cy={size / 2} r={r} fill="none" stroke="url(#lvlGradLP)" strokeWidth={stroke} strokeLinecap="butt" strokeDasharray={circ} strokeDashoffset={offset} transform={`rotate(-90 ${size / 2} ${size / 2})`} />
+        <circle cx={size / 2} cy={size / 2} r={r - stroke / 2} fill="#0B0B11" />
+      </svg>
+      <div className="lvl-ring-center">
+        <span className="lvl-ring-eyebrow">LEVEL</span>
+        <span className="lvl-ring-num">{level}</span>
+        <span className="lvl-ring-title">{title}</span>
+      </div>
+    </button>
+  );
+};
 
 interface BadgeDef {
   id: string;
@@ -197,7 +232,7 @@ const LevelPage: React.FC = () => {
       ALL_DAYS.forEach(d => { map[d] = {}; });
       loadedHabits.forEach(h => ALL_DAYS.forEach(d => { map[d][h.name] = false; }));
       (trackerData.habits as any[]).forEach(row => {
-        if (map[row.day]) map[row.day][row.habit_name] = row.done;
+        if (map[row.day]) map[row.day][row.habit_name] = row.state === 'done' || row.done === true;
       });
       setHt(map);
       setLoaded(true);
@@ -216,29 +251,40 @@ const LevelPage: React.FC = () => {
   const sortedByXP = [...allStats].sort((a, b) => b.totalXP - a.totalXP);
 
   return (
-    <div className="app flush" style={{ '--theme': '#7C3AED', '--theme-dim': '#7C3AED66', '--theme-glow': '#7C3AED22' } as React.CSSProperties}>
-      <div className="page-content level-page-content">
-        <div className="page-intro-row">
-          <button className="page-back" onClick={() => navigate(-1)}><span className="page-back-arrow">‹</span> Back</button>
-          <h1 className="page-intro-title">Level Profile</h1>
+    <div className="app flush" style={{ '--theme': '#22C55E', '--theme-dim': '#22C55E66', '--theme-glow': '#22C55E14' } as React.CSSProperties}>
+      {/* Top bar: brand + cog */}
+      <div className="hb-topbar">
+        <div className="hb-brand">
+          <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span>
         </div>
+        <div className="hb-topbar-actions">
+          <button className="hb-cog" onClick={() => navigate('/profile')} aria-label="Settings">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="19" height="19">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+          </button>
+        </div>
+      </div>
 
-        {/* Level card */}
-        <div className="level-hero-card">
-          <div className="level-hero-badge">Lv.{playerLevel.level}</div>
-          <div className="level-hero-info">
-            <div className="level-hero-title">{playerLevel.title}</div>
-            <div className="level-hero-xp">{totalXP.toLocaleString()} XP total</div>
-            <div className="level-hero-bar-wrap">
-              <div className="level-hero-bar">
-                <div className="level-hero-fill" style={{ width: `${playerLevel.progress * 100}%` }} />
-              </div>
-              {playerLevel.xpForNext && (
-                <div className="level-hero-next">
-                  {(totalXP - playerLevel.xpForLevel).toLocaleString()} / {(playerLevel.xpForNext - playerLevel.xpForLevel).toLocaleString()} XP to next level
-                </div>
-              )}
+      <div className="page-content level-page-content">
+        {/* Level ring + XP */}
+        <div className="hb-level">
+          <LevelRing level={playerLevel.level} title={playerLevel.title} progress={playerLevel.progress} onClick={() => navigateWithTransition(navigate, '/')} />
+          <div className="hb-xp">
+            <div className="hb-xp-scale">
+              <span>{totalXP.toLocaleString()} XP</span>
+              <span>{playerLevel.xpForNext != null ? playerLevel.xpForNext.toLocaleString() : 'MAX'}</span>
             </div>
+            <div className="hb-xp-bar">
+              <div className="hb-xp-fill" style={{ width: `${Math.max(2, playerLevel.progress * 100)}%` }} />
+            </div>
+            {playerLevel.xpForNext != null ? (
+              <p className="hb-xp-to">{(playerLevel.xpForNext - totalXP).toLocaleString()} XP to <span>{playerLevel.nextTitle}</span></p>
+            ) : (
+              <p className="hb-xp-to">Max level — you legend.</p>
+            )}
           </div>
         </div>
 

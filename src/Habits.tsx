@@ -1,7 +1,16 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { flushSync } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import './App.css';
 import { api } from './api';
+
+// Navigate with a View Transition (shared-element morph) where supported
+function navigateWithTransition(navigate: any, to: string | number) {
+  const doNav = () => navigate(to);
+  const startVT = (document as any).startViewTransition?.bind(document);
+  if (startVT) startVT(() => flushSync(doNav));
+  else doNav();
+}
 
 const PWA_PROMPT_VERSION = '1.0';
 const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !(window as any).MSStream;
@@ -96,10 +105,10 @@ function getWeekDays(): { key: string; label: string; isFuture: boolean; isToday
 function getRank(totalDays: number): { title: string; color: string } {
   if (totalDays === 0)  return { title: '6ft Under', color: '#555' };
   if (totalDays >= 365) return { title: 'Master', color: '#FFD233' };
-  if (totalDays >= 100) return { title: 'In the Hundreds', color: '#7C3AED' };
+  if (totalDays >= 100) return { title: 'In the Hundreds', color: '#2E8BFF' };
   if (totalDays >= 50)  return { title: 'Habit Tracking Superstar', color: '#FF8A00' };
   if (totalDays >= 30)  return { title: 'Rising Star', color: '#FF4D8D' };
-  if (totalDays >= 10)  return { title: 'Gathering Momentum', color: '#B84DFF' };
+  if (totalDays >= 10)  return { title: 'Gathering Momentum', color: '#FFB928' };
   return { title: 'Habitteaur', color: '#888' };
 }
 
@@ -637,9 +646,7 @@ const Habits: React.FC = () => {
   if (!loaded) {
     return (
       <div className="app" style={{ '--theme': '#22C55E', '--theme-dim': '#22C55E66', '--theme-glow': '#22C55E14' } as React.CSSProperties}>
-        <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', color: '#22C55E', fontSize: '1.2rem' }}>
-          Loading…
-        </div>
+        <div className="sd-loader-wrap"><div className="sd-loader"><img className="sd-loader-logo" src="/superdub-logo.png" alt="" /></div></div>
       </div>
     );
   }
@@ -718,6 +725,9 @@ const Habits: React.FC = () => {
                     <button className="cog-menu-item" onClick={() => { setShowCogMenu(false); setAddOpen(true); }}>
                       <span>＋</span> Add Habit
                     </button>
+                    <button className="cog-menu-item" onClick={() => { setShowCogMenu(false); window.dispatchEvent(new CustomEvent('superdub:show-checkin')); }}>
+                      <span>⚖️</span> Log Weight
+                    </button>
                     <button className="cog-menu-item" onClick={() => { setShowCogMenu(false); setGraveyardOpen(true); setTimeout(() => graveyardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80); }}>
                       <span>📦</span> Archived Habits
                     </button>
@@ -752,7 +762,7 @@ const Habits: React.FC = () => {
 
         {/* Level ring + XP */}
         <div className="hb-level">
-          <LevelRing level={playerLevel.level} title={playerLevel.title} progress={playerLevel.progress} onClick={() => navigate('/level')} />
+          <LevelRing level={playerLevel.level} title={playerLevel.title} progress={playerLevel.progress} onClick={() => navigateWithTransition(navigate, '/level')} />
           <div className="hb-xp">
             <div className="hb-xp-scale">
               <span>{totalXPAll.toLocaleString()} XP</span>
