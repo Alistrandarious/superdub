@@ -6,27 +6,47 @@
 
 /* CSS Custom Properties */
 :root {
-  --glass-bg: #0E0E14;
-  --glass-bg-strong: #15151E;
-  --glass-border: #252532;
-  --glass-border-strong: #16323E;
+  /* ── Canonical neutral surfaces — the single source the whole app uses ── */
+  --glass-bg: #0E0E14;            /* base card / panel surface */
+  --glass-bg-strong: #15151E;     /* elevated surface (modals, raised) */
+  --glass-border: #252532;        /* default hairline border */
+  --glass-border-strong: #16323E; /* emphasised border */
   --glass-shadow: 0 4px 24px rgba(0,0,0,0.5);
   --glass-blur: none;
-  /* ── Superdub V2 "Ascension" signature gradients ── */
-  --grad-brand: linear-gradient(135deg, #2FD27E 0%, #2E8BFF 100%);   /* flagship */
-  --grad-health: linear-gradient(135deg, #3CF98E 0%, #2FD27E 100%);  /* green = health */
-  --grad-growth: linear-gradient(135deg, #48C2FF 0%, #2E8BFF 100%);  /* blue = growth */
+  /* Semantic aliases → prefer these going forward; they point at the canonical surfaces above */
+  --surface: var(--glass-bg);
+  --surface-2: var(--glass-bg);
+  --surface-raised: var(--glass-bg-strong);
+  --line: var(--glass-border);
+  --line-soft: var(--glass-border);
+  --bg: var(--glass-bg);
+  --void: #07090C;
+
+  /* ── Signature gradients (brand identity) ── */
+  --grad-brand: linear-gradient(135deg, #2FD27E 0%, #2E8BFF 100%);     /* flagship green→blue */
+  --grad-health: linear-gradient(135deg, #3CF98E 0%, #2FD27E 100%);    /* green = health */
+  --grad-growth: linear-gradient(135deg, #48C2FF 0%, #2E8BFF 100%);    /* blue = growth */
   --grad-ascension: linear-gradient(135deg, #FFB928 0%, #FFE08A 100%); /* gold = ascension */
   /* dub wordmark — Brand gradient, weighted greener */
   --sd-gradient: linear-gradient(110deg, #2FD27E 0%, #2FD27E 42%, #2E8BFF 100%);
   --gold-gradient: var(--grad-ascension);
-  /* neutrals */
-  --void: #07090C;
-  --bg: #080F12;
-  --surface: #0E1418;
-  --surface-2: #0C1320;
-  --line: #132820;
-  --line-soft: #101E1A;
+
+  /* ── Accents — --theme is the per-page brand base (green→blue), set inline per page.
+        Gold is RESERVED for ascension moments only: ranks, targets hit, streaks. ── */
+  --brand: #2FD27E;
+  --brand-blue: #2E8BFF;
+  --gold: #FFB928;
+
+  /* ── Radius scale — replaces the ad-hoc 8/10/11/12/14/16/18/20 spread ── */
+  --r-xs: 6px;
+  --r-sm: 10px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 20px;
+  --r-pill: 999px;
+
+  /* ── Spacing ── */
+  --gutter: 16px;
 }
 
 /* Animatable CSS custom property for the ring */
@@ -38,8 +58,8 @@
 
 /* =====================================================================
    SUPERDUB — App.css
-   Brand palette: #2E8BFF deep-purple · #FFB928 violet · #FF4D8D hot-pink · #FF8A00 orange · #FFD233 gold
-   Fonts: Sora (headings) · Inter (body)
+   Palette: green→blue Brand (#2FD27E → #2E8BFF) · gold #FFB928 (ascension only)
+   Fonts: Kanit (display) · Sora (UI/body) · Space Mono (data) — see :root tokens
    ===================================================================== */
 
 /* ─ Global base ─────────────────────────────────────────── */
@@ -1397,7 +1417,7 @@ h1, h2, h3, h4, .sora {
   font-size: 0.9rem; font-family: inherit; outline: none;
   transition: border-color 0.15s;
 }
-.lists-input:focus { border-color: var(--accent, #FF4D8D)44; }
+.lists-input:focus { border-color: var(--accent, #FF4D8D); }
 .lists-add-btn {
   width: 44px; height: 44px; border: none; border-radius: 10px;
   color: #000; font-size: 1.3rem; font-weight: 700; cursor: pointer;
