@@ -3957,8 +3957,8 @@ h1, h2, h3, h4, .sora {
   box-shadow: 0 0 14px rgba(34,197,94,0.35);
 }
 .hb-week-circle.failed {
-  background: rgba(255,77,141,0.16);
-  border-color: #2FD27E;
+  background: rgba(255,84,112,0.15);
+  border-color: #FF5470;
 }
 .hb-week-circle.today {
   border-color: #FFD233;
@@ -3976,7 +3976,7 @@ h1, h2, h3, h4, .sora {
   font-weight: 800;
   color: #0E0E14;
 }
-.hb-week-tick.fail { color: #2FD27E; }
+.hb-week-tick.fail { color: #FF5470; }
 
 /* ── Week gold celebration ── */
 @keyframes circle-flip {
@@ -4110,7 +4110,7 @@ h1, h2, h3, h4, .sora {
   font-weight: 800;
   color: #0E0E14;
 }
-.hrow-tick.fail { color: #2FD27E; }
+.hrow-tick.fail { color: #FF5470; }
 .hrow-body {
   flex: 1;
   min-width: 0;

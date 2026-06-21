@@ -632,6 +632,47 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     : chartData.length <= 60 ? 4
     : 7;
 
+  // Custom two-row X-axis tick: day number on top, month name on first tick of each new month
+  const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const shownTickMonths = useMemo(() => {
+    const result = new Map<number, string>(); // index → month abbreviation (only on first of month)
+    let lastMonth = -1;
+    chartData.forEach((d, i) => {
+      if (displayInterval === 0 || i % displayInterval === 0) {
+        const mm = parseInt((d.day as string).split('/')[1]) - 1;
+        if (mm !== lastMonth) { result.set(i, MONTH_ABBR[mm]); lastMonth = mm; }
+      }
+    });
+    return result;
+  }, [chartData, displayInterval]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const chartXTick = useMemo(() => (props: any) => {
+    const { x, y, payload, index } = props;
+    if (!payload?.value) return <g />;
+    const dd = parseInt((payload.value as string).split('/')[0]);
+    const monthLabel = shownTickMonths.get(index);
+    return (
+      <g transform={`translate(${x},${y + 4})`}>
+        <text textAnchor="middle" fill="rgba(255,255,255,0.6)" fontSize={9} fontFamily="'Space Mono',monospace">{dd}</text>
+        {monthLabel && (
+          <text y={13} textAnchor="middle" fill="#2E8BFF" fontSize={8} fontFamily="'Sora',sans-serif" fontWeight={600}>{monthLabel}</text>
+        )}
+      </g>
+    );
+  }, [shownTickMonths]);
+
+  // Month boundary reference lines — subtle vertical marker when month changes
+  const monthBoundaryDays = useMemo(() => {
+    const result: string[] = [];
+    let lastMm = -1;
+    chartData.forEach(d => {
+      const mm = parseInt((d.day as string).split('/')[1]);
+      if (mm !== lastMm && lastMm !== -1) result.push(d.day as string);
+      lastMm = mm;
+    });
+    return result;
+  }, [chartData]);
+
   // EMA colour (green if on track, red if off pace)
   const emaColor = planStatus?.active
     ? (planCycle?.onTrack === false ? '#FF5470' : '#2FD27E')
@@ -1203,9 +1244,13 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               </linearGradient>
             </defs>
             <CartesianGrid stroke={themeColor + '1a'} strokeDasharray="3 3" />
-            <XAxis dataKey="day" stroke="rgba(255,255,255,0.25)" tick={{ fill: '#FFFFFF', fontSize: 10 }} interval={displayInterval} tickLine={false} padding={{ left: 10 }} />
-            <YAxis yAxisId="left" hide={weightZoom} stroke="rgba(255,255,255,0.25)" tick={{ fill: '#FFFFFF', fontSize: 10 }} allowDecimals={false} width={30} axisLine={false} tickLine={false} domain={[0, habits.length]} />
-            <YAxis yAxisId="right" orientation="right" stroke="rgba(255,255,255,0.25)" tick={{ fill: '#FFFFFF', fontSize: 10 }} allowDecimals={false} tickCount={5} domain={(() => {
+            {/* Month boundary markers */}
+            {monthBoundaryDays.map(d => (
+              <ReferenceLine key={`mb-${d}`} yAxisId="left" x={d} stroke="rgba(46,139,255,0.18)" strokeWidth={1} />
+            ))}
+            <XAxis dataKey="day" stroke="rgba(255,255,255,0.1)" tick={chartXTick} interval={displayInterval} tickLine={false} height={36} padding={{ left: 10 }} />
+            <YAxis yAxisId="left" hide={weightZoom} stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} allowDecimals={false} width={30} axisLine={false} tickLine={false} domain={[0, habits.length]} />
+            <YAxis yAxisId="right" orientation="right" stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} allowDecimals={false} tickCount={5} domain={(() => {
               const weights = chartData.map(d => d.weight).filter(Boolean) as number[];
               const emas    = chartData.map((d: any) => d.ema).filter(Boolean) as number[];
               const projs   = chartData.map((d: any) => d.projection).filter(Boolean) as number[];
@@ -1337,8 +1382,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               <ResponsiveContainer width="100%" height={180}>
                 <ComposedChart data={stepChartData} margin={{ left: 0, right: 10, top: 8, bottom: 4 }}>
                   <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
-                  <XAxis dataKey="day" stroke="rgba(255,255,255,0.25)" tick={{ fill: '#FFFFFF', fontSize: 9 }} interval="preserveStartEnd" tickLine={false} padding={{ left: 6, right: 6 }} />
-                  <YAxis stroke="rgba(255,255,255,0.25)" tick={{ fill: '#FFFFFF', fontSize: 9 }} width={36} axisLine={false} tickLine={false} tickFormatter={(v: number) => v >= 1000 ? `${Math.round(v / 1000)}k` : String(v)} />
+                  <XAxis dataKey="day" stroke="rgba(255,255,255,0.1)" tick={chartXTick} interval={displayInterval} tickLine={false} height={36} padding={{ left: 6, right: 6 }} />
+                  <YAxis stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} width={36} axisLine={false} tickLine={false} tickFormatter={(v: number) => v >= 1000 ? `${Math.round(v / 1000)}k` : String(v)} />
                   <Tooltip
                     cursor={{ fill: 'rgba(255,255,255,0.04)' }}
                     contentStyle={{ background: '#0E1418', border: '1px solid #132820', borderRadius: 10, fontSize: 12 }}
