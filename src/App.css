@@ -8701,6 +8701,112 @@ h3, h4,
   margin: 0 0 16px;
 }
 
+/* ── Expanded top-of-page plan card ── */
+.plan-engine-card--top {
+  margin: 12px 16px 0;
+  padding: 18px 18px 14px;
+}
+.plan-engine-card--off {
+  border-left-color: #FF5470;
+}
+.plan-engine-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.plan-engine-eyebrow {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.3);
+}
+.plan-engine-cal-row {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+.plan-engine-cal {
+  font-family: 'Kanit', sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+}
+.plan-engine-cal-unit {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.plan-engine-pace-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 12px 0 10px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  margin: 10px 0 10px;
+}
+.plan-engine-pace-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.plan-engine-pace-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.28);
+}
+.plan-engine-pace-val {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #fff;
+}
+.plan-engine-pace-sep {
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.2);
+  padding: 0 2px;
+  align-self: flex-end;
+  padding-bottom: 2px;
+}
+.plan-engine-reasoning {
+  font-family: 'Sora', sans-serif;
+  font-size: 0.74rem;
+  color: rgba(255,255,255,0.42);
+  line-height: 1.55;
+  margin-bottom: 10px;
+}
+.plan-engine-reasoning-pace {
+  color: rgba(255,255,255,0.62);
+  font-weight: 600;
+}
+.plan-engine-signal {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+.plan-engine-signal-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.plan-engine-signal-text {
+  font-family: 'Sora', sans-serif;
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.35);
+}
+.color-health { color: #2FD27E; }
+.color-danger { color: #FF5470; }
+
 .plan-engine-header {
   display: flex;
   align-items: center;
