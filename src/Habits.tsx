@@ -19,6 +19,9 @@ const isInStandaloneMode = ('standalone' in window.navigator) && (window.navigat
 const INSTALL_XP = 100;
 const INSTALL_XP_KEY = 'superdub.installXP';
 
+const OVERLAY_REFRESH_KEY = 'superdub.overlay.refresh';
+const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
+
 /* ── helpers ─────────────────────────────────────────────── */
 
 const YEAR = 2026;
@@ -226,35 +229,35 @@ function computeHabitStats(
 const FEATURED = [
   {
     id: 'walk-10k',
-    name: '10K Walks',
-    tagline: "Ali's doing steps — join him",
+    name: '10K Steps',
+    tagline: 'Build the daily movement habit, one step at a time.',
     icon: '🚶‍♂️',
     accent: '#22C55E',
     bgClass: 'featured-bg-walk',
   },
   {
-    id: 'no-gambling',
-    name: '0 Gambling',
-    tagline: 'Take back control. Every day counts.',
-    icon: '🎯',
+    id: 'quit-smoking',
+    name: 'Quit Smoking',
+    tagline: 'Every cigarette-free day is a victory. Start yours now.',
+    icon: '🚭',
     accent: '#FF8A00',
-    bgClass: 'featured-bg-gamble',
-  },
-  {
-    id: 'pet-iggy',
-    name: 'Petting Iggy',
-    tagline: 'Daily love for your sweet fury baby girl.',
-    icon: '🐶',
-    accent: '#2FD27E',
-    bgClass: 'featured-bg-iggy',
+    bgClass: 'featured-bg-smoke',
   },
   {
     id: 'yoga',
     name: 'Yoga',
-    tagline: "You happy now Florian, you Putana?",
+    tagline: 'Stretch, breathe, and reset. A few minutes goes a long way.',
     icon: '🧘',
     accent: '#ff6ec7',
     bgClass: 'featured-bg-yoga',
+  },
+  {
+    id: 'reading',
+    name: 'Reading',
+    tagline: 'Sharpen your mind with just 20 pages a day.',
+    icon: '📖',
+    accent: '#2E8BFF',
+    bgClass: 'featured-bg-read',
   },
 ];
 
@@ -464,6 +467,7 @@ const Habits: React.FC = () => {
   const [showCogMenu, setShowCogMenu] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [featuredOpen, setFeaturedOpen] = useState(false);
+  const [showDayOverlay, setShowDayOverlay] = useState(false);
   const graveyardRef = useRef<HTMLDivElement>(null);
 
   const pwaKey = `superdub.pwa.${PWA_PROMPT_VERSION}`;
@@ -495,6 +499,16 @@ const Habits: React.FC = () => {
   };
   const dismissInstall = () => animateOutInstall(() => localStorage.setItem(pwaDayKey, todayStr));
   const neverShowInstall = () => animateOutInstall(() => localStorage.setItem(pwaKey, 'dismissed'));
+
+  const openDayOverlay = () => {
+    localStorage.setItem(OVERLAY_REFRESH_KEY, String(Date.now()));
+    setShowDayOverlay(true);
+  };
+  const shouldAutoRefresh = () => {
+    const last = parseInt(localStorage.getItem(OVERLAY_REFRESH_KEY) || '0', 10);
+    return Date.now() - last >= SIX_HOURS_MS;
+  };
+
   const today = todayKey();
   const weekDays = getWeekDays();
   const habitXP = habits.reduce((sum, h) => sum + computeHabitStats(h, ht, today, startDates[h]).totalXP, 0);
@@ -556,6 +570,29 @@ const Habits: React.FC = () => {
       },
       () => {}
     );
+  }, []);
+
+  // Show habit overlay when habits are first loaded + 6-hour threshold has passed
+  useEffect(() => {
+    if (loaded && shouldAutoRefresh()) openDayOverlay();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded]);
+
+  // Always show/refresh overlay immediately after a weigh-in
+  useEffect(() => {
+    const handler = () => openDayOverlay();
+    window.addEventListener('superdub:tracker-updated', handler);
+    return () => window.removeEventListener('superdub:tracker-updated', handler);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Fallback: check every 5 minutes if 6 hours have passed
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (shouldAutoRefresh()) openDayOverlay();
+    }, 5 * 60 * 1000);
+    return () => clearInterval(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleToggleDay = useCallback((habit: string, dayKey: string, state: HabitState) => {
@@ -877,6 +914,76 @@ const Habits: React.FC = () => {
 
         <div style={{ height: 100 }} />
       </div>
+
+      {/* ── Habit day overlay — triggered by weigh-in or 6-hour refresh ── */}
+      {showDayOverlay && loaded && (() => {
+        const todayHabits = ht[today] ?? {};
+        const displayHabits = yourHabits;
+        const doneCount = displayHabits.filter(h => todayHabits[h] === 'done').length;
+        const total = displayHabits.length;
+        const allDone = total > 0 && doneCount === total;
+        const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+        const now = new Date();
+        const hour = now.getHours();
+        const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+        const todayLabel = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+        return (
+          <div className="checkin-overlay" onClick={() => setShowDayOverlay(false)}>
+            <div className="checkin-inner" onClick={e => e.stopPropagation()}>
+              <button className="checkin-close" onClick={() => setShowDayOverlay(false)} aria-label="Close">✕</button>
+              <div className="checkin-head">
+                <div className="checkin-greet-wrap">
+                  <p className="checkin-eyebrow">{todayLabel}</p>
+                  <h2 className="checkin-greeting">{greeting} <span className="checkin-wave">👋</span></h2>
+                  <p className="checkin-sub">Here's your habit progress for today.</p>
+                </div>
+                <div
+                  className="checkin-ring"
+                  style={{ '--pct': pct } as React.CSSProperties}
+                  aria-label={`${doneCount} of ${total} habits done today`}
+                >
+                  <div className="checkin-ring-inner">
+                    <span className="checkin-count">{doneCount}<span className="checkin-count-total">/{total}</span></span>
+                    <span className="checkin-progress-label">done</span>
+                  </div>
+                </div>
+              </div>
+
+              {total === 0 ? (
+                <p className="checkin-empty">No habits yet — add some below.</p>
+              ) : (
+                <div className="checkin-habits">
+                  {displayHabits.map(h => {
+                    const state = todayHabits[h] ?? null;
+                    const done = state === 'done';
+                    return (
+                      <button
+                        key={h}
+                        type="button"
+                        className={`checkin-habit ${done ? 'done' : ''}`}
+                        onClick={() => handleToggleDay(h, today, cycleState(state))}
+                        aria-pressed={done}
+                      >
+                        <span className="checkin-tick">{done ? '✓' : '+'}</span>
+                        <span className="checkin-habit-name">{h}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="checkin-footer">
+                {allDone
+                  ? <p className="checkin-done-msg">All habits done — nice work! 🎉</p>
+                  : total > 0 && <p className="checkin-hint-msg">Tap to check off habits.</p>}
+                <button type="button" className="checkin-scroll-hint" onClick={() => setShowDayOverlay(false)}>
+                  {allDone ? 'Keep it up 🚀' : 'Close'} <span className="checkin-chevron">▾</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };
