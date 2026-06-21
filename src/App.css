@@ -3770,6 +3770,17 @@ h1, h2, h3, h4, .sora {
   -webkit-text-fill-color: transparent;
   color: transparent;
 }
+.hb-build-tag {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.55rem;
+  font-weight: 400;
+  color: rgba(255,255,255,0.25);
+  letter-spacing: 0.04em;
+  margin-left: 6px;
+  vertical-align: middle;
+  position: relative;
+  top: -2px;
+}
 .hb-topbar-actions {
   display: flex;
   align-items: center;
