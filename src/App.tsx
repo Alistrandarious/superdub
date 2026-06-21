@@ -480,11 +480,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   // Chart day range based on selected range tab
   const chartDayRange = useMemo(() => {
     let from: Date;
-    if (chartRange === '7d') { from = new Date(now); from.setDate(now.getDate() - 6); }
-    else if (chartRange === '1m') { from = new Date(now); from.setDate(now.getDate() - 29); }
-    else if (chartRange === '1y') { from = new Date(now); from.setDate(now.getDate() - 364); }
-    else { from = new Date(accountCreatedDate); } // 'all' — from day 1
-    // Never start before account creation
+    if      (chartRange === '7d')  { from = new Date(now); from.setDate(now.getDate() - 6); }
+    else if (chartRange === '1m')  { from = new Date(now); from.setDate(now.getDate() - 29); }
+    else if (chartRange === '3m')  { from = new Date(now); from.setDate(now.getDate() - 89); }
+    else if (chartRange === '1y')  { from = new Date(now); from.setDate(now.getDate() - 364); }
+    else                           { from = new Date(accountCreatedDate); } // 'all'
     if (from < accountCreatedDate) from = new Date(accountCreatedDate);
     return getChartDayRange(from, now);
   }, [chartRange, accountCreatedDate]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -552,18 +552,22 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   // Weekly aggregation for Y / All views with >60 days of history
   const shouldAggregate = (chartRange === '1y' || chartRange === 'all') && chartDayRange.length > 60;
 
-  // Build base (daily) chart data
+  // Build base (daily) chart data (trend = linear regression line, ema = smoothed signal)
   const dailyChartData = chartDayRange.map(({ ddmm }, i) => {
     const d = tracker[ddmm] ?? { weight: '', habits: {}, calories: '', protein: '', carbs: '', fats: '', steps: '' };
     const completed = habits.filter(h => d.habits[h] === true).length;
     const failed = habits.filter(h => d.habits[h] === 'failed').length;
     const ema = chartEMA[i] != null ? chartEMA[i] : null;
-    return { day: ddmm, completed, failed, weight: d.weight ? Number(d.weight) : null, ema, projection: null as number | null };
+    // Only show trend line where we have real weight data nearby (within 3 days)
+    const nearbyWeight = weightPoints.some(p => Math.abs(p.i - i) <= 3);
+    const trend = hasTrend && nearbyWeight ? +(trendIntercept + trendSlope * i).toFixed(2) : null;
+    return { day: ddmm, completed, failed, weight: d.weight ? Number(d.weight) : null, ema, trend, projection: null as number | null };
   });
 
   // Forward projection days (EMA slope extended past today)
-  const projectionLen = hasTrend && lastEMAValue !== null && !shouldAggregate
-    ? (chartRange === '7d' ? 7 : chartRange === '1m' ? 14 : 30)
+  // Only project forward on longer views; short views (7d/1m) show no projection to avoid doubling apparent range
+  const projectionLen = hasTrend && lastEMAValue !== null && !shouldAggregate && chartRange !== '7d' && chartRange !== '1m'
+    ? (chartRange === '3m' ? 14 : 30)
     : 0;
   const futureChartData = projectionLen > 0
     ? Array.from({ length: projectionLen }, (_, f) => {
@@ -683,9 +687,14 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const walkAvg = walkLogged.length ? Math.round(walkTotal / walkLogged.length) : 0;
   const walkDaysHit = walkLogged.filter(d => d.steps >= stepTarget).length;
   const walkDaysMissed = walkLogged.length - walkDaysHit;
-  // current streak: consecutive most-recent days that hit the target
+  // current streak: consecutive completed days hitting target.
+  // Skip today (last entry) if steps haven't synced yet — the day isn't over.
   let walkStreak = 0;
-  for (let i = walkAll.length - 1; i >= 0; i--) {
+  const todayDDMM = `${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}`;
+  const startFrom = walkAll.length > 0 && walkAll[walkAll.length - 1].ddmm === todayDDMM && walkAll[walkAll.length - 1].steps === 0
+    ? walkAll.length - 2   // today has no data yet — start from yesterday
+    : walkAll.length - 1;
+  for (let i = startFrom; i >= 0; i--) {
     if (walkAll[i].steps > 0 && walkAll[i].steps >= stepTarget) walkStreak++;
     else break;
   }
@@ -1132,16 +1141,21 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               labelStyle={{ color: '#FFFFFF', fontWeight: 700, fontFamily: "'Space Mono', monospace", fontSize: 12, marginBottom: 5 }}
               itemStyle={{ color: '#C4C4D0', fontFamily: "'Sora', sans-serif", fontSize: 12, padding: '2px 0' }}
             />
-            {parseFloat(goalWeight) > 0 && (
-              <ReferenceLine
-                yAxisId="right"
-                y={parseFloat(goalWeight)}
-                stroke="#2E8BFF"
-                strokeWidth={1.5}
-                strokeDasharray="8 4"
-                label={{ value: `Goal ${goalWeight}kg`, fill: '#2E8BFF', fontSize: 11, fontWeight: 700, position: 'insideTopRight' }}
-              />
-            )}
+            {(() => {
+              // Prefer adaptive plan target weight, fall back to weight-settings goal
+              const goalKg = planStatus?.goal?.targetWeight ?? (parseFloat(goalWeight) > 0 ? parseFloat(goalWeight) : null);
+              if (!goalKg) return null;
+              return (
+                <ReferenceLine
+                  yAxisId="right"
+                  y={goalKg}
+                  stroke="#2E8BFF"
+                  strokeWidth={1.5}
+                  strokeDasharray="8 4"
+                  label={{ value: `Goal ${goalKg}kg`, fill: '#2E8BFF', fontSize: 11, fontWeight: 700, position: 'insideTopRight' }}
+                />
+              );
+            })()}
             {/* ── Habit bars: green for done, red for failed, rounded tops ── */}
             {!weightZoom && <Bar yAxisId="left" dataKey="completed" stackId="habits" fill="#2FD27E" name="Done" radius={[4,4,0,0]} isAnimationActive={false} />}
             {!weightZoom && <Bar yAxisId="left" dataKey="failed" stackId="habits" fill="#FF5470" name="Failed" radius={[4,4,0,0]} isAnimationActive={false} />}
@@ -1167,8 +1181,10 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               connectNulls
               isAnimationActive={false}
             />
-            {/* ── Trend overlaid on top of the weight line for visibility ── */}
-            <Line yAxisId="right" type="monotone" dataKey="trend" stroke="#2FD27E" strokeWidth={2.5} strokeDasharray="5 4" dot={false} name="Trend" connectNulls isAnimationActive={false} />
+            {/* ── Linear regression trend line — shows direction across logged points ── */}
+            {hasTrend && (
+              <Line yAxisId="right" type="linear" dataKey="trend" stroke="rgba(255,255,255,0.28)" strokeWidth={1.5} strokeDasharray="4 3" dot={false} name="Trend" connectNulls isAnimationActive={false} />
+            )}
             {/* ── EMA smoothed trend (primary engine signal) ── */}
             {hasTrend && (
               <Line
