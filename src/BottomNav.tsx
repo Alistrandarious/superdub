@@ -5,6 +5,7 @@ const BottomNav: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [dietOpen, setDietOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
@@ -12,16 +13,18 @@ const BottomNav: React.FC = () => {
   };
 
   const closeDiet = () => setDietOpen(false);
+  const closeMore = () => setMoreOpen(false);
 
   const goTo = (path: string) => {
     closeDiet();
+    closeMore();
     navigate(path);
   };
 
   return (
     <>
-      {dietOpen && (
-        <div className="bottom-nav-overlay" onClick={closeDiet} />
+      {(dietOpen || moreOpen) && (
+        <div className="bottom-nav-overlay" onClick={() => { closeDiet(); closeMore(); }} />
       )}
 
       {dietOpen && (
@@ -46,6 +49,40 @@ const BottomNav: React.FC = () => {
             <div className="diet-sub-text">
               <span className="diet-sub-label">Food Logging</span>
               <span className="diet-sub-desc">Log today's meals by voice</span>
+            </div>
+          </button>
+        </div>
+      )}
+
+      {moreOpen && (
+        <div className="diet-sub-menu more-sub-menu">
+          <div className="diet-sub-title">More</div>
+          <button className="diet-sub-item" onClick={() => goTo('/profile')}>
+            <span className="diet-sub-icon">👤</span>
+            <div className="diet-sub-text">
+              <span className="diet-sub-label">Profile &amp; Settings</span>
+              <span className="diet-sub-desc">Bio, units, goals &amp; account</span>
+            </div>
+          </button>
+          <button className="diet-sub-item" onClick={() => goTo('/level')}>
+            <span className="diet-sub-icon">⚡</span>
+            <div className="diet-sub-text">
+              <span className="diet-sub-label">Level &amp; XP</span>
+              <span className="diet-sub-desc">Progress, badges &amp; achievements</span>
+            </div>
+          </button>
+          <button className="diet-sub-item" onClick={() => goTo('/about')}>
+            <span className="diet-sub-icon">📖</span>
+            <div className="diet-sub-text">
+              <span className="diet-sub-label">About Superdub</span>
+              <span className="diet-sub-desc">App info &amp; version</span>
+            </div>
+          </button>
+          <button className="diet-sub-item" onClick={() => goTo('/privacy')}>
+            <span className="diet-sub-icon">🔏</span>
+            <div className="diet-sub-text">
+              <span className="diet-sub-label">Privacy Policy</span>
+              <span className="diet-sub-desc">How we handle your data</span>
             </div>
           </button>
         </div>
@@ -115,8 +152,8 @@ const BottomNav: React.FC = () => {
 
         {/* More */}
         <button
-          className={`bottom-nav-item${isActive('/profile') ? ' active' : ''}`}
-          onClick={() => goTo('/profile')}
+          className={`bottom-nav-item${isActive('/profile') || isActive('/about') || isActive('/privacy') || isActive('/level') || moreOpen ? ' active' : ''}`}
+          onClick={() => { closeDiet(); setMoreOpen(o => !o); }}
           aria-label="More"
         >
           <span className="bottom-nav-icon">
