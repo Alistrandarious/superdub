@@ -110,11 +110,16 @@ const PlanPage: React.FC = () => {
       }
       setLatestWeight(lw);
 
-      // Run cycle (idempotent)
+    } catch {
+      setError('Could not load plan data — check your connection and try again.');
+    } finally {
+      setLoading(false);
+    }
+
+    // Run cycle separately — a failure here must never block the page from loading
+    try {
       const c = await api.runPlanCycle();
       setCycle(c);
-
-      // If cycle ran + adjusted, reload status to show updated calories
       if (c.ran && c.adjusted) {
         const fresh = await api.getPlanStatus();
         if (fresh.active) {
@@ -124,9 +129,7 @@ const PlanPage: React.FC = () => {
         }
       }
     } catch {
-      setError('Failed to load plan data');
-    } finally {
-      setLoading(false);
+      // cycle failure is non-fatal — page already visible with status data
     }
   }, []);
 

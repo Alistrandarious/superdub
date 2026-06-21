@@ -673,11 +673,10 @@ const Habits: React.FC = () => {
     setTimeout(() => setRestoringHabit(null), 800);
   };
 
-  // Perfect week — computed from state, safe before early return
-  const yourHabitsForPerfect = habits.filter(h => h !== MANDATORY_HABIT);
-  const isPerfectWeek = yourHabitsForPerfect.length > 0 && weekDays
-    .filter(d => !d.isFuture)
-    .every(d => yourHabitsForPerfect.every(h => ht[d.key]?.[h] === 'done'));
+  // Perfect week — all non-future check-in days (MANDATORY_HABIT) are done
+  const nonFutureDays = weekDays.filter(d => !d.isFuture);
+  const isPerfectWeek = nonFutureDays.length > 0 &&
+    nonFutureDays.every(d => ht[d.key]?.[MANDATORY_HABIT] === 'done');
 
   // Trigger gold animation the moment perfect week is first achieved this week
   // eslint-disable-next-line react-hooks/exhaustive-deps
