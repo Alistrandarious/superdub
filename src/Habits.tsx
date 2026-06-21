@@ -470,6 +470,18 @@ const Habits: React.FC = () => {
   const [showDayOverlay, setShowDayOverlay] = useState(false);
   const graveyardRef = useRef<HTMLDivElement>(null);
 
+  // Week gold celebration
+  const weekGoldKey = (() => {
+    const now = new Date();
+    const dow = now.getDay();
+    const mon = new Date(now);
+    mon.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1));
+    return `superdub.weekgold.${mon.getFullYear()}-${String(mon.getMonth()+1).padStart(2,'0')}-${String(mon.getDate()).padStart(2,'0')}`;
+  })();
+  const [weekGold, setWeekGold] = useState(() => !!localStorage.getItem(weekGoldKey));
+  const [weekCelebrating, setWeekCelebrating] = useState(false);
+  const prevPerfectRef = useRef(false);
+
   const pwaKey = `superdub.pwa.${PWA_PROMPT_VERSION}`;
   const pwaDayKey = `superdub.pwa.day.${PWA_PROMPT_VERSION}`;
   const todayStr = new Date().toDateString();
@@ -671,6 +683,23 @@ const Habits: React.FC = () => {
 
   const yourHabits = habits.filter(h => h !== MANDATORY_HABIT);
 
+  // Perfect week: all yourHabits done for every non-future weekday
+  const isPerfectWeek = yourHabits.length > 0 && weekDays
+    .filter(d => !d.isFuture)
+    .every(d => yourHabits.every(h => ht[d.key]?.[h] === 'done'));
+
+  // Trigger gold animation the moment perfect week is first achieved this week
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (isPerfectWeek && !prevPerfectRef.current && !weekGold) {
+      setWeekGold(true);
+      setWeekCelebrating(true);
+      localStorage.setItem(weekGoldKey, '1');
+      setTimeout(() => setWeekCelebrating(false), 1800);
+    }
+    prevPerfectRef.current = isPerfectWeek;
+  });
+
   const mandatoryStats = computeHabitStats(MANDATORY_HABIT, ht, today, startDates[MANDATORY_HABIT]);
 
   return (
@@ -826,7 +855,7 @@ const Habits: React.FC = () => {
         </div>
 
         {/* Weekly strip — the simplified "Logging into Superdub" habit */}
-        <div className="hb-week">
+        <div className={`hb-week${weekGold ? ' hb-week-gold' : ''}${weekCelebrating ? ' hb-week-celebrating' : ''}`}>
           {weekDays.map(({ key, label, isFuture, isToday }) => {
             const state = ht[key]?.[MANDATORY_HABIT] ?? null;
             return (
