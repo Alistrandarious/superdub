@@ -20,7 +20,7 @@ router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
       pool.query(
         `SELECT name, dob, height_cm, weight_kg, age, sex, activity, steps, vest_kg,
                 job_type, gym_freq, walk_freq, step_target,
-                gym_sessions_per_week, gym_intensity, gym_minutes, weekly_activities
+                gym_sessions_per_week, gym_intensity, gym_minutes, weekly_activities, avatar_seed
          FROM profile WHERE user_id = $1`,
         [req.userId]
       ),
@@ -51,6 +51,7 @@ router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
       gymIntensity: r.gym_intensity ?? 'moderate',
       gymMinutes: r.gym_minutes ?? 60,
       weeklyActivities,
+      avatarSeed: r.avatar_seed ?? null,
       accountCreatedAt,
       lastLoginAt,
       lastActiveAt,
@@ -65,7 +66,7 @@ router.put('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
     const {
       name, dob, heightCm, weightKg, sex, activity, steps, vestKg,
       jobType, gymFreq, walkFreq, stepTarget,
-      gymSessionsPerWeek, gymIntensity, gymMinutes, weeklyActivities,
+      gymSessionsPerWeek, gymIntensity, gymMinutes, weeklyActivities, avatarSeed,
     } = req.body;
     const age = dob != null ? ageFromDob(dob || null) : undefined;
     const activitiesStr = weeklyActivities != null
@@ -89,7 +90,8 @@ router.put('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
          gym_sessions_per_week = CASE WHEN $15::int IS NOT NULL THEN $15 ELSE gym_sessions_per_week END,
          gym_intensity = CASE WHEN $16::text IS NOT NULL THEN $16 ELSE gym_intensity END,
          gym_minutes = CASE WHEN $17::int IS NOT NULL THEN $17 ELSE gym_minutes END,
-         weekly_activities = CASE WHEN $18::text IS NOT NULL THEN $18 ELSE weekly_activities END
+         weekly_activities = CASE WHEN $18::text IS NOT NULL THEN $18 ELSE weekly_activities END,
+         avatar_seed = CASE WHEN $19::text IS NOT NULL THEN $19 ELSE avatar_seed END
        WHERE user_id=$1`,
       [req.userId,
        name          != null ? String(name)          : null,
@@ -108,7 +110,8 @@ router.put('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
        gymSessionsPerWeek != null ? Number(gymSessionsPerWeek) : null,
        gymIntensity  != null ? String(gymIntensity)   : null,
        gymMinutes    != null ? Number(gymMinutes)     : null,
-       activitiesStr]
+       activitiesStr,
+       avatarSeed    != null ? String(avatarSeed)     : null]
     );
     res.json({ ok: true });
   } catch {

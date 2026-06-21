@@ -159,6 +159,7 @@ const migrations = [
      AND h.start_date IS NOT NULL
      AND h.start_date > u.created_at::DATE
      AND h.start_date <= u.created_at::DATE + INTERVAL '3 days'`,
+  `ALTER TABLE profile ADD COLUMN IF NOT EXISTS avatar_seed TEXT`,
 ];
 (async () => {
   for (const sql of migrations) {
