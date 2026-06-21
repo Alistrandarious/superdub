@@ -55,8 +55,8 @@ function addWeeks(from: Date, weeks: number): Date {
   return d;
 }
 
-function fmtSlope(n: number | null): string {
-  if (n === null) return '—';
+function fmtSlope(n: number | null | undefined): string {
+  if (n == null) return '—';
   return `${n > 0 ? '+' : ''}${n.toFixed(2)} kg/wk`;
 }
 
@@ -249,7 +249,7 @@ const PlanPage: React.FC = () => {
                 <span className="plan-status-date">by {new Date(activeGoal.targetDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
               </div>
 
-              {cycle && cycle.actualSlope !== null && (
+              {cycle && cycle.actualSlope != null && (
                 <div className="plan-status-slopes">
                   <span className="plan-status-slope-item">
                     <span className="plan-status-slope-label">Trend</span>
