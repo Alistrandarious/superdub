@@ -245,7 +245,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const todayKey = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}`;
 
   // Chart state
-  const [chartRange, setChartRange] = useState<'7d' | '1m' | '1y' | 'all'>('all');
+  const [chartRange, setChartRange] = useState<'7d' | '1m' | '3m' | '1y' | 'all'>('all');
   const [weightZoom, setWeightZoom] = useState(false);
 
   // Coaching message state
