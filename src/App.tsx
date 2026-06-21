@@ -3,6 +3,7 @@ import { useXP } from './XPContext';
 import {
   ComposedChart,
   Line,
+  Area,
   Bar,
   XAxis,
   YAxis,
@@ -257,7 +258,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const [goalSheetOpen, setGoalSheetOpen] = useState(false);
   const [planStatus, setPlanStatus] = useState<{
     active: boolean;
-    goal?: { goalType: string; startWeight: number; targetWeight: number; targetDate: string; ratePctBw: number };
+    goal?: { goalType: string; startWeight: number; targetWeight: number; startDate: string; targetDate: string; ratePctBw: number };
     currentTarget?: { calories: number; reason: string; effectiveFrom: string };
     history?: { id: string; calories: number; previousCalories: number; reason: string; effectiveFrom: string }[];
   } | null>(null);
@@ -563,8 +564,22 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   // Weekly aggregation for Y / All views with >60 days of history
   const shouldAggregate = (chartRange === '1y' || chartRange === 'all') && chartDayRange.length > 60;
 
+  // Diagonal safe-zone corridor: ±1.5 kg around the ideal linear path from plan start → target
+  const zoneActive = !!(planGoal?.startDate && planGoal?.targetDate && planGoal?.startWeight != null && planGoal?.targetWeight != null);
+  const zoneStartMs = zoneActive ? new Date(planGoal!.startDate).getTime() : 0;
+  const zoneEndMs   = zoneActive ? new Date(planGoal!.targetDate).getTime() : 0;
+  const zoneStartW  = zoneActive ? planGoal!.startWeight  : 0;
+  const zoneEndW    = zoneActive ? planGoal!.targetWeight : 0;
+  const ZONE_HALF   = 1.5;
+  const getZone = (dateMs: number): { zoneLow: number | null; zoneBand: number } => {
+    if (!zoneActive || dateMs < zoneStartMs || dateMs > zoneEndMs) return { zoneLow: null, zoneBand: 0 };
+    const t = (dateMs - zoneStartMs) / (zoneEndMs - zoneStartMs);
+    const ideal = zoneStartW + t * (zoneEndW - zoneStartW);
+    return { zoneLow: +(ideal - ZONE_HALF).toFixed(2), zoneBand: ZONE_HALF * 2 };
+  };
+
   // Build base (daily) chart data (trend = linear regression line, ema = smoothed signal)
-  const dailyChartData = chartDayRange.map(({ ddmm }, i) => {
+  const dailyChartData = chartDayRange.map(({ ddmm, date }, i) => {
     const d = tracker[ddmm] ?? { weight: '', habits: {}, calories: '', protein: '', carbs: '', fats: '', steps: '' };
     const completed = habits.filter(h => d.habits[h] === true).length;
     const failed = habits.filter(h => d.habits[h] === 'failed').length;
@@ -572,7 +587,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     // Only show trend line where we have real weight data nearby (within 3 days)
     const nearbyWeight = weightPoints.some(p => Math.abs(p.i - i) <= 3);
     const trend = hasTrend && nearbyWeight ? +(trendIntercept + trendSlope * i).toFixed(2) : null;
-    return { day: ddmm, completed, failed, weight: d.weight ? Number(d.weight) : null, ema, trend, projection: null as number | null };
+    const { zoneLow, zoneBand } = getZone(date.getTime());
+    return { day: ddmm, completed, failed, weight: d.weight ? Number(d.weight) : null, ema, trend, projection: null as number | null, zoneLow, zoneBand };
   });
 
   // Forward projection days (EMA slope extended past today)
@@ -588,7 +604,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         const mm = String(futureDate.getMonth() + 1).padStart(2, '0');
         const futureIdx = chartDayRange.length + f;
         const proj = +(lastEMAValue! + trendSlope * (futureIdx - lastEMAIndex)).toFixed(1);
-        return { day: `${dd}/${mm}`, completed: 0, failed: 0, weight: null as number | null, ema: null as number | null, projection: proj as number | null };
+        const { zoneLow, zoneBand } = getZone(futureDate.getTime());
+        return { day: `${dd}/${mm}`, completed: 0, failed: 0, weight: null as number | null, ema: null as number | null, projection: proj as number | null, zoneLow, zoneBand };
       })
     : [];
 
@@ -621,6 +638,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         trend: null,
         ema: null,
         projection: null,
+        zoneLow: null,
+        zoneBand: 0,
       }));
   }
 
@@ -1271,24 +1290,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               // Prefer adaptive plan target weight, fall back to weight-settings goal
               const goalKg = planStatus?.goal?.targetWeight ?? (parseFloat(goalWeight) > 0 ? parseFloat(goalWeight) : null);
               if (!goalKg) return null;
-              const zoneY1 = goalKg;
-              const zoneY2 = lastEMAValue ?? goalKg;
-              const zoneColor = planStatus?.goal?.goalType === 'bulk'
-                ? (zoneY2 < goalKg ? '#2FD27E' : '#FF5470')
-                : (zoneY2 > goalKg ? '#2FD27E' : '#FF5470');
               return (
                 <>
-                  {/* Shaded zone between goal and current EMA — the "territory to cover" */}
-                  {lastEMAValue !== null && zoneY1 !== zoneY2 && (
-                    <ReferenceArea
-                      yAxisId="right"
-                      y1={Math.min(zoneY1, zoneY2)}
-                      y2={Math.max(zoneY1, zoneY2)}
-                      fill={zoneColor}
-                      fillOpacity={0.07}
-                      ifOverflow="hidden"
-                    />
-                  )}
                   <ReferenceLine
                     yAxisId="right"
                     y={goalKg}
@@ -1300,6 +1303,13 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 </>
               );
             })()}
+            {/* ── Diagonal safe-zone corridor toward goal (±1.5 kg band) ── */}
+            {zoneActive && (
+              <>
+                <Area yAxisId="right" type="linear" dataKey="zoneLow" stroke="none" fill="none" legendType="none" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} stackId="zone" />
+                <Area yAxisId="right" type="linear" dataKey="zoneBand" stroke="none" fill="rgba(46,139,255,0.10)" legendType="none" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} stackId="zone" />
+              </>
+            )}
             {/* ── Habit bars: green for done, red for failed, rounded tops ── */}
             {!weightZoom && <Bar yAxisId="left" dataKey="completed" stackId="habits" fill="#2FD27E" name="Done" radius={[4,4,0,0]} isAnimationActive={false} />}
             {!weightZoom && <Bar yAxisId="left" dataKey="failed" stackId="habits" fill="#FF5470" name="Failed" radius={[4,4,0,0]} isAnimationActive={false} />}
