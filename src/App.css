@@ -8078,6 +8078,37 @@ h3, h4,
   justify-content: center;
 }
 
+/* ── Step Chart section ── */
+.step-chart-section { margin-top: 0; }
+.step-chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding: 0 4px;
+}
+.step-chart-eyebrow {
+  font-family: var(--font-ui, 'Sora', sans-serif);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+}
+.step-chart-stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-data, 'Space Mono', monospace);
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.35);
+}
+.step-stat-val { color: rgba(255,255,255,0.8); font-weight: 700; }
+.step-stat-sep { opacity: 0.3; }
+.consistency-section { margin-top: 4px; }
+
 /* ── Walking stats ── */
 .walk-card { margin-top: 12px; }
 .walk-kpi-row {

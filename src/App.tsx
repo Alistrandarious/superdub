@@ -489,6 +489,15 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     return getChartDayRange(from, now);
   }, [chartRange, accountCreatedDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Step chart data — one bar per day for current chartRange
+  const stepChartData = useMemo(() =>
+    chartDayRange.map(({ ddmm }) => {
+      const steps = parseInt(tracker[ddmm]?.steps ?? '') || 0;
+      return { day: ddmm, steps: steps > 0 ? steps : null, hit: steps > 0 && steps >= stepTarget };
+    }),
+    [chartDayRange, tracker, stepTarget] // eslint-disable-line react-hooks/exhaustive-deps
+  );
+
   // How much history exists → grey out ranges we don't have data for yet
   const daysSinceCreation = Math.max(1, Math.floor((now.getTime() - accountCreatedDate.getTime()) / 86400000) + 1);
   const rangeAvailable = (r: string) =>
@@ -607,6 +616,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         weight: data.weights.length > 0 ? +(data.weights.reduce((a, b) => a + b, 0) / data.weights.length).toFixed(1) : null,
         completed: data.done,
         failed: data.failed,
+        trend: null,
         ema: null,
         projection: null,
       }));
@@ -1313,6 +1323,49 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </div>{/* /chart-section-inner */}
       </section>
 
+      {/* ── Step Chart ── */}
+      <section className="chart-section step-chart-section">
+        <div className="chart-section-inner">
+          <div className="chart-container">
+            <div className="step-chart-header">
+              <span className="step-chart-eyebrow">Daily Steps · target {stepTarget.toLocaleString()}</span>
+              {walkHasData && (
+                <div className="step-chart-stats">
+                  <span className="step-stat"><span className={`step-stat-val ${walkDaysHit > 0 ? 'color-health' : ''}`}>{walkDaysHit}</span> hit</span>
+                  <span className="step-stat-sep">·</span>
+                  <span className="step-stat"><span className="step-stat-val">{walkDaysMissed}</span> missed</span>
+                  <span className="step-stat-sep">·</span>
+                  <span className="step-stat"><span className="step-stat-val">{walkAvg.toLocaleString()}</span> avg</span>
+                </div>
+              )}
+            </div>
+            {walkHasData ? (
+              <ResponsiveContainer width="100%" height={180}>
+                <ComposedChart data={stepChartData} margin={{ left: 0, right: 10, top: 8, bottom: 4 }}>
+                  <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+                  <XAxis dataKey="day" stroke="rgba(255,255,255,0.25)" tick={{ fill: '#FFFFFF', fontSize: 9 }} interval="preserveStartEnd" tickLine={false} padding={{ left: 6, right: 6 }} />
+                  <YAxis stroke="rgba(255,255,255,0.25)" tick={{ fill: '#FFFFFF', fontSize: 9 }} width={36} axisLine={false} tickLine={false} tickFormatter={(v: number) => v >= 1000 ? `${Math.round(v / 1000)}k` : String(v)} />
+                  <Tooltip
+                    cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                    contentStyle={{ background: '#0E1418', border: '1px solid #132820', borderRadius: 10, fontSize: 12 }}
+                    labelStyle={{ color: '#9aa' }}
+                    formatter={(v: any) => [Number(v).toLocaleString() + ' steps', '']}
+                  />
+                  <ReferenceLine y={stepTarget} stroke="#2E8BFF" strokeDasharray="4 4" label={{ value: stepTarget >= 1000 ? `${Math.round(stepTarget/1000)}k target` : `${stepTarget} target`, fill: '#2E8BFF', fontSize: 10, position: 'insideTopRight' }} />
+                  <Bar dataKey="steps" radius={[4, 4, 0, 0]} isAnimationActive={false}>
+                    {stepChartData.map((d, i) => (
+                      <Cell key={i} fill={d.steps == null ? 'rgba(255,255,255,0.06)' : d.hit ? '#2FD27E' : '#FF5470'} />
+                    ))}
+                  </Bar>
+                </ComposedChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="walk-empty" style={{ margin: '16px 0' }}>No step data yet — steps will appear once they sync from your phone or you add them manually.</p>
+            )}
+          </div>
+        </div>
+      </section>
+
       {/* ── KPI cards ── */}
       <div className="kpi-section">
         <p className="kpi-group-label">Weight</p>
@@ -1376,8 +1429,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </div>
       </div>
 
-      {/* plan engine card moved to top — see below chart section */}
-
       {/* ── Coaching message ── */}
       {coachingMsg && (
         <div className={`coaching-card${coachingMsg.churnRisk === 'HIGH' || coachingMsg.churnRisk === 'CRITICAL' ? ' coaching-empathy' : ''}`}>
@@ -1390,8 +1441,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </div>
       )}
 
-      {/* ── Consistency heatmap (from start date → grows over time) ── */}
-      <section className="report-card">
+      {/* ── Consistency heatmap — dedicated bottom section ── */}
+      <section className="report-card consistency-section">
         <p className="report-eyebrow">Consistency · since {MONTH_SHORT[joinMonth]} {YEAR}</p>
         <div className="heatmap">
           <div className="heatmap-grid">
@@ -1412,54 +1463,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             ))}
           </div>
         </div>
-      </section>
-
-      {/* ── Walking stats (steps from phone sync or manual entry) ── */}
-      <section className="report-card walk-card">
-        <p className="report-eyebrow">Walking · target {stepTarget.toLocaleString()} steps</p>
-        {walkHasData ? (
-          <>
-            <div className="walk-kpi-row">
-              <div className="walk-kpi">
-                <span className="walk-kpi-val">{walkAvg.toLocaleString()}</span>
-                <span className="walk-kpi-label">Avg / day</span>
-              </div>
-              <div className="walk-kpi">
-                <span className={`walk-kpi-val ${walkDaysHit > 0 ? 'kpi-good' : ''}`}>{walkDaysHit}</span>
-                <span className="walk-kpi-label">Days hit</span>
-              </div>
-              <div className="walk-kpi">
-                <span className="walk-kpi-val">{walkDaysMissed}</span>
-                <span className="walk-kpi-label">Days missed</span>
-              </div>
-              <div className="walk-kpi">
-                <span className="walk-kpi-val">{walkStreak}{walkStreak > 0 ? <svg viewBox="0 0 24 24" width="14" height="14" style={{verticalAlign:'middle',marginLeft:2}} fill="#FF8A00"><path d="M12 1C12 1 7 8 7 13a5 5 0 0 0 10 0c0-5-5-12-5-12zm0 16a3 3 0 0 1-3-3c0-2.5 2-6 3-8 1 2 3 5.5 3 8a3 3 0 0 1-3 3z"/></svg> : ''}</span>
-                <span className="walk-kpi-label">Streak</span>
-              </div>
-            </div>
-            <ResponsiveContainer width="100%" height={170}>
-              <ComposedChart data={walkChart} margin={{ left: 0, right: 10, top: 8, bottom: 4 }}>
-                <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
-                <XAxis dataKey="day" stroke="rgba(255,255,255,0.25)" tick={{ fill: '#FFFFFF', fontSize: 9 }} interval="preserveStartEnd" tickLine={false} padding={{ left: 6, right: 6 }} />
-                <YAxis stroke="rgba(255,255,255,0.25)" tick={{ fill: '#FFFFFF', fontSize: 9 }} width={36} axisLine={false} tickLine={false} tickFormatter={(v: number) => v >= 1000 ? `${Math.round(v / 1000)}k` : String(v)} />
-                <Tooltip
-                  cursor={{ fill: 'rgba(255,255,255,0.04)' }}
-                  contentStyle={{ background: '#0E1418', border: '1px solid #132820', borderRadius: 10, fontSize: 12 }}
-                  labelStyle={{ color: '#9aa' }}
-                  formatter={(v: any) => [Number(v).toLocaleString() + ' steps', '']}
-                />
-                <ReferenceLine y={stepTarget} stroke="#2E8BFF" strokeDasharray="4 4" label={{ value: 'Target', fill: '#2E8BFF', fontSize: 10, position: 'insideTopRight' }} />
-                <Bar dataKey="steps" radius={[4, 4, 0, 0]} isAnimationActive={false}>
-                  {walkChart.map((d, i) => (
-                    <Cell key={i} fill={d.hit ? '#2FD27E' : '#FF5470'} />
-                  ))}
-                </Bar>
-              </ComposedChart>
-            </ResponsiveContainer>
-          </>
-        ) : (
-          <p className="walk-empty">No step data yet. Once steps sync from your phone (or you add them manually), your walking stats appear here.</p>
-        )}
       </section>
 
       {/* ── Weekly Recap share card ── */}
