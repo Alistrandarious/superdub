@@ -63,6 +63,7 @@ const DailyCheckIn: React.FC = () => {
       await api.updateTrackerDay(todayStr(), { weight });
       await api.updateProfile({ weightKg: weight }).catch(() => {});
       window.dispatchEvent(new CustomEvent('superdub:tracker-updated'));
+      window.dispatchEvent(new CustomEvent('superdub:checkin-done'));
       setDone(true);
       setTimeout(dismiss, 900);
     } catch (err: any) {

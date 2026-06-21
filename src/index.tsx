@@ -14,6 +14,7 @@ import FoodLog from './FoodLog';
 import MealPlans from './MealPlans';
 import PlanPage from './PlanPage';
 import DailyCheckIn from './DailyCheckIn';
+import EnergyCheckIn from './EnergyCheckIn';
 import StepEntry from './StepEntry';
 import BottomNav from './BottomNav';
 import { Auth } from './Auth';
@@ -81,6 +82,7 @@ function AppRouter() {
         <Route path="/plan" element={<PlanPage />} />
       </Routes>
       <DailyCheckIn />
+      <EnergyCheckIn />
       <StepEntry />
       <BottomNav />
     </>

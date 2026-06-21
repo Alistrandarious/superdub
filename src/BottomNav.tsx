@@ -8,12 +8,17 @@ function readPlanBadge(): { active: boolean; calories: number | null; onTrack: b
   } catch { return null; }
 }
 
+function readCheckinEnabled(): boolean {
+  return localStorage.getItem('superdub.checkin.enabled') !== 'false';
+}
+
 const BottomNav: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [dietOpen, setDietOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [planBadge, setPlanBadge] = useState(readPlanBadge);
+  const [checkinEnabled, setCheckinEnabled] = useState(readCheckinEnabled);
 
   useEffect(() => {
     const sync = () => setPlanBadge(readPlanBadge());
@@ -125,6 +130,23 @@ const BottomNav: React.FC = () => {
               <span className="diet-sub-label">Privacy Policy</span>
               <span className="diet-sub-desc">How we handle your data</span>
             </div>
+          </button>
+          <button
+            className="diet-sub-item"
+            onClick={() => {
+              const next = !checkinEnabled;
+              setCheckinEnabled(next);
+              localStorage.setItem('superdub.checkin.enabled', next ? 'true' : 'false');
+            }}
+          >
+            <span className="diet-sub-icon">{checkinEnabled ? '🔔' : '🔕'}</span>
+            <div className="diet-sub-text">
+              <span className="diet-sub-label">Daily Check-in</span>
+              <span className="diet-sub-desc">{checkinEnabled ? 'On — energy & adherence prompt' : 'Off — no daily prompt'}</span>
+            </div>
+            <span className={`checkin-toggle-pill ${checkinEnabled ? 'on' : 'off'}`}>
+              {checkinEnabled ? 'ON' : 'OFF'}
+            </span>
           </button>
         </div>
       )}

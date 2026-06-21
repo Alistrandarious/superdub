@@ -286,21 +286,63 @@ router.post('/cycle', requireAuth as any, async (req: AuthRequest, res: Response
 
     const result = runCycle(rowToGoal(goal), currentCalories, emaPoints, bio);
 
+    // ── Weekly adherence confidence modifier (Step 5) ───────────────────────
+    // Fetch this week's check-ins. If ≥3 logged, modulate the correction size:
+    //   high "about right" fraction → stronger correction (TDEE likely miscalibrated)
+    //   high "above/below" fraction → conservative correction (adherence pattern, not calibration)
+    // Falls back to plain cycle result when data is sparse (< 3 check-ins).
+    let finalNewCalories = result.newCalories;
+    let adherenceNote = '';
+    if (result.shouldAdjust) {
+      const { rows: ciRows } = await pool.query(
+        `SELECT adherence FROM daily_checkins
+         WHERE user_id = $1 AND date >= CURRENT_DATE - INTERVAL '7 days'`,
+        [req.userId]
+      );
+      if (ciRows.length >= 3) {
+        const total = ciRows.length;
+        const aboutCount = ciRows.filter((r: any) => r.adherence === 'about').length;
+        const aboutFraction = aboutCount / total;
+        const baseDelta = result.newCalories - result.prevCalories;
+
+        if (aboutFraction >= 0.6) {
+          // Consistent self-report "about right" but trend is off → TDEE is the culprit
+          // Apply 120% of the raw correction (stronger signal)
+          finalNewCalories = Math.max(
+            Math.round(result.prevCalories + baseDelta * 1.2),
+            result.bmrFloor
+          );
+          adherenceNote = '; adherence signal: TDEE recalibration (×1.2)';
+        } else {
+          const divergentFraction = 1 - aboutFraction;
+          if (divergentFraction >= 0.6) {
+            // Mixed above/below → adherence is driving the divergence, not calibration
+            // Apply 50% of the raw correction (conservative)
+            finalNewCalories = Math.max(
+              Math.round(result.prevCalories + baseDelta * 0.5),
+              result.bmrFloor
+            );
+            adherenceNote = '; adherence signal: behaviour pattern (×0.5)';
+          }
+        }
+      }
+    }
+
     if (result.shouldAdjust) {
       await pool.query(
         `INSERT INTO weight_plan_targets
            (user_id, goal_id, prescribed_calories, previous_calories, reason)
          VALUES ($1, $2, $3, $4, $5)`,
-        [req.userId, goal.id, result.newCalories, result.prevCalories, result.reason]
+        [req.userId, goal.id, finalNewCalories, result.prevCalories, result.reason + adherenceNote]
       );
     }
 
     res.json({
       ran: true,
       adjusted: result.shouldAdjust,
-      newCalories: result.newCalories,
+      newCalories: finalNewCalories,
       prevCalories: result.prevCalories,
-      reason: result.reason,
+      reason: result.reason + adherenceNote,
       onTrack: result.onTrack,
       actualSlope: result.actualSlope,
       targetSlope: result.targetSlope,

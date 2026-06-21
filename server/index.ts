@@ -14,6 +14,7 @@ import foodlogRoutes from './routes/foodlog';
 import mealplansRoutes from './routes/mealplans';
 import stepsRoutes from './routes/steps';
 import planRoutes from './routes/plan';
+import checkinRoutes from './routes/checkin';
 import { pool } from './db';
 
 dotenv.config();
@@ -35,6 +36,7 @@ app.use('/api/food-log', foodlogRoutes);
 app.use('/api/meal-plans', mealplansRoutes);
 app.use('/api/steps', stepsRoutes);
 app.use('/api/plan', planRoutes);
+app.use('/api/checkin', checkinRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
@@ -191,6 +193,26 @@ const migrations = [
   )`,
   `CREATE INDEX IF NOT EXISTS weight_plan_targets_user_idx
     ON weight_plan_targets (user_id, effective_from DESC)`,
+  // ── Daily check-in (energy + adherence self-report) ─────────────────────────
+  `CREATE TABLE IF NOT EXISTS daily_checkins (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    date        DATE NOT NULL DEFAULT CURRENT_DATE,
+    energy      INTEGER NOT NULL CHECK (energy BETWEEN 1 AND 5),
+    adherence   TEXT NOT NULL CHECK (adherence IN ('below','about','above')),
+    created_at  TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE (user_id, date)
+  )`,
+  `CREATE INDEX IF NOT EXISTS daily_checkins_user_idx ON daily_checkins (user_id, date DESC)`,
+  // ── Weekly intentions (Sunday Review free-text) ──────────────────────────────
+  `CREATE TABLE IF NOT EXISTS weekly_intentions (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    week_start  DATE NOT NULL,
+    intention   TEXT NOT NULL,
+    created_at  TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE (user_id, week_start)
+  )`,
 ];
 (async () => {
   for (const sql of migrations) {

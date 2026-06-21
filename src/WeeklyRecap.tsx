@@ -1,4 +1,5 @@
-import React, { useRef, useCallback, useState, useEffect } from 'react';
+import React, { useRef, useCallback, useState, useEffect, useMemo } from 'react';
+import { api } from './api';
 
 const XP_GATES: [number, number][] = [
   [0, 10], [7, 15], [14, 20], [30, 25], [60, 30], [100, 35], [200, 40], [365, 50],
@@ -47,6 +48,11 @@ const WeeklyRecap: React.FC<WeeklyRecapProps> = ({ habits, tracker }) => {
   const [scale, setScale] = useState(1);
   const [open, setOpen] = useState(false);
 
+  // Sunday Review state
+  const [intentionText, setIntentionText] = useState('');
+  const [intentionSaved, setIntentionSaved] = useState(false);
+  const [lastWeekIntention, setLastWeekIntention] = useState<string | null>(null);
+
   const today = new Date();
   const dow = today.getDay(); // 0=Sun
   const isSunday = dow === 0;
@@ -57,6 +63,21 @@ const WeeklyRecap: React.FC<WeeklyRecapProps> = ({ habits, tracker }) => {
   mon.setHours(0, 0, 0, 0);
   const sun = new Date(mon);
   sun.setDate(mon.getDate() + 6);
+
+  // Week start key for intention storage (YYYY-MM-DD of Monday)
+  const weekStartISO = useMemo(
+    () => mon.toISOString().slice(0, 10),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [mon.getTime()]
+  );
+
+  // Previous week's Monday
+  const prevWeekStartISO = useMemo(() => {
+    const prev = new Date(mon);
+    prev.setDate(prev.getDate() - 7);
+    return prev.toISOString().slice(0, 10);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mon.getTime()]);
 
   const toKey = (d: Date) =>
     `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -136,6 +157,68 @@ const WeeklyRecap: React.FC<WeeklyRecapProps> = ({ habits, tracker }) => {
   const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   const dateRange = `Mon ${mon.getDate()} ${MONTH_SHORT[mon.getMonth()]} – Sun ${sun.getDate()} ${MONTH_SHORT[sun.getMonth()]} ${sun.getFullYear()}`;
+
+  // ── Sunday Review: load this week's intention + last week's intention ────────
+  useEffect(() => {
+    if (!open || !isSunday) return;
+    api.getWeeklyIntention(weekStartISO)
+      .then((d: any) => { if (d.intention) setIntentionText(d.intention); })
+      .catch(() => {});
+    api.getWeeklyIntention(prevWeekStartISO)
+      .then((d: any) => { setLastWeekIntention(d.intention ?? null); })
+      .catch(() => {});
+  }, [open, isSunday, weekStartISO, prevWeekStartISO]);
+
+  const saveIntention = () => {
+    if (!intentionText.trim()) return;
+    api.saveWeeklyIntention(weekStartISO, intentionText)
+      .then(() => setIntentionSaved(true))
+      .catch(() => {});
+  };
+
+  // ── Sunday Review computed values ─────────────────────────────────────────
+  // Biggest win: day with highest step count OR highest consistency, whichever is clearer
+  const biggestWin = useMemo(() => {
+    const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    let bestStepsDay = -1, bestSteps = 0;
+    let bestConsDay = -1, bestCons = 0;
+    weekKeys.forEach((key, i) => {
+      const d = tracker[key];
+      if (!d) return;
+      const steps = parseInt(d.steps ?? '') || 0;
+      if (steps > bestSteps) { bestSteps = steps; bestStepsDay = i; }
+      const done = habits.filter(h => d.habits?.[h] === true).length;
+      const cons = habits.length > 0 ? done / habits.length : 0;
+      if (cons > bestCons) { bestCons = cons; bestConsDay = i; }
+    });
+    if (bestSteps > 0 && bestStepsDay >= 0) {
+      return `${DAY_NAMES[bestStepsDay]} — ${bestSteps.toLocaleString()} steps`;
+    }
+    if (bestCons > 0 && bestConsDay >= 0) {
+      return `${DAY_NAMES[bestConsDay]} — ${Math.round(bestCons * 100)}% habit consistency`;
+    }
+    return null;
+  }, [weekKeys, tracker, habits]);
+
+  // Friction point: lowest-energy day (needs check-in data) or lowest-consistency habit
+  const frictionPoint = useMemo(() => {
+    const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    let worstConsDay = -1, worstCons = Infinity;
+    weekKeys.forEach((key, i) => {
+      const d = tracker[key];
+      if (!d) return;
+      const done = habits.filter(h => d.habits?.[h] === true).length;
+      const poss = habits.some(h => d.habits?.[h] === true || d.habits?.[h] === 'failed') ? habits.length : null;
+      if (poss !== null) {
+        const cons = done / poss;
+        if (cons < worstCons) { worstCons = cons; worstConsDay = i; }
+      }
+    });
+    if (worstConsDay >= 0 && worstCons < 1) {
+      return `${DAY_NAMES[worstConsDay]} was the toughest — ${Math.round(worstCons * 100)}% consistency`;
+    }
+    return null;
+  }, [weekKeys, tracker, habits]);
 
   // ── Responsive scaling ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -359,6 +442,56 @@ const WeeklyRecap: React.FC<WeeklyRecapProps> = ({ habits, tracker }) => {
               </button>
             )}
           </div>
+
+          {/* ── Sunday Review ──────────────────────────────────────────────── */}
+          {isSunday && (
+            <div className="sunday-review">
+              <div className="sunday-review-title">Sunday Review</div>
+
+              {lastWeekIntention && (
+                <div className="sunday-intention-recall">
+                  <span className="sunday-recall-label">Last week you said:</span>
+                  <span className="sunday-recall-text">"{lastWeekIntention}"</span>
+                </div>
+              )}
+
+              {biggestWin && (
+                <div className="sunday-review-row">
+                  <span className="sunday-review-eyebrow">Biggest win</span>
+                  <span className="sunday-review-value">{biggestWin}</span>
+                </div>
+              )}
+
+              {frictionPoint && (
+                <div className="sunday-review-row">
+                  <span className="sunday-review-eyebrow">Friction point</span>
+                  <span className="sunday-review-value">{frictionPoint}</span>
+                </div>
+              )}
+
+              {!biggestWin && !frictionPoint && (
+                <p className="sunday-review-empty">Log habits or steps this week to see your review here.</p>
+              )}
+
+              <div className="sunday-intention-wrap">
+                <span className="sunday-review-eyebrow">Next week's intention</span>
+                <textarea
+                  className="sunday-intention-input"
+                  placeholder="What do you want to focus on next week?"
+                  value={intentionText}
+                  onChange={e => { setIntentionText(e.target.value); setIntentionSaved(false); }}
+                  rows={2}
+                />
+                <button
+                  className="sunday-intention-save"
+                  onClick={saveIntention}
+                  disabled={!intentionText.trim() || intentionSaved}
+                >
+                  {intentionSaved ? '✓ Saved' : 'Save intention'}
+                </button>
+              </div>
+            </div>
+          )}
         </>
       )}
     </section>

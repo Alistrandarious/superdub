@@ -9310,3 +9310,229 @@ details[open] .plan-explainer-summary::before { content: '▾  '; }
   font-family: 'Space Mono', monospace;
   margin-bottom: 2px;
 }
+
+/* ── Coaching card ─────────────────────────────────────────────────────────── */
+.coaching-card {
+  background: rgba(46,139,255,0.07);
+  border: 1px solid rgba(46,139,255,0.18);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin: 0 0 8px;
+}
+.coaching-card.coaching-empathy {
+  background: rgba(255,212,51,0.06);
+  border-color: rgba(255,212,51,0.18);
+}
+.coaching-eyebrow {
+  display: block;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.38);
+  margin-bottom: 6px;
+}
+.coaching-msg {
+  font-family: 'Sora', sans-serif;
+  font-size: 0.88rem;
+  color: rgba(255,255,255,0.82);
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* ── Energy check-in modal ─────────────────────────────────────────────────── */
+.energy-checkin-modal {
+  padding: 28px 24px 24px;
+}
+.energy-section,
+.adherence-section {
+  margin-bottom: 20px;
+}
+.energy-label-row {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.45);
+  margin: 0 0 10px;
+}
+.energy-selected-label {
+  color: rgba(255,255,255,0.75);
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.energy-pips {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+.energy-pip {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.7);
+  font-family: 'Space Mono', monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.energy-pip.selected {
+  border-color: #2FD27E;
+  background: rgba(47,210,126,0.15);
+  color: #2FD27E;
+}
+.energy-pip-labels {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'Sora', sans-serif;
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.3);
+  margin-top: 4px;
+}
+.adherence-btns {
+  display: flex;
+  gap: 8px;
+}
+.adherence-btn {
+  flex: 1;
+  padding: 10px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.65);
+  font-family: 'Sora', sans-serif;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  line-height: 1.2;
+}
+.adherence-btn.selected {
+  border-color: #2E8BFF;
+  background: rgba(46,139,255,0.15);
+  color: #2E8BFF;
+  font-weight: 600;
+}
+
+/* ── Check-in toggle pill in More menu ─────────────────────────────────────── */
+.checkin-toggle-pill {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 3px 7px;
+  border-radius: 20px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.checkin-toggle-pill.on {
+  background: rgba(47,210,126,0.15);
+  color: #2FD27E;
+}
+.checkin-toggle-pill.off {
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.35);
+}
+
+/* ── Sunday Review ─────────────────────────────────────────────────────────── */
+.sunday-review {
+  margin-top: 16px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-top: 16px;
+}
+.sunday-review-title {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.35);
+  margin-bottom: 14px;
+}
+.sunday-intention-recall {
+  background: rgba(255,212,51,0.07);
+  border: 1px solid rgba(255,212,51,0.16);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sunday-recall-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255,212,51,0.6);
+}
+.sunday-recall-text {
+  font-family: 'Sora', sans-serif;
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.75);
+  font-style: italic;
+}
+.sunday-review-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 12px;
+}
+.sunday-review-eyebrow {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.35);
+}
+.sunday-review-value {
+  font-family: 'Sora', sans-serif;
+  font-size: 0.88rem;
+  color: rgba(255,255,255,0.8);
+}
+.sunday-review-empty {
+  font-family: 'Sora', sans-serif;
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.3);
+  margin: 0 0 14px;
+}
+.sunday-intention-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+.sunday-intention-input {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: rgba(255,255,255,0.85);
+  font-family: 'Sora', sans-serif;
+  font-size: 0.85rem;
+  resize: none;
+  line-height: 1.5;
+  outline: none;
+}
+.sunday-intention-input:focus {
+  border-color: rgba(46,139,255,0.4);
+}
+.sunday-intention-save {
+  align-self: flex-end;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(46,139,255,0.35);
+  background: rgba(46,139,255,0.12);
+  color: #2E8BFF;
+  font-family: 'Sora', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.sunday-intention-save:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

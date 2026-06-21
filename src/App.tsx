@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
   ReferenceLine,
   Cell,
+  Brush,
 } from 'recharts';
 import './App.css';
 import { api } from './api';
@@ -33,6 +34,65 @@ const MONTH_COLORS: Record<number, string> = {
   10: '#FF4D8D', // Nov - hot pink
   11: '#FFD233', // Dec - gold
 };
+
+// ── Custom chart tick: day number only, month label at boundaries ─────────────
+const ChartXTick: React.FC<any> = ({ x, y, payload }) => {
+  const val = payload?.value as string;
+  if (!val) return null;
+  const parts = val.split('/');
+  if (parts.length !== 2) return null;
+  const dd = parseInt(parts[0], 10);
+  const mm = parseInt(parts[1], 10);
+  const isMonthStart = dd === 1 || dd <= 7; // first week of month shows label
+  const showMonth = dd === 1; // only first day of month gets the month label
+  return (
+    <g transform={`translate(${x},${y})`}>
+      {showMonth && (
+        <text x={0} y={-14} fill="rgba(255,255,255,0.85)" fontSize={9} fontWeight={700}
+          fontFamily="'Space Mono', monospace" textAnchor="middle" letterSpacing="0.08em">
+          {MONTH_SHORT[mm - 1].toUpperCase()}
+        </text>
+      )}
+      <text x={0} y={0} dy={4}
+        fill={showMonth ? '#fff' : 'rgba(255,255,255,0.38)'}
+        fontSize={showMonth ? 10.5 : 9}
+        fontWeight={showMonth ? 700 : 400}
+        fontFamily="'Space Mono', monospace"
+        textAnchor="middle">
+        {dd}
+      </text>
+    </g>
+  );
+};
+
+// ── Color-matched tooltip ─────────────────────────────────────────────────────
+function makeChartTooltip(emaColor: string) {
+  return ({ active, payload, label }: any) => {
+    if (!active || !payload?.length) return null;
+    const hasData = payload.some((e: any) => e.value != null && e.value !== 0);
+    if (!hasData) return null;
+    return (
+      <div style={{ background: 'rgba(12,12,18,0.97)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '9px 13px', boxShadow: '0 12px 36px rgba(0,0,0,0.7)', minWidth: 140 }}>
+        <div style={{ color: '#fff', fontWeight: 700, fontFamily: "'Space Mono', monospace", fontSize: 11, marginBottom: 7 }}>{label}</div>
+        {payload.map((entry: any, idx: number) => {
+          if (entry.value == null || entry.value === 0) return null;
+          const color = entry.color || entry.fill || emaColor;
+          const isCount = entry.name === 'Done' || entry.name === 'Failed';
+          const isProjection = entry.name === 'Projection';
+          return (
+            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '2px 0' }}>
+              <span style={{ width: 8, height: 8, borderRadius: isCount ? 2 : '50%', background: color, opacity: isProjection ? 0.5 : 1, flexShrink: 0 }} />
+              <span style={{ color: 'rgba(255,255,255,0.45)', fontFamily: "'Sora', sans-serif", fontSize: 11 }}>{entry.name}</span>
+              <span style={{ color, opacity: isProjection ? 0.65 : 1, fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700, marginLeft: 'auto', paddingLeft: 12 }}>
+                {isCount ? entry.value : `${entry.value} kg`}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+}
 
 function getYearDays(year: number): string[] {
   const days: string[] = [];
@@ -185,8 +245,10 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const todayKey = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}`;
 
   // Chart state
-  const [chartRange, setChartRange] = useState<'7d' | '1m' | '3m' | '1y' | 'all'>('all');
-  const [weightZoom, setWeightZoom] = useState(false);
+  const [chartRange, setChartRange] = useState<'7d' | '1m' | '1y' | 'all'>('all');
+
+  // Coaching message state
+  const [coachingMsg, setCoachingMsg] = useState<{ message: string; churnRisk: string } | null>(null);
 
   // Plan engine state
   const [goalSheetOpen, setGoalSheetOpen] = useState(false);
@@ -289,6 +351,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         return next;
       });
       // Load plan and run adjustment cycle (cycle is idempotent — skips if <7 days)
+      api.getCoachingMessage().then((d: any) => setCoachingMsg(d)).catch(() => {});
       loadPlanStatus();
       api.runPlanCycle()
         .then((c: any) => {
@@ -418,7 +481,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     let from: Date;
     if (chartRange === '7d') { from = new Date(now); from.setDate(now.getDate() - 6); }
     else if (chartRange === '1m') { from = new Date(now); from.setDate(now.getDate() - 29); }
-    else if (chartRange === '3m') { from = new Date(now); from.setDate(now.getDate() - 89); }
     else if (chartRange === '1y') { from = new Date(now); from.setDate(now.getDate() - 364); }
     else { from = new Date(accountCreatedDate); } // 'all' — from day 1
     // Never start before account creation
@@ -431,8 +493,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const rangeAvailable = (r: string) =>
     r === '7d' || r === 'all' ? true
     : r === '1m' ? daysSinceCreation > 7
-    : r === '3m' ? daysSinceCreation > 30
-    : r === '1y' ? daysSinceCreation > 90
+    : r === '1y' ? daysSinceCreation > 30
     : true;
 
   // Days to reach goal (drives the macro/loss math)
@@ -460,8 +521,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     trendIntercept = (sumY - trendSlope * sumX) / n;
   }
 
-  // EMA smoothed trend for the chart (α=0.25, same as backend engine).
-  // Computed client-side from already-loaded tracker data — no extra API call needed.
+  // EMA (α=0.25, same as backend engine)
   const chartEMA: Record<number, number> = {};
   {
     let ema: number | null = null;
@@ -471,10 +531,13 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     }
   }
 
-  // Plan goal projection line: from active goal's start weight/date to target weight/date.
-  // Used on the chart to show the user whether the trend is tracking toward target.
+  // Last EMA index/value — used for forward projection
+  const lastEMAIndex = weightPoints.length > 0 ? weightPoints[weightPoints.length - 1].i : -1;
+  const lastEMAValue: number | null = lastEMAIndex >= 0 ? (chartEMA[lastEMAIndex] ?? null) : null;
+
+  // Plan goal info
   const planGoal = planStatus?.active ? planStatus.goal : null;
-  const planGoalStartDate = planGoal ? new Date(planGoal.startWeight > 0 ? planStatus!.goal!.targetDate : '') : null;
+
   // Map adjustment history to DD/MM keys for chart markers
   const adjustmentDDMMs = new Set<string>(
     (planStatus?.history ?? [])
@@ -485,31 +548,80 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       })
   );
 
-  // XAxis tick density based on how many days are visible
-  const xAxisInterval = chartDayRange.length <= 10 ? 0
-    : chartDayRange.length <= 35 ? 6
-    : chartDayRange.length <= 100 ? 13
-    : 29;
+  // Weekly aggregation for Y / All views with >60 days of history
+  const shouldAggregate = (chartRange === '1y' || chartRange === 'all') && chartDayRange.length > 60;
 
-  const chartData = chartDayRange.map(({ ddmm, date }, i) => {
+  // Build base (daily) chart data
+  const dailyChartData = chartDayRange.map(({ ddmm }, i) => {
     const d = tracker[ddmm] ?? { weight: '', habits: {}, calories: '', protein: '', carbs: '', fats: '', steps: '' };
     const completed = habits.filter(h => d.habits[h] === true).length;
     const failed = habits.filter(h => d.habits[h] === 'failed').length;
-
-    // Days since account creation → drives the linear goal curve
-    const daysSinceStart = Math.round((date.getTime() - accountCreatedDate.getTime()) / 86400000);
-    const prediction = (startWeight > 0 && activeLoss > 0 && daysSinceStart >= 0)
-      ? +Math.max(startWeight - (activeLoss / 7) * daysSinceStart, goal > 0 ? goal : 0).toFixed(1)
-      : null;
-
-    const lastDataIndex = hasTrend ? weightPoints[weightPoints.length - 1].i : 0;
-    const trend = hasTrend && i >= weightPoints[0].i && i <= lastDataIndex + 7
-      ? +(trendIntercept + trendSlope * i).toFixed(1)
-      : null;
-
     const ema = chartEMA[i] != null ? chartEMA[i] : null;
-    return { day: ddmm, completed, failed, weight: d.weight ? Number(d.weight) : null, prediction, trend, ema };
+    return { day: ddmm, completed, failed, weight: d.weight ? Number(d.weight) : null, ema, projection: null as number | null };
   });
+
+  // Forward projection days (EMA slope extended past today)
+  const projectionLen = hasTrend && lastEMAValue !== null && !shouldAggregate
+    ? (chartRange === '7d' ? 7 : chartRange === '1m' ? 14 : 30)
+    : 0;
+  const futureChartData = projectionLen > 0
+    ? Array.from({ length: projectionLen }, (_, f) => {
+        const futureDate = new Date(now);
+        futureDate.setDate(now.getDate() + f + 1);
+        const dd = String(futureDate.getDate()).padStart(2, '0');
+        const mm = String(futureDate.getMonth() + 1).padStart(2, '0');
+        const futureIdx = chartDayRange.length + f;
+        const proj = +(lastEMAValue! + trendSlope * (futureIdx - lastEMAIndex)).toFixed(1);
+        return { day: `${dd}/${mm}`, completed: 0, failed: 0, weight: null as number | null, ema: null as number | null, projection: proj as number | null };
+      })
+    : [];
+
+  // Weekly aggregated data for Y / All
+  let weeklyChartData: typeof dailyChartData = [];
+  if (shouldAggregate) {
+    const weekMap = new Map<string, { weights: number[]; done: number; failed: number; order: number }>();
+    let order = 0;
+    chartDayRange.forEach(({ ddmm, date }) => {
+      const mon = new Date(date);
+      mon.setDate(date.getDate() - ((date.getDay() + 6) % 7));
+      const wk = `${String(mon.getDate()).padStart(2, '0')}/${String(mon.getMonth() + 1).padStart(2, '0')}`;
+      if (!weekMap.has(wk)) { weekMap.set(wk, { weights: [], done: 0, failed: 0, order: order++ }); }
+      const w = weekMap.get(wk)!;
+      const wt = parseFloat(tracker[ddmm]?.weight ?? '');
+      if (wt > 0) w.weights.push(wt);
+      const d = tracker[ddmm];
+      if (d) {
+        w.done += habits.filter(h => d.habits[h] === true).length;
+        w.failed += habits.filter(h => d.habits[h] === 'failed').length;
+      }
+    });
+    weeklyChartData = Array.from(weekMap.entries())
+      .sort((a, b) => a[1].order - b[1].order)
+      .map(([wk, data]) => ({
+        day: wk,
+        weight: data.weights.length > 0 ? +(data.weights.reduce((a, b) => a + b, 0) / data.weights.length).toFixed(1) : null,
+        completed: data.done,
+        failed: data.failed,
+        ema: null,
+        projection: null,
+      }));
+  }
+
+  const chartData = shouldAggregate ? weeklyChartData : [...dailyChartData, ...futureChartData];
+
+  // XAxis tick density
+  const displayInterval = chartData.length <= 10 ? 0
+    : chartData.length <= 35 ? 2
+    : chartData.length <= 60 ? 4
+    : 7;
+
+  // EMA colour (green if on track, red if off pace)
+  const emaColor = planStatus?.active
+    ? (planCycle?.onTrack === false ? '#FF5470' : '#2FD27E')
+    : '#2FD27E';
+
+  // Tooltip render function (colour-matched per series)
+  const renderTooltip = makeChartTooltip(emaColor);
 
   // ── Reporting: consistency heatmap (from start date → today, grows over time) ──
   const nowMs = Date.now();
@@ -610,6 +722,23 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
   // Weekly weight trend from linear regression (kg/week, signed)
   const weeklyWeightTrend = hasTrend ? +(trendSlope * 7).toFixed(2) : null;
+
+  // KPI: days since journey start (Day N counter)
+  const daysSinceStart = Math.max(1, Math.floor((Date.now() - accountCreatedDate.getTime()) / 86400000) + 1);
+
+  // KPI: weight change — EMA vs goal start weight (or earliest logged weight)
+  const weightLoss: number | null = (() => {
+    if (lastEMAValue === null) return null;
+    if (planStatus?.active && planStatus.goal) {
+      return +(lastEMAValue - planStatus.goal.startWeight).toFixed(1);
+    }
+    // No active goal: vs. first ever logged weight
+    for (const day of ALL_DAYS) {
+      const w = parseFloat(tracker[day]?.weight ?? '');
+      if (w > 0) return +(lastEMAValue - w).toFixed(1);
+    }
+    return null;
+  })();
 
   const handleWeight = (day: string, value: string) => {
     if (value !== '' && !/^\d*\.?\d*$/.test(value)) return;
@@ -1120,6 +1249,18 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           </div>
         );
       })()}
+
+      {/* ── Coaching message ── */}
+      {coachingMsg && (
+        <div className={`coaching-card${coachingMsg.churnRisk === 'HIGH' || coachingMsg.churnRisk === 'CRITICAL' ? ' coaching-empathy' : ''}`}>
+          <span className="coaching-eyebrow">
+            {coachingMsg.churnRisk === 'HIGH' || coachingMsg.churnRisk === 'CRITICAL'
+              ? 'A note for today'
+              : 'Today\'s insight'}
+          </span>
+          <p className="coaching-msg">{coachingMsg.message}</p>
+        </div>
+      )}
 
       {/* ── Consistency heatmap (from start date → grows over time) ── */}
       <section className="report-card">
