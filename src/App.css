@@ -8654,3 +8654,360 @@ h3, h4,
 .wr-btn-primary:not(:disabled):hover {
   opacity: 0.88;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PLAN ENGINE — Goal Sheet + Dashboard Card
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Plan surfacing card (Progress page, above heatmap) ── */
+.plan-engine-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-left: 3px solid #2FD27E;
+  border-radius: 14px;
+  padding: 16px 18px 14px;
+  margin: 0 0 16px;
+}
+
+.plan-engine-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.plan-engine-title {
+  font-size: 0.72rem;
+  font-family: 'Space Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #9aa0a6;
+}
+
+.plan-engine-badge {
+  font-size: 0.6rem;
+  font-family: 'Space Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-radius: 20px;
+  padding: 3px 10px;
+}
+.badge-on  { background: rgba(47,210,126,0.12); color: #2FD27E; border: 1px solid rgba(47,210,126,0.3); }
+.badge-off { background: rgba(255,84,112,0.12); color: #FF5470; border: 1px solid rgba(255,84,112,0.3); }
+
+.plan-engine-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.plan-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 64px;
+}
+
+.plan-kpi-label {
+  font-size: 0.6rem;
+  font-family: 'Space Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255,255,255,0.35);
+}
+
+.plan-kpi-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-family: 'Space Mono', monospace;
+  color: #fff;
+  line-height: 1.1;
+}
+
+.plan-engine-reason {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.38);
+  font-family: 'Sora', sans-serif;
+  line-height: 1.45;
+  margin: 0;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding-top: 8px;
+}
+
+/* ── Goal Sheet modal ── */
+.goal-sheet {
+  max-width: 420px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.goal-sheet-loading {
+  padding: 32px;
+  text-align: center;
+  color: rgba(255,255,255,0.45);
+  font-size: 0.85rem;
+}
+
+.goal-sheet-body {
+  padding: 4px 0 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.goal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.goal-field-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255,255,255,0.45);
+  font-family: 'Space Mono', monospace;
+}
+
+.goal-field-readonly {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #fff;
+  font-family: 'Space Mono', monospace;
+}
+
+.goal-input {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  padding: 11px 14px;
+  color: #fff;
+  font-size: 0.95rem;
+  font-family: 'Sora', sans-serif;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+.goal-input:focus {
+  outline: none;
+  border-color: rgba(47,210,126,0.5);
+}
+.goal-input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.6);
+}
+
+/* ── Implied rate section ── */
+.goal-rate-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.goal-rate-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.goal-rate-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255,255,255,0.45);
+  font-family: 'Space Mono', monospace;
+}
+
+.goal-rate-value {
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: 'Space Mono', monospace;
+}
+
+.goal-rate-pct {
+  font-size: 0.68rem;
+  font-weight: 400;
+  opacity: 0.65;
+  margin-left: 5px;
+}
+
+/* ── Risk slider ── */
+.goal-slider-wrap {
+  position: relative;
+}
+
+.goal-slider {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: transparent;
+  position: relative;
+  z-index: 2;
+  cursor: pointer;
+  margin: 0 0 4px;
+}
+.goal-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid rgba(0,0,0,0.3);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  cursor: pointer;
+}
+.goal-slider:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.goal-slider-track {
+  display: flex;
+  height: 6px;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: -2px;
+}
+
+.goal-slider-zone {
+  flex: 1;
+}
+.zone-gentle    { background: #2FD27E; }
+.zone-moderate  { background: #FFD233; }
+.zone-aggressive { background: #FF8A00; }
+.zone-warn      { background: #FF5470; }
+
+.goal-slider-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.58rem;
+  color: rgba(255,255,255,0.3);
+  font-family: 'Space Mono', monospace;
+  margin-top: 4px;
+}
+
+/* ── Zone badge ── */
+.goal-zone-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-family: 'Sora', sans-serif;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid;
+  padding: 5px 12px;
+  align-self: flex-start;
+}
+
+/* ── Warning box ── */
+.goal-warning {
+  background: rgba(255,84,112,0.08);
+  border: 1px solid rgba(255,84,112,0.25);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 0.78rem;
+  color: rgba(255,180,180,0.85);
+  font-family: 'Sora', sans-serif;
+  line-height: 1.5;
+}
+
+/* ── Active goal summary card ── */
+.goal-active-card {
+  background: rgba(47,210,126,0.06);
+  border: 1px solid rgba(47,210,126,0.2);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.goal-active-label {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(47,210,126,0.6);
+  font-family: 'Space Mono', monospace;
+  margin-bottom: 6px;
+}
+
+.goal-active-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #fff;
+  font-family: 'Space Mono', monospace;
+  margin-bottom: 4px;
+}
+
+.goal-active-date {
+  color: rgba(255,255,255,0.5);
+  font-size: 0.75rem;
+  margin-left: auto;
+}
+
+.goal-active-cal {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.45);
+  font-family: 'Sora', sans-serif;
+}
+
+.goal-active-cal strong {
+  color: #2FD27E;
+}
+
+/* ── Error ── */
+.goal-error {
+  background: rgba(255,84,112,0.1);
+  border: 1px solid rgba(255,84,112,0.3);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.78rem;
+  color: #FF5470;
+  font-family: 'Sora', sans-serif;
+}
+
+/* ── Actions ── */
+.goal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.goal-btn-abandon {
+  background: transparent;
+  border: 1px solid rgba(255,84,112,0.3);
+  color: rgba(255,84,112,0.75);
+  border-radius: 20px;
+  padding: 9px 16px;
+  font-size: 0.78rem;
+  font-family: 'Sora', sans-serif;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.goal-btn-abandon:hover:not(:disabled) {
+  background: rgba(255,84,112,0.1);
+  color: #FF5470;
+}
+
+.goal-btn-save {
+  background: linear-gradient(135deg, #2FD27E, #2E8BFF);
+  border: none;
+  color: #fff;
+  border-radius: 20px;
+  padding: 10px 22px;
+  font-size: 0.82rem;
+  font-family: 'Sora', sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.goal-btn-save:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.goal-btn-save:not(:disabled):hover {
+  opacity: 0.88;
+}

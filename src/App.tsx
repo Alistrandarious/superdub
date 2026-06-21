@@ -14,6 +14,7 @@ import {
 import './App.css';
 import { api } from './api';
 import WeeklyRecap from './WeeklyRecap';
+import GoalSheet from './GoalSheet';
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -187,6 +188,18 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const [chartRange, setChartRange] = useState<'7d' | '1m' | '3m' | '1y' | 'all'>('all');
   const [weightZoom, setWeightZoom] = useState(false);
 
+  // Plan engine state
+  const [goalSheetOpen, setGoalSheetOpen] = useState(false);
+  const [planStatus, setPlanStatus] = useState<{
+    active: boolean;
+    goal?: { goalType: string; startWeight: number; targetWeight: number; targetDate: string; ratePctBw: number };
+    currentTarget?: { calories: number; reason: string; effectiveFrom: string };
+    history?: { id: string; calories: number; previousCalories: number; reason: string; effectiveFrom: string }[];
+  } | null>(null);
+  const [planCycle, setPlanCycle] = useState<{
+    onTrack: boolean; actualSlope: number | null; targetSlope: number; flaggedDays: string[];
+  } | null>(null);
+
   // Weight plan state
   const [currentWeight, setCurrentWeight] = useState('');
   const [goalWeight, setGoalWeight] = useState('');
@@ -248,6 +261,13 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     }).catch(() => setLoaded(true));
   }, []);
 
+  // Load plan status
+  const loadPlanStatus = useCallback(() => {
+    api.getPlanStatus()
+      .then((d: any) => setPlanStatus(d))
+      .catch(() => {});
+  }, []);
+
   useEffect(() => {
     loadData().then(() => {
       // Auto-mark the mandatory habit done on every app open
@@ -259,8 +279,13 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         next[todayKey] = { ...next[todayKey], habits: { ...next[todayKey].habits, [MANDATORY]: true } };
         return next;
       });
+      // Load plan and run adjustment cycle (cycle is idempotent — skips if <7 days)
+      loadPlanStatus();
+      api.runPlanCycle()
+        .then((c: any) => { if (c.ran) { setPlanCycle(c); loadPlanStatus(); } })
+        .catch(() => {});
     });
-  }, [loadData]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loadData, loadPlanStatus]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Re-sync tracker when DailyCheckIn saves weight
   useEffect(() => {
@@ -415,6 +440,31 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     trendIntercept = (sumY - trendSlope * sumX) / n;
   }
 
+  // EMA smoothed trend for the chart (α=0.25, same as backend engine).
+  // Computed client-side from already-loaded tracker data — no extra API call needed.
+  const chartEMA: Record<number, number> = {};
+  {
+    let ema: number | null = null;
+    for (const { i, w } of weightPoints) {
+      ema = ema === null ? w : 0.25 * w + 0.75 * ema;
+      chartEMA[i] = +ema.toFixed(2);
+    }
+  }
+
+  // Plan goal projection line: from active goal's start weight/date to target weight/date.
+  // Used on the chart to show the user whether the trend is tracking toward target.
+  const planGoal = planStatus?.active ? planStatus.goal : null;
+  const planGoalStartDate = planGoal ? new Date(planGoal.startWeight > 0 ? planStatus!.goal!.targetDate : '') : null;
+  // Map adjustment history to DD/MM keys for chart markers
+  const adjustmentDDMMs = new Set<string>(
+    (planStatus?.history ?? [])
+      .filter(h => h.previousCalories != null)
+      .map(h => {
+        const d = new Date(h.effectiveFrom);
+        return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+      })
+  );
+
   // XAxis tick density based on how many days are visible
   const xAxisInterval = chartDayRange.length <= 10 ? 0
     : chartDayRange.length <= 35 ? 6
@@ -437,7 +487,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       ? +(trendIntercept + trendSlope * i).toFixed(1)
       : null;
 
-    return { day: ddmm, completed, failed, weight: d.weight ? Number(d.weight) : null, prediction, trend };
+    const ema = chartEMA[i] != null ? chartEMA[i] : null;
+    return { day: ddmm, completed, failed, weight: d.weight ? Number(d.weight) : null, prediction, trend, ema };
   });
 
   // ── Reporting: consistency heatmap (from start date → today, grows over time) ──
@@ -678,8 +729,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 <button className="cog-menu-item" onClick={() => { setMenuOpen(false); setHabitsModalOpen(true); }}>
                   <span>✎</span> Edit Habits
                 </button>
+                <button className="cog-menu-item" onClick={() => { setMenuOpen(false); setGoalSheetOpen(true); }}>
+                  <span>🎯</span> Weight Goal
+                </button>
                 <button className="cog-menu-item" onClick={() => { setMenuOpen(false); setWeightPlanOpen(true); }}>
-                  <span>🎯</span> Weight Settings
+                  <span>⚙️</span> Weight Calculator
                 </button>
                 <button className="cog-menu-item" onClick={() => { setMenuOpen(false); window.dispatchEvent(new CustomEvent('superdub:show-checkin')); }}>
                   <span>⚖️</span> Log Weight
@@ -779,6 +833,21 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </div>
       )}
 
+      {/* ── Plan engine goal sheet ── */}
+      <GoalSheet
+        open={goalSheetOpen}
+        onClose={() => setGoalSheetOpen(false)}
+        latestWeight={(() => {
+          // Find most recent logged weight from the full tracker
+          for (let i = ALL_DAYS.length - 1; i >= 0; i--) {
+            const w = parseFloat(tracker[ALL_DAYS[i]]?.weight ?? '');
+            if (w > 0) return w;
+          }
+          return null;
+        })()}
+        onGoalSaved={() => { loadPlanStatus(); api.runPlanCycle().then((c: any) => { if (c.ran) setPlanCycle(c); }).catch(() => {}); }}
+      />
+
       {nutritionOpen && (
         <div className="modal-overlay" onClick={closeNutritionModal}>
           <div className="modal" onClick={e => e.stopPropagation()}>
@@ -872,8 +941,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               const weights = chartData.map(d => d.weight).filter(Boolean) as number[];
               const preds   = chartData.map(d => d.prediction).filter(Boolean) as number[];
               const trends  = chartData.map(d => d.trend).filter(Boolean) as number[];
+              const emas    = chartData.map((d: any) => d.ema).filter(Boolean) as number[];
               const gw      = parseFloat(goalWeight) || 0;
-              const allVals = [...weights, ...preds, ...trends, ...(gw > 0 ? [gw] : [])];
+              const allVals = [...weights, ...preds, ...trends, ...emas, ...(gw > 0 ? [gw] : [])];
               if (allVals.length === 0) return [55, 60] as [number, number];
               const lo = Math.floor((Math.min(...allVals) - 1) / 2) * 2;
               const hi = Math.ceil((Math.max(...allVals) + 1) / 2) * 2;
@@ -922,6 +992,33 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             />
             {/* ── Trend overlaid on top of the weight line for visibility ── */}
             <Line yAxisId="right" type="monotone" dataKey="trend" stroke="#2FD27E" strokeWidth={2.5} strokeDasharray="5 4" dot={false} name="Trend" connectNulls isAnimationActive={false} />
+            {/* ── EMA smoothed trend (primary engine signal) ── */}
+            {hasTrend && (
+              <Line
+                yAxisId="right"
+                type="monotone"
+                dataKey="ema"
+                stroke={planStatus?.active
+                  ? (planCycle?.onTrack === false ? '#FF5470' : '#2FD27E')
+                  : '#2FD27E'}
+                strokeWidth={3}
+                dot={false}
+                name="EMA trend"
+                connectNulls
+                isAnimationActive={false}
+              />
+            )}
+            {/* ── Calorie adjustment markers ── */}
+            {Array.from(adjustmentDDMMs).map(ddmm => (
+              <ReferenceLine
+                key={`adj-${ddmm}`}
+                yAxisId="left"
+                x={ddmm}
+                stroke="rgba(255,255,255,0.18)"
+                strokeDasharray="3 3"
+                label={{ value: '⟳', fill: '#9aa0a6', position: 'insideTop', fontSize: 10 }}
+              />
+            ))}
           </ComposedChart>
         </ResponsiveContainer>
         </div>
@@ -958,6 +1055,51 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           <p className="kpi-value">{daysLogged}</p>
         </div>
       </div>
+
+      {/* ── Plan engine surfacing ── */}
+      {planStatus?.active && planStatus.currentTarget && (() => {
+        const target = planStatus.currentTarget!;
+        const g = planStatus.goal!;
+        const onTrack = planCycle?.onTrack ?? true;
+        const slope = planCycle?.actualSlope;
+        const weeksLeft = Math.round((new Date(g.targetDate).getTime() - Date.now()) / (7 * 86400000));
+        const daysAgo = Math.round((Date.now() - new Date(target.effectiveFrom).getTime()) / 86400000);
+        return (
+          <div className="plan-engine-card">
+            <div className="plan-engine-header">
+              <span className="plan-engine-title">Weight Plan</span>
+              <span className={`plan-engine-badge ${onTrack ? 'badge-on' : 'badge-off'}`}>
+                {onTrack ? 'On pace' : 'Adjusting'}
+              </span>
+            </div>
+            <div className="plan-engine-row">
+              <div className="plan-kpi">
+                <span className="plan-kpi-label">Prescribed</span>
+                <span className="plan-kpi-value">{target.calories} kcal/day</span>
+              </div>
+              <div className="plan-kpi">
+                <span className="plan-kpi-label">Target</span>
+                <span className="plan-kpi-value">{g.targetWeight} kg</span>
+              </div>
+              <div className="plan-kpi">
+                <span className="plan-kpi-label">Weeks left</span>
+                <span className="plan-kpi-value">{Math.max(weeksLeft, 0)}</span>
+              </div>
+              {slope != null && (
+                <div className="plan-kpi">
+                  <span className="plan-kpi-label">Trend</span>
+                  <span className={`plan-kpi-value ${slope < 0 && g.goalType === 'lose' ? 'kpi-good' : ''}`}>
+                    {slope > 0 ? '+' : ''}{slope.toFixed(2)} kg/wk
+                  </span>
+                </div>
+              )}
+            </div>
+            <p className="plan-engine-reason">
+              {daysAgo === 0 ? 'Today' : daysAgo === 1 ? 'Yesterday' : `${daysAgo}d ago`} — {target.reason}
+            </p>
+          </div>
+        );
+      })()}
 
       {/* ── Consistency heatmap (from start date → grows over time) ── */}
       <section className="report-card">

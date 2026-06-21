@@ -113,6 +113,13 @@ export const api = {
   updateWeightSettings: (data: object) =>
     request('/weight-settings', { method: 'PUT', body: JSON.stringify(data) }),
 
+  // plan engine
+  getPlanStatus: () => request('/plan/status'),
+  createPlanGoal: (targetWeight: number, targetDate: string) =>
+    request('/plan/goal', { method: 'POST', body: JSON.stringify({ targetWeight, targetDate }) }),
+  abandonPlanGoal: () => request('/plan/goal', { method: 'DELETE' }),
+  runPlanCycle: () => request('/plan/cycle', { method: 'POST' }),
+
   // AI key
   getAiKeyStatus: () => request('/profile/ai-key'),
   saveAiKey: (key: string) => request('/profile/ai-key', { method: 'PUT', body: JSON.stringify({ key }) }),
