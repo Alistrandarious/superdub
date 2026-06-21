@@ -673,20 +673,11 @@ const Habits: React.FC = () => {
     setTimeout(() => setRestoringHabit(null), 800);
   };
 
-  if (!loaded) {
-    return (
-      <div className="app" style={{ '--theme': '#22C55E', '--theme-dim': '#22C55E66', '--theme-glow': '#22C55E14' } as React.CSSProperties}>
-        <div className="sd-loader-wrap"><div className="sd-loader"><img className="sd-loader-logo" src="/superdub-logo.png" alt="" /></div></div>
-      </div>
-    );
-  }
-
-  const yourHabits = habits.filter(h => h !== MANDATORY_HABIT);
-
-  // Perfect week: all yourHabits done for every non-future weekday
-  const isPerfectWeek = yourHabits.length > 0 && weekDays
+  // Perfect week — computed from state, safe before early return
+  const yourHabitsForPerfect = habits.filter(h => h !== MANDATORY_HABIT);
+  const isPerfectWeek = yourHabitsForPerfect.length > 0 && weekDays
     .filter(d => !d.isFuture)
-    .every(d => yourHabits.every(h => ht[d.key]?.[h] === 'done'));
+    .every(d => yourHabitsForPerfect.every(h => ht[d.key]?.[h] === 'done'));
 
   // Trigger gold animation the moment perfect week is first achieved this week
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -699,6 +690,16 @@ const Habits: React.FC = () => {
     }
     prevPerfectRef.current = isPerfectWeek;
   });
+
+  if (!loaded) {
+    return (
+      <div className="app" style={{ '--theme': '#22C55E', '--theme-dim': '#22C55E66', '--theme-glow': '#22C55E14' } as React.CSSProperties}>
+        <div className="sd-loader-wrap"><div className="sd-loader"><img className="sd-loader-logo" src="/superdub-logo.png" alt="" /></div></div>
+      </div>
+    );
+  }
+
+  const yourHabits = habits.filter(h => h !== MANDATORY_HABIT);
 
   const mandatoryStats = computeHabitStats(MANDATORY_HABIT, ht, today, startDates[MANDATORY_HABIT]);
 
