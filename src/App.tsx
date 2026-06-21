@@ -1319,13 +1319,17 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         <div className="kpi-group">
           <div className="kpi-card kpi-row-layout">
             <span className="kpi-label">Change</span>
-            <span className={`kpi-value ${weightLoss !== null && ((planStatus?.goal?.goalType === 'bulk' ? weightLoss > 0 : weightLoss < 0)) ? 'kpi-good' : ''}`}>
+            <span className={`kpi-value ${weightLoss !== null && planStatus?.goal?.goalType && planStatus.goal.goalType !== 'maintain'
+              ? (planStatus.goal.goalType === 'bulk' ? weightLoss > 0 : weightLoss < 0) ? 'kpi-good' : 'kpi-bad'
+              : ''}`}>
               {weightLoss !== null ? `${weightLoss > 0 ? '+' : ''}${weightLoss} kg` : '—'}
             </span>
           </div>
           <div className="kpi-card kpi-row-layout">
             <span className="kpi-label">Trend</span>
-            <span className={`kpi-value ${weeklyWeightTrend !== null && (planStatus?.goal?.goalType === 'bulk' ? weeklyWeightTrend > 0 : weeklyWeightTrend < 0) ? 'kpi-good' : ''}`}>
+            <span className={`kpi-value ${weeklyWeightTrend !== null && planStatus?.goal?.goalType && planStatus.goal.goalType !== 'maintain'
+              ? (planStatus.goal.goalType === 'bulk' ? weeklyWeightTrend > 0 : weeklyWeightTrend < 0) ? 'kpi-good' : 'kpi-bad'
+              : ''}`}>
               {weeklyWeightTrend !== null ? `${weeklyWeightTrend > 0 ? '+' : ''}${weeklyWeightTrend} kg/wk` : '—'}
             </span>
           </div>
@@ -1342,7 +1346,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           </div>
           <div className="kpi-card kpi-row-layout">
             <span className="kpi-label">Walk streak</span>
-            <span className="kpi-value kpi-good">
+            <span className={`kpi-value ${walkStreak > 0 ? 'kpi-good' : ''}`}>
               {walkStreak}d{walkStreak > 0 ? <svg viewBox="0 0 24 24" width="13" height="13" style={{verticalAlign:'middle',marginLeft:2}} fill="#FF8A00"><path d="M12 1C12 1 7 8 7 13a5 5 0 0 0 10 0c0-5-5-12-5-12zm0 16a3 3 0 0 1-3-3c0-2.5 2-6 3-8 1 2 3 5.5 3 8a3 3 0 0 1-3 3z"/></svg> : ''}
             </span>
           </div>
@@ -1351,7 +1355,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         <div className="kpi-group">
           <div className="kpi-card kpi-row-layout">
             <span className="kpi-label">Habit streak</span>
-            <span className="kpi-value kpi-good">
+            <span className={`kpi-value ${habitStreak > 0 ? 'kpi-good' : ''}`}>
               {habitStreak}d{habitStreak > 0 ? <svg viewBox="0 0 24 24" width="13" height="13" style={{verticalAlign:'middle',marginLeft:2}} fill="#FF8A00"><path d="M12 1C12 1 7 8 7 13a5 5 0 0 0 10 0c0-5-5-12-5-12zm0 16a3 3 0 0 1-3-3c0-2.5 2-6 3-8 1 2 3 5.5 3 8a3 3 0 0 1-3 3z"/></svg> : ''}
             </span>
           </div>
@@ -1367,7 +1371,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           </div>
           <div className="kpi-card kpi-row-layout">
             <span className="kpi-label">Total XP</span>
-            <span className="kpi-value kpi-gold">{totalXP.toLocaleString()}</span>
+            <span className="kpi-value kpi-xp-value"><span className="xp-badge-chip">XP</span>{totalXP.toLocaleString()}</span>
           </div>
         </div>
       </div>
@@ -1421,7 +1425,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 <span className="walk-kpi-label">Avg / day</span>
               </div>
               <div className="walk-kpi">
-                <span className="walk-kpi-val kpi-good">{walkDaysHit}</span>
+                <span className={`walk-kpi-val ${walkDaysHit > 0 ? 'kpi-good' : ''}`}>{walkDaysHit}</span>
                 <span className="walk-kpi-label">Days hit</span>
               </div>
               <div className="walk-kpi">
@@ -1444,10 +1448,10 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                   labelStyle={{ color: '#9aa' }}
                   formatter={(v: any) => [Number(v).toLocaleString() + ' steps', '']}
                 />
-                <ReferenceLine y={stepTarget} stroke="#FFD233" strokeDasharray="4 4" label={{ value: 'Target', fill: '#FFD233', fontSize: 10, position: 'insideTopRight' }} />
+                <ReferenceLine y={stepTarget} stroke="#2E8BFF" strokeDasharray="4 4" label={{ value: 'Target', fill: '#2E8BFF', fontSize: 10, position: 'insideTopRight' }} />
                 <Bar dataKey="steps" radius={[4, 4, 0, 0]} isAnimationActive={false}>
                   {walkChart.map((d, i) => (
-                    <Cell key={i} fill={d.hit ? '#2FD27E' : '#2E8BFF'} />
+                    <Cell key={i} fill={d.hit ? '#2FD27E' : '#FF5470'} />
                   ))}
                 </Bar>
               </ComposedChart>
