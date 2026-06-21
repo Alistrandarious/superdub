@@ -9011,3 +9011,302 @@ h3, h4,
 .goal-btn-save:not(:disabled):hover {
   opacity: 0.88;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PLAN PAGE  (/plan route)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.plan-page {
+  min-height: 100vh;
+  background: #0e0e14;
+  padding-bottom: 90px;
+}
+
+.plan-page-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px 12px;
+  position: sticky;
+  top: 0;
+  background: rgba(14,14,20,0.96);
+  backdrop-filter: blur(10px);
+  z-index: 10;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.plan-page-back {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.6);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  transition: color 0.2s;
+}
+.plan-page-back:hover { color: #fff; }
+
+.plan-page-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-family: 'Kanit', sans-serif;
+  color: #fff;
+  letter-spacing: 0.01em;
+}
+
+.plan-page-loading {
+  padding: 48px;
+  text-align: center;
+  color: rgba(255,255,255,0.35);
+  font-size: 0.85rem;
+}
+
+.plan-page-body {
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Status card ── */
+.plan-status-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-left: 3px solid #2FD27E;
+  border-radius: 16px;
+  padding: 18px 18px 14px;
+}
+.plan-status-card.plan-status-off {
+  border-left-color: #FF5470;
+}
+
+.plan-status-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.plan-status-cal {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.plan-status-cal-num {
+  font-size: 2rem;
+  font-weight: 800;
+  font-family: 'Kanit', sans-serif;
+  color: #fff;
+  line-height: 1;
+}
+
+.plan-status-cal-unit {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.45);
+  font-family: 'Space Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.plan-nav-badge {
+  font-size: 0.58rem;
+  font-family: 'Space Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-radius: 20px;
+  padding: 2px 7px;
+  vertical-align: middle;
+}
+
+.plan-status-goal-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.plan-status-arrow {
+  font-size: 1.1rem;
+  color: rgba(255,255,255,0.55);
+}
+
+.plan-status-weights {
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: 'Space Mono', monospace;
+  color: #fff;
+}
+
+.plan-status-date {
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.4);
+  font-family: 'Sora', sans-serif;
+}
+
+.plan-status-slopes {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 10px 0 8px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  margin-bottom: 10px;
+}
+
+.plan-status-slope-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.plan-status-slope-label {
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255,255,255,0.3);
+  font-family: 'Space Mono', monospace;
+}
+
+.plan-status-slope-val {
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-family: 'Space Mono', monospace;
+  color: #fff;
+}
+
+.plan-status-slope-sep {
+  color: rgba(255,255,255,0.2);
+  font-size: 0.8rem;
+  align-self: flex-end;
+  padding-bottom: 2px;
+}
+
+.plan-status-reason {
+  font-size: 0.71rem;
+  color: rgba(255,255,255,0.38);
+  font-family: 'Sora', sans-serif;
+  line-height: 1.5;
+}
+
+.plan-status-flagged {
+  margin-top: 8px;
+  font-size: 0.65rem;
+  color: rgba(255,200,80,0.65);
+  font-family: 'Space Mono', monospace;
+  line-height: 1.4;
+}
+
+/* ── Explainer ── */
+.plan-explainer {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.plan-explainer-summary {
+  padding: 12px 16px;
+  font-size: 0.78rem;
+  font-family: 'Sora', sans-serif;
+  color: rgba(255,255,255,0.5);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.plan-explainer-summary::-webkit-details-marker { display: none; }
+.plan-explainer-summary::before {
+  content: '▸  ';
+  font-size: 0.65rem;
+  opacity: 0.5;
+}
+details[open] .plan-explainer-summary::before { content: '▾  '; }
+
+.plan-explainer-body {
+  padding: 0 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.plan-explainer-body p {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.45);
+  font-family: 'Sora', sans-serif;
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* ── Adjustment history ── */
+.plan-history {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.plan-history-title {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.3);
+  font-family: 'Space Mono', monospace;
+  margin-bottom: 10px;
+}
+
+.plan-history-row {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 8px 10px;
+  align-items: start;
+  padding: 7px 0;
+  border-top: 1px solid rgba(255,255,255,0.04);
+}
+.plan-history-row:first-of-type { border-top: none; }
+
+.plan-history-cal {
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-family: 'Space Mono', monospace;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.plan-history-date {
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.3);
+  font-family: 'Space Mono', monospace;
+  white-space: nowrap;
+}
+
+.plan-history-reason {
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.35);
+  font-family: 'Sora', sans-serif;
+  line-height: 1.4;
+  grid-column: 1 / -1;
+  padding-top: 2px;
+}
+
+/* ── Form section ── */
+.plan-form-section {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 16px;
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.plan-form-title {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.35);
+  font-family: 'Space Mono', monospace;
+  margin-bottom: 2px;
+}

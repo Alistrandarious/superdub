@@ -12,6 +12,7 @@ import PrivacyPolicy from './PrivacyPolicy';
 import LevelPage from './LevelPage';
 import FoodLog from './FoodLog';
 import MealPlans from './MealPlans';
+import PlanPage from './PlanPage';
 import DailyCheckIn from './DailyCheckIn';
 import StepEntry from './StepEntry';
 import BottomNav from './BottomNav';
@@ -77,6 +78,7 @@ function AppRouter() {
         <Route path="/level" element={<LevelPage />} />
         <Route path="/food-log" element={<FoodLog />} />
         <Route path="/meal-plans" element={<MealPlans />} />
+        <Route path="/plan" element={<PlanPage />} />
       </Routes>
       <DailyCheckIn />
       <StepEntry />

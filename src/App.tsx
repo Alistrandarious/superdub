@@ -261,10 +261,19 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     }).catch(() => setLoaded(true));
   }, []);
 
-  // Load plan status
+  // Load plan status and write badge for BottomNav
   const loadPlanStatus = useCallback(() => {
     api.getPlanStatus()
-      .then((d: any) => setPlanStatus(d))
+      .then((d: any) => {
+        setPlanStatus(d);
+        const badge = {
+          active: !!d.active,
+          calories: d.currentTarget?.calories ?? null,
+          onTrack: null as boolean | null,
+        };
+        localStorage.setItem('superdub.plan.badge', JSON.stringify(badge));
+        window.dispatchEvent(new Event('superdub:plan-badge-updated'));
+      })
       .catch(() => {});
   }, []);
 
@@ -282,7 +291,18 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       // Load plan and run adjustment cycle (cycle is idempotent — skips if <7 days)
       loadPlanStatus();
       api.runPlanCycle()
-        .then((c: any) => { if (c.ran) { setPlanCycle(c); loadPlanStatus(); } })
+        .then((c: any) => {
+          if (c.ran) { setPlanCycle(c); loadPlanStatus(); }
+          // Update badge with onTrack so BottomNav shows current pace
+          try {
+            const existing = JSON.parse(localStorage.getItem('superdub.plan.badge') ?? '{}');
+            if (existing.active && c.onTrack !== undefined) {
+              existing.onTrack = c.onTrack;
+              localStorage.setItem('superdub.plan.badge', JSON.stringify(existing));
+              window.dispatchEvent(new Event('superdub:plan-badge-updated'));
+            }
+          } catch {}
+        })
         .catch(() => {});
     });
   }, [loadData, loadPlanStatus]); // eslint-disable-line react-hooks/exhaustive-deps

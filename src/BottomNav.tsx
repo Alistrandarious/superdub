@@ -1,11 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+
+function readPlanBadge(): { active: boolean; calories: number | null; onTrack: boolean | null } | null {
+  try {
+    const raw = localStorage.getItem('superdub.plan.badge');
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
 
 const BottomNav: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [dietOpen, setDietOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [planBadge, setPlanBadge] = useState(readPlanBadge);
+
+  useEffect(() => {
+    const sync = () => setPlanBadge(readPlanBadge());
+    window.addEventListener('superdub:plan-badge-updated', sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener('superdub:plan-badge-updated', sync);
+      window.removeEventListener('storage', sync);
+    };
+  }, []);
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
@@ -57,6 +75,29 @@ const BottomNav: React.FC = () => {
       {moreOpen && (
         <div className="diet-sub-menu more-sub-menu">
           <div className="diet-sub-title">More</div>
+          <button className="diet-sub-item" onClick={() => goTo('/plan')}>
+            <span className="diet-sub-icon">🎯</span>
+            <div className="diet-sub-text">
+              <span className="diet-sub-label">
+                Weight Goal
+                {planBadge?.active && (
+                  <span
+                    className={`plan-nav-badge ${planBadge.onTrack === false ? 'badge-off' : 'badge-on'}`}
+                    style={{ marginLeft: 6 }}
+                  >
+                    {planBadge.onTrack === null ? '●' : planBadge.onTrack ? 'on pace' : 'off pace'}
+                  </span>
+                )}
+              </span>
+              <span className="diet-sub-desc">
+                {planBadge?.active
+                  ? planBadge.calories != null
+                    ? `${planBadge.calories} kcal/day prescribed`
+                    : 'Goal active'
+                  : 'Set a target &amp; let the engine adapt'}
+              </span>
+            </div>
+          </button>
           <button className="diet-sub-item" onClick={() => goTo('/profile')}>
             <span className="diet-sub-icon">👤</span>
             <div className="diet-sub-text">
@@ -152,7 +193,7 @@ const BottomNav: React.FC = () => {
 
         {/* More */}
         <button
-          className={`bottom-nav-item${isActive('/profile') || isActive('/about') || isActive('/privacy') || isActive('/level') || moreOpen ? ' active' : ''}`}
+          className={`bottom-nav-item${isActive('/profile') || isActive('/about') || isActive('/privacy') || isActive('/level') || isActive('/plan') || moreOpen ? ' active' : ''}`}
           onClick={() => { closeDiet(); setMoreOpen(o => !o); }}
           aria-label="More"
         >
