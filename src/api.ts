@@ -134,8 +134,8 @@ export const api = {
     request('/meal-plans/swap', { method: 'POST', body: JSON.stringify(body) }),
 
   // daily check-in (energy + adherence)
-  submitCheckIn: (energy: number, adherence: 'below' | 'about' | 'above') =>
-    request('/checkin', { method: 'POST', body: JSON.stringify({ energy, adherence }) }),
+  submitCheckIn: (energy: number, adherence: 'below' | 'about' | 'above', mood?: number) =>
+    request('/checkin', { method: 'POST', body: JSON.stringify({ energy, adherence, mood }) }),
   getRecentCheckIns: () => request('/checkin/recent'),
   getCoachingMessage: () => request('/checkin/coaching'),
   getWeeklyIntention: (weekStart: string) =>

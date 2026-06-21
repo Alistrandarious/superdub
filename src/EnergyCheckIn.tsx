@@ -13,16 +13,16 @@ function isEnabled() {
 }
 
 const ENERGY_LABELS: Record<number, string> = {
-  1: 'Exhausted',
-  2: 'Low',
-  3: 'Okay',
-  4: 'Good',
-  5: 'Great',
+  1: 'Exhausted', 2: 'Low', 3: 'Okay', 4: 'Good', 5: 'Great',
+};
+const MOOD_LABELS: Record<number, string> = {
+  1: 'Rough', 2: 'Low', 3: 'Neutral', 4: 'Good', 5: 'Great',
 };
 
 const EnergyCheckIn: React.FC = () => {
   const [show, setShow] = useState(false);
   const [energy, setEnergy] = useState<number | null>(null);
+  const [mood, setMood] = useState<number | null>(null);
   const [adherence, setAdherence] = useState<'below' | 'about' | 'above' | null>(null);
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
@@ -64,6 +64,7 @@ const EnergyCheckIn: React.FC = () => {
       setDone(false);
       setError(null);
       setEnergy(null);
+      setMood(null);
       setAdherence(null);
       setShow(true);
     };
@@ -72,11 +73,11 @@ const EnergyCheckIn: React.FC = () => {
   }, []);
 
   const save = async () => {
-    if (!energy || !adherence) return;
+    if (!energy || !mood || !adherence) return;
     setSaving(true);
     setError(null);
     try {
-      await api.submitCheckIn(energy, adherence);
+      await api.submitCheckIn(energy, adherence, mood);
       setDone(true);
       setTimeout(dismiss, 1000);
     } catch (err: any) {
@@ -97,7 +98,7 @@ const EnergyCheckIn: React.FC = () => {
         {/* Energy scale */}
         <div className="energy-section">
           <p className="energy-label-row">
-            Energy level
+            Energy
             {energy !== null && (
               <span className="energy-selected-label"> — {ENERGY_LABELS[energy]}</span>
             )}
@@ -116,6 +117,32 @@ const EnergyCheckIn: React.FC = () => {
           </div>
           <div className="energy-pip-labels">
             <span>Exhausted</span>
+            <span>Great</span>
+          </div>
+        </div>
+
+        {/* Mood scale */}
+        <div className="energy-section">
+          <p className="energy-label-row">
+            Mood
+            {mood !== null && (
+              <span className="energy-selected-label"> — {MOOD_LABELS[mood]}</span>
+            )}
+          </p>
+          <div className="energy-pips">
+            {[1, 2, 3, 4, 5].map(v => (
+              <button
+                key={v}
+                className={`energy-pip mood-pip${mood === v ? ' selected-mood' : ''}`}
+                onClick={() => setMood(v)}
+                aria-label={MOOD_LABELS[v]}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
+          <div className="energy-pip-labels">
+            <span>Rough</span>
             <span>Great</span>
           </div>
         </div>
@@ -149,7 +176,7 @@ const EnergyCheckIn: React.FC = () => {
               <button
                 className="checkin-save-btn"
                 onClick={save}
-                disabled={saving || !energy || !adherence}
+                disabled={saving || !energy || !mood || !adherence}
               >
                 {saving ? 'Saving…' : error ? 'Retry' : 'Log it'}
               </button>

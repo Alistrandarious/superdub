@@ -13,9 +13,10 @@ const router = Router();
 // a future checkin_xp column can accumulate this when the XP system is extended).
 router.post('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
-    const { energy, adherence } = req.body as {
+    const { energy, adherence, mood } = req.body as {
       energy: number;
       adherence: 'below' | 'about' | 'above';
+      mood?: number;
     };
 
     if (!energy || energy < 1 || energy > 5) {
@@ -24,12 +25,15 @@ router.post('/', requireAuth as any, async (req: AuthRequest, res: Response) => 
     if (!['below', 'about', 'above'].includes(adherence)) {
       return res.status(400).json({ error: 'adherence must be below, about, or above' });
     }
+    if (mood !== undefined && (mood < 1 || mood > 5)) {
+      return res.status(400).json({ error: 'mood must be 1–5' });
+    }
 
     await pool.query(
-      `INSERT INTO daily_checkins (user_id, date, energy, adherence)
-       VALUES ($1, CURRENT_DATE, $2, $3)
-       ON CONFLICT (user_id, date) DO UPDATE SET energy = $2, adherence = $3`,
-      [req.userId, Math.round(energy), adherence]
+      `INSERT INTO daily_checkins (user_id, date, energy, adherence, mood)
+       VALUES ($1, CURRENT_DATE, $2, $3, $4)
+       ON CONFLICT (user_id, date) DO UPDATE SET energy = $2, adherence = $3, mood = $4`,
+      [req.userId, Math.round(energy), adherence, mood != null ? Math.round(mood) : null]
     );
 
     res.json({ ok: true, xpAwarded: 5 });
@@ -44,7 +48,7 @@ router.post('/', requireAuth as any, async (req: AuthRequest, res: Response) => 
 router.get('/recent', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
     const { rows } = await pool.query(
-      `SELECT date::text, energy, adherence
+      `SELECT date::text, energy, adherence, mood
        FROM daily_checkins
        WHERE user_id = $1 AND date >= CURRENT_DATE - INTERVAL '14 days'
        ORDER BY date DESC`,
@@ -67,6 +71,7 @@ router.get('/recent', requireAuth as any, async (req: AuthRequest, res: Response
     const checkins = rows.map((r: any) => ({
       date: new Date(r.date),
       energy: Number(r.energy),
+      mood: r.mood != null ? Number(r.mood) : undefined,
     }));
 
     const churnRisk = computeChurnRisk(

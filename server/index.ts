@@ -204,6 +204,7 @@ const migrations = [
     UNIQUE (user_id, date)
   )`,
   `CREATE INDEX IF NOT EXISTS daily_checkins_user_idx ON daily_checkins (user_id, date DESC)`,
+  `ALTER TABLE daily_checkins ADD COLUMN IF NOT EXISTS mood INTEGER CHECK (mood BETWEEN 1 AND 5)`,
   // ── Weekly intentions (Sunday Review free-text) ──────────────────────────────
   `CREATE TABLE IF NOT EXISTS weekly_intentions (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),

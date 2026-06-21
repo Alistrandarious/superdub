@@ -9419,6 +9419,11 @@ details[open] .plan-explainer-summary::before { content: '▾  '; }
   background: rgba(47,210,126,0.15);
   color: #2FD27E;
 }
+.energy-pip.selected-mood {
+  border-color: #2E8BFF;
+  background: rgba(46,139,255,0.15);
+  color: #2E8BFF;
+}
 .energy-pip-labels {
   display: flex;
   justify-content: space-between;
