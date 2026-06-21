@@ -13,6 +13,7 @@ import {
 } from 'recharts';
 import './App.css';
 import { api } from './api';
+import WeeklyRecap from './WeeklyRecap';
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -1029,6 +1030,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           <p className="walk-empty">No step data yet. Once steps sync from your phone (or you add them manually), your walking stats appear here.</p>
         )}
       </section>
+
+      {/* ── Weekly Recap share card ── */}
+      <WeeklyRecap habits={habits} tracker={tracker} />
 
       {/* Habits & Nutrition tracker — moved into the cog (opens as a modal) */}
       {trackerModalOpen && (
