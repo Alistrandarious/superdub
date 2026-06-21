@@ -246,6 +246,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
   // Chart state
   const [chartRange, setChartRange] = useState<'7d' | '1m' | '1y' | 'all'>('all');
+  const [weightZoom, setWeightZoom] = useState(false);
 
   // Coaching message state
   const [coachingMsg, setCoachingMsg] = useState<{ message: string; churnRisk: string } | null>(null);
@@ -1084,15 +1085,14 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               </linearGradient>
             </defs>
             <CartesianGrid stroke={themeColor + '1a'} strokeDasharray="3 3" />
-            <XAxis dataKey="day" stroke="rgba(255,255,255,0.25)" tick={{ fill: '#FFFFFF', fontSize: 10 }} interval={xAxisInterval} tickLine={false} padding={{ left: 10 }} />
+            <XAxis dataKey="day" stroke="rgba(255,255,255,0.25)" tick={{ fill: '#FFFFFF', fontSize: 10 }} interval={displayInterval} tickLine={false} padding={{ left: 10 }} />
             <YAxis yAxisId="left" hide={weightZoom} stroke="rgba(255,255,255,0.25)" tick={{ fill: '#FFFFFF', fontSize: 10 }} allowDecimals={false} width={30} axisLine={false} tickLine={false} domain={[0, habits.length]} />
             <YAxis yAxisId="right" orientation="right" stroke="rgba(255,255,255,0.25)" tick={{ fill: '#FFFFFF', fontSize: 10 }} allowDecimals={false} tickCount={5} domain={(() => {
               const weights = chartData.map(d => d.weight).filter(Boolean) as number[];
-              const preds   = chartData.map(d => d.prediction).filter(Boolean) as number[];
-              const trends  = chartData.map(d => d.trend).filter(Boolean) as number[];
               const emas    = chartData.map((d: any) => d.ema).filter(Boolean) as number[];
+              const projs   = chartData.map((d: any) => d.projection).filter(Boolean) as number[];
               const gw      = parseFloat(goalWeight) || 0;
-              const allVals = [...weights, ...preds, ...trends, ...emas, ...(gw > 0 ? [gw] : [])];
+              const allVals = [...weights, ...emas, ...projs, ...(gw > 0 ? [gw] : [])];
               if (allVals.length === 0) return [55, 60] as [number, number];
               const lo = Math.floor((Math.min(...allVals) - 1) / 2) * 2;
               const hi = Math.ceil((Math.max(...allVals) + 1) / 2) * 2;
@@ -1108,18 +1108,18 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               <ReferenceLine
                 yAxisId="right"
                 y={parseFloat(goalWeight)}
-                stroke="#FFD233"
+                stroke="#2E8BFF"
                 strokeWidth={1.5}
                 strokeDasharray="8 4"
-                label={{ value: `Goal ${goalWeight}kg`, fill: '#FFD233', fontSize: 11, fontWeight: 700, position: 'insideTopRight' }}
+                label={{ value: `Goal ${goalWeight}kg`, fill: '#2E8BFF', fontSize: 11, fontWeight: 700, position: 'insideTopRight' }}
               />
             )}
-            {/* ── Habit bars (hidden when zoomed into weight) ── */}
-            {!weightZoom && <Bar yAxisId="left" dataKey="completed" stackId="habits" fill={themeColor} name="Done" radius={[0,0,0,0]} isAnimationActive={false} />}
-            {!weightZoom && <Bar yAxisId="left" dataKey="failed" stackId="habits" fill="#E04848" name="Failed" radius={[4,4,0,0]} isAnimationActive={false} />}
-            {/* ── Prediction (focused weight view only) ── */}
-            {weightZoom && parseFloat(goalWeight) > 0 && (
-              <Line yAxisId="right" type="monotone" dataKey="prediction" stroke="#FFD233" strokeWidth={2} strokeDasharray="5 5" dot={false} name="Prediction" connectNulls isAnimationActive={false} />
+            {/* ── Habit bars: green for done, red for failed, rounded tops ── */}
+            {!weightZoom && <Bar yAxisId="left" dataKey="completed" stackId="habits" fill="#2FD27E" name="Done" radius={[4,4,0,0]} isAnimationActive={false} />}
+            {!weightZoom && <Bar yAxisId="left" dataKey="failed" stackId="habits" fill="#FF5470" name="Failed" radius={[4,4,0,0]} isAnimationActive={false} />}
+            {/* ── Forward projection (weight zoom only) ── */}
+            {weightZoom && (
+              <Line yAxisId="right" type="monotone" dataKey="projection" stroke="#2E8BFF" strokeWidth={2} strokeDasharray="5 5" dot={false} name="Projection" connectNulls isAnimationActive={false} />
             )}
             {/* ── Actual weight line ── */}
             <Line
