@@ -5625,6 +5625,7 @@ h1, h2, h3, h4, .sora {
   text-align: left;
   transition: background 0.15s;
   -webkit-tap-highlight-color: transparent;
+  color: rgba(255,255,255,0.7);
 }
 
 .diet-sub-item:hover:not(:disabled) {
