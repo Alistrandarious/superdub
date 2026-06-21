@@ -13,6 +13,7 @@ import weightSettingsRoutes from './routes/weightSettings';
 import foodlogRoutes from './routes/foodlog';
 import mealplansRoutes from './routes/mealplans';
 import stepsRoutes from './routes/steps';
+import planRoutes from './routes/plan';
 import { pool } from './db';
 
 dotenv.config();
@@ -33,6 +34,7 @@ app.use('/api/weight-settings', weightSettingsRoutes);
 app.use('/api/food-log', foodlogRoutes);
 app.use('/api/meal-plans', mealplansRoutes);
 app.use('/api/steps', stepsRoutes);
+app.use('/api/plan', planRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
@@ -160,6 +162,35 @@ const migrations = [
      AND h.start_date > u.created_at::DATE
      AND h.start_date <= u.created_at::DATE + INTERVAL '3 days'`,
   `ALTER TABLE profile ADD COLUMN IF NOT EXISTS avatar_seed TEXT`,
+  // ── Plan engine tables ──────────────────────────────────────────────────────
+  // One active weight goal per user; history kept with status != 'active'.
+  `CREATE TABLE IF NOT EXISTS weight_goals (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    goal_type   TEXT NOT NULL CHECK (goal_type IN ('lose','gain','maintain')),
+    start_weight NUMERIC(6,2) NOT NULL,
+    start_date  DATE NOT NULL DEFAULT CURRENT_DATE,
+    target_weight NUMERIC(6,2) NOT NULL,
+    target_date DATE NOT NULL,
+    rate_pct_bw NUMERIC(8,6) NOT NULL,
+    status      TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','completed','abandoned')),
+    created_at  TIMESTAMPTZ DEFAULT NOW()
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS weight_goals_one_active
+    ON weight_goals (user_id) WHERE status = 'active'`,
+  // Full history of calorie prescriptions; latest row = current target.
+  `CREATE TABLE IF NOT EXISTS weight_plan_targets (
+    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id             INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    goal_id             UUID NOT NULL REFERENCES weight_goals(id) ON DELETE CASCADE,
+    prescribed_calories INTEGER NOT NULL,
+    previous_calories   INTEGER,
+    reason              TEXT NOT NULL,
+    effective_from      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at          TIMESTAMPTZ DEFAULT NOW()
+  )`,
+  `CREATE INDEX IF NOT EXISTS weight_plan_targets_user_idx
+    ON weight_plan_targets (user_id, effective_from DESC)`,
 ];
 (async () => {
   for (const sql of migrations) {
