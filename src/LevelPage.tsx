@@ -3,6 +3,7 @@ import { flushSync } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import './App.css';
 import { api } from './api';
+import { useXP } from './XPContext';
 
 function navigateWithTransition(navigate: any, to: string) {
   const doNav = () => navigate(to);
@@ -240,12 +241,11 @@ const LevelPage: React.FC = () => {
   }, []);
 
   const today = todayKey();
+  const { totalXP, playerLevel } = useXP();
   const allStats = habits.map(h => ({
     ...h,
     ...computeHabitXP(h.name, ht, today, h.startDate),
   }));
-  const totalXP = allStats.reduce((sum, s) => sum + s.totalXP, 0);
-  const playerLevel = getPlayerLevel(totalXP);
   const badges = computeBadges(habits, ht, today, totalXP, playerLevel.level);
 
   const sortedByXP = [...allStats].sort((a, b) => b.totalXP - a.totalXP);

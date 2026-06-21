@@ -21,6 +21,7 @@ import { Auth } from './Auth';
 import { isLoggedIn, clearToken, api } from './api';
 import { initStepSync } from './stepSync';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { XPProvider } from './XPContext';
 
 const NO_NAV_PATHS = ['/privacy'];
 
@@ -92,7 +93,9 @@ function AppRouter() {
 function Root() {
   return (
     <BrowserRouter>
-      <AppRouter />
+      <XPProvider>
+        <AppRouter />
+      </XPProvider>
     </BrowserRouter>
   );
 }

@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { useXP } from './XPContext';
 import {
   ComposedChart,
   Line,
@@ -761,33 +762,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     return null;
   })();
 
-  const totalXP = (() => {
-    const XP_GATES: [number, number][] = [
-      [0, 10], [7, 15], [14, 20], [30, 25], [60, 30], [100, 35], [200, 40], [365, 50],
-    ];
-    let xp = 0;
-    const streakMap: Record<string, number> = {};
-    const allDays = Object.keys(tracker).sort((a, b) => {
-      const [ad, am] = a.split('/').map(Number);
-      const [bd, bm] = b.split('/').map(Number);
-      return am !== bm ? am - bm : ad - bd;
-    });
-    allDays.forEach(day => {
-      const d = tracker[day];
-      if (!d) return;
-      habits.forEach(h => {
-        if (d.habits?.[h] === true) {
-          streakMap[h] = (streakMap[h] ?? 0) + 1;
-          const streak = streakMap[h];
-          const gateIdx = XP_GATES.filter(([t]) => t > 0 && streak >= t).length;
-          xp += XP_GATES[Math.min(gateIdx, XP_GATES.length - 1)][1];
-        } else if (d.habits?.[h] === 'failed') {
-          streakMap[h] = 0;
-        }
-      });
-    });
-    return xp;
-  })();
+  const { totalXP } = useXP();
 
   const handleWeight = (day: string, value: string) => {
     if (value !== '' && !/^\d*\.?\d*$/.test(value)) return;

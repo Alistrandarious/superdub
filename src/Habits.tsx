@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useXP } from './XPContext';
 import { flushSync } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import './App.css';
@@ -523,9 +524,7 @@ const Habits: React.FC = () => {
 
   const today = todayKey();
   const weekDays = getWeekDays();
-  const habitXP = habits.reduce((sum, h) => sum + computeHabitStats(h, ht, today, startDates[h]).totalXP, 0);
-  const totalXPAll = habitXP + (installBonus ? INSTALL_XP : 0);
-  const playerLevel = getPlayerLevel(totalXPAll);
+  const { totalXP: totalXPAll, playerLevel, refresh: refreshXP } = useXP();
 
   useEffect(() => {
     Promise.all([api.getHabits(), api.getTracker(), api.getGraveyard()]).then(([loadedHabits, trackerData, graveyardData]) => {
