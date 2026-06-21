@@ -6859,8 +6859,10 @@ h1, h2, h3, h4, .sora {
   font-size: 0.74rem; color: #888; margin-top: 1px;
 }
 .log-weight-row {
-  display: flex; gap: 10px; min-width: 0;
+  display: flex; gap: 10px; min-width: 0; flex-wrap: wrap; overflow: hidden;
 }
+.log-weight-row .log-weight-input-unit { min-width: 100px; }
+.log-weight-row .log-weight-btn { flex-shrink: 0; }
 .log-weight-input-unit {
   flex: 1; display: flex; align-items: center;
   background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.12);
@@ -7982,47 +7984,76 @@ h3, h4,
 }
 .heatmap-month { grid-row: 1; }
 
-.kpi-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+.kpi-section {
   margin: 12px 16px 0;
 }
+.kpi-group-label {
+  font-family: var(--font-data, 'Space Mono', monospace);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  margin: 16px 0 6px 4px;
+}
+.kpi-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 .kpi-card {
-  padding: 16px 18px;
+  padding: 12px 16px;
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
-  border-radius: 18px;
+  border-radius: 16px;
   min-width: 0;
+}
+.kpi-card.kpi-row-layout {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 .kpi-label {
   font-family: var(--font-data, 'Space Mono', monospace);
   font-size: 0.64rem;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #6A6A78;
-  margin: 0 0 8px;
+  color: rgba(255,255,255,0.38);
+  margin: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  flex-shrink: 0;
 }
 .kpi-value {
   font-family: var(--font-data, 'Space Mono', monospace);
-  font-size: 1.6rem;
+  font-size: 1rem;
   font-weight: 700;
-  color: var(--theme);
+  color: #fff;
   margin: 0;
   line-height: 1;
-  word-break: break-all;
+  text-align: right;
+}
+.kpi-unit {
+  font-size: 0.7rem;
+  opacity: 0.6;
+}
+.kpi-sub-inline {
+  font-size: 0.65rem;
+  opacity: 0.45;
+  margin-left: 4px;
 }
 .kpi-sub {
   font-family: var(--font-data, 'Space Mono', monospace);
   font-size: 0.65rem;
-  color: #6A6A78;
+  color: rgba(255,255,255,0.3);
   margin: 4px 0 0;
 }
-.kpi-good { color: #22C55E; }
+.kpi-good { color: #2FD27E; }
+.kpi-gold { color: #FFD233; }
 
 /* Period picker pill in topbar */
 .progress-period-pill {
@@ -8661,10 +8692,10 @@ h3, h4,
 
 /* ── Plan surfacing card (Progress page, above heatmap) ── */
 .plan-engine-card {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
   border-left: 3px solid #2FD27E;
-  border-radius: 14px;
+  border-radius: 20px;
   padding: 16px 18px 14px;
   margin: 0 0 16px;
 }

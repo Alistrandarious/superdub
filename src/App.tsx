@@ -741,6 +741,34 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     return null;
   })();
 
+  const totalXP = (() => {
+    const XP_GATES: [number, number][] = [
+      [0, 10], [7, 15], [14, 20], [30, 25], [60, 30], [100, 35], [200, 40], [365, 50],
+    ];
+    let xp = 0;
+    const streakMap: Record<string, number> = {};
+    const allDays = Object.keys(tracker).sort((a, b) => {
+      const [ad, am] = a.split('/').map(Number);
+      const [bd, bm] = b.split('/').map(Number);
+      return am !== bm ? am - bm : ad - bd;
+    });
+    allDays.forEach(day => {
+      const d = tracker[day];
+      if (!d) return;
+      habits.forEach(h => {
+        if (d.habits?.[h] === true) {
+          streakMap[h] = (streakMap[h] ?? 0) + 1;
+          const streak = streakMap[h];
+          const gateIdx = XP_GATES.filter(([t]) => t > 0 && streak >= t).length;
+          xp += XP_GATES[Math.min(gateIdx, XP_GATES.length - 1)][1];
+        } else if (d.habits?.[h] === 'failed') {
+          streakMap[h] = 0;
+        }
+      });
+    });
+    return xp;
+  })();
+
   const handleWeight = (day: string, value: string) => {
     if (value !== '' && !/^\d*\.?\d*$/.test(value)) return;
     setTracker(prev => ({ ...prev, [day]: { ...prev[day], weight: value } }));
@@ -1175,33 +1203,61 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       </section>
 
       {/* ── KPI cards ── */}
-      <div className="kpi-row">
-        <div className="kpi-card">
-          <p className="kpi-label">Streak</p>
-          <p className="kpi-value kpi-good">{habitStreak}d {habitStreak > 0 ? <svg viewBox="0 0 24 24" width="16" height="16" style={{verticalAlign:'middle',marginLeft:2}} fill="#FF8A00"><path d="M12 1C12 1 7 8 7 13a5 5 0 0 0 10 0c0-5-5-12-5-12zm0 16a3 3 0 0 1-3-3c0-2.5 2-6 3-8 1 2 3 5.5 3 8a3 3 0 0 1-3 3z"/></svg> : ''}</p>
+      <div className="kpi-section">
+        <p className="kpi-group-label">Weight</p>
+        <div className="kpi-group">
+          <div className="kpi-card kpi-row-layout">
+            <span className="kpi-label">Change</span>
+            <span className={`kpi-value ${weightLoss !== null && ((planStatus?.goal?.goalType === 'bulk' ? weightLoss > 0 : weightLoss < 0)) ? 'kpi-good' : ''}`}>
+              {weightLoss !== null ? `${weightLoss > 0 ? '+' : ''}${weightLoss} kg` : '—'}
+            </span>
+          </div>
+          <div className="kpi-card kpi-row-layout">
+            <span className="kpi-label">Trend</span>
+            <span className={`kpi-value ${weeklyWeightTrend !== null && (planStatus?.goal?.goalType === 'bulk' ? weeklyWeightTrend > 0 : weeklyWeightTrend < 0) ? 'kpi-good' : ''}`}>
+              {weeklyWeightTrend !== null ? `${weeklyWeightTrend > 0 ? '+' : ''}${weeklyWeightTrend} kg/wk` : '—'}
+            </span>
+          </div>
         </div>
-        <div className="kpi-card">
-          <p className="kpi-label">{MONTH_SHORT[selectedMonth]} consistency</p>
-          <p className={`kpi-value ${periodConsistencyPct !== null && periodConsistencyPct >= 70 ? 'kpi-good' : ''}`}>
-            {periodConsistencyPct !== null ? `${periodConsistencyPct}%` : '—'}
-          </p>
+        <p className="kpi-group-label">Activity</p>
+        <div className="kpi-group">
+          <div className="kpi-card kpi-row-layout">
+            <span className="kpi-label">{MONTH_SHORT[selectedMonth]} steps</span>
+            <span className="kpi-value">
+              {periodStepTotal > 0
+                ? <>{periodStepKm} <span className="kpi-unit">km</span> <span className="kpi-sub-inline">({periodStepTotal.toLocaleString()})</span></>
+                : '—'}
+            </span>
+          </div>
+          <div className="kpi-card kpi-row-layout">
+            <span className="kpi-label">Walk streak</span>
+            <span className="kpi-value kpi-good">
+              {walkStreak}d{walkStreak > 0 ? <svg viewBox="0 0 24 24" width="13" height="13" style={{verticalAlign:'middle',marginLeft:2}} fill="#FF8A00"><path d="M12 1C12 1 7 8 7 13a5 5 0 0 0 10 0c0-5-5-12-5-12zm0 16a3 3 0 0 1-3-3c0-2.5 2-6 3-8 1 2 3 5.5 3 8a3 3 0 0 1-3 3z"/></svg> : ''}
+            </span>
+          </div>
         </div>
-        <div className="kpi-card">
-          <p className="kpi-label">{MONTH_SHORT[selectedMonth]} steps</p>
-          <p className="kpi-value">{periodStepTotal > 0 ? `${periodStepKm} km` : '—'}</p>
-          {periodStepTotal > 0 && <p className="kpi-sub">{periodStepTotal.toLocaleString()} steps</p>}
-        </div>
-        <div className="kpi-card">
-          <p className="kpi-label">Weight trend</p>
-          <p className={`kpi-value ${weeklyWeightTrend !== null && weeklyWeightTrend < 0 ? 'kpi-good' : ''}`}>
-            {weeklyWeightTrend !== null
-              ? `${weeklyWeightTrend > 0 ? '+' : ''}${weeklyWeightTrend} kg/wk`
-              : '—'}
-          </p>
-        </div>
-        <div className="kpi-card">
-          <p className="kpi-label">Days logged</p>
-          <p className="kpi-value">{daysLogged}</p>
+        <p className="kpi-group-label">Engagement</p>
+        <div className="kpi-group">
+          <div className="kpi-card kpi-row-layout">
+            <span className="kpi-label">Habit streak</span>
+            <span className="kpi-value kpi-good">
+              {habitStreak}d{habitStreak > 0 ? <svg viewBox="0 0 24 24" width="13" height="13" style={{verticalAlign:'middle',marginLeft:2}} fill="#FF8A00"><path d="M12 1C12 1 7 8 7 13a5 5 0 0 0 10 0c0-5-5-12-5-12zm0 16a3 3 0 0 1-3-3c0-2.5 2-6 3-8 1 2 3 5.5 3 8a3 3 0 0 1-3 3z"/></svg> : ''}
+            </span>
+          </div>
+          <div className="kpi-card kpi-row-layout">
+            <span className="kpi-label">{MONTH_SHORT[selectedMonth]} consistency</span>
+            <span className={`kpi-value ${periodConsistencyPct !== null && periodConsistencyPct >= 70 ? 'kpi-good' : ''}`}>
+              {periodConsistencyPct !== null ? `${periodConsistencyPct}%` : '—'}
+            </span>
+          </div>
+          <div className="kpi-card kpi-row-layout">
+            <span className="kpi-label">Days logged</span>
+            <span className="kpi-value">{daysLogged}</span>
+          </div>
+          <div className="kpi-card kpi-row-layout">
+            <span className="kpi-label">Total XP</span>
+            <span className="kpi-value kpi-gold">{totalXP.toLocaleString()}</span>
+          </div>
         </div>
       </div>
 
