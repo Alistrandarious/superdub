@@ -8692,8 +8692,9 @@ h3, h4,
   border-radius: 20px;
   padding: 3px 10px;
 }
-.badge-on  { background: rgba(47,210,126,0.12); color: #2FD27E; border: 1px solid rgba(47,210,126,0.3); }
-.badge-off { background: rgba(255,84,112,0.12); color: #FF5470; border: 1px solid rgba(255,84,112,0.3); }
+.badge-on      { background: rgba(47,210,126,0.12); color: #2FD27E; border: 1px solid rgba(47,210,126,0.3); }
+.badge-off     { background: rgba(255,84,112,0.12); color: #FF5470; border: 1px solid rgba(255,84,112,0.3); }
+.badge-neutral { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.4); border: 1px solid rgba(255,255,255,0.12); }
 
 .plan-engine-row {
   display: flex;

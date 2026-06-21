@@ -87,10 +87,14 @@ const BottomNav: React.FC = () => {
                 Weight Goal
                 {planBadge?.active && (
                   <span
-                    className={`plan-nav-badge ${planBadge.onTrack === false ? 'badge-off' : 'badge-on'}`}
+                    className={`plan-nav-badge ${
+                      planBadge.onTrack === true  ? 'badge-on'
+                    : planBadge.onTrack === false ? 'badge-off'
+                    :                              'badge-neutral'
+                    }`}
                     style={{ marginLeft: 6 }}
                   >
-                    {planBadge.onTrack === null ? '●' : planBadge.onTrack ? 'on pace' : 'off pace'}
+                    {planBadge.onTrack === true ? 'on pace' : planBadge.onTrack === false ? 'off pace' : '●'}
                   </span>
                 )}
               </span>
@@ -99,7 +103,7 @@ const BottomNav: React.FC = () => {
                   ? planBadge.calories != null
                     ? `${planBadge.calories} kcal/day prescribed`
                     : 'Goal active'
-                  : 'Set a target &amp; let the engine adapt'}
+                  : 'Set a target & let the engine adapt'}
               </span>
             </div>
           </button>
