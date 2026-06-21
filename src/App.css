@@ -4942,7 +4942,7 @@ h1, h2, h3, h4, .sora {
 
 .hcard-day-tick.hcard-day-fail {
   font-size: 0.65rem;
-  color: #2FD27E;
+  color: #FF5470;
   font-weight: 700;
   line-height: 1;
 }
@@ -7977,7 +7977,9 @@ h3, h4,
 .hb-xp-scale,
 .hb-xp-to,
 .hb-week-dow,
-.hb-week-caption {
+.hb-week-caption,
+.hcard-day-label,
+.hcard-day-tick {
   font-family: var(--font-data);
 }
 
