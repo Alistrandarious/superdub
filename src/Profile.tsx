@@ -444,7 +444,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
         {/* Quick: Log Weight */}
         <div className="log-weight-card">
           <div className="log-weight-head">
-            <span className="log-weight-icon">⚖️</span>
+            <span className="log-weight-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span>
             <div>
               <div className="log-weight-title">Log Weight</div>
               <div className="log-weight-sub">Save today's weigh-in</div>
@@ -968,12 +968,12 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
         {/* ── More menu ── */}
         <div className="more-menu">
           <button className="more-menu-item" onClick={() => navigate('/about')}>
-            <span className="more-menu-icon">📖</span>
+            <span className="more-menu-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span>
             <span className="more-menu-label">About Superdub</span>
             <span className="more-menu-arrow">›</span>
           </button>
           <button className="more-menu-item" onClick={() => navigate('/privacy')}>
-            <span className="more-menu-icon">🔏</span>
+            <span className="more-menu-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
             <span className="more-menu-label">Privacy Policy</span>
             <span className="more-menu-arrow">›</span>
           </button>

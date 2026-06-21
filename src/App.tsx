@@ -880,19 +880,19 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                   <span>✎</span> Edit Habits
                 </button>
                 <button className="cog-menu-item" onClick={() => { setMenuOpen(false); setGoalSheetOpen(true); }}>
-                  <span>🎯</span> Weight Goal
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg> Weight Goal
                 </button>
                 <button className="cog-menu-item" onClick={() => { setMenuOpen(false); setWeightPlanOpen(true); }}>
-                  <span>⚙️</span> Weight Calculator
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg> Weight Calculator
                 </button>
                 <button className="cog-menu-item" onClick={() => { setMenuOpen(false); window.dispatchEvent(new CustomEvent('superdub:show-checkin')); }}>
-                  <span>⚖️</span> Log Weight
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><polyline points="3 6 4 7 6 5"/><polyline points="3 12 4 13 6 11"/><polyline points="3 18 4 19 6 17"/></svg> Log Weight
                 </button>
                 <button className="cog-menu-item" onClick={() => { setMenuOpen(false); window.dispatchEvent(new CustomEvent('superdub:show-step-entry')); }}>
-                  <span>👟</span> Log Steps
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 4h-2L9 9H5l-1 5h14l-1-5h-4z"/><path d="M5 14v5h14v-5"/></svg> Log Steps
                 </button>
                 <button className="cog-menu-item" onClick={() => { setMenuOpen(false); setTrackerModalOpen(true); }}>
-                  <span>📋</span> Habits &amp; Nutrition
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Habits &amp; Nutrition
                 </button>
               </div>
             </>
@@ -1178,7 +1178,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="kpi-row">
         <div className="kpi-card">
           <p className="kpi-label">Streak</p>
-          <p className="kpi-value kpi-good">{habitStreak}d {habitStreak > 0 ? '🔥' : ''}</p>
+          <p className="kpi-value kpi-good">{habitStreak}d {habitStreak > 0 ? <svg viewBox="0 0 24 24" width="16" height="16" style={{verticalAlign:'middle',marginLeft:2}} fill="#FF8A00"><path d="M12 1C12 1 7 8 7 13a5 5 0 0 0 10 0c0-5-5-12-5-12zm0 16a3 3 0 0 1-3-3c0-2.5 2-6 3-8 1 2 3 5.5 3 8a3 3 0 0 1-3 3z"/></svg> : ''}</p>
         </div>
         <div className="kpi-card">
           <p className="kpi-label">{MONTH_SHORT[selectedMonth]} consistency</p>
@@ -1305,7 +1305,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 <span className="walk-kpi-label">Days missed</span>
               </div>
               <div className="walk-kpi">
-                <span className="walk-kpi-val">{walkStreak}{walkStreak > 0 ? ' 🔥' : ''}</span>
+                <span className="walk-kpi-val">{walkStreak}{walkStreak > 0 ? <svg viewBox="0 0 24 24" width="14" height="14" style={{verticalAlign:'middle',marginLeft:2}} fill="#FF8A00"><path d="M12 1C12 1 7 8 7 13a5 5 0 0 0 10 0c0-5-5-12-5-12zm0 16a3 3 0 0 1-3-3c0-2.5 2-6 3-8 1 2 3 5.5 3 8a3 3 0 0 1-3 3z"/></svg> : ''}</span>
                 <span className="walk-kpi-label">Streak</span>
               </div>
             </div>

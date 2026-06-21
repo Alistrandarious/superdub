@@ -54,21 +54,21 @@ const BottomNav: React.FC = () => {
         <div className="diet-sub-menu">
           <div className="diet-sub-title">Diet</div>
           <button className="diet-sub-item" onClick={() => goTo('/diet')}>
-            <span className="diet-sub-icon">🥗</span>
+            <span className="diet-sub-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h20M12 2a10 10 0 0 1 0 20"/><path d="M12 2a10 10 0 0 0 0 20"/><path d="M12 2v20"/></svg></span>
             <div className="diet-sub-text">
               <span className="diet-sub-label">Macro Split &amp; Performance</span>
               <span className="diet-sub-desc">Build targets &amp; macro split</span>
             </div>
           </button>
           <button className="diet-sub-item" onClick={() => goTo('/meal-plans')}>
-            <span className="diet-sub-icon">📋</span>
+            <span className="diet-sub-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg></span>
             <div className="diet-sub-text">
               <span className="diet-sub-label">Meal Plans</span>
               <span className="diet-sub-desc">Your saved meal plans</span>
             </div>
           </button>
           <button className="diet-sub-item" onClick={() => goTo('/food-log')}>
-            <span className="diet-sub-icon">📊</span>
+            <span className="diet-sub-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
             <div className="diet-sub-text">
               <span className="diet-sub-label">Food Logging</span>
               <span className="diet-sub-desc">Log today's meals by voice</span>
@@ -81,7 +81,7 @@ const BottomNav: React.FC = () => {
         <div className="diet-sub-menu more-sub-menu">
           <div className="diet-sub-title">More</div>
           <button className="diet-sub-item" onClick={() => goTo('/plan')}>
-            <span className="diet-sub-icon">🎯</span>
+            <span className="diet-sub-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>
             <div className="diet-sub-text">
               <span className="diet-sub-label">
                 Weight Goal
@@ -108,28 +108,28 @@ const BottomNav: React.FC = () => {
             </div>
           </button>
           <button className="diet-sub-item" onClick={() => goTo('/profile')}>
-            <span className="diet-sub-icon">👤</span>
+            <span className="diet-sub-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
             <div className="diet-sub-text">
               <span className="diet-sub-label">Profile &amp; Settings</span>
               <span className="diet-sub-desc">Bio, units, goals &amp; account</span>
             </div>
           </button>
           <button className="diet-sub-item" onClick={() => goTo('/level')}>
-            <span className="diet-sub-icon">⚡</span>
+            <span className="diet-sub-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
             <div className="diet-sub-text">
               <span className="diet-sub-label">Level &amp; XP</span>
               <span className="diet-sub-desc">Progress, badges &amp; achievements</span>
             </div>
           </button>
           <button className="diet-sub-item" onClick={() => goTo('/about')}>
-            <span className="diet-sub-icon">📖</span>
+            <span className="diet-sub-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span>
             <div className="diet-sub-text">
               <span className="diet-sub-label">About Superdub</span>
               <span className="diet-sub-desc">App info &amp; version</span>
             </div>
           </button>
           <button className="diet-sub-item" onClick={() => goTo('/privacy')}>
-            <span className="diet-sub-icon">🔏</span>
+            <span className="diet-sub-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
             <div className="diet-sub-text">
               <span className="diet-sub-label">Privacy Policy</span>
               <span className="diet-sub-desc">How we handle your data</span>
@@ -143,7 +143,12 @@ const BottomNav: React.FC = () => {
               localStorage.setItem('superdub.checkin.enabled', next ? 'true' : 'false');
             }}
           >
-            <span className="diet-sub-icon">{checkinEnabled ? '🔔' : '🔕'}</span>
+            <span className="diet-sub-icon">
+              {checkinEnabled
+                ? <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                : <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13.73 21a2 2 0 0 1-3.46 0"/><path d="M18.63 13A17.89 17.89 0 0 1 18 8"/><path d="M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14"/><path d="M18 8a6 6 0 0 0-9.33-5"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              }
+            </span>
             <div className="diet-sub-text">
               <span className="diet-sub-label">Daily Check-in</span>
               <span className="diet-sub-desc">{checkinEnabled ? 'On — energy & adherence prompt' : 'Off — no daily prompt'}</span>
