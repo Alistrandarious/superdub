@@ -136,6 +136,10 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
   const [weightInput, setWeightInput] = useState('');
   const [weightSaved, setWeightSaved] = useState(false);
 
+  // Avatar picker
+  const [avatarSeed, setAvatarSeed] = useState<string | null>(null);
+  const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
+
   // Unit preferences
   const [heightUnit, setHeightUnit] = useState<'cm' | 'ftin'>('cm');
   const [weightUnit, setWeightUnit] = useState<'kg' | 'lbs' | 'st'>('kg');
@@ -192,6 +196,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
       if (pa.gymIntensity) setGymIntensity(pa.gymIntensity as 'light' | 'moderate' | 'hard');
       if (pa.gymMinutes) setGymMinutes(Number(pa.gymMinutes));
       if (Array.isArray(pa.weeklyActivities)) setWeeklyActivities(pa.weeklyActivities);
+      if (pa.avatarSeed) setAvatarSeed(pa.avatarSeed);
       if (pa.accountCreatedAt) setAccountCreatedAt(pa.accountCreatedAt);
       if (pa.lastLoginAt) setLastLoginAt(pa.lastLoginAt);
       if (pa.lastActiveAt) setLastActiveAt(pa.lastActiveAt);
@@ -410,6 +415,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
     const todayKey = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}`;
     api.updateTrackerDay(todayKey, { weight: String(kg) }).catch(() => {});
     setProfile(p => ({ ...p, weightKg: String(kg) }));
+    window.dispatchEvent(new CustomEvent('superdub:tracker-updated'));
     setWeightSaved(true);
     setWeightInput('');
     setTimeout(() => setWeightSaved(false), 2200);
@@ -464,12 +470,67 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
 
         {/* Identity */}
         <div className="profile-identity">
-          <div className="profile-avatar">{name ? name.trim()[0].toUpperCase() : '?'}</div>
+          <button
+            className="profile-avatar avatar-btn"
+            onClick={() => setAvatarPickerOpen(true)}
+            aria-label="Change avatar"
+            title="Change avatar"
+          >
+            {avatarSeed ? (
+              <img
+                src={`https://api.dicebear.com/9.x/pixel-art/svg?seed=${encodeURIComponent(avatarSeed)}&size=80`}
+                alt="avatar"
+                className="profile-avatar-img"
+              />
+            ) : (
+              <span className="profile-avatar-initial">{name ? name.trim()[0].toUpperCase() : '?'}</span>
+            )}
+            <span className="profile-avatar-edit-badge">✎</span>
+          </button>
           <div className="profile-identity-info">
             <input id="profile-name-field" className="profile-name-input" type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Your name" maxLength={40} />
             <label htmlFor="profile-name-field" className="profile-name-hint">Tap to edit</label>
           </div>
         </div>
+
+        {/* Avatar picker sheet */}
+        {avatarPickerOpen && (() => {
+          const AVATAR_SEEDS = [
+            'Felix', 'Midnight', 'Pixel', 'Nova', 'Orbit', 'Cipher', 'Blaze', 'Echo',
+            'Zara', 'Neon', 'Ghost', 'Storm',
+          ];
+          return (
+            <div className="hb-sheet-overlay" onClick={() => setAvatarPickerOpen(false)}>
+              <div className="hb-sheet avatar-picker-sheet" onClick={e => e.stopPropagation()}>
+                <div className="hb-sheet-grip" />
+                <div className="hb-sheet-head">
+                  <h3 className="hb-sheet-title">Choose Avatar</h3>
+                  <button className="hb-sheet-close" onClick={() => setAvatarPickerOpen(false)} aria-label="Close">✕</button>
+                </div>
+                <p className="hb-sheet-sub">Pick a pixel-art avatar for your profile.</p>
+                <div className="avatar-grid">
+                  {AVATAR_SEEDS.map(seed => (
+                    <button
+                      key={seed}
+                      className={`avatar-option ${avatarSeed === seed ? 'selected' : ''}`}
+                      onClick={() => {
+                        setAvatarSeed(seed);
+                        api.updateProfile({ avatarSeed: seed }).catch(() => {});
+                        setAvatarPickerOpen(false);
+                      }}
+                    >
+                      <img
+                        src={`https://api.dicebear.com/9.x/pixel-art/svg?seed=${encodeURIComponent(seed)}&size=64`}
+                        alt={seed}
+                        className="avatar-option-img"
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {(lastActiveAt || lastLoginAt || accountCreatedAt) && (
           <div className="profile-account-meta">

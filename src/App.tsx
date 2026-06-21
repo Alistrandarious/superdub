@@ -99,7 +99,6 @@ function initData(habits: string[]): Record<string, DayData> {
 
 const INITIAL_TRACKER = initData([]);
 
-const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 interface AppProps { onLogout?: () => void; }
 
@@ -132,16 +131,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const [nutritionOpen, setNutritionOpen] = useState(false);
   const [trackerModalOpen, setTrackerModalOpen] = useState(false);
   const [trackerTab, setTrackerTab] = useState<'habits' | 'nutrition'>('habits');
-
-  // One-time daily check-in overlay
-  const todayStamp = `${new Date().getFullYear()}-${new Date().getMonth()}-${new Date().getDate()}`;
-  const [checkinOpen, setCheckinOpen] = useState(() => {
-    return localStorage.getItem('superdub.checkin') !== todayStamp;
-  });
-  const dismissCheckin = () => {
-    localStorage.setItem('superdub.checkin', todayStamp);
-    setCheckinOpen(false);
-  };
 
   const [name, setName] = useState('');
   const [habits, setHabits] = useState<string[]>([]);
@@ -192,13 +181,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const currentWeek = selectedMonth === currentMonth ? Math.ceil(now.getDate() / 7) : null;
 
   const todayKey = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}`;
-  const todayLabel = `${WEEKDAYS[now.getDay()]}, ${now.getDate()} ${MONTH_NAMES[now.getMonth()]}`;
-  const hour = now.getHours();
-  const greeting = hour < 6 ? 'Good night'
-    : hour < 12 ? 'Good morning'
-    : hour < 18 ? 'Good afternoon'
-    : hour < 21 ? 'Good evening'
-    : 'Good night';
 
   // Chart state
   const [chartRange, setChartRange] = useState<'7d' | '1m' | '3m' | '1y' | 'all'>('all');
@@ -526,6 +508,37 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const walkChart = walkAll.slice(-14).map(d => ({ day: d.ddmm, steps: d.steps, hit: d.steps >= stepTarget }));
   const walkHasData = walkLogged.length > 0;
 
+  // ── New KPIs for the Progress page ────────────────────────────────────────
+  // Total steps for the selected period (month)
+  const periodStepTotal = monthDays.reduce((sum, day) => {
+    return sum + (parseInt(tracker[day]?.steps ?? '') || 0);
+  }, 0);
+  const periodStepKm = +(periodStepTotal * 0.00075).toFixed(1);
+
+  // Period habit consistency (within selected month only)
+  let periodDone = 0, periodPossible = 0;
+  monthDays.forEach(day => {
+    const d = tracker[day];
+    if (!d || !habits.some(h => d.habits[h] === true || d.habits[h] === ('failed' as any))) return;
+    periodDone += habits.filter(h => d.habits[h] === true).length;
+    periodPossible += habits.length;
+  });
+  const periodConsistencyPct = periodPossible > 0 ? Math.round((periodDone / periodPossible) * 100) : null;
+
+  // Current habit streak — consecutive non-future days with ≥1 habit done (from heatmap cells)
+  const habitStreak = (() => {
+    const cells = heatmapCells.filter(c => !c.inactive);
+    let streak = 0;
+    for (let i = cells.length - 1; i >= 0; i--) {
+      if (cells[i].ratio > 0) streak++;
+      else break;
+    }
+    return streak;
+  })();
+
+  // Weekly weight trend from linear regression (kg/week, signed)
+  const weeklyWeightTrend = hasTrend ? +(trendSlope * 7).toFixed(2) : null;
+
   const handleWeight = (day: string, value: string) => {
     if (value !== '' && !/^\d*\.?\d*$/.test(value)) return;
     setTracker(prev => ({ ...prev, [day]: { ...prev[day], weight: value } }));
@@ -618,6 +631,35 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
           <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span>
+        </div>
+
+        {/* Period picker — compact pill between brand and cog */}
+        <div className="progress-period-pill" style={{ position: 'relative' }}>
+          <button className="calendar-btn" onClick={() => setCalendarOpen(!calendarOpen)}>
+            {MONTH_NAMES[selectedMonth]} {YEAR}
+            {selectedWeek !== null && ` · W${selectedWeek}`}
+            <span className="calendar-arrow">{calendarOpen ? '▲' : '▾'}</span>
+          </button>
+          {calendarOpen && (
+            <div className="calendar-dropdown">
+              <div className="calendar-grid">
+                {MONTH_SHORT.map((m, i) => {
+                  const isBeforeJoin = i < joinMonth;
+                  return (
+                    <button
+                      key={m}
+                      className={`calendar-month ${i === selectedMonth ? 'selected' : ''} ${i === currentMonth ? 'current' : ''} ${isBeforeJoin ? 'disabled' : ''}`}
+                      style={{ '--month-color': MONTH_COLORS[i] } as React.CSSProperties}
+                      disabled={isBeforeJoin}
+                      onClick={() => { setSelectedMonth(i); setSelectedWeek(null); setCalendarOpen(false); }}
+                    >
+                      {m}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Cog dropdown — top right */}
@@ -787,108 +829,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </div>
       )}
 
-      {/* ── Daily check-in overlay (once per day, waits for habits to load) ── */}
-      {checkinOpen && loaded && (() => {
-        const todayEntry = tracker[todayKey];
-        const doneCount = todayEntry ? habits.filter(h => todayEntry.habits[h] === true).length : 0;
-        const total = habits.length;
-        const allDone = total > 0 && doneCount === total;
-        const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
-        return (
-          <div className="checkin-overlay" onClick={dismissCheckin}>
-            <div className="checkin-inner" onClick={e => e.stopPropagation()}>
-              <button className="checkin-close" onClick={dismissCheckin} aria-label="Close">✕</button>
-              <div className="checkin-head">
-                <div className="checkin-greet-wrap">
-                  <p className="checkin-eyebrow">{todayLabel}</p>
-                  <h2 className="checkin-greeting">
-                    {greeting}{name.trim() ? `, ${name.trim()}` : ''} <span className="checkin-wave">👋</span>
-                  </h2>
-                  <p className="checkin-sub">Here's your check-in for today.</p>
-                </div>
-                <div
-                  className="checkin-ring"
-                  style={{ '--pct': pct } as React.CSSProperties}
-                  aria-label={`${doneCount} of ${total} habits done today`}
-                >
-                  <div className="checkin-ring-inner">
-                    <span className="checkin-count">{doneCount}<span className="checkin-count-total">/{total}</span></span>
-                    <span className="checkin-progress-label">done</span>
-                  </div>
-                </div>
-              </div>
-
-              {!todayEntry ? (
-                <p className="checkin-empty">Today isn't in this year's tracker.</p>
-              ) : total === 0 ? (
-                <p className="checkin-empty">No habits yet — add some from the menu.</p>
-              ) : (
-                <div className="checkin-habits">
-                  {habits.map(h => {
-                    const done = todayEntry.habits[h] === true;
-                    return (
-                      <button
-                        key={h}
-                        type="button"
-                        className={`checkin-habit ${done ? 'done' : ''}`}
-                        onClick={() => handleCheck(todayKey, h)}
-                        aria-pressed={done}
-                      >
-                        <span className="checkin-tick">{done ? '✓' : '+'}</span>
-                        <span className="checkin-habit-name">{h}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-
-              <div className="checkin-footer">
-                {allDone
-                  ? <p className="checkin-done-msg">All habits done — nice work! 🎉</p>
-                  : total > 0 && <p className="checkin-hint-msg">Tap to check off, then head to dashboard.</p>}
-                <button type="button" className="checkin-scroll-hint" onClick={dismissCheckin}>
-                  {allDone ? 'Let\'s go 🚀' : 'Go to dashboard'} <span className="checkin-chevron">▾</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-
       <div className="dashboard-scroll">
-      {/* Overview heading + month picker */}
-      <div className="progress-overview">
-        {/* title removed (redundant with nav); empty wrapper kept as a flex spacer
-            so space-between keeps the month picker on the right */}
-        <div className="progress-overview-titles" />
-        <div className="calendar-picker">
-          <button className="calendar-btn" onClick={() => setCalendarOpen(!calendarOpen)}>
-            {MONTH_NAMES[selectedMonth]} {YEAR}
-            {selectedWeek !== null && ` · W${selectedWeek}`}
-            <span className="calendar-arrow">{calendarOpen ? '▲' : '▾'}</span>
-          </button>
-          {calendarOpen && (
-            <div className="calendar-dropdown">
-              <div className="calendar-grid">
-                {MONTH_SHORT.map((m, i) => {
-                  const isBeforeJoin = i < joinMonth;
-                  return (
-                    <button
-                      key={m}
-                      className={`calendar-month ${i === selectedMonth ? 'selected' : ''} ${i === currentMonth ? 'current' : ''} ${isBeforeJoin ? 'disabled' : ''}`}
-                      style={{ '--month-color': MONTH_COLORS[i] } as React.CSSProperties}
-                      disabled={isBeforeJoin}
-                      onClick={() => { setSelectedMonth(i); setSelectedWeek(null); setCalendarOpen(false); }}
-                    >
-                      {m}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
 
       <section className="chart-section">
         <div className="chart-range-tabs">
@@ -989,8 +930,27 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       {/* ── KPI cards ── */}
       <div className="kpi-row">
         <div className="kpi-card">
-          <p className="kpi-label">Consistency</p>
-          <p className="kpi-value kpi-good">{consistencyPct}%</p>
+          <p className="kpi-label">Streak</p>
+          <p className="kpi-value kpi-good">{habitStreak}d {habitStreak > 0 ? '🔥' : ''}</p>
+        </div>
+        <div className="kpi-card">
+          <p className="kpi-label">{MONTH_SHORT[selectedMonth]} consistency</p>
+          <p className={`kpi-value ${periodConsistencyPct !== null && periodConsistencyPct >= 70 ? 'kpi-good' : ''}`}>
+            {periodConsistencyPct !== null ? `${periodConsistencyPct}%` : '—'}
+          </p>
+        </div>
+        <div className="kpi-card">
+          <p className="kpi-label">{MONTH_SHORT[selectedMonth]} steps</p>
+          <p className="kpi-value">{periodStepTotal > 0 ? `${periodStepKm} km` : '—'}</p>
+          {periodStepTotal > 0 && <p className="kpi-sub">{periodStepTotal.toLocaleString()} steps</p>}
+        </div>
+        <div className="kpi-card">
+          <p className="kpi-label">Weight trend</p>
+          <p className={`kpi-value ${weeklyWeightTrend !== null && weeklyWeightTrend < 0 ? 'kpi-good' : ''}`}>
+            {weeklyWeightTrend !== null
+              ? `${weeklyWeightTrend > 0 ? '+' : ''}${weeklyWeightTrend} kg/wk`
+              : '—'}
+          </p>
         </div>
         <div className="kpi-card">
           <p className="kpi-label">Days logged</p>
