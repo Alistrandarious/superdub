@@ -9,6 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   ReferenceLine,
+  ReferenceArea,
   Cell,
   Brush,
 } from 'recharts';
@@ -1250,15 +1251,33 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               // Prefer adaptive plan target weight, fall back to weight-settings goal
               const goalKg = planStatus?.goal?.targetWeight ?? (parseFloat(goalWeight) > 0 ? parseFloat(goalWeight) : null);
               if (!goalKg) return null;
+              const zoneY1 = goalKg;
+              const zoneY2 = lastEMAValue ?? goalKg;
+              const zoneColor = planStatus?.goal?.goalType === 'bulk'
+                ? (zoneY2 < goalKg ? '#2FD27E' : '#FF5470')
+                : (zoneY2 > goalKg ? '#2FD27E' : '#FF5470');
               return (
-                <ReferenceLine
-                  yAxisId="right"
-                  y={goalKg}
-                  stroke="#2E8BFF"
-                  strokeWidth={1.5}
-                  strokeDasharray="8 4"
-                  label={{ value: `Goal ${goalKg}kg`, fill: '#2E8BFF', fontSize: 11, fontWeight: 700, position: 'insideTopRight' }}
-                />
+                <>
+                  {/* Shaded zone between goal and current EMA — the "territory to cover" */}
+                  {lastEMAValue !== null && zoneY1 !== zoneY2 && (
+                    <ReferenceArea
+                      yAxisId="right"
+                      y1={Math.min(zoneY1, zoneY2)}
+                      y2={Math.max(zoneY1, zoneY2)}
+                      fill={zoneColor}
+                      fillOpacity={0.07}
+                      ifOverflow="hidden"
+                    />
+                  )}
+                  <ReferenceLine
+                    yAxisId="right"
+                    y={goalKg}
+                    stroke="#2E8BFF"
+                    strokeWidth={1.5}
+                    strokeDasharray="8 4"
+                    label={{ value: `Goal ${goalKg}kg`, fill: '#2E8BFF', fontSize: 11, fontWeight: 700, position: 'insideTopRight' }}
+                  />
+                </>
               );
             })()}
             {/* ── Habit bars: green for done, red for failed, rounded tops ── */}
@@ -1286,9 +1305,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               connectNulls
               isAnimationActive={false}
             />
-            {/* ── Linear regression trend line — shows direction across logged points ── */}
+            {/* ── Linear regression trend line — distinct gold so it reads separate from EMA ── */}
             {hasTrend && (
-              <Line yAxisId="right" type="linear" dataKey="trend" stroke="rgba(255,255,255,0.28)" strokeWidth={1.5} strokeDasharray="4 3" dot={false} name="Trend" connectNulls isAnimationActive={false} />
+              <Line yAxisId="right" type="linear" dataKey="trend" stroke="#FFB928" strokeOpacity={0.65} strokeWidth={1.5} strokeDasharray="5 4" dot={false} name="Trend" connectNulls isAnimationActive={false} />
             )}
             {/* ── EMA smoothed trend (primary engine signal) ── */}
             {hasTrend && (
