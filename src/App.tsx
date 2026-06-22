@@ -87,7 +87,7 @@ function isDarkColor(c: string): boolean {
 function renderWeightLegend({ payload }: any) {
   if (!payload?.length) return null;
   // Drop internal helper series that have no user-facing name (EMA halo + zone band/base)
-  const HIDDEN = ['ema', 'emaHalo', 'zoneLow', 'zoneBand'];
+  const HIDDEN = ['ema', 'emaHalo', 'zoneLow', 'zoneBand', 'zoneHigh'];
   const items = payload.filter((e: any) => e.value && !HIDDEN.includes(e.value));
   if (!items.length) return null;
   const bars = items.filter((e: any) => e.type === 'rect');
@@ -142,7 +142,7 @@ function makeChartTooltip(emaColor: string, todayDDMM: string) {
         {payload.map((entry: any, idx: number) => {
           if (entry.value == null || entry.value === 0) return null;
           // Filter internal zone series — never show in tooltip
-          if (entry.name === 'zoneLow' || entry.name === 'zoneBand') return null;
+          if (entry.name === 'zoneLow' || entry.name === 'zoneBand' || entry.name === 'zoneHigh') return null;
           const color = entry.color || entry.fill || emaColor;
           const isCount = entry.name === 'Done' || entry.name === 'Failed';
           // Never show habit counts for future projected days
@@ -672,11 +672,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const zoneStartW  = zoneActive ? planGoal!.startWeight  : 0;
   const zoneEndW    = zoneActive ? planGoal!.targetWeight : 0;
   const ZONE_HALF   = 1.5;
-  const getZone = (dateMs: number): { zoneLow: number | null; zoneBand: number } => {
-    if (!zoneActive || dateMs < zoneStartMs || dateMs > zoneEndMs) return { zoneLow: null, zoneBand: 0 };
+  const getZone = (dateMs: number): { zoneLow: number | null; zoneBand: number; zoneHigh: number | null } => {
+    if (!zoneActive || dateMs < zoneStartMs || dateMs > zoneEndMs) return { zoneLow: null, zoneBand: 0, zoneHigh: null };
     const t = (dateMs - zoneStartMs) / (zoneEndMs - zoneStartMs);
     const ideal = zoneStartW + t * (zoneEndW - zoneStartW);
-    return { zoneLow: +(ideal - ZONE_HALF).toFixed(2), zoneBand: ZONE_HALF * 2 };
+    return { zoneLow: +(ideal - ZONE_HALF).toFixed(2), zoneBand: ZONE_HALF * 2, zoneHigh: +(ideal + ZONE_HALF).toFixed(2) };
   };
 
   // Build base (daily) chart data (trend = linear regression line, ema = smoothed signal)
@@ -688,8 +688,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     // Only show trend line where we have real weight data nearby (within 3 days)
     const nearbyWeight = weightPoints.some(p => Math.abs(p.i - i) <= 3);
     const trend = hasTrend && nearbyWeight ? +(trendIntercept + trendSlope * i).toFixed(2) : null;
-    const { zoneLow, zoneBand } = getZone(date.getTime());
-    return { day: ddmm, completed, failed, weight: d.weight ? Number(d.weight) : null, ema, trend, projection: null as number | null, zoneLow, zoneBand };
+    const { zoneLow, zoneBand, zoneHigh } = getZone(date.getTime());
+    return { day: ddmm, completed, failed, weight: d.weight ? Number(d.weight) : null, ema, trend, projection: null as number | null, zoneLow, zoneBand, zoneHigh };
   });
 
   // Forward projection days (EMA slope extended past today)
@@ -705,8 +705,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         const mm = String(futureDate.getMonth() + 1).padStart(2, '0');
         const futureIdx = chartDayRange.length + f;
         const proj = +(lastEMAValue! + trendSlope * (futureIdx - lastEMAIndex)).toFixed(1);
-        const { zoneLow, zoneBand } = getZone(futureDate.getTime());
-        return { day: `${dd}/${mm}`, completed: 0, failed: 0, weight: null as number | null, ema: null as number | null, projection: proj as number | null, zoneLow, zoneBand };
+        const { zoneLow, zoneBand, zoneHigh } = getZone(futureDate.getTime());
+        return { day: `${dd}/${mm}`, completed: 0, failed: 0, weight: null as number | null, ema: null as number | null, projection: proj as number | null, zoneLow, zoneBand, zoneHigh };
       })
     : [];
 
@@ -741,6 +741,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         projection: null,
         zoneLow: null,
         zoneBand: 0,
+        zoneHigh: null,
       }));
   }
 
@@ -1079,7 +1080,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.172</span>
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.173</span>
         </div>
 
         {/* Period picker — compact pill between brand and cog */}
@@ -1394,13 +1395,15 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             {/* ── Habit bars: green for done, red for failed, rounded tops ── */}
             {!weightZoom && <Bar yAxisId="left" dataKey="completed" stackId="habits" fill="#2FD27E" name="Done" radius={[4,4,0,0]} isAnimationActive={false} legendType="rect" />}
             {!weightZoom && <Bar yAxisId="left" dataKey="failed" stackId="habits" fill="#FF5470" name="Failed" radius={[4,4,0,0]} isAnimationActive={false} legendType="rect" />}
-            {/* ── Golden safe-zone corridor — two crisp gold edges + light fill = a defined target band ── */}
+            {/* ── Golden safe-zone corridor: light fill (Area) + diagonal edge lines (Lines, no vertical cap) ── */}
             {zoneActive && (
               <>
-                {/* lower edge of the band */}
-                <Area yAxisId="right" type="linear" dataKey="zoneLow" stroke="rgba(255,200,60,0.85)" strokeWidth={1.5} fill="none" legendType="none" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} stackId="zone" />
-                {/* upper edge + light fill between the edges */}
-                <Area yAxisId="right" type="linear" dataKey="zoneBand" stroke="rgba(255,200,60,0.85)" strokeWidth={1.5} fill="rgba(255,190,30,0.16)" legendType="none" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} stackId="zone" />
+                {/* Stacked fill only — no stroke, so no vertical closing edge on the left */}
+                <Area yAxisId="right" type="linear" dataKey="zoneLow" stroke="none" fill="none" legendType="none" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} stackId="zone" />
+                <Area yAxisId="right" type="linear" dataKey="zoneBand" stroke="none" fill="rgba(255,190,30,0.16)" legendType="none" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} stackId="zone" />
+                {/* Edges drawn as plain lines — they don't close vertically */}
+                <Line yAxisId="right" type="linear" dataKey="zoneLow" stroke="rgba(255,200,60,0.85)" strokeWidth={1.5} dot={false} activeDot={false} legendType="none" connectNulls={false} isAnimationActive={false} />
+                <Line yAxisId="right" type="linear" dataKey="zoneHigh" stroke="rgba(255,200,60,0.85)" strokeWidth={1.5} dot={false} activeDot={false} legendType="none" connectNulls={false} isAnimationActive={false} />
               </>
             )}
             {/* ── Forward projection (weight zoom only) ── */}
