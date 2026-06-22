@@ -944,6 +944,17 @@ const Diet: React.FC = () => {
   const timePct = (startMs != null && targetMs != null && targetMs > startMs)
     ? clamp01((Date.now() - startMs) / (targetMs - startMs)) : null;
 
+  // ── Arc gauge geometry (top semicircle): the weight journey, start → goal ──
+  const GA = { cx: 130, cy: 124, r: 104 };
+  const arcPoint = (p: number) => {
+    const t = (180 - clamp01(p) * 180) * Math.PI / 180;
+    return { x: GA.cx + GA.r * Math.cos(t), y: GA.cy - GA.r * Math.sin(t) };
+  };
+  const wp = weightPct ?? 0;
+  const gp = arcPoint(wp);
+  const gaugeTrack = `M ${GA.cx - GA.r} ${GA.cy} A ${GA.r} ${GA.r} 0 0 1 ${GA.cx + GA.r} ${GA.cy}`;
+  const gaugeProg = `M ${GA.cx - GA.r} ${GA.cy} A ${GA.r} ${GA.r} 0 0 1 ${gp.x.toFixed(1)} ${gp.y.toFixed(1)}`;
+
   return (
     <div className="app flush" style={{ '--theme': '#2E8BFF', '--theme-dim': '#2E8BFF66', '--theme-glow': '#2E8BFF33' } as React.CSSProperties}>
       {/* ── Full scrollable content ── */}
@@ -966,47 +977,47 @@ const Diet: React.FC = () => {
           <button className="plan-hero-edit" onClick={() => navigate('/profile')}>Edit →</button>
         </div>
 
-        <div className="plan-hero-weights">
-          <div className="plan-weight-col">
-            <span className="plan-weight-label">{todayWeight !== null ? 'Today' : 'Current'}</span>
-            <span className="plan-weight-num">{displayWeight > 0 ? displayWeight.toFixed(1) : '—'}</span>
-            <span className="plan-weight-unit">kg{todayWeight !== null && <i className="plan-weight-dot" />}</span>
-          </div>
-          <div className="plan-weight-track">
-            <div className="plan-track-line">
-              <span className="plan-track-dot start" />
-              <span className="plan-track-bar" style={{ background: `linear-gradient(90deg, #ffffff18, ${accent}55)` }} />
-              <span className="plan-track-dot end" style={{ background: accent, boxShadow: `0 0 6px ${accent}80` }} />
-            </div>
-            {weightDiff !== null && (
-              <span className="plan-track-delta">{goal === 'bulk' ? '+' : '−'}{weightDiff.toFixed(1)} kg</span>
+        {/* ── Weight journey arc gauge: start → goal, big current number at centre ── */}
+        <div className="plan-gauge">
+          <svg viewBox="0 0 260 138" className="plan-gauge-svg">
+            <defs>
+              <linearGradient id="planGaugeGrad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor={accent} stopOpacity={0.5} />
+                <stop offset="100%" stopColor={accent} />
+              </linearGradient>
+            </defs>
+            <path d={gaugeTrack} stroke="rgba(255,255,255,0.07)" strokeWidth={12} fill="none" strokeLinecap="round" />
+            {weightPct !== null && wp > 0.001 && (
+              <path d={gaugeProg} stroke="url(#planGaugeGrad)" strokeWidth={12} fill="none" strokeLinecap="round" />
+            )}
+            {weightPct !== null && (
+              <circle cx={gp.x} cy={gp.y} r={7} fill="#0E0E14" stroke={accent} strokeWidth={3} />
+            )}
+          </svg>
+          <div className="plan-gauge-center">
+            <span className="plan-gauge-now">{displayWeight > 0 ? displayWeight.toFixed(1) : '—'}</span>
+            <span className="plan-gauge-now-unit">kg now</span>
+            {weightPct !== null && (
+              <span className="plan-gauge-pct" style={{ color: accent }}>{Math.round(weightPct * 100)}% there</span>
             )}
           </div>
-          <div className="plan-weight-col right">
-            <span className="plan-weight-label">Goal</span>
-            <span className="plan-weight-num" style={{ color: accent }}>{goalWeight > 0 ? goalWeight.toFixed(1) : '—'}</span>
-            <span className="plan-weight-unit">kg</span>
+          <div className="plan-gauge-ends">
+            <div className="plan-gauge-end">
+              <span className="plan-gauge-end-val">{startW != null ? startW.toFixed(1) : (displayWeight > 0 ? displayWeight.toFixed(1) : '—')}</span>
+              <span className="plan-gauge-end-lbl">Start</span>
+            </div>
+            <div className="plan-gauge-end right">
+              <span className="plan-gauge-end-val" style={{ color: accent }}>{goalWeight > 0 ? goalWeight.toFixed(1) : '—'}</span>
+              <span className="plan-gauge-end-lbl">Goal</span>
+            </div>
           </div>
         </div>
 
-        {/* Two progress lines: time elapsed (flame) vs weight done (accent) */}
-        {(timePct !== null || weightPct !== null) && (
-          <div className="plan-hero-progress">
-            <span className="plan-progress-header">Progress to goal</span>
-            <div className="plan-pbar-row">
-              <span className="plan-pbar-label">Time</span>
-              <div className="plan-pbar-track">
-                <div className="plan-pbar-fill plan-pbar-flame" style={{ width: `${Math.round((timePct ?? 0) * 100)}%` }} />
-              </div>
-              <span className="plan-pbar-pct">{timePct !== null ? `${Math.round(timePct * 100)}%` : '—'}</span>
-            </div>
-            <div className="plan-pbar-row">
-              <span className="plan-pbar-label">Weight</span>
-              <div className="plan-pbar-track">
-                <div className="plan-pbar-fill" style={{ width: `${Math.round((weightPct ?? 0) * 100)}%`, background: accent }} />
-              </div>
-              <span className="plan-pbar-pct">{weightPct !== null ? `${Math.round(weightPct * 100)}%` : '—'}</span>
-            </div>
+        {/* Time pacing — small caption under the gauge */}
+        {timePct !== null && (
+          <div className="plan-gauge-time">
+            <span className="plan-gauge-time-bar"><span className="plan-gauge-time-fill" style={{ width: `${Math.round(timePct * 100)}%` }} /></span>
+            <span className="plan-gauge-time-lbl">{Math.round(timePct * 100)}% of time used{weeksLeft ? ` · ~${weeksLeft}w left` : ''}</span>
           </div>
         )}
 

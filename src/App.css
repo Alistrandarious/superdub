@@ -10035,95 +10035,94 @@ details[open] .plan-explainer-summary::before { content: '▾  '; }
 .plan-hero-edit:active { transform: scale(0.97); }
 
 /* Weight start → goal row */
-.plan-hero-weights {
-  display: flex;
-  align-items: center;
-  padding: 2px 16px 14px;
+/* ── Weight journey arc gauge (hero centerpiece) ── */
+.plan-gauge {
+  position: relative;
+  padding: 8px 18px 0;
 }
-.plan-weight-col { min-width: 78px; display: flex; flex-direction: column; gap: 1px; }
-.plan-weight-col.right { text-align: right; align-items: flex-end; }
-.plan-weight-label {
-  font-family: 'Space Mono', monospace;
-  font-size: 0.55rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: rgba(255,255,255,0.4);
+.plan-gauge-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
 }
-.plan-weight-num {
-  font-family: 'Space Mono', monospace;
-  font-size: 1.85rem;
-  font-weight: 700;
-  color: #E8ECF4;
-  line-height: 1.1;
-}
-.plan-weight-unit {
-  font-size: 0.72rem;
-  color: rgba(255,255,255,0.4);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.plan-weight-col.right .plan-weight-unit { justify-content: flex-end; }
-.plan-weight-dot { width: 5px; height: 5px; border-radius: 50%; background: #2FD27E; display: inline-block; }
-.plan-weight-track { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 0 8px; }
-.plan-track-line { width: 100%; display: flex; align-items: center; }
-.plan-track-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-.plan-track-dot.start { background: #2a3a4a; }
-.plan-track-bar { flex: 1; height: 1.5px; }
-.plan-track-delta { font-family: 'Space Mono', monospace; font-size: 0.65rem; color: rgba(255,255,255,0.4); }
-
-/* Two progress lines in the hero: time elapsed (flame) vs weight done (accent) */
-.plan-hero-progress {
+.plan-gauge-center {
+  position: absolute;
+  left: 50%;
+  top: 58%;
+  transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 2px 16px 14px;
+  align-items: center;
+  gap: 1px;
+  pointer-events: none;
 }
-.plan-progress-header {
+.plan-gauge-now {
   font-family: 'Space Mono', monospace;
-  font-size: 0.55rem;
+  font-size: 2.7rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 0.95;
+}
+.plan-gauge-now-unit {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: rgba(255,255,255,0.4);
+}
+.plan-gauge-pct {
+  font-family: 'Sora', sans-serif;
+  font-size: 0.74rem;
+  font-weight: 700;
+  margin-top: 4px;
+}
+.plan-gauge-ends {
+  display: flex;
+  justify-content: space-between;
+  margin-top: -10px;
+  padding: 0 2px;
+}
+.plan-gauge-end { display: flex; flex-direction: column; gap: 1px; }
+.plan-gauge-end.right { align-items: flex-end; }
+.plan-gauge-end-val {
+  font-family: 'Space Mono', monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #E8ECF4;
+}
+.plan-gauge-end-lbl {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.5rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: rgba(255,255,255,0.4);
-  margin-bottom: 2px;
 }
-.plan-pbar-row {
+/* time pacing caption under the gauge */
+.plan-gauge-time {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
+  padding: 12px 18px 14px;
 }
-.plan-pbar-label {
-  font-family: 'Space Mono', monospace;
-  font-size: 0.55rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: rgba(255,255,255,0.45);
-  width: 44px;
-  flex-shrink: 0;
-}
-.plan-pbar-track {
+.plan-gauge-time-bar {
   flex: 1;
-  height: 6px;
+  height: 4px;
   border-radius: var(--r-pill);
   background: rgba(255,255,255,0.06);
   overflow: hidden;
 }
-.plan-pbar-fill {
+.plan-gauge-time-fill {
+  display: block;
   height: 100%;
   border-radius: var(--r-pill);
-  transition: width 0.4s ease;
+  background: linear-gradient(90deg, #FF4D00, #FFB000);
 }
-.plan-pbar-flame {
-  background: linear-gradient(90deg, #FF4D00 0%, #FF8A00 55%, #FFC247 100%);
-}
-.plan-pbar-pct {
+.plan-gauge-time-lbl {
   font-family: 'Space Mono', monospace;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: #E8ECF4;
-  width: 36px;
-  text-align: right;
-  flex-shrink: 0;
+  font-size: 0.58rem;
+  color: rgba(255,255,255,0.45);
+  white-space: nowrap;
 }
 
 /* kcal strip */
