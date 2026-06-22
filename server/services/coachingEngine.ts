@@ -15,6 +15,7 @@ export interface CoachingInput {
   streakDays: number;
   kgToGoal: number | null;   // signed: positive = still above target weight
   newTarget: number | null;  // current prescribed kcal
+  mathCorrection?: string | null; // if set, displayed FIRST before any coaching text
 }
 
 export function getEnergyBand(energy: number): EnergyBand {
@@ -169,7 +170,11 @@ function interpolate(tpl: string, vars: Record<string, string>): string {
 }
 
 export function getCoachingMessage(input: CoachingInput): string {
-  const { trend, adherence, energyBand, churnRisk, streakDays, kgToGoal, newTarget } = input;
+  const { trend, adherence, energyBand, churnRisk, streakDays, kgToGoal, newTarget, mathCorrection } = input;
+
+  // Math-correction priority: if calculations contradict logged data, surface the correction first.
+  // This overrides all coaching text — accuracy comes before motivation.
+  if (mathCorrection) return mathCorrection;
 
   // Empathy mode overrides everything
   if (churnRisk === 'HIGH' || churnRisk === 'CRITICAL') {

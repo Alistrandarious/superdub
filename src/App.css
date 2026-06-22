@@ -8013,7 +8013,8 @@ h3, h4,
 }
 .heatmap-cell {
   border-radius: 3px;
-  background: color-mix(in srgb, var(--theme) calc(var(--lvl, 0) * 100%), rgba(255,255,255,0.05));
+  /* Hits: light→deep blue scaled by --lvl (0=miss/grey, 0.3–1=light–deep blue) */
+  background: color-mix(in srgb, #2E8BFF calc(var(--lvl, 0) * 90%), rgba(255,255,255,0.04));
 }
 .heatmap-cell.inactive { background: rgba(255,255,255,0.018); }
 .heatmap-months {
@@ -8096,6 +8097,13 @@ h3, h4,
 }
 .kpi-good { color: #2FD27E; }
 .kpi-bad  { color: #FF5470; }
+.kpi-sunday-gold {
+  background: linear-gradient(90deg, #FFD700, #FFB300, #FF8A00);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
+}
 .kpi-gold { color: #FFB928; }
 .kpi-xp-value { color: #FFB928; font-feature-settings: 'tnum'; }
 .xp-badge-chip {
@@ -8893,6 +8901,28 @@ h3, h4,
 }
 .color-health { color: #2FD27E; }
 .color-danger { color: #FF5470; }
+.plan-engine-metabolic-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: rgba(255, 200, 0, 0.08);
+  border: 1px solid rgba(255, 200, 0, 0.28);
+  border-radius: 8px;
+}
+.plan-engine-metabolic-icon { font-size: 0.9rem; flex-shrink: 0; margin-top: 1px; }
+.plan-engine-metabolic-text {
+  font-family: 'Sora', sans-serif;
+  font-size: 0.72rem;
+  color: rgba(255,220,80,0.88);
+  line-height: 1.5;
+}
+.step-target-adjusted {
+  font-size: 0.7em;
+  color: rgba(255,255,255,0.45);
+  margin-left: 4px;
+}
 
 .plan-engine-header {
   display: flex;
@@ -9538,6 +9568,51 @@ details[open] .plan-explainer-summary::before { content: '▾  '; }
 }
 
 /* ── Coaching card ─────────────────────────────────────────────────────────── */
+.cohort-banner {
+  margin: 8px 16px 0;
+}
+.cohort-banner-inner {
+  background: linear-gradient(135deg, rgba(46,139,255,0.12), rgba(47,210,126,0.08));
+  border: 1px solid rgba(46,139,255,0.28);
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+.cohort-banner-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.cohort-banner-icon { font-size: 1rem; }
+.cohort-banner-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #2E8BFF;
+  flex: 1;
+}
+.cohort-banner-dismiss {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.35);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0 2px;
+}
+.cohort-banner-name {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #2FD27E;
+  margin-bottom: 6px;
+}
+.cohort-banner-msg {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.72);
+  line-height: 1.5;
+  margin: 0;
+}
 .coaching-card {
   background: rgba(46,139,255,0.07);
   border: 1px solid rgba(46,139,255,0.18);

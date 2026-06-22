@@ -251,8 +251,13 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const [chartRange, setChartRange] = useState<'7d' | '1m' | '3m' | '1y' | 'all'>('all');
   const [weightZoom, setWeightZoom] = useState(false);
 
-  // Coaching message state
-  const [coachingMsg, setCoachingMsg] = useState<{ message: string; churnRisk: string } | null>(null);
+  // Coaching message state (includes today's energy score for dynamic step target)
+  const [coachingMsg, setCoachingMsg] = useState<{ message: string; churnRisk: string; todayEnergy?: number | null } | null>(null);
+
+  // Cohort onboarding banner — shown once after signup, dismissed permanently
+  const [cohortMsg] = useState<string | null>(() => localStorage.getItem('superdub:cohort-msg'));
+  const [cohortName] = useState<string | null>(() => localStorage.getItem('superdub:cohort-name'));
+  const [cohortDismissed, setCohortDismissed] = useState(() => !!localStorage.getItem('superdub:cohort-dismissed'));
 
   // Plan engine state
   const [goalSheetOpen, setGoalSheetOpen] = useState(false);
@@ -264,6 +269,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   } | null>(null);
   const [planCycle, setPlanCycle] = useState<{
     onTrack: boolean; actualSlope: number | null; targetSlope: number; flaggedDays: string[];
+    metabolicProtection?: boolean;
   } | null>(null);
 
   // Weight plan state
@@ -275,6 +281,16 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const [age, setAge] = useState('');
   const [activityLevel, setActivityLevel] = useState('1.4');
   const [stepTarget, setStepTarget] = useState(10000);
+
+  // Dynamic step target: ML Engine adjusts based on Energy Score (1-5).
+  // Higher energy → push harder; lower energy → recovery focus.
+  // Base target comes from profile; this is the effective display/threshold target.
+  const effectiveStepTarget = (() => {
+    const energy = coachingMsg?.todayEnergy;
+    if (!energy) return stepTarget;
+    const adjustments: Record<number, number> = { 1: -2000, 2: -1000, 3: 0, 4: 1000, 5: 2000 };
+    return Math.max(3000, stepTarget + (adjustments[energy] ?? 0));
+  })();
 
   // Load all data on mount
   const loadData = useCallback((currentHabits?: string[]) => {
@@ -496,9 +512,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const stepChartData = useMemo(() =>
     chartDayRange.map(({ ddmm }) => {
       const steps = parseInt(tracker[ddmm]?.steps ?? '') || 0;
-      return { day: ddmm, steps: steps > 0 ? steps : null, hit: steps > 0 && steps >= stepTarget };
+      return { day: ddmm, steps: steps > 0 ? steps : null, hit: steps > 0 && steps >= effectiveStepTarget };
     }),
-    [chartDayRange, tracker, stepTarget] // eslint-disable-line react-hooks/exhaustive-deps
+    [chartDayRange, tracker, effectiveStepTarget] // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   // How much history exists → grey out ranges we don't have data for yet
@@ -506,7 +522,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const rangeAvailable = (r: string) =>
     r === '7d' || r === 'all' ? true
     : r === '1m' ? daysSinceCreation > 7
-    : r === '1y' ? daysSinceCreation > 30
+    : r === '3m' ? daysSinceCreation > 30
+    : r === '1y' ? daysSinceCreation > 90
     : true;
 
   // Days to reach goal (drives the macro/loss math)
@@ -757,7 +774,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const walkLogged = walkAll.filter(d => d.steps > 0);
   const walkTotal = walkLogged.reduce((s, d) => s + d.steps, 0);
   const walkAvg = walkLogged.length ? Math.round(walkTotal / walkLogged.length) : 0;
-  const walkDaysHit = walkLogged.filter(d => d.steps >= stepTarget).length;
+  const walkDaysHit = walkLogged.filter(d => d.steps >= effectiveStepTarget).length;
   const walkDaysMissed = walkLogged.length - walkDaysHit;
   // current streak: consecutive completed days hitting target.
   // Skip today (last entry) if steps haven't synced yet — the day isn't over.
@@ -767,11 +784,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     ? walkAll.length - 2   // today has no data yet — start from yesterday
     : walkAll.length - 1;
   for (let i = startFrom; i >= 0; i--) {
-    if (walkAll[i].steps > 0 && walkAll[i].steps >= stepTarget) walkStreak++;
+    if (walkAll[i].steps > 0 && walkAll[i].steps >= effectiveStepTarget) walkStreak++;
     else break;
   }
   // chart: last 14 days, coloured by hit/miss
-  const walkChart = walkAll.slice(-14).map(d => ({ day: d.ddmm, steps: d.steps, hit: d.steps >= stepTarget }));
+  const walkChart = walkAll.slice(-14).map(d => ({ day: d.ddmm, steps: d.steps, hit: d.steps >= effectiveStepTarget }));
   const walkHasData = walkLogged.length > 0;
 
   // ── New KPIs for the Progress page ────────────────────────────────────────
@@ -802,24 +819,40 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     return streak;
   })();
 
+  // Sunday Payoff: gold gradient on streak UI when all habits done on Sunday.
+  // Reverts to default on Monday.
+  const isSundayPayoff = (() => {
+    if (now.getDay() !== 0) return false; // only Sunday
+    const d = tracker[todayKey];
+    if (!d || habits.length === 0) return false;
+    return habits.every(h => d.habits[h] === true);
+  })();
+
   // Weekly weight trend from linear regression (kg/week, signed)
   const weeklyWeightTrend = hasTrend ? +(trendSlope * 7).toFixed(2) : null;
 
   // KPI: days since journey start (Day N counter)
   const daysSinceStart = Math.max(1, Math.floor((Date.now() - accountCreatedDate.getTime()) / 86400000) + 1);
 
-  // KPI: weight change — EMA vs goal start weight (or earliest logged weight)
+  // KPI: weight change = current weight − weight on first day of selected chart range.
+  // Positive = gain (red), negative = loss (green) — sign-agnostic, goal-type independent.
   const weightLoss: number | null = (() => {
-    if (lastEMAValue === null) return null;
-    if (planStatus?.active && planStatus.goal) {
-      return +(lastEMAValue - planStatus.goal.startWeight).toFixed(1);
+    // Find first logged weight in the chart range
+    let firstWeight: number | null = null;
+    for (const { ddmm } of chartDayRange) {
+      const w = parseFloat(tracker[ddmm]?.weight ?? '');
+      if (w > 0) { firstWeight = w; break; }
     }
-    // No active goal: vs. first ever logged weight
-    for (const day of ALL_DAYS) {
-      const w = parseFloat(tracker[day]?.weight ?? '');
-      if (w > 0) return +(lastEMAValue - w).toFixed(1);
+    // Find latest logged weight
+    let latestWeight: number | null = lastEMAValue;
+    if (latestWeight === null) {
+      for (let i = chartDayRange.length - 1; i >= 0; i--) {
+        const w = parseFloat(tracker[chartDayRange[i].ddmm]?.weight ?? '');
+        if (w > 0) { latestWeight = w; break; }
+      }
     }
-    return null;
+    if (firstWeight === null || latestWeight === null) return null;
+    return +(latestWeight - firstWeight).toFixed(1);
   })();
 
   const { totalXP } = useXP();
@@ -1134,6 +1167,24 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
       <div className="dashboard-scroll">
 
+      {/* ── Cohort onboarding banner (shown once after signup) ── */}
+      {cohortMsg && !cohortDismissed && (
+        <div className="cohort-banner">
+          <div className="cohort-banner-inner">
+            <div className="cohort-banner-header">
+              <span className="cohort-banner-icon">👥</span>
+              <span className="cohort-banner-label">Expert Coach · Community Cohort</span>
+              <button className="cohort-banner-dismiss" onClick={() => {
+                setCohortDismissed(true);
+                localStorage.setItem('superdub:cohort-dismissed', '1');
+              }}>✕</button>
+            </div>
+            {cohortName && <div className="cohort-banner-name">{cohortName}</div>}
+            <p className="cohort-banner-msg">{cohortMsg}</p>
+          </div>
+        </div>
+      )}
+
       {/* ── Weight Plan — engine reasoning card (top of page) ── */}
       {planStatus?.active && planStatus.currentTarget && (() => {
         const target = planStatus.currentTarget!;
@@ -1223,6 +1274,15 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               <div className="plan-engine-signal">
                 <span className="plan-engine-signal-dot" style={{ background: signalColor }} />
                 <span className="plan-engine-signal-text">Check-in signal: <strong style={{ color: signalColor }}>{signalLabel}</strong> — engine confidence {signalLabel === 'Strong' ? 'high' : signalLabel === 'Moderate' ? 'moderate' : 'reduced'}</span>
+              </div>
+            )}
+            {/* Metabolic Protection alert */}
+            {planCycle?.metabolicProtection && (
+              <div className="plan-engine-metabolic-warning">
+                <span className="plan-engine-metabolic-icon">⚡</span>
+                <span className="plan-engine-metabolic-text">
+                  <strong>Metabolic Protection</strong> — weight velocity has exceeded 1.5% of body weight/week for 2+ consecutive weeks. Consider a calorie maintenance boost to protect lean mass.
+                </span>
               </div>
             )}
           </div>
@@ -1378,7 +1438,10 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         <div className="chart-section-inner">
           <div className="chart-container">
             <div className="step-chart-header">
-              <span className="step-chart-eyebrow">Daily Steps · target {stepTarget.toLocaleString()}</span>
+              <span className="step-chart-eyebrow">
+                Daily Steps · target {effectiveStepTarget.toLocaleString()}
+                {effectiveStepTarget !== stepTarget && <span className="step-target-adjusted"> (energy-adjusted)</span>}
+              </span>
               {walkHasData && (
                 <div className="step-chart-stats">
                   <span className="step-stat"><span className={`step-stat-val ${walkDaysHit > 0 ? 'color-health' : ''}`}>{walkDaysHit}</span> hit</span>
@@ -1401,7 +1464,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                     labelStyle={{ color: '#9aa' }}
                     formatter={(v: any) => [Number(v).toLocaleString() + ' steps', '']}
                   />
-                  <ReferenceLine y={stepTarget} stroke="#2E8BFF" strokeDasharray="4 4" label={{ value: stepTarget >= 1000 ? `${Math.round(stepTarget/1000)}k target` : `${stepTarget} target`, fill: '#2E8BFF', fontSize: 10, position: 'insideTopRight' }} />
+                  <ReferenceLine y={effectiveStepTarget} stroke="#2E8BFF" strokeDasharray="4 4" label={{ value: effectiveStepTarget >= 1000 ? `${Math.round(effectiveStepTarget/1000)}k target` : `${effectiveStepTarget} target`, fill: '#2E8BFF', fontSize: 10, position: 'insideTopRight' }} />
                   <Bar dataKey="steps" radius={[4, 4, 0, 0]} isAnimationActive={false}>
                     {stepChartData.map((d, i) => (
                       <Cell key={i} fill={d.steps == null ? 'rgba(255,255,255,0.06)' : d.hit ? '#2FD27E' : '#FF5470'} />
@@ -1416,15 +1479,31 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </div>
       </section>
 
-      {/* ── KPI cards ── */}
+      {/* ── KPI cards — Engagement first, then Weight, then Activity ── */}
       <div className="kpi-section">
+        <p className="kpi-group-label">Engagement</p>
+        <div className="kpi-group">
+          <div className="kpi-card kpi-row-layout">
+            <span className="kpi-label">Total XP</span>
+            <span className="kpi-value kpi-xp-value"><span className="xp-badge-chip">XP</span>{totalXP.toLocaleString()}</span>
+          </div>
+          <div className="kpi-card kpi-row-layout">
+            <span className="kpi-label">Habit streak</span>
+            <span className={`kpi-value${isSundayPayoff ? ' kpi-sunday-gold' : habitStreak > 0 ? ' kpi-good' : ''}`}>
+              {habitStreak}d{habitStreak > 0 ? <svg viewBox="0 0 24 24" width="13" height="13" style={{verticalAlign:'middle',marginLeft:2}} fill={isSundayPayoff ? '#FFD700' : '#FF8A00'}><path d="M12 1C12 1 7 8 7 13a5 5 0 0 0 10 0c0-5-5-12-5-12zm0 16a3 3 0 0 1-3-3c0-2.5 2-6 3-8 1 2 3 5.5 3 8a3 3 0 0 1-3 3z"/></svg> : ''}
+            </span>
+          </div>
+          <div className="kpi-card kpi-row-layout">
+            <span className="kpi-label">Days logged</span>
+            <span className="kpi-value">{daysLogged}</span>
+          </div>
+        </div>
         <p className="kpi-group-label">Weight</p>
         <div className="kpi-group">
           <div className="kpi-card kpi-row-layout">
             <span className="kpi-label">Change</span>
-            <span className={`kpi-value ${weightLoss !== null && planStatus?.goal?.goalType && planStatus.goal.goalType !== 'maintain'
-              ? (planStatus.goal.goalType === 'bulk' ? weightLoss > 0 : weightLoss < 0) ? 'kpi-good' : 'kpi-bad'
-              : ''}`}>
+            {/* Positive = gain = red; negative = loss = green — sign-agnostic */}
+            <span className={`kpi-value ${weightLoss !== null ? (weightLoss < 0 ? 'kpi-good' : weightLoss > 0 ? 'kpi-bad' : '') : ''}`}>
               {weightLoss !== null ? `${weightLoss > 0 ? '+' : ''}${weightLoss} kg` : '—'}
             </span>
           </div>
@@ -1452,29 +1531,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             <span className={`kpi-value ${walkStreak > 0 ? 'kpi-good' : ''}`}>
               {walkStreak}d{walkStreak > 0 ? <svg viewBox="0 0 24 24" width="13" height="13" style={{verticalAlign:'middle',marginLeft:2}} fill="#FF8A00"><path d="M12 1C12 1 7 8 7 13a5 5 0 0 0 10 0c0-5-5-12-5-12zm0 16a3 3 0 0 1-3-3c0-2.5 2-6 3-8 1 2 3 5.5 3 8a3 3 0 0 1-3 3z"/></svg> : ''}
             </span>
-          </div>
-        </div>
-        <p className="kpi-group-label">Engagement</p>
-        <div className="kpi-group">
-          <div className="kpi-card kpi-row-layout">
-            <span className="kpi-label">Habit streak</span>
-            <span className={`kpi-value ${habitStreak > 0 ? 'kpi-good' : ''}`}>
-              {habitStreak}d{habitStreak > 0 ? <svg viewBox="0 0 24 24" width="13" height="13" style={{verticalAlign:'middle',marginLeft:2}} fill="#FF8A00"><path d="M12 1C12 1 7 8 7 13a5 5 0 0 0 10 0c0-5-5-12-5-12zm0 16a3 3 0 0 1-3-3c0-2.5 2-6 3-8 1 2 3 5.5 3 8a3 3 0 0 1-3 3z"/></svg> : ''}
-            </span>
-          </div>
-          <div className="kpi-card kpi-row-layout">
-            <span className="kpi-label">{MONTH_SHORT[selectedMonth]} consistency</span>
-            <span className={`kpi-value ${periodConsistencyPct !== null && periodConsistencyPct >= 70 ? 'kpi-good' : ''}`}>
-              {periodConsistencyPct !== null ? `${periodConsistencyPct}%` : '—'}
-            </span>
-          </div>
-          <div className="kpi-card kpi-row-layout">
-            <span className="kpi-label">Days logged</span>
-            <span className="kpi-value">{daysLogged}</span>
-          </div>
-          <div className="kpi-card kpi-row-layout">
-            <span className="kpi-label">Total XP</span>
-            <span className="kpi-value kpi-xp-value"><span className="xp-badge-chip">XP</span>{totalXP.toLocaleString()}</span>
           </div>
         </div>
       </div>
@@ -1655,8 +1711,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           })}          <div className="tracker-label">Steps</div>
           {visibleDays.map((day) => {
             const val = parseInt(tracker[day]?.steps ?? '') || 0;
-            const target = 10000;
-            const under = val > 0 && val < target;
+            const under = val > 0 && val < effectiveStepTarget;
             return (
               <div key={`steps-${day}`} className={`tracker-cell ${under ? 'cell-under' : ''}`}>
                 <input

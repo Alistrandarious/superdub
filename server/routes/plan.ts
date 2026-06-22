@@ -348,6 +348,7 @@ router.post('/cycle', requireAuth as any, async (req: AuthRequest, res: Response
       targetSlope: result.targetSlope,
       bmrFloor: result.bmrFloor,
       flaggedDays: result.flaggedDays,
+      metabolicProtection: result.metabolicProtection ?? false,
     });
   } catch (err: any) {
     console.error('[plan/cycle]', err?.message);

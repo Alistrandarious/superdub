@@ -52,6 +52,7 @@ export interface CycleResult {
   onTrack: boolean;
   bmrFloor: number;
   flaggedDays: string[];        // DD/MM entries with implausible overnight swings
+  metabolicProtection?: boolean; // true when velocity > 1.5% BW/week for 2+ consecutive weeks
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -188,12 +189,39 @@ export function runCycle(
   const reason = `${dir} by ${diff} kcal/day — ${paceWord} pace by ${Math.abs(gap).toFixed(2)} kg/wk`
     + ` (actual ${fmtRate(actualSlope)} vs target ${fmtRate(targetSlope)} kg/wk)`;
 
+  const metabolicProtection = detectMetabolicProtection(emaPoints, bio.weightKg);
+
   return {
     shouldAdjust: true, newCalories: newCal, prevCalories: currentCalories,
     reason, actualSlope, targetSlope, onTrack: false, bmrFloor, flaggedDays,
+    metabolicProtection,
   };
 }
 
 function fmtRate(n: number): string {
   return `${n > 0 ? '+' : ''}${n.toFixed(2)}`;
+}
+
+// ── Velocity Protection ────────────────────────────────────────────────────────
+// Returns true if the weekly rate of change exceeds 1.5% of total body weight
+// for 2 or more consecutive weeks — a signal to recommend calorie maintenance boost.
+export function detectMetabolicProtection(emaPoints: EMAPoint[], currentWeightKg: number): boolean {
+  if (emaPoints.length < 14) return false; // need at least 2 weeks of EMA data
+  const VELOCITY_THRESHOLD = 0.015; // 1.5% of body weight per week
+  // Slice into weekly windows and compute slope for each
+  const weeks: number[] = [];
+  for (let i = 7; i <= emaPoints.length; i += 7) {
+    const slice = emaPoints.slice(i - 7, i);
+    const slope = weeklySlope(slice);
+    if (slope !== null) weeks.push(slope);
+  }
+  // Check for 2+ consecutive weeks exceeding threshold in same direction
+  let consecutive = 0;
+  for (const slope of weeks) {
+    const velocityPct = Math.abs(slope) / currentWeightKg;
+    if (velocityPct > VELOCITY_THRESHOLD) consecutive++;
+    else consecutive = 0;
+    if (consecutive >= 2) return true;
+  }
+  return false;
 }

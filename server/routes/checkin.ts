@@ -178,7 +178,9 @@ router.get('/coaching', requireAuth as any, async (req: AuthRequest, res: Respon
       newTarget,
     };
 
-    res.json({ message: getCoachingMessage(input), churnRisk, trend });
+    // Include today's energy score so frontend can compute dynamic step targets
+    const todayEnergy = todayCI ? Number(todayCI.energy) : null;
+    res.json({ message: getCoachingMessage(input), churnRisk, trend, todayEnergy });
   } catch (err: any) {
     console.error('[checkin/coaching]', err?.message);
     res.status(500).json({ error: 'Server error' });

@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import { pool } from '../db';
 import { requireAuth, AuthRequest } from '../middleware/auth';
 import { sendWelcomeEmail, sendPasswordResetEmail } from '../email';
+import { assignCohort } from '../services/cohortEngine';
 
 const router = Router();
 
@@ -116,12 +117,20 @@ router.post('/signup', async (req: Request, res: Response) => {
 
     await client.query('COMMIT');
 
+    // Cohort assignment — immediate, no calibration window needed
+    const cohort = assignCohort({
+      age: Math.max(18, parseInt(age) || 25),
+      sex: sex === 'female' ? 'female' : 'male',
+      activityMultiplier: parseFloat(activityLevel) || 1.55,
+      goalType: (dietGoal === 'bulk' ? 'bulk' : dietGoal === 'maintain' ? 'maintain' : 'cut'),
+    });
+
     // Fire-and-forget welcome email — don't block the signup response
     sendWelcomeEmail(email.toLowerCase(), name).catch(err =>
       console.error('[email] Failed to send welcome email:', err)
     );
 
-    res.json({ token: makeToken(userId), userId });
+    res.json({ token: makeToken(userId), userId, cohort });
   } catch (err: any) {
     if (client) await client.query('ROLLBACK').catch(() => {});
     console.error(err);

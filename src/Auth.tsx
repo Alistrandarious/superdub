@@ -175,12 +175,17 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
     setLoading(true);
     try {
       const name = [firstName.trim(), lastName.trim()].filter(Boolean).join(' ');
-      const { token } = await api.signup({
+      const result = await api.signup({
         email, password, name, dob, sex, heightCm, weightKg,
         goalWeight, lossPerWeek, gainPerWeek, activityLevel, dietGoal, habits,
         jobType, gymFreq, walkFreq,
       });
-      setToken(token);
+      setToken(result.token);
+      // Persist cohort onboarding message so the dashboard can display it on first load
+      if (result.cohort?.onboardingMessage) {
+        localStorage.setItem('superdub:cohort-msg', result.cohort.onboardingMessage);
+        localStorage.setItem('superdub:cohort-name', result.cohort.cohortName);
+      }
       onAuth();
     } catch (err: any) {
       setError(err.message);
