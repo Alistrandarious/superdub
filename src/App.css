@@ -8168,13 +8168,13 @@ h3, h4,
   border-radius: 3px;
   background: rgba(255,255,255,0.04);
 }
-/* Active day (on the app) — filled blue, intensity by habit completion */
+/* Active day (on the app) — filled blue, brighter the more habits you did */
 .heatmap-cell.hm-active {
-  background: color-mix(in srgb, #2E8BFF calc(var(--lvl, 0.22) * 92%), rgba(255,255,255,0.06));
+  background: color-mix(in srgb, #2E8BFF calc(var(--lvl, 0.45) * 100%), rgba(255,255,255,0.05));
 }
-/* Not on the app (before signup, no activity, or future) → white */
+/* Not on the app (before signup, no activity, or future) — subtle empty cell */
 .heatmap-cell.hm-off {
-  background: rgba(255,255,255,0.9);
+  background: rgba(255,255,255,0.035);
 }
 .heatmap-months {
   display: grid;

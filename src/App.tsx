@@ -1023,7 +1023,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.192</span>
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.193</span>
         </div>
 
         {/* Period picker — compact pill between brand and cog */}
@@ -1657,7 +1657,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               <div
                 key={i}
                 className={`heatmap-cell hm-${c.state}`}
-                style={c.state === 'active' ? ({ '--lvl': Math.max(c.ratio, 0.22) } as React.CSSProperties) : undefined}
+                style={c.state === 'active' ? ({ '--lvl': Math.max(c.ratio, 0.45) } as React.CSSProperties) : undefined}
                 title={`${c.ddmm}: ${c.state === 'off' ? 'not on the app' : `${Math.round(c.ratio * 100)}% of habits done`}`}
               />
             ))}
