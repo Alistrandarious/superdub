@@ -60,20 +60,6 @@ const BottomNav: React.FC = () => {
               <span className="diet-sub-desc">Build targets &amp; macro split</span>
             </div>
           </button>
-          <button className="diet-sub-item" onClick={() => goTo('/meal-plans')}>
-            <span className="diet-sub-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg></span>
-            <div className="diet-sub-text">
-              <span className="diet-sub-label">Meal Plans</span>
-              <span className="diet-sub-desc">Your saved meal plans</span>
-            </div>
-          </button>
-          <button className="diet-sub-item" onClick={() => goTo('/food-log')}>
-            <span className="diet-sub-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
-            <div className="diet-sub-text">
-              <span className="diet-sub-label">Food Logging</span>
-              <span className="diet-sub-desc">Log today's meals by voice</span>
-            </div>
-          </button>
         </div>
       )}
 
@@ -190,7 +176,7 @@ const BottomNav: React.FC = () => {
               <circle cx="12" cy="12" r="2" />
             </svg>
           </span>
-          <span className="bottom-nav-label">Plans</span>
+          <span className="bottom-nav-label">Plan</span>
         </button>
 
         {/* Habits — centre circle */}

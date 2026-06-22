@@ -914,7 +914,7 @@ const Diet: React.FC = () => {
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
           <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span>
         </div>
-        <span className="plan-topbar-eyebrow">Plans</span>
+        <span className="plan-topbar-eyebrow">Plan</span>
       </div>
 
       {/* Plan summary hero */}
