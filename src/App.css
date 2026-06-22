@@ -9839,12 +9839,12 @@ details[open] .plan-explainer-summary::before { content: '▾  '; }
   display: block;
   font-family: 'Sora', sans-serif;
   font-size: 0.72rem;
-  color: rgba(255,185,0,0.85);
+  color: rgba(46,139,255,0.9);
   margin-top: 4px;
 }
 .step-advisable strong {
   font-family: 'Space Mono', monospace;
-  color: #FFB928;
+  color: #2E8BFF;
 }
 
 /* ── Check-in toggle pill in More menu ─────────────────────────────────────── */

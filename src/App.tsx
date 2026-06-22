@@ -587,8 +587,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     else if (chartRange === '1m')  { from = new Date(now); from.setDate(now.getDate() - 29); }
     else if (chartRange === '3m')  { from = new Date(now); from.setDate(now.getDate() - 89); }
     else if (chartRange === '1y')  { from = new Date(now); from.setDate(now.getDate() - 364); }
-    else                           { from = new Date(accountCreatedDate); } // 'all'
-    if (from < accountCreatedDate) from = new Date(accountCreatedDate);
+    else                           { from = new Date(accountCreatedDate.getFullYear(), accountCreatedDate.getMonth(), 1); } // 'all' → 1st of signup month
+    // Clamp to signup only for the rolling ranges; 'all' may roll back to day 1 of the month
+    if (chartRange !== 'all' && from < accountCreatedDate) from = new Date(accountCreatedDate);
     return getChartDayRange(from, now);
   }, [chartRange, accountCreatedDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -758,46 +759,31 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     : chartData.length <= 60 ? 4
     : 7;
 
-  // Custom two-row X-axis tick: day number on top, month name on first tick of each new month
   const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const shownTickMonths = useMemo(() => {
-    const result = new Map<number, string>(); // index → month abbreviation (only on first of month)
-    let lastMonth = -1;
-    chartData.forEach((d, i) => {
-      if (displayInterval === 0 || i % displayInterval === 0) {
-        const mm = parseInt((d.day as string).split('/')[1]) - 1;
-        if (mm !== lastMonth) { result.set(i, MONTH_ABBR[mm]); lastMonth = mm; }
-      }
-    });
-    return result;
-  }, [chartData, displayInterval]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Day-number tick only; month names are drawn on the boundary lines below
   const chartXTick = useMemo(() => (props: any) => {
-    const { x, y, payload, index } = props;
+    const { x, y, payload } = props;
     if (!payload?.value) return <g />;
     const dd = parseInt((payload.value as string).split('/')[0]);
-    const monthLabel = shownTickMonths.get(index);
     return (
       <g transform={`translate(${x},${y + 4})`}>
         <text textAnchor="middle" fill="rgba(255,255,255,0.6)" fontSize={9} fontFamily="'Space Mono',monospace">{dd}</text>
-        {monthLabel && (
-          <text y={13} textAnchor="middle" fill="#2E8BFF" fontSize={8} fontFamily="'Sora',sans-serif" fontWeight={600}>{monthLabel}</text>
-        )}
       </g>
     );
-  }, [shownTickMonths]);
+  }, []);
 
-  // Month boundary reference lines — subtle vertical marker when month changes
+  // Month boundaries — the first day of each month visible (incl. the very first), with its name
   const monthBoundaryDays = useMemo(() => {
-    const result: string[] = [];
+    const result: { day: string; month: string }[] = [];
     let lastMm = -1;
-    chartData.forEach(d => {
+    chartData.forEach((d, idx) => {
       const mm = parseInt((d.day as string).split('/')[1]);
-      if (mm !== lastMm && lastMm !== -1) result.push(d.day as string);
+      if (idx === 0 || mm !== lastMm) result.push({ day: d.day as string, month: MONTH_ABBR[mm - 1] });
       lastMm = mm;
     });
     return result;
-  }, [chartData]);
+  }, [chartData]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // EMA colour: white (no goal), cyan (on track), red (off pace)
   // Deliberately NOT green — habit Done bars are green and the EMA would be invisible
@@ -1085,7 +1071,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.175</span>
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.176</span>
         </div>
 
         {/* Period picker — compact pill between brand and cog */}
@@ -1326,8 +1312,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
       <section className="chart-section">
         <div className="chart-range-tabs">
-          <button className={`chart-expand-btn${weightZoom ? ' active' : ''}`} onClick={() => setWeightZoom(z => !z)}>
-            {weightZoom ? 'Habits' : 'Weight trend'} <span aria-hidden>{weightZoom ? '✕' : '⤢'}</span>
+          <button className={`chart-expand-btn${!weightZoom ? ' active' : ''}`} onClick={() => setWeightZoom(z => !z)}>
+            Habits <span aria-hidden>{weightZoom ? '✕' : '✓'}</span>
           </button>
           <div className="chart-range-group">
             {(['7d', '1m', '3m', '1y', 'all'] as const).map(r => {
@@ -1358,9 +1344,17 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               </linearGradient>
             </defs>
             <CartesianGrid stroke={themeColor + '1a'} strokeDasharray="3 3" />
-            {/* Month boundary markers */}
-            {monthBoundaryDays.map(d => (
-              <ReferenceLine key={`mb-${d}`} yAxisId="left" x={d} stroke="rgba(46,139,255,0.18)" strokeWidth={1} />
+            {/* Month boundary markers — distinct periwinkle divider + month name */}
+            {monthBoundaryDays.map(mb => (
+              <ReferenceLine
+                key={`mb-${mb.day}`}
+                yAxisId="left"
+                x={mb.day}
+                stroke="rgba(150,170,255,0.35)"
+                strokeWidth={1}
+                strokeDasharray="2 4"
+                label={{ value: mb.month, fill: 'rgba(170,185,255,0.9)', fontSize: 9, fontWeight: 700, position: 'insideTopLeft' }}
+              />
             ))}
             <XAxis dataKey="day" stroke="rgba(255,255,255,0.1)" tick={chartXTick} interval={displayInterval} tickLine={false} height={36} padding={{ left: 10 }} />
             <YAxis yAxisId="left" hide={weightZoom} stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} allowDecimals={false} width={30} axisLine={false} tickLine={false} domain={[0, habits.length]} />
@@ -1392,14 +1386,14 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                     stroke="#2E8BFF"
                     strokeWidth={1.5}
                     strokeDasharray="8 4"
-                    label={{ value: `Goal ${goalKg}kg`, fill: '#2E8BFF', fontSize: 11, fontWeight: 700, position: 'insideTopRight' }}
+                    label={{ value: `Goal ${goalKg}kg`, fill: '#2E8BFF', fontSize: 11, fontWeight: 700, position: 'insideBottomLeft' }}
                   />
                 </>
               );
             })()}
             {/* ── Habit bars: green for done, red for failed, rounded tops ── */}
-            {!weightZoom && <Bar yAxisId="left" dataKey="completed" stackId="habits" fill="#2FD27E" name="Done" radius={[4,4,0,0]} isAnimationActive={false} legendType="rect" />}
-            {!weightZoom && <Bar yAxisId="left" dataKey="failed" stackId="habits" fill="#FF5470" name="Failed" radius={[4,4,0,0]} isAnimationActive={false} legendType="rect" />}
+            {!weightZoom && <Bar yAxisId="left" dataKey="completed" stackId="habits" fill="#2FD27E" name="Done" radius={[4,4,0,0]} isAnimationActive={true} animationDuration={450} legendType="rect" />}
+            {!weightZoom && <Bar yAxisId="left" dataKey="failed" stackId="habits" fill="#FF5470" name="Failed" radius={[4,4,0,0]} isAnimationActive={true} animationDuration={450} legendType="rect" />}
             {/* ── Golden safe-zone corridor: light fill (Area) + diagonal edge lines (Lines, no vertical cap) ── */}
             {zoneActive && (
               <>
@@ -1431,7 +1425,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               }}
               name="Weight"
               connectNulls
-              isAnimationActive={false}
+              isAnimationActive={true}
+              animationDuration={450}
               legendType="plainline"
             />
             {/* ── EMA smoothed trend — black line with a white halo so it stays visible on dark ── */}
@@ -1458,7 +1453,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 dot={false}
                 name="Smoothed"
                 connectNulls
-                isAnimationActive={false}
+                isAnimationActive={true}
+                animationDuration={450}
                 legendType="plainline"
               />
             )}
@@ -1494,7 +1490,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 Daily Steps · target {effectiveStepTarget.toLocaleString()}
                 {effectiveStepTarget !== stepTarget && <span className="step-target-adjusted"> (energy-adjusted)</span>}
               </span>
-              {coachingMsg?.advisableSteps != null && (
+              {coachingMsg?.advisableSteps != null && coachingMsg.advisableSteps !== effectiveStepTarget && (
                 <span className="step-advisable">
                   Coach suggests <strong>{coachingMsg.advisableSteps.toLocaleString()}</strong> steps today
                 </span>
