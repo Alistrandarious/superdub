@@ -15,7 +15,6 @@ function readCheckinEnabled(): boolean {
 const BottomNav: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [dietOpen, setDietOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [planBadge, setPlanBadge] = useState(readPlanBadge);
   const [checkinEnabled, setCheckinEnabled] = useState(readCheckinEnabled);
@@ -35,32 +34,17 @@ const BottomNav: React.FC = () => {
     return location.pathname.startsWith(path);
   };
 
-  const closeDiet = () => setDietOpen(false);
   const closeMore = () => setMoreOpen(false);
 
   const goTo = (path: string) => {
-    closeDiet();
     closeMore();
     navigate(path);
   };
 
   return (
     <>
-      {(dietOpen || moreOpen) && (
-        <div className="bottom-nav-overlay" onClick={() => { closeDiet(); closeMore(); }} />
-      )}
-
-      {dietOpen && (
-        <div className="diet-sub-menu">
-          <div className="diet-sub-title">Diet</div>
-          <button className="diet-sub-item" onClick={() => goTo('/diet')}>
-            <span className="diet-sub-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h20M12 2a10 10 0 0 1 0 20"/><path d="M12 2a10 10 0 0 0 0 20"/><path d="M12 2v20"/></svg></span>
-            <div className="diet-sub-text">
-              <span className="diet-sub-label">Macro Split &amp; Performance</span>
-              <span className="diet-sub-desc">Build targets &amp; macro split</span>
-            </div>
-          </button>
-        </div>
+      {moreOpen && (
+        <div className="bottom-nav-overlay" onClick={() => { closeMore(); }} />
       )}
 
       {moreOpen && (
@@ -163,11 +147,11 @@ const BottomNav: React.FC = () => {
           <span className="bottom-nav-label">Progress</span>
         </button>
 
-        {/* Diet — opens sub-menu */}
+        {/* Plan — navigates straight to the Plan page */}
         <button
-          className={`bottom-nav-item${isActive('/diet') ? ' active' : ''}${dietOpen ? ' active' : ''}`}
-          onClick={() => setDietOpen(o => !o)}
-          aria-label="Diet"
+          className={`bottom-nav-item${isActive('/diet') ? ' active' : ''}`}
+          onClick={() => goTo('/diet')}
+          aria-label="Plan"
         >
           <span className="bottom-nav-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -211,7 +195,7 @@ const BottomNav: React.FC = () => {
         {/* More */}
         <button
           className={`bottom-nav-item${isActive('/profile') || isActive('/about') || isActive('/privacy') || isActive('/level') || isActive('/plan') || moreOpen ? ' active' : ''}`}
-          onClick={() => { closeDiet(); setMoreOpen(o => !o); }}
+          onClick={() => setMoreOpen(o => !o)}
           aria-label="More"
         >
           <span className="bottom-nav-icon">
