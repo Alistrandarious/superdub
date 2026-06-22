@@ -35,8 +35,22 @@ const DailyCheckIn: React.FC = () => {
   useEffect(() => {
     if (localStorage.getItem(CHECKIN_KEY) === todayStr()) return;
     applyProfileWeight();
-    const t = setTimeout(() => setShow(true), 800);
-    return () => clearTimeout(t);
+    let cancelled = false;
+    let tid: ReturnType<typeof setTimeout>;
+    // Check server — if today's weight is already logged (e.g. from another device), skip prompt
+    api.getTracker().then((data: any) => {
+      if (cancelled) return;
+      const today = todayStr();
+      const todayEntry = data?.days?.find((d: any) => d.day === today);
+      if (todayEntry?.weight) {
+        localStorage.setItem(CHECKIN_KEY, today);
+        return;
+      }
+      tid = setTimeout(() => setShow(true), 800);
+    }).catch(() => {
+      if (!cancelled) tid = setTimeout(() => setShow(true), 800);
+    });
+    return () => { cancelled = true; clearTimeout(tid); };
   }, []);
 
   useEffect(() => {
