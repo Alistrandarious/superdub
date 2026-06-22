@@ -326,7 +326,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const todayKey = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}`;
 
   // Chart state
-  const [chartRange, setChartRange] = useState<'7d' | '1m' | '3m' | '1y' | 'all'>('all');
+  const [chartRange, setChartRange] = useState<'7d' | '1m' | '3m' | '1y' | 'all'>('7d');
   const [weightZoom, setWeightZoom] = useState(false);
 
   // Coaching message state (includes today's energy score, advisable steps, workout calories)
@@ -1070,7 +1070,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.181</span>
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.182</span>
         </div>
 
         {/* Period picker — compact pill between brand and cog */}
@@ -1391,8 +1391,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               );
             })()}
             {/* ── Habit bars: green for done, red for failed, rounded tops ── */}
-            {!weightZoom && <Bar yAxisId="left" dataKey="completed" stackId="habits" fill="#2FD27E" name="Done" radius={[4,4,0,0]} isAnimationActive={true} animationDuration={450} legendType="rect" />}
-            {!weightZoom && <Bar yAxisId="left" dataKey="failed" stackId="habits" fill="#FF5470" name="Failed" radius={[4,4,0,0]} isAnimationActive={true} animationDuration={450} legendType="rect" />}
+            {!weightZoom && <Bar yAxisId="left" dataKey="completed" stackId="habits" fill="#2FD27E" name="Done" radius={[4,4,0,0]} isAnimationActive={false} legendType="rect" />}
+            {!weightZoom && <Bar yAxisId="left" dataKey="failed" stackId="habits" fill="#FF5470" name="Failed" radius={[4,4,0,0]} isAnimationActive={false} legendType="rect" />}
             {/* ── Golden safe-zone corridor: light fill (Area) + diagonal edge lines (Lines, no vertical cap) ── */}
             {zoneActive && (
               <>
@@ -1424,8 +1424,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               }}
               name="Weight"
               connectNulls
-              isAnimationActive={true}
-              animationDuration={450}
+              isAnimationActive={false}
               legendType="plainline"
             />
             {/* ── EMA smoothed trend — black line with a white halo so it stays visible on dark ── */}
@@ -1452,8 +1451,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 dot={false}
                 name="Smoothed"
                 connectNulls
-                isAnimationActive={true}
-                animationDuration={450}
+                isAnimationActive={false}
                 legendType="plainline"
               />
             )}

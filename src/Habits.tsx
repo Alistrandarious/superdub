@@ -471,18 +471,9 @@ const Habits: React.FC = () => {
   const [showDayOverlay, setShowDayOverlay] = useState(false);
   const graveyardRef = useRef<HTMLDivElement>(null);
 
-  // Week gold celebration
-  const weekGoldKey = (() => {
-    const now = new Date();
-    const dow = now.getDay();
-    const mon = new Date(now);
-    mon.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1));
-    return `superdub.weekgold.${mon.getFullYear()}-${String(mon.getMonth()+1).padStart(2,'0')}-${String(mon.getDate()).padStart(2,'0')}`;
-  })();
-  const [weekGold, setWeekGold] = useState(() => !!localStorage.getItem(weekGoldKey));
+  // Week gold — purely derived: gold ONLY on Sunday when all 7 days are logged.
+  // Resets to original colour automatically on Monday (no persisted state, no veteran ring).
   const [weekCelebrating, setWeekCelebrating] = useState(false);
-  // Whether a gold week has ever been earned — drives the gold hollow ring in later weeks
-  const [goldEver, setGoldEver] = useState(() => localStorage.getItem('superdub.weekgold.ever') === '1');
   const prevPerfectRef = useRef(false);
 
   const pwaKey = `superdub.pwa.${PWA_PROMPT_VERSION}`;
@@ -681,15 +672,11 @@ const Habits: React.FC = () => {
   const isPerfectWeek = isSunday && nonFutureDays.length === 7 &&
     nonFutureDays.every(d => ht[d.key]?.[MANDATORY_HABIT] === 'done');
 
-  // Trigger gold animation the moment the perfect (Sunday) week is achieved
+  // Trigger the flip animation the moment the perfect (Sunday) week is achieved
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (isPerfectWeek && !prevPerfectRef.current && !weekGold) {
-      setWeekGold(true);
+    if (isPerfectWeek && !prevPerfectRef.current) {
       setWeekCelebrating(true);
-      setGoldEver(true);
-      localStorage.setItem(weekGoldKey, '1');
-      localStorage.setItem('superdub.weekgold.ever', '1');
       setTimeout(() => setWeekCelebrating(false), 1800);
     }
     prevPerfectRef.current = isPerfectWeek;
@@ -860,7 +847,7 @@ const Habits: React.FC = () => {
         </div>
 
         {/* Weekly strip — the simplified "Logging into Superdub" habit */}
-        <div className={`hb-week${weekGold ? ' hb-week-gold' : ''}${weekCelebrating ? ' hb-week-celebrating' : ''}${goldEver && !weekGold ? ' hb-week-veteran' : ''}`}>
+        <div className={`hb-week${isPerfectWeek ? ' hb-week-gold' : ''}${weekCelebrating ? ' hb-week-celebrating' : ''}`}>
           {weekDays.map(({ key, label, isFuture, isToday }) => {
             const state = ht[key]?.[MANDATORY_HABIT] ?? null;
             // Read-only: this strip mirrors your daily login automatically — not tappable.
