@@ -83,6 +83,8 @@ function makeChartTooltip(emaColor: string, todayDDMM: string) {
         <div style={{ color: '#fff', fontWeight: 700, fontFamily: "'Space Mono', monospace", fontSize: 11, marginBottom: 7 }}>{label}</div>
         {payload.map((entry: any, idx: number) => {
           if (entry.value == null || entry.value === 0) return null;
+          // Filter internal zone series — never show in tooltip
+          if (entry.name === 'zoneLow' || entry.name === 'zoneBand') return null;
           const color = entry.color || entry.fill || emaColor;
           const isCount = entry.name === 'Done' || entry.name === 'Failed';
           // Never show habit counts for future projected days
@@ -731,10 +733,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     return result;
   }, [chartData]);
 
-  // EMA colour (green if on track, red if off pace)
+  // EMA colour: white (no goal), cyan (on track), red (off pace)
+  // Deliberately NOT green — habit Done bars are green and the EMA would be invisible
   const emaColor = planStatus?.active
-    ? (planCycle?.onTrack === false ? '#FF5470' : '#2FD27E')
-    : '#2FD27E';
+    ? (planCycle?.onTrack === false ? '#FF5470' : '#00D4FF')
+    : '#FFFFFF';
 
   // Tooltip render function (colour-matched per series)
   const renderTooltip = makeChartTooltip(emaColor, todayKey);
@@ -970,7 +973,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.149</span>
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.150</span>
         </div>
 
         {/* Period picker — compact pill between brand and cog */}
@@ -1389,8 +1392,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             {/* ── Diagonal safe-zone corridor toward goal: gold fill, blue dashed borders ── */}
             {zoneActive && (
               <>
-                <Area yAxisId="right" type="linear" dataKey="zoneLow" stroke="#2E8BFF" strokeWidth={1.5} strokeDasharray="5 3" fill="none" legendType="none" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} stackId="zone" />
-                <Area yAxisId="right" type="linear" dataKey="zoneBand" stroke="#2E8BFF" strokeWidth={1.5} strokeDasharray="5 3" fill="rgba(255,185,0,0.13)" legendType="none" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} stackId="zone" />
+                <Area yAxisId="right" type="linear" dataKey="zoneLow" stroke="none" fill="none" legendType="none" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} stackId="zone" />
+                <Area yAxisId="right" type="linear" dataKey="zoneBand" stroke="rgba(255,185,0,0.4)" strokeWidth={1} fill="rgba(255,185,0,0.10)" legendType="none" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} stackId="zone" />
               </>
             )}
             {/* ── Habit bars: green for done, red for failed, rounded tops ── */}
@@ -1428,9 +1431,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 yAxisId="right"
                 type="monotone"
                 dataKey="ema"
-                stroke={planStatus?.active
-                  ? (planCycle?.onTrack === false ? '#FF5470' : '#2FD27E')
-                  : '#2FD27E'}
+                stroke={emaColor}
                 strokeWidth={3}
                 dot={false}
                 name="EMA trend"
