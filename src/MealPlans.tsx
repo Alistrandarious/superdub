@@ -135,7 +135,7 @@ function IngredientPanel({ recipeId, scale }: { recipeId: number; scale: number 
   if (loading) return <button className="mp-ing-load-btn" disabled>Loading...</button>;
   if (fetchError) return (
     <div>
-      <p className="mp-ing-empty" style={{ color: '#ff453a' }}>Error: {fetchError}</p>
+      <p className="mp-ing-empty" style={{ color: '#FF5470' }}>Error: {fetchError}</p>
       <button className="mp-ing-load-btn" onClick={() => { setLoaded(false); fetchIngredients(); }}>Retry</button>
     </div>
   );
