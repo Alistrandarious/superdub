@@ -41,25 +41,29 @@ router.put('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
 
     const habitSet = new Set<string>(habits);
     const removed = Array.from(existingMap.keys()).filter((n: string) => !habitSet.has(n));
+    // Removed habits are ARCHIVED (soft delete → graveyard), never hard-deleted.
+    // Their tracker_habits history is preserved so nothing is ever lost.
     if (removed.length > 0) {
       await pool.query(
-        'DELETE FROM tracker_habits WHERE user_id = $1 AND habit_name = ANY($2::text[])',
+        'UPDATE habits SET archived = TRUE WHERE user_id = $1 AND name = ANY($2::text[])',
         [req.userId, removed]
       );
     }
 
-    await pool.query(
-      'DELETE FROM habits WHERE user_id = $1 AND (archived = FALSE OR archived IS NULL)',
-      [req.userId]
-    );
+    // Upsert each habit in the desired order. Update the existing row (un-archiving
+    // it if it was in the graveyard) or insert a new one — without deleting anything.
     for (let i = 0; i < habits.length; i++) {
-      // Preserve whatever start_date was stored (including null) for existing habits.
-      // Only assign today for genuinely new habits not previously in the DB.
       const startDate = existingMap.has(habits[i]) ? existingMap.get(habits[i]) : today;
-      await pool.query(
-        'INSERT INTO habits (user_id, name, position, start_date, archived) VALUES ($1, $2, $3, $4, FALSE)',
+      const upd = await pool.query(
+        'UPDATE habits SET position = $3, archived = FALSE, start_date = COALESCE(start_date, $4) WHERE user_id = $1 AND name = $2',
         [req.userId, habits[i], i, startDate]
       );
+      if (upd.rowCount === 0) {
+        await pool.query(
+          'INSERT INTO habits (user_id, name, position, start_date, archived) VALUES ($1, $2, $3, $4, FALSE)',
+          [req.userId, habits[i], i, startDate]
+        );
+      }
     }
 
     res.json({ ok: true });
