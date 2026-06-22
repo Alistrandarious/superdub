@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ComposedChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import './App.css';
 import { api } from './api';
+import AdaptiveWeightPlanCard from './AdaptiveWeightPlanCard';
 
 interface ProfileData {
   dob: string;
@@ -1001,6 +1002,9 @@ const Diet: React.FC = () => {
           </div>
         )}
       </section>
+
+        {/* Adaptive Weight Plan — engine reasoning (moved here from Progress) */}
+        <AdaptiveWeightPlanCard />
 
         {/* Today's Meal Plan */}
         {latestPlan && (
