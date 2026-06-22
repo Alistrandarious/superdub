@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ComposedChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { ComposedChart, Line, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import './App.css';
 import { api } from './api';
 import AdaptiveWeightPlanCard from './AdaptiveWeightPlanCard';
@@ -58,7 +58,7 @@ function deduplicateDays(days: any[]): any[] {
   return Object.values(map);
 }
 
-function linearReg(pts: { x: number; y: number }[]): { slope: number; weeklyRate: number } | null {
+function linearReg(pts: { x: number; y: number }[]): { slope: number; weeklyRate: number; intercept: number } | null {
   const n = pts.length;
   if (n < 2) return null;
   const mx = pts.reduce((s, p) => s + p.x, 0) / n;
@@ -67,7 +67,7 @@ function linearReg(pts: { x: number; y: number }[]): { slope: number; weeklyRate
   const den = pts.reduce((s, p) => s + (p.x - mx) ** 2, 0);
   if (den === 0) return null;
   const slope = num / den;
-  return { slope, weeklyRate: slope * 7 };
+  return { slope, weeklyRate: slope * 7, intercept: my - slope * mx };
 }
 
 function localYMD(d: Date): string {
@@ -312,12 +312,13 @@ const PlanSummaryCard: React.FC<{
 const DAY_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 const DayCircleTick = (props: any) => {
-  const { x, y, payload } = props;
+  const { x, y, payload, doneFlags } = props;
   const letter = (payload.value as string)?.[0] ?? '';
+  const done = Array.isArray(doneFlags) ? !!doneFlags[payload.index] : false;
   return (
     <g transform={`translate(${x},${y + 10})`}>
-      <circle r={10} fill="#2A2D3A" stroke="#252532" strokeWidth={1} />
-      <text textAnchor="middle" dominantBaseline="central" fill="#555" fontSize={10} fontWeight={700}>
+      <circle r={10} fill={done ? '#2FD27E' : '#2A2D3A'} stroke={done ? '#2FD27E' : '#252532'} strokeWidth={1} />
+      <text textAnchor="middle" dominantBaseline="central" fill={done ? '#06210F' : '#555'} fontSize={10} fontWeight={700}>
         {letter}
       </text>
     </g>
@@ -364,6 +365,8 @@ const WeightSparkline: React.FC<{
   const reg = linearReg(histPts);
   const weeklyRate = reg?.weeklyRate ?? null;
 
+  const todayStart = new Date(now); todayStart.setHours(0, 0, 0, 0);
+  const ZONE_HALF = 0.75; // ±0.75 kg safe corridor around the ideal weekly path
   const weekData = weekDays.map((iso, i) => {
     const ddmm = isoToDDMM(iso);
     const found = allTrackerDays.find((d: any) => d.day === ddmm);
@@ -373,8 +376,24 @@ const WeightSparkline: React.FC<{
     const expected = currentWeight > 0 && lossPerWeek > 0
       ? parseFloat((currentWeight + direction * (lossPerWeek / 7) * i).toFixed(2))
       : undefined;
-    return { label: DAY_SHORT[i], actual, expected, ema, emaHalo: ema };
+    // Trendline: the 28-day regression evaluated at this day's position in that window
+    const dayDate = new Date(iso + 'T00:00:00');
+    const daysFromToday = Math.round((todayStart.getTime() - dayDate.getTime()) / 86400000);
+    const x = 27 - daysFromToday;
+    const trend = reg ? parseFloat((reg.intercept + reg.slope * x).toFixed(2)) : undefined;
+    // Corridor band around the ideal path
+    const zoneLow = expected !== undefined ? parseFloat((expected - ZONE_HALF).toFixed(2)) : undefined;
+    const zoneBand = expected !== undefined ? ZONE_HALF * 2 : undefined;
+    const zoneHigh = expected !== undefined ? parseFloat((expected + ZONE_HALF).toFixed(2)) : undefined;
+    // "Done" = logged that day (weight or a completed habit), and not in the future
+    const isFuture = dayDate.getTime() > todayStart.getTime();
+    const done = !isFuture && !!found && (
+      (parseFloat(found.weight) > 0) ||
+      (found.habits && Object.values(found.habits).some((v: any) => v === true))
+    );
+    return { label: DAY_SHORT[i], actual, expected, ema, emaHalo: ema, trend, zoneLow, zoneBand, zoneHigh, done };
   });
+  const weekDone = weekData.map(d => d.done);
 
   let insightLevel: 'good' | 'great' | 'behind' | 'nodata' = 'nodata';
   let insightMsg = 'Log your weight for a few more days to unlock your trend analysis.';
@@ -398,7 +417,7 @@ const WeightSparkline: React.FC<{
   }
 
   const hasAny = weekData.some(d => d.actual !== undefined);
-  const allVals = weekData.flatMap(d => [d.actual, d.expected, d.ema].filter(v => v !== undefined) as number[]);
+  const allVals = weekData.flatMap(d => [d.actual, d.expected, d.ema, d.trend, d.zoneLow, d.zoneHigh].filter(v => v !== undefined) as number[]);
   let lo = allVals.length > 0 ? Math.min(...allVals) : 70;
   if (goalWeight > 0) lo = Math.min(lo, goalWeight);   // floor toward goal, like Progress
   const minW = Math.floor(lo - 1);
@@ -407,14 +426,15 @@ const WeightSparkline: React.FC<{
   // Tooltip mirroring the Progress chart (Logged / Smoothed / Expected)
   const renderTip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
-    const rows = payload.filter((e: any) => e.dataKey !== 'emaHalo' && e.value != null);
+    const HIDE = ['emaHalo', 'zoneLow', 'zoneHigh', 'zoneBand'];
+    const rows = payload.filter((e: any) => !HIDE.includes(e.dataKey) && e.value != null);
     if (!rows.length) return null;
     return (
       <div style={{ background: 'rgba(12,12,18,0.97)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '8px 11px', minWidth: 120 }}>
         <div style={{ color: '#fff', fontWeight: 700, fontFamily: "'Space Mono', monospace", fontSize: 11, marginBottom: 5 }}>{label}</div>
         {rows.map((e: any, i: number) => {
-          const nm = e.dataKey === 'actual' ? 'Logged' : e.dataKey === 'ema' ? 'Smoothed' : 'Expected';
-          const swatch = e.dataKey === 'ema' ? '#E8ECF4' : e.dataKey === 'actual' ? '#FFFFFF' : '#2E8BFF';
+          const nm = e.dataKey === 'actual' ? 'Logged' : e.dataKey === 'ema' ? 'Smoothed' : e.dataKey === 'trend' ? 'Trend' : 'Expected';
+          const swatch = e.dataKey === 'ema' ? '#E8ECF4' : e.dataKey === 'actual' ? '#FFFFFF' : e.dataKey === 'trend' ? '#FF8A00' : '#2E8BFF';
           return (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '1px 0' }}>
               <span style={{ width: 8, height: 8, borderRadius: 2, background: swatch, flexShrink: 0 }} />
@@ -432,24 +452,24 @@ const WeightSparkline: React.FC<{
       <h2 className="diet-heading">Weight This Week</h2>
 
       {hasAny || weekData.some(d => d.expected !== undefined) ? (
-        <ResponsiveContainer width="100%" height={160}>
-          <ComposedChart data={weekData} margin={{ top: 8, right: 4, bottom: 0, left: -18 }}>
-            <XAxis dataKey="label" tick={<DayCircleTick />} axisLine={false} tickLine={false} height={28} />
+        <ResponsiveContainer width="100%" height={210}>
+          <ComposedChart data={weekData} margin={{ top: 10, right: 6, bottom: 0, left: -18 }}>
+            <XAxis dataKey="label" tick={(p: any) => <DayCircleTick {...p} doneFlags={weekDone} />} axisLine={false} tickLine={false} height={28} interval={0} />
             <YAxis domain={[minW, maxW]} tick={{ fill: '#444', fontSize: 10 }} axisLine={false} tickLine={false} width={38} />
             <Tooltip content={renderTip} />
-            {/* Expected/ideal path — faint blue dashed, like the Progress projection */}
-            <Line type="linear" dataKey="expected" stroke="#2E8BFF55" strokeWidth={1.5} strokeDasharray="4 3"
-              dot={(props: any) => {
-                const { cx, cy, payload } = props;
-                if (payload.actual !== undefined) return <g key={cx} />;
-                return <circle key={cx} cx={cx} cy={cy} r={4} fill="none" stroke="#252532" strokeWidth={1.5} />;
-              }}
-              connectNulls name="expected" isAnimationActive={false}
-            />
-            {/* EMA smoothed — black line with a white halo, exactly like Progress */}
+            {/* Golden safe-zone corridor: light fill + gold edge lines (no vertical cap) */}
+            <Area type="linear" dataKey="zoneLow" stackId="zone" stroke="none" fill="none" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} />
+            <Area type="linear" dataKey="zoneBand" stackId="zone" stroke="none" fill="rgba(255,190,30,0.16)" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} />
+            <Line type="linear" dataKey="zoneLow" stroke="rgba(255,200,60,0.8)" strokeWidth={1.5} dot={false} activeDot={false} connectNulls isAnimationActive={false} />
+            <Line type="linear" dataKey="zoneHigh" stroke="rgba(255,200,60,0.8)" strokeWidth={1.5} dot={false} activeDot={false} connectNulls isAnimationActive={false} />
+            {/* Expected/ideal path — faint blue dashed */}
+            <Line type="linear" dataKey="expected" stroke="#2E8BFF55" strokeWidth={1.5} strokeDasharray="4 3" dot={false} connectNulls name="expected" isAnimationActive={false} />
+            {/* Trendline — amber regression of your last 28 days */}
+            <Line type="linear" dataKey="trend" stroke="#FF8A00" strokeWidth={2} strokeDasharray="6 4" dot={false} connectNulls name="trend" isAnimationActive={false} />
+            {/* EMA smoothed — black line with a white halo */}
             <Line type="monotone" dataKey="emaHalo" stroke="rgba(255,255,255,0.6)" strokeWidth={5} dot={false} connectNulls isAnimationActive={false} />
             <Line type="monotone" dataKey="ema" stroke="#000000" strokeWidth={2.5} dot={false} connectNulls isAnimationActive={false} name="ema" />
-            {/* Actual logged weight — white line with hollow dots, like Progress */}
+            {/* Actual logged weight — white line with hollow dots */}
             <Line type="monotone" dataKey="actual" stroke="#FFFFFF" strokeWidth={2.5} dot={{ r: 4, fill: '#0E0E14', stroke: '#FFFFFF', strokeWidth: 2 }} activeDot={{ r: 6 }} connectNulls={false} name="actual" />
           </ComposedChart>
         </ResponsiveContainer>
@@ -1007,19 +1027,6 @@ const Diet: React.FC = () => {
           )}
         </div>
 
-        <div className="plan-macro-row">
-          {[
-            { val: target.protein, lbl: 'Protein', color: '#FF6EC7' },
-            { val: target.carbs,   lbl: 'Carbs',   color: '#2E8BFF' },
-            { val: target.fats,    lbl: 'Fats',    color: '#FFD60A' },
-          ].map(m => (
-            <div key={m.lbl} className="plan-macro-chip" style={{ borderColor: m.color + '30' }}>
-              <span className="plan-macro-num" style={{ color: m.color }}>{m.val}g</span>
-              <span className="plan-macro-lbl">{m.lbl}</span>
-            </div>
-          ))}
-        </div>
-
         {lossPerWeek > 0 && goal !== 'maintain' && (
           <div className="plan-rate-line">
             <span className="plan-rate-text">
@@ -1038,6 +1045,30 @@ const Diet: React.FC = () => {
 
         {/* Adaptive Weight Plan — engine reasoning (moved here from Progress) */}
         <AdaptiveWeightPlanCard />
+
+        {/* Weight This Week — prominent, with corridor + trend */}
+        <WeightSparkline
+          allTrackerDays={allTrackerDays}
+          currentWeight={todayWeight ?? kg}
+          goalWeight={goalWeight}
+          lossPerWeek={lossPerWeek}
+        />
+
+        {/* Steps & activity — moved up; adaptive targets */}
+        <ActivityTargetsCard
+          currentWeight={todayWeight ?? kg}
+          maintenance={maintenance}
+          macroCalories={macroCalories}
+          lossPerWeek={lossPerWeek}
+          goal={goal}
+          stepTarget={stepTarget}
+          yesterdaySteps={yesterdaySteps}
+          gymSessionsPerWeek={gymSessionsPerWeek}
+          gymIntensity={gymIntensity}
+          gymMinutes={gymMinutes}
+          weeklyActivities={weeklyActivities}
+          onSaved={s => setYesterdaySteps(s)}
+        />
 
         {/* Today's Meal Plan */}
         {latestPlan && (
@@ -1062,13 +1093,6 @@ const Diet: React.FC = () => {
           </div>
         )}
 
-        <WeightSparkline
-          allTrackerDays={allTrackerDays}
-          currentWeight={todayWeight ?? kg}
-          goalWeight={goalWeight}
-          lossPerWeek={lossPerWeek}
-        />
-
         <SmartAdjustCard
           goal={goal}
           lossPerWeek={lossPerWeek}
@@ -1078,21 +1102,6 @@ const Diet: React.FC = () => {
           currentWeight={todayWeight ?? kg}
           locks={locks}
           onApply={handleSmartApply}
-        />
-
-        <ActivityTargetsCard
-          currentWeight={todayWeight ?? kg}
-          maintenance={maintenance}
-          macroCalories={macroCalories}
-          lossPerWeek={lossPerWeek}
-          goal={goal}
-          stepTarget={stepTarget}
-          yesterdaySteps={yesterdaySteps}
-          gymSessionsPerWeek={gymSessionsPerWeek}
-          gymIntensity={gymIntensity}
-          gymMinutes={gymMinutes}
-          weeklyActivities={weeklyActivities}
-          onSaved={s => setYesterdaySteps(s)}
         />
       </div>
     </div>
