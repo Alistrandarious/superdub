@@ -987,6 +987,7 @@ const Diet: React.FC = () => {
         {/* Two progress lines: time elapsed (flame) vs weight done (accent) */}
         {(timePct !== null || weightPct !== null) && (
           <div className="plan-hero-progress">
+            <span className="plan-progress-header">Progress to goal</span>
             <div className="plan-pbar-row">
               <span className="plan-pbar-label">Time</span>
               <div className="plan-pbar-track">

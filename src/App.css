@@ -10084,6 +10084,14 @@ details[open] .plan-explainer-summary::before { content: '▾  '; }
   gap: 8px;
   padding: 2px 16px 14px;
 }
+.plan-progress-header {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 2px;
+}
 .plan-pbar-row {
   display: flex;
   align-items: center;
