@@ -930,7 +930,13 @@ const Diet: React.FC = () => {
 
   // ── Two progress tracks for the hero: time elapsed (flame) vs weight done (accent) ──
   const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
-  const startW = planGoal?.startWeight ?? null;
+  // Prefer the actual earliest logged weight as the start reference — the stored plan
+  // start weight can be stale and misrepresent real progress.
+  const firstLoggedW = (() => {
+    const e = allTrackerDays.find((d: any) => parseFloat(d.weight) > 0);
+    return e ? parseFloat(e.weight) : null;
+  })();
+  const startW = firstLoggedW ?? planGoal?.startWeight ?? null;
   const targetW = planGoal?.targetWeight ?? (goalWeight > 0 ? goalWeight : null);
   const startMs = planGoal?.startDate ? new Date(planGoal.startDate).getTime() : null;
   const targetMs = planGoal?.targetDate ? new Date(planGoal.targetDate).getTime() : null;
