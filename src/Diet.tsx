@@ -316,7 +316,7 @@ const DayCircleTick = (props: any) => {
   const letter = (payload.value as string)?.[0] ?? '';
   const done = Array.isArray(doneFlags) ? !!doneFlags[payload.index] : false;
   return (
-    <g transform={`translate(${x},${y + 10})`}>
+    <g transform={`translate(${x},${y + 16})`}>
       <circle r={10} fill={done ? '#2FD27E' : '#2A2D3A'} stroke={done ? '#2FD27E' : '#252532'} strokeWidth={1} />
       <text textAnchor="middle" dominantBaseline="central" fill={done ? '#06210F' : '#555'} fontSize={10} fontWeight={700}>
         {letter}
@@ -417,11 +417,11 @@ const WeightSparkline: React.FC<{
   }
 
   const hasAny = weekData.some(d => d.actual !== undefined);
-  const allVals = weekData.flatMap(d => [d.actual, d.expected, d.ema, d.trend, d.zoneLow, d.zoneHigh].filter(v => v !== undefined) as number[]);
-  let lo = allVals.length > 0 ? Math.min(...allVals) : 70;
-  if (goalWeight > 0) lo = Math.min(lo, goalWeight);   // floor toward goal, like Progress
-  const minW = Math.floor(lo - 1);
-  const maxW = allVals.length > 0 ? Math.ceil(Math.max(...allVals) + 1) : 90;
+  // Tight domain from the real weight line only (logged + smoothed) so the small
+  // weekly change is visible — not a flat line stuck in a huge 0–90 range.
+  const wVals = weekData.flatMap(d => [d.actual, d.ema].filter(v => v !== undefined) as number[]);
+  const minW = wVals.length > 0 ? Math.floor(Math.min(...wVals) - 1) : 70;
+  const maxW = wVals.length > 0 ? Math.ceil(Math.max(...wVals) + 1) : 90;
 
   // Tooltip mirroring the Progress chart (Logged / Smoothed / Expected)
   const renderTip = ({ active, payload, label }: any) => {
@@ -449,13 +449,20 @@ const WeightSparkline: React.FC<{
 
   return (
     <div className="diet-section weight-sparkline-card">
-      <h2 className="diet-heading">Weight This Week</h2>
+      <div className="ws-head">
+        <h2 className="diet-heading">Weight This Week</h2>
+        {lossPerWeek > 0 && (
+          <span className="ws-potential">
+            <strong>{isBulk ? '+' : '−'}{lossPerWeek}kg</strong> possible
+          </span>
+        )}
+      </div>
 
       {hasAny || weekData.some(d => d.expected !== undefined) ? (
-        <ResponsiveContainer width="100%" height={210}>
-          <ComposedChart data={weekData} margin={{ top: 10, right: 6, bottom: 0, left: -18 }}>
-            <XAxis dataKey="label" tick={(p: any) => <DayCircleTick {...p} doneFlags={weekDone} />} axisLine={false} tickLine={false} height={28} interval={0} />
-            <YAxis domain={[minW, maxW]} tick={{ fill: '#444', fontSize: 10 }} axisLine={false} tickLine={false} width={38} />
+        <ResponsiveContainer width="100%" height={132}>
+          <ComposedChart data={weekData} margin={{ top: 8, right: 14, bottom: 0, left: -8 }}>
+            <XAxis dataKey="label" tick={(p: any) => <DayCircleTick {...p} doneFlags={weekDone} />} axisLine={false} tickLine={false} height={40} interval={0} padding={{ left: 16, right: 16 }} />
+            <YAxis domain={[minW, maxW]} tick={{ fill: '#444', fontSize: 10 }} axisLine={false} tickLine={false} width={34} />
             <Tooltip content={renderTip} />
             {/* Golden safe-zone corridor: light fill + gold edge lines (no vertical cap) */}
             <Area type="linear" dataKey="zoneLow" stackId="zone" stroke="none" fill="none" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} />
