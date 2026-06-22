@@ -417,11 +417,18 @@ const WeightSparkline: React.FC<{
   }
 
   const hasAny = weekData.some(d => d.actual !== undefined);
-  // Tight domain from the real weight line only (logged + smoothed) so the small
-  // weekly change is visible — not a flat line stuck in a huge 0–90 range.
+  // Fixed ±2.5 kg window around your weight (a 5 kg band) so the line never
+  // sits flat in a huge 0–90 range. Expands only if a weigh-in lands outside it.
   const wVals = weekData.flatMap(d => [d.actual, d.ema].filter(v => v !== undefined) as number[]);
-  const minW = wVals.length > 0 ? Math.floor(Math.min(...wVals) - 1) : 70;
-  const maxW = wVals.length > 0 ? Math.ceil(Math.max(...wVals) + 1) : 90;
+  const center = currentWeight > 0
+    ? currentWeight
+    : (wVals.length > 0 ? wVals.reduce((a, b) => a + b, 0) / wVals.length : 80);
+  let minW = +(center - 2.5).toFixed(1);
+  let maxW = +(center + 2.5).toFixed(1);
+  if (wVals.length > 0) {
+    minW = Math.min(minW, Math.floor(Math.min(...wVals)));
+    maxW = Math.max(maxW, Math.ceil(Math.max(...wVals)));
+  }
 
   // Tooltip mirroring the Progress chart (Logged / Smoothed / Expected)
   const renderTip = ({ active, payload, label }: any) => {
@@ -462,7 +469,7 @@ const WeightSparkline: React.FC<{
         <ResponsiveContainer width="100%" height={132}>
           <ComposedChart data={weekData} margin={{ top: 8, right: 14, bottom: 0, left: -8 }}>
             <XAxis dataKey="label" tick={(p: any) => <DayCircleTick {...p} doneFlags={weekDone} />} axisLine={false} tickLine={false} height={40} interval={0} padding={{ left: 16, right: 16 }} />
-            <YAxis domain={[minW, maxW]} tick={{ fill: '#444', fontSize: 10 }} axisLine={false} tickLine={false} width={34} />
+            <YAxis domain={[minW, maxW]} allowDataOverflow={true} tick={{ fill: '#444', fontSize: 10 }} axisLine={false} tickLine={false} width={34} />
             <Tooltip content={renderTip} />
             {/* Golden safe-zone corridor: light fill + gold edge lines (no vertical cap) */}
             <Area type="linear" dataKey="zoneLow" stackId="zone" stroke="none" fill="none" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} />
