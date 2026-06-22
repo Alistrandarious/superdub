@@ -691,8 +691,13 @@ h1, h2, h3, h4, .sora {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 16px;
   padding-bottom: 48px;
+}
+/* Cards must keep their natural height — the scroll container handles overflow.
+   Without this, flex-shrink collapses overflow:hidden cards (e.g. the hero). */
+.diet-content > * {
+  flex-shrink: 0;
 }
 
 .diet-section {
@@ -9964,10 +9969,8 @@ details[open] .plan-explainer-summary::before { content: '▾  '; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: -20px -20px 18px;
-  padding: 14px 20px;
+  padding-bottom: 14px;
   border-bottom: 1px solid var(--glass-border);
-  background: var(--glass-bg);
 }
 .plan-topbar-eyebrow {
   font-family: 'Space Mono', monospace;
@@ -9984,7 +9987,6 @@ details[open] .plan-explainer-summary::before { content: '▾  '; }
   border-radius: var(--r-lg);
   background: var(--glass-bg);
   overflow: hidden;
-  margin-bottom: 16px;
 }
 .plan-hero-accent { height: 3px; width: 100%; }
 .plan-hero-head {
@@ -10124,7 +10126,6 @@ details[open] .plan-explainer-summary::before { content: '▾  '; }
   border: 1px solid var(--glass-border);
   border-radius: var(--r-lg);
   overflow: hidden;
-  margin-bottom: 16px;
 }
 .plan-card-head {
   display: flex;
