@@ -343,28 +343,37 @@ const WeightSparkline: React.FC<{
     return localYMD(d);
   });
 
-  const weekData = weekDays.map((iso, i) => {
-    const ddmm = isoToDDMM(iso);
-    const found = allTrackerDays.find((d: any) => d.day === ddmm);
-    const actual = found && parseFloat(found.weight) > 0 ? parseFloat(found.weight) : undefined;
-    const direction = isBulk ? 1 : -1;
-    const expected = currentWeight > 0 && lossPerWeek > 0
-      ? parseFloat((currentWeight + direction * (lossPerWeek / 7) * i).toFixed(2))
-      : undefined;
-    return { label: DAY_SHORT[i], actual, expected };
-  });
-
+  // 28-day history → linear-reg trend + an EMA(α=0.25) smoothed series,
+  // mirroring the Progress weight chart logic.
   const histPts: { x: number; y: number }[] = [];
+  const emaByDDMM: Record<string, number> = {};
+  let emaAcc: number | null = null;
   for (let i = 27; i >= 0; i--) {
     const d = new Date(now); d.setDate(now.getDate() - i);
     const ddmm = isoToDDMM(localYMD(d));
     const found = allTrackerDays.find((day: any) => day.day === ddmm);
-    if (found && parseFloat(found.weight) > 0)
-      histPts.push({ x: 27 - i, y: parseFloat(found.weight) });
+    const w = found ? parseFloat(found.weight) : NaN;
+    if (w > 0) {
+      histPts.push({ x: 27 - i, y: w });
+      emaAcc = emaAcc === null ? w : 0.25 * w + 0.75 * emaAcc;
+      emaByDDMM[ddmm] = parseFloat(emaAcc.toFixed(2));
+    }
   }
 
   const reg = linearReg(histPts);
   const weeklyRate = reg?.weeklyRate ?? null;
+
+  const weekData = weekDays.map((iso, i) => {
+    const ddmm = isoToDDMM(iso);
+    const found = allTrackerDays.find((d: any) => d.day === ddmm);
+    const actual = found && parseFloat(found.weight) > 0 ? parseFloat(found.weight) : undefined;
+    const ema = emaByDDMM[ddmm];
+    const direction = isBulk ? 1 : -1;
+    const expected = currentWeight > 0 && lossPerWeek > 0
+      ? parseFloat((currentWeight + direction * (lossPerWeek / 7) * i).toFixed(2))
+      : undefined;
+    return { label: DAY_SHORT[i], actual, expected, ema, emaHalo: ema };
+  });
 
   let insightLevel: 'good' | 'great' | 'behind' | 'nodata' = 'nodata';
   let insightMsg = 'Log your weight for a few more days to unlock your trend analysis.';
@@ -388,9 +397,34 @@ const WeightSparkline: React.FC<{
   }
 
   const hasAny = weekData.some(d => d.actual !== undefined);
-  const allVals = weekData.flatMap(d => [d.actual, d.expected].filter(v => v !== undefined) as number[]);
-  const minW = allVals.length > 0 ? Math.floor(Math.min(...allVals) - 1) : 70;
+  const allVals = weekData.flatMap(d => [d.actual, d.expected, d.ema].filter(v => v !== undefined) as number[]);
+  let lo = allVals.length > 0 ? Math.min(...allVals) : 70;
+  if (goalWeight > 0) lo = Math.min(lo, goalWeight);   // floor toward goal, like Progress
+  const minW = Math.floor(lo - 1);
   const maxW = allVals.length > 0 ? Math.ceil(Math.max(...allVals) + 1) : 90;
+
+  // Tooltip mirroring the Progress chart (Logged / Smoothed / Expected)
+  const renderTip = ({ active, payload, label }: any) => {
+    if (!active || !payload?.length) return null;
+    const rows = payload.filter((e: any) => e.dataKey !== 'emaHalo' && e.value != null);
+    if (!rows.length) return null;
+    return (
+      <div style={{ background: 'rgba(12,12,18,0.97)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '8px 11px', minWidth: 120 }}>
+        <div style={{ color: '#fff', fontWeight: 700, fontFamily: "'Space Mono', monospace", fontSize: 11, marginBottom: 5 }}>{label}</div>
+        {rows.map((e: any, i: number) => {
+          const nm = e.dataKey === 'actual' ? 'Logged' : e.dataKey === 'ema' ? 'Smoothed' : 'Expected';
+          const swatch = e.dataKey === 'ema' ? '#E8ECF4' : e.dataKey === 'actual' ? '#FFFFFF' : '#2E8BFF';
+          return (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '1px 0' }}>
+              <span style={{ width: 8, height: 8, borderRadius: 2, background: swatch, flexShrink: 0 }} />
+              <span style={{ color: '#c8ccd8', fontSize: 11, fontFamily: "'Sora', sans-serif" }}>{nm}</span>
+              <span style={{ marginLeft: 'auto', paddingLeft: 12, color: '#fff', fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700 }}>{e.value} kg</span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
 
   return (
     <div className="diet-section weight-sparkline-card">
@@ -401,20 +435,21 @@ const WeightSparkline: React.FC<{
           <ComposedChart data={weekData} margin={{ top: 8, right: 4, bottom: 0, left: -18 }}>
             <XAxis dataKey="label" tick={<DayCircleTick />} axisLine={false} tickLine={false} height={28} />
             <YAxis domain={[minW, maxW]} tick={{ fill: '#444', fontSize: 10 }} axisLine={false} tickLine={false} width={38} />
-            <Tooltip
-              contentStyle={{ background: '#0d0d1a', border: '1px solid #252532', borderRadius: 8, fontSize: 12 }}
-              labelStyle={{ color: '#888' }}
-              formatter={((val: any, name: string) => [`${val} kg`, name === 'actual' ? 'Logged' : 'Expected']) as any}
-            />
-            <Line type="linear" dataKey="expected" stroke="#2E8BFF33" strokeWidth={1.5} strokeDasharray="4 3"
+            <Tooltip content={renderTip} />
+            {/* Expected/ideal path — faint blue dashed, like the Progress projection */}
+            <Line type="linear" dataKey="expected" stroke="#2E8BFF55" strokeWidth={1.5} strokeDasharray="4 3"
               dot={(props: any) => {
                 const { cx, cy, payload } = props;
                 if (payload.actual !== undefined) return <g key={cx} />;
                 return <circle key={cx} cx={cx} cy={cy} r={4} fill="none" stroke="#252532" strokeWidth={1.5} />;
               }}
-              connectNulls name="expected"
+              connectNulls name="expected" isAnimationActive={false}
             />
-            <Line type="monotone" dataKey="actual" stroke="#2E8BFF" strokeWidth={2.5} dot={{ fill: '#2E8BFF', r: 5, stroke: '#0a0d18', strokeWidth: 2 }} activeDot={{ r: 7 }} connectNulls={false} name="actual" />
+            {/* EMA smoothed — black line with a white halo, exactly like Progress */}
+            <Line type="monotone" dataKey="emaHalo" stroke="rgba(255,255,255,0.6)" strokeWidth={5} dot={false} connectNulls isAnimationActive={false} />
+            <Line type="monotone" dataKey="ema" stroke="#000000" strokeWidth={2.5} dot={false} connectNulls isAnimationActive={false} name="ema" />
+            {/* Actual logged weight — white line with hollow dots, like Progress */}
+            <Line type="monotone" dataKey="actual" stroke="#FFFFFF" strokeWidth={2.5} dot={{ r: 4, fill: '#0E0E14', stroke: '#FFFFFF', strokeWidth: 2 }} activeDot={{ r: 6 }} connectNulls={false} name="actual" />
           </ComposedChart>
         </ResponsiveContainer>
       ) : (
