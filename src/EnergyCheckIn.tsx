@@ -19,11 +19,26 @@ const MOOD_LABELS: Record<number, string> = {
   1: 'Rough', 2: 'Low', 3: 'Neutral', 4: 'Good', 5: 'Great',
 };
 
+type WorkoutIntensity = 'light' | 'moderate' | 'intense' | 'very_intense';
+
+const INTENSITY_LABELS: Record<WorkoutIntensity, string> = {
+  light: 'Light',
+  moderate: 'Moderate',
+  intense: 'Intense',
+  very_intense: 'Very Intense',
+};
+
+const DURATION_OPTIONS = [20, 30, 45, 60, 90];
+
 const EnergyCheckIn: React.FC = () => {
   const [show, setShow] = useState(false);
   const [energy, setEnergy] = useState<number | null>(null);
   const [mood, setMood] = useState<number | null>(null);
   const [adherence, setAdherence] = useState<'below' | 'about' | 'above' | null>(null);
+  const [workoutDone, setWorkoutDone] = useState<boolean | null>(null);
+  const [workoutIntensity, setWorkoutIntensity] = useState<WorkoutIntensity | null>(null);
+  const [workoutDuration, setWorkoutDuration] = useState<number | null>(null);
+  const [workoutCalories, setWorkoutCalories] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,20 +81,33 @@ const EnergyCheckIn: React.FC = () => {
       setEnergy(null);
       setMood(null);
       setAdherence(null);
+      setWorkoutDone(null);
+      setWorkoutIntensity(null);
+      setWorkoutDuration(null);
+      setWorkoutCalories(null);
       setShow(true);
     };
     window.addEventListener('superdub:show-energy-checkin', handler);
     return () => window.removeEventListener('superdub:show-energy-checkin', handler);
   }, []);
 
+  const canSave = !!(energy && mood && adherence && workoutDone !== null &&
+    (workoutDone === false || (workoutIntensity && workoutDuration)));
+
   const save = async () => {
-    if (!energy || !mood || !adherence) return;
+    if (!canSave || !energy || !mood || !adherence) return;
     setSaving(true);
     setError(null);
     try {
-      await api.submitCheckIn(energy, adherence, mood);
+      const result: any = await api.submitCheckIn(
+        energy, adherence, mood,
+        workoutDone ?? false,
+        workoutDone ? workoutIntensity ?? undefined : undefined,
+        workoutDone ? workoutDuration ?? undefined : undefined,
+      );
+      if (result?.workoutCalories) setWorkoutCalories(result.workoutCalories);
       setDone(true);
-      setTimeout(dismiss, 1000);
+      setTimeout(dismiss, 2000);
     } catch (err: any) {
       setError(err?.message ?? 'Could not save. Tap to retry.');
     } finally {
@@ -166,17 +194,66 @@ const EnergyCheckIn: React.FC = () => {
           </div>
         </div>
 
+        {/* Workout section */}
+        <div className="adherence-section">
+          <p className="energy-label-row">Did you work out today?</p>
+          <div className="adherence-btns">
+            <button
+              className={`adherence-btn${workoutDone === true ? ' selected' : ''}`}
+              onClick={() => setWorkoutDone(true)}
+            >Yes</button>
+            <button
+              className={`adherence-btn${workoutDone === false ? ' selected' : ''}`}
+              onClick={() => { setWorkoutDone(false); setWorkoutIntensity(null); setWorkoutDuration(null); }}
+            >No</button>
+          </div>
+        </div>
+
+        {workoutDone === true && (
+          <>
+            <div className="adherence-section">
+              <p className="energy-label-row">Intensity</p>
+              <div className="workout-intensity-btns">
+                {(['light', 'moderate', 'intense', 'very_intense'] as WorkoutIntensity[]).map(lvl => (
+                  <button
+                    key={lvl}
+                    className={`workout-intensity-btn${workoutIntensity === lvl ? ' selected' : ''}`}
+                    onClick={() => setWorkoutIntensity(lvl)}
+                  >{INTENSITY_LABELS[lvl]}</button>
+                ))}
+              </div>
+            </div>
+            <div className="adherence-section">
+              <p className="energy-label-row">Duration</p>
+              <div className="workout-duration-btns">
+                {DURATION_OPTIONS.map(d => (
+                  <button
+                    key={d}
+                    className={`workout-duration-btn${workoutDuration === d ? ' selected' : ''}`}
+                    onClick={() => setWorkoutDuration(d)}
+                  >{d === 90 ? '90+ min' : `${d} min`}</button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
         {/* Actions */}
         <div className="checkin-actions">
           {done ? (
-            <div className="checkin-done">✓ Logged! +5 XP</div>
+            <div className="checkin-done">
+              ✓ Logged! +5 XP
+              {workoutCalories != null && (
+                <span className="checkin-workout-cal"> · ~{workoutCalories} kcal burned</span>
+              )}
+            </div>
           ) : (
             <>
               {error && <p className="checkin-error">{error}</p>}
               <button
                 className="checkin-save-btn"
                 onClick={save}
-                disabled={saving || !energy || !mood || !adherence}
+                disabled={saving || !canSave}
               >
                 {saving ? 'Saving…' : error ? 'Retry' : 'Log it'}
               </button>

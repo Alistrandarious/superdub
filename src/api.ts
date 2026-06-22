@@ -133,9 +133,16 @@ export const api = {
   swapMeal: (body: { slotName: string; targetCal: number; diets: string[]; excludeIds: number[]; halal: boolean }) =>
     request('/meal-plans/swap', { method: 'POST', body: JSON.stringify(body) }),
 
-  // daily check-in (energy + adherence)
-  submitCheckIn: (energy: number, adherence: 'below' | 'about' | 'above', mood?: number) =>
-    request('/checkin', { method: 'POST', body: JSON.stringify({ energy, adherence, mood }) }),
+  // daily check-in (energy + adherence + optional workout)
+  submitCheckIn: (
+    energy: number,
+    adherence: 'below' | 'about' | 'above',
+    mood?: number,
+    workoutDone?: boolean,
+    workoutIntensity?: 'light' | 'moderate' | 'intense' | 'very_intense',
+    workoutDurationMin?: number,
+  ) =>
+    request('/checkin', { method: 'POST', body: JSON.stringify({ energy, adherence, mood, workoutDone, workoutIntensity, workoutDurationMin }) }),
   getRecentCheckIns: () => request('/checkin/recent'),
   getCoachingMessage: () => request('/checkin/coaching'),
   getWeeklyIntention: (weekStart: string) =>

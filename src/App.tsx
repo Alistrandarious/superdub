@@ -261,8 +261,14 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const [chartRange, setChartRange] = useState<'7d' | '1m' | '3m' | '1y' | 'all'>('all');
   const [weightZoom, setWeightZoom] = useState(false);
 
-  // Coaching message state (includes today's energy score for dynamic step target)
-  const [coachingMsg, setCoachingMsg] = useState<{ message: string; churnRisk: string; todayEnergy?: number | null } | null>(null);
+  // Coaching message state (includes today's energy score, advisable steps, workout calories)
+  const [coachingMsg, setCoachingMsg] = useState<{
+    message: string;
+    churnRisk: string;
+    todayEnergy?: number | null;
+    advisableSteps?: number | null;
+    workoutCalories?: number | null;
+  } | null>(null);
 
   // Cohort onboarding banner — shown once after signup, dismissed permanently
   const [cohortMsg] = useState<string | null>(() => localStorage.getItem('superdub:cohort-msg'));
@@ -958,7 +964,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.145</span>
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.146</span>
         </div>
 
         {/* Period picker — compact pill between brand and cog */}
@@ -1452,6 +1458,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 Daily Steps · target {effectiveStepTarget.toLocaleString()}
                 {effectiveStepTarget !== stepTarget && <span className="step-target-adjusted"> (energy-adjusted)</span>}
               </span>
+              {coachingMsg?.advisableSteps != null && (
+                <span className="step-advisable">
+                  Coach suggests <strong>{coachingMsg.advisableSteps.toLocaleString()}</strong> steps today
+                </span>
+              )}
               {walkHasData && (
                 <div className="step-chart-stats">
                   <span className="step-stat"><span className={`step-stat-val ${walkDaysHit > 0 ? 'color-health' : ''}`}>{walkDaysHit}</span> hit</span>

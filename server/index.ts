@@ -205,6 +205,9 @@ const migrations = [
   )`,
   `CREATE INDEX IF NOT EXISTS daily_checkins_user_idx ON daily_checkins (user_id, date DESC)`,
   `ALTER TABLE daily_checkins ADD COLUMN IF NOT EXISTS mood INTEGER CHECK (mood BETWEEN 1 AND 5)`,
+  `ALTER TABLE daily_checkins ADD COLUMN IF NOT EXISTS workout_done BOOLEAN`,
+  `ALTER TABLE daily_checkins ADD COLUMN IF NOT EXISTS workout_intensity TEXT CHECK (workout_intensity IN ('light','moderate','intense','very_intense'))`,
+  `ALTER TABLE daily_checkins ADD COLUMN IF NOT EXISTS workout_duration_min INTEGER CHECK (workout_duration_min > 0)`,
   // ── Weekly intentions (Sunday Review free-text) ──────────────────────────────
   `CREATE TABLE IF NOT EXISTS weekly_intentions (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -11,12 +11,23 @@ const router = Router();
 // Upsert today's energy + adherence check-in.
 // Returns 5 XP (stub — habit XP is derived from tracker_habits, not awarded here;
 // a future checkin_xp column can accumulate this when the XP system is extended).
+// MET values per intensity for calorie-burn estimation
+const WORKOUT_MET: Record<string, number> = {
+  light: 3.5,
+  moderate: 5.5,
+  intense: 8.0,
+  very_intense: 10.0,
+};
+
 router.post('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
-    const { energy, adherence, mood } = req.body as {
+    const { energy, adherence, mood, workoutDone, workoutIntensity, workoutDurationMin } = req.body as {
       energy: number;
       adherence: 'below' | 'about' | 'above';
       mood?: number;
+      workoutDone?: boolean;
+      workoutIntensity?: 'light' | 'moderate' | 'intense' | 'very_intense';
+      workoutDurationMin?: number;
     };
 
     if (!energy || energy < 1 || energy > 5) {
@@ -29,14 +40,31 @@ router.post('/', requireAuth as any, async (req: AuthRequest, res: Response) => 
       return res.status(400).json({ error: 'mood must be 1–5' });
     }
 
+    // Estimate calories burned from workout (MET × kg × hours)
+    let workoutCalories: number | null = null;
+    if (workoutDone && workoutIntensity && workoutDurationMin) {
+      const { rows: wRows } = await pool.query(
+        `SELECT weight_kg::NUMERIC AS w FROM profile WHERE user_id = $1`, [req.userId]
+      );
+      const userKg = wRows[0]?.w ? Number(wRows[0].w) : 75;
+      const met = WORKOUT_MET[workoutIntensity] ?? 5.5;
+      workoutCalories = Math.round(met * userKg * (workoutDurationMin / 60));
+    }
+
     await pool.query(
-      `INSERT INTO daily_checkins (user_id, date, energy, adherence, mood)
-       VALUES ($1, CURRENT_DATE, $2, $3, $4)
-       ON CONFLICT (user_id, date) DO UPDATE SET energy = $2, adherence = $3, mood = $4`,
-      [req.userId, Math.round(energy), adherence, mood != null ? Math.round(mood) : null]
+      `INSERT INTO daily_checkins (user_id, date, energy, adherence, mood, workout_done, workout_intensity, workout_duration_min)
+       VALUES ($1, CURRENT_DATE, $2, $3, $4, $5, $6, $7)
+       ON CONFLICT (user_id, date) DO UPDATE
+         SET energy = $2, adherence = $3, mood = $4,
+             workout_done = $5, workout_intensity = $6, workout_duration_min = $7`,
+      [req.userId, Math.round(energy), adherence,
+       mood != null ? Math.round(mood) : null,
+       workoutDone ?? false,
+       workoutDone && workoutIntensity ? workoutIntensity : null,
+       workoutDone && workoutDurationMin ? workoutDurationMin : null]
     );
 
-    res.json({ ok: true, xpAwarded: 5 });
+    res.json({ ok: true, xpAwarded: 5, workoutCalories });
   } catch (err: any) {
     console.error('[checkin POST]', err?.message);
     res.status(500).json({ error: 'Server error' });
@@ -101,7 +129,8 @@ router.get('/coaching', requireAuth as any, async (req: AuthRequest, res: Respon
   try {
     const [ciRes, priorRes, actRes, goalRes] = await Promise.all([
       pool.query(
-        `SELECT energy, adherence FROM daily_checkins WHERE user_id = $1 AND date = CURRENT_DATE`,
+        `SELECT energy, adherence, workout_done, workout_intensity, workout_duration_min
+         FROM daily_checkins WHERE user_id = $1 AND date = CURRENT_DATE`,
         [req.userId]
       ),
       pool.query(
@@ -180,7 +209,42 @@ router.get('/coaching', requireAuth as any, async (req: AuthRequest, res: Respon
 
     // Include today's energy score so frontend can compute dynamic step targets
     const todayEnergy = todayCI ? Number(todayCI.energy) : null;
-    res.json({ message: getCoachingMessage(input), churnRisk, trend, todayEnergy });
+
+    // Workout calorie burn for today (if logged)
+    let workoutCalories: number | null = null;
+    if (todayCI?.workout_done && todayCI?.workout_intensity && todayCI?.workout_duration_min) {
+      const { rows: profRows } = await pool.query(
+        `SELECT weight_kg::NUMERIC AS w, step_target FROM profile WHERE user_id = $1`, [req.userId]
+      );
+      const userKg = profRows[0]?.w ? Number(profRows[0].w) : 75;
+      const met = WORKOUT_MET[todayCI.workout_intensity as string] ?? 5.5;
+      workoutCalories = Math.round(met * userKg * (Number(todayCI.workout_duration_min) / 60));
+
+      // Advisable steps: reduce on workout days (body already stressed), increase on rest days
+      const baseSteps = profRows[0]?.step_target ? Number(profRows[0].step_target) : 10000;
+      const energyScore = todayEnergy ?? 3;
+      const workoutPenalty = todayCI.workout_intensity === 'very_intense' ? -3000
+        : todayCI.workout_intensity === 'intense' ? -2000
+        : todayCI.workout_intensity === 'moderate' ? -1000
+        : -500;
+      const energyBonus = energyScore >= 4 ? 500 : energyScore <= 2 ? -1000 : 0;
+      const trendBonus = trend === 'behind' && goalRow?.goal_type === 'lose' ? 1000 : 0;
+      const advisableSteps = Math.max(3000, Math.min(20000, baseSteps + workoutPenalty + energyBonus + trendBonus));
+      res.json({ message: getCoachingMessage(input), churnRisk, trend, todayEnergy, workoutCalories, advisableSteps });
+      return;
+    }
+
+    // No workout today — advisable steps based purely on energy + trend
+    const { rows: profRows2 } = await pool.query(
+      `SELECT step_target FROM profile WHERE user_id = $1`, [req.userId]
+    );
+    const baseSteps2 = profRows2[0]?.step_target ? Number(profRows2[0].step_target) : 10000;
+    const energyScore2 = todayEnergy ?? 3;
+    const energyBonus2 = energyScore2 >= 5 ? 2000 : energyScore2 === 4 ? 1000 : energyScore2 <= 1 ? -2000 : energyScore2 === 2 ? -1000 : 0;
+    const trendBonus2 = trend === 'behind' && goalRow?.goal_type === 'lose' ? 1500 : 0;
+    const advisableSteps = Math.max(3000, Math.min(20000, baseSteps2 + energyBonus2 + trendBonus2));
+
+    res.json({ message: getCoachingMessage(input), churnRisk, trend, todayEnergy, workoutCalories, advisableSteps });
   } catch (err: any) {
     console.error('[checkin/coaching]', err?.message);
     res.status(500).json({ error: 'Server error' });
