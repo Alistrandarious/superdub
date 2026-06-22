@@ -6357,6 +6357,27 @@ h1, h2, h3, h4, .sora {
 }
 .checkin-skip-btn:hover { color: #666; }
 
+.checkin-later-btn {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--glass-border);
+  color: rgba(255,255,255,0.7);
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 10px 12px;
+  width: 100%;
+  border-radius: 12px;
+  margin-top: 8px;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.checkin-later-btn:hover:not(:disabled) {
+  background: rgba(255,255,255,0.07);
+  color: #fff;
+  border-color: rgba(255,255,255,0.2);
+}
+.checkin-later-btn:disabled { opacity: 0.5; cursor: default; }
+
 .checkin-error {
   font-size: 0.75rem; color: #ff453a; text-align: center;
   margin: 0 0 8px; padding: 8px 12px;

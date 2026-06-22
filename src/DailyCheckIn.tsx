@@ -4,6 +4,8 @@ import { api } from './api';
 import WheelPicker from './WheelPicker';
 
 const CHECKIN_KEY = 'superdub.weight.checkin';
+const SNOOZE_KEY = 'superdub.weight.snooze';   // timestamp (ms) to re-ask after "Ask me later"
+const SNOOZE_MS = 2 * 60 * 60 * 1000;           // 2 hours
 
 function todayStr() {
   const n = new Date();
@@ -46,7 +48,10 @@ const DailyCheckIn: React.FC = () => {
         localStorage.setItem(CHECKIN_KEY, today);
         return;
       }
-      tid = setTimeout(() => setShow(true), 800);
+      // Respect an "Ask me later" snooze — re-show when it expires rather than now
+      const snooze = parseInt(localStorage.getItem(SNOOZE_KEY) || '0', 10);
+      const delay = snooze > Date.now() ? (snooze - Date.now()) : 800;
+      tid = setTimeout(() => setShow(true), delay);
     }).catch(() => {
       if (!cancelled) tid = setTimeout(() => setShow(true), 800);
     });
@@ -66,7 +71,17 @@ const DailyCheckIn: React.FC = () => {
 
   const dismiss = () => {
     localStorage.setItem(CHECKIN_KEY, todayStr());
+    localStorage.removeItem(SNOOZE_KEY);
     setShow(false);
+  };
+
+  // Snooze: hide now, re-ask in ~2h. Does NOT mark the day done.
+  const askLater = () => {
+    localStorage.setItem(SNOOZE_KEY, String(Date.now() + SNOOZE_MS));
+    setShow(false);
+    setTimeout(() => {
+      if (localStorage.getItem(CHECKIN_KEY) !== todayStr()) setShow(true);
+    }, SNOOZE_MS);
   };
 
   const save = async () => {
@@ -130,6 +145,9 @@ const DailyCheckIn: React.FC = () => {
               {error && <p className="checkin-error">{error}</p>}
               <button className="checkin-save-btn" onClick={save} disabled={saving}>
                 {saving ? 'Saving…' : error ? 'Retry' : 'Log it'}
+              </button>
+              <button className="checkin-later-btn" onClick={askLater} disabled={saving}>
+                Ask me later
               </button>
               <button className="checkin-skip-btn" onClick={dismiss} disabled={saving}>
                 Skip today
