@@ -5120,7 +5120,15 @@ h1, h2, h3, h4, .sora {
 }
 
 .bottom-nav-item.active {
-  color: #FFB928;
+  /* Icon (stroke uses currentColor) = brand green, the gradient's start */
+  color: #2FD27E;
+}
+.bottom-nav-item.active .bottom-nav-label {
+  /* Label = Superdub green→blue gradient */
+  background: var(--sd-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .bottom-nav-item:hover {
@@ -5128,7 +5136,7 @@ h1, h2, h3, h4, .sora {
 }
 
 .bottom-nav-item.active:hover {
-  color: #FFB928;
+  color: #2FD27E;
 }
 
 .bottom-nav-icon {
