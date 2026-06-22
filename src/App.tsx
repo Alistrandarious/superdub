@@ -81,11 +81,21 @@ function makeChartTooltip(emaColor: string) {
           if (entry.value == null || entry.value === 0) return null;
           const color = entry.color || entry.fill || emaColor;
           const isCount = entry.name === 'Done' || entry.name === 'Failed';
+          const isLine = !isCount; // weight, ema, trend, projection
           const isProjection = entry.name === 'Projection';
           return (
             <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '2px 0' }}>
-              <span style={{ width: 8, height: 8, borderRadius: isCount ? 2 : '50%', background: color, opacity: isProjection ? 0.5 : 1, flexShrink: 0 }} />
-              <span style={{ color: 'rgba(255,255,255,0.45)', fontFamily: "'Sora', sans-serif", fontSize: 11 }}>{entry.name}</span>
+              {isLine ? (
+                /* Line series: show a short coloured dash + centre dot */
+                <span style={{ display: 'flex', alignItems: 'center', gap: 0, flexShrink: 0, opacity: isProjection ? 0.55 : 1 }}>
+                  <span style={{ width: 8, height: 1.5, background: color, borderRadius: 1 }} />
+                  <span style={{ width: 4, height: 4, borderRadius: '50%', background: color, margin: '0 1px' }} />
+                  <span style={{ width: 8, height: 1.5, background: color, borderRadius: 1 }} />
+                </span>
+              ) : (
+                <span style={{ width: 8, height: 8, borderRadius: 2, background: color, flexShrink: 0 }} />
+              )}
+              <span style={{ color, opacity: isProjection ? 0.65 : 0.85, fontFamily: "'Sora', sans-serif", fontSize: 11 }}>{entry.name}</span>
               <span style={{ color, opacity: isProjection ? 0.65 : 1, fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700, marginLeft: 'auto', paddingLeft: 12 }}>
                 {isCount ? entry.value : `${entry.value} kg`}
               </span>
@@ -948,7 +958,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.144</span>
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.145</span>
         </div>
 
         {/* Period picker — compact pill between brand and cog */}
@@ -1364,11 +1374,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 </>
               );
             })()}
-            {/* ── Diagonal safe-zone corridor toward goal (±1.5 kg band) ── */}
+            {/* ── Diagonal safe-zone corridor toward goal: gold fill, blue dashed borders ── */}
             {zoneActive && (
               <>
-                <Area yAxisId="right" type="linear" dataKey="zoneLow" stroke="none" fill="none" legendType="none" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} stackId="zone" />
-                <Area yAxisId="right" type="linear" dataKey="zoneBand" stroke="none" fill="rgba(46,139,255,0.10)" legendType="none" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} stackId="zone" />
+                <Area yAxisId="right" type="linear" dataKey="zoneLow" stroke="#2E8BFF" strokeWidth={1.5} strokeDasharray="5 3" fill="none" legendType="none" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} stackId="zone" />
+                <Area yAxisId="right" type="linear" dataKey="zoneBand" stroke="#2E8BFF" strokeWidth={1.5} strokeDasharray="5 3" fill="rgba(255,185,0,0.13)" legendType="none" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} stackId="zone" />
               </>
             )}
             {/* ── Habit bars: green for done, red for failed, rounded tops ── */}
