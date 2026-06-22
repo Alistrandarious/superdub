@@ -1011,7 +1011,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.154</span>
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.155</span>
         </div>
 
         {/* Period picker — compact pill between brand and cog */}
@@ -1425,11 +1425,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 </>
               );
             })()}
-            {/* ── Diagonal safe-zone corridor toward goal: gold fill, blue dashed borders ── */}
+            {/* ── Diagonal safe-zone corridor toward goal: faint fill only, no border line ── */}
             {zoneActive && (
               <>
                 <Area yAxisId="right" type="linear" dataKey="zoneLow" stroke="none" fill="none" legendType="none" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} stackId="zone" />
-                <Area yAxisId="right" type="linear" dataKey="zoneBand" stroke="rgba(255,185,0,0.4)" strokeWidth={1} fill="rgba(255,185,0,0.10)" legendType="none" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} stackId="zone" />
+                <Area yAxisId="right" type="linear" dataKey="zoneBand" stroke="none" fill="rgba(255,185,0,0.08)" legendType="none" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} stackId="zone" />
               </>
             )}
             {/* ── Habit bars: green for done, red for failed, rounded tops ── */}
