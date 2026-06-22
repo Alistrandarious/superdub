@@ -909,36 +909,42 @@ const Habits: React.FC = () => {
           <span className="hb-featured-icon">🚶</span>
         </button>
 
-        {/* Archived Habits */}
-        {graveyard.length > 0 && (
-          <div className="graveyard-section" ref={graveyardRef}>
-            <button className="graveyard-toggle" onClick={() => setGraveyardOpen(g => !g)}>
-              <span>📦 Archived Habits</span>
-              <span className="graveyard-count">{graveyard.length}</span>
-              <span className="graveyard-arrow">{graveyardOpen ? '▲' : '▾'}</span>
-            </button>
-            {graveyardOpen && (
-              <div className="graveyard-list">
-                <p className="graveyard-hint">Restore a habit and it'll start fresh from today.</p>
-                {graveyard.map(h => (
-                  <div
-                    key={h.name}
-                    className={`graveyard-card ${restoringHabit === h.name ? 'rising' : ''}`}
-                  >
-                    <span className="graveyard-card-name">📁 {h.name}</span>
-                    <button
-                      className="graveyard-restore-btn"
-                      onClick={() => restoreHabit(h.name)}
-                      disabled={restoringHabit !== null}
+        {/* Archived Habits — always rendered so ref is valid for scroll */}
+        <div className="graveyard-section" ref={graveyardRef}>
+          <button className="graveyard-toggle" onClick={() => setGraveyardOpen(g => !g)}>
+            <span>📦 Archived Habits</span>
+            {graveyard.length > 0 && <span className="graveyard-count">{graveyard.length}</span>}
+            <span className="graveyard-arrow">{graveyardOpen ? '▲' : '▾'}</span>
+          </button>
+          {graveyardOpen && (
+            <div className="graveyard-list">
+              {graveyard.length === 0 ? (
+                <p className="graveyard-hint" style={{ textAlign: 'center', opacity: 0.45 }}>
+                  No archived habits yet. Archive a habit to find it here later.
+                </p>
+              ) : (
+                <>
+                  <p className="graveyard-hint">Restore a habit and it'll start fresh from today.</p>
+                  {graveyard.map(h => (
+                    <div
+                      key={h.name}
+                      className={`graveyard-card ${restoringHabit === h.name ? 'rising' : ''}`}
                     >
-                      {restoringHabit === h.name ? '✨ Restoring…' : 'Restore'}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+                      <span className="graveyard-card-name">📁 {h.name}</span>
+                      <button
+                        className="graveyard-restore-btn"
+                        onClick={() => restoreHabit(h.name)}
+                        disabled={restoringHabit !== null}
+                      >
+                        {restoringHabit === h.name ? '✨ Restoring…' : 'Restore'}
+                      </button>
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+          )}
+        </div>
 
         <div style={{ height: 100 }} />
       </div>

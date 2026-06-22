@@ -964,7 +964,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.146</span>
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.147</span>
         </div>
 
         {/* Period picker — compact pill between brand and cog */}
