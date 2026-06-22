@@ -8903,6 +8903,14 @@ h3, h4,
 }
 .color-health { color: #2FD27E; }
 .color-danger { color: #FF5470; }
+.color-cal { color: #FF8A00; }
+.calorie-chart-note {
+  margin: 8px 4px 0;
+  font-size: 10px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.38);
+  font-family: 'Sora', sans-serif;
+}
 .plan-engine-metabolic-warning {
   display: flex;
   align-items: flex-start;

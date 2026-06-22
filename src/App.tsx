@@ -817,6 +817,43 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const walkChart = walkAll.slice(-14).map(d => ({ day: d.ddmm, steps: d.steps, hit: d.steps >= effectiveStepTarget }));
   const walkHasData = walkLogged.length > 0;
 
+  // ── Estimated calorie intake — energy-balance back-calculation ──────────────
+  // probable intake(day) ≈ maintenance(BMR×activity) + step-deviation burn
+  //                         + weight-trend stored energy (7700 kcal/kg)
+  // Uses a 7-day EMA slope so the estimate is smooth, not spiky day-to-day.
+  const KCAL_PER_KG = 7700;
+  const kcalPerStep = 0.0005 * (startWeight > 0 ? startWeight : 75);
+  const calorieChartData = (() => {
+    if (!(bmr > 0)) return [] as { day: string; intake: number | null; target: number }[];
+    const EMA_A = 0.25;
+    let ema: number | null = null;
+    const rows = chartDayRange.map(({ ddmm }) => {
+      const w = parseFloat(tracker[ddmm]?.weight ?? '') || null;
+      if (w != null) ema = ema == null ? w : EMA_A * w + (1 - EMA_A) * ema;
+      const steps = parseInt(tracker[ddmm]?.steps ?? '') || 0;
+      return { ddmm, ema, steps };
+    });
+    const WIN = 7;
+    return rows.map((r, i) => {
+      if (r.ema == null && r.steps === 0) return { day: r.ddmm, intake: null, target: targetCalories };
+      // smooth daily slope over up to WIN days
+      const j = Math.max(0, i - WIN);
+      const span = i - j;
+      const emaJ = rows[j].ema;
+      const slopePerDay = (span > 0 && r.ema != null && emaJ != null) ? (r.ema - emaJ) / span : 0;
+      const wForBmr = r.ema ?? startWeight;
+      const dayBmr = (10 * wForBmr) + (6.25 * ht) - (5 * ag) + 5;
+      const maintenance = dayBmr * al;
+      const stepDev = walkAvg > 0 ? (r.steps - walkAvg) * kcalPerStep : 0;
+      const trendCals = slopePerDay * KCAL_PER_KG;
+      const intake = Math.round(maintenance + stepDev + trendCals);
+      return { day: r.ddmm, intake: intake > 600 ? intake : null, target: targetCalories };
+    });
+  })();
+  const calorieEstVals = calorieChartData.map(d => d.intake).filter((v): v is number => v != null);
+  const calorieHasData = calorieEstVals.length > 0;
+  const avgEstIntake = calorieHasData ? Math.round(calorieEstVals.reduce((a, b) => a + b, 0) / calorieEstVals.length) : 0;
+
   // ── New KPIs for the Progress page ────────────────────────────────────────
   // Total steps for the selected period (month)
   const periodStepTotal = monthDays.reduce((sum, day) => {
@@ -974,7 +1011,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.152</span>
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.153</span>
         </div>
 
         {/* Period picker — compact pill between brand and cog */}
@@ -1421,10 +1458,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               isAnimationActive={false}
               legendType="plainline"
             />
-            {/* ── Linear regression trend line — distinct gold so it reads separate from EMA ── */}
-            {hasTrend && (
-              <Line yAxisId="right" type="linear" dataKey="trend" stroke="#FFB928" strokeOpacity={0.9} strokeWidth={2} strokeDasharray="6 4" dot={false} name="Trend" connectNulls isAnimationActive={false} legendType="plainline" />
-            )}
             {/* ── EMA smoothed trend (primary engine signal) ── */}
             {hasTrend && (
               <Line
@@ -1521,6 +1554,51 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             ) : (
               <p className="walk-empty" style={{ margin: '16px 0' }}>No step data yet — steps will appear once they sync from your phone or you add them manually.</p>
             )}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Estimated Calorie Intake (energy-balance back-calculation) ── */}
+      <section className="chart-section calorie-chart-section">
+        <div className="chart-section-inner">
+          <div className="chart-container">
+            <div className="step-chart-header">
+              <span className="step-chart-eyebrow">Estimated Intake · from weight trend, steps &amp; activity</span>
+              {calorieHasData && (
+                <div className="step-chart-stats">
+                  <span className="step-stat"><span className="step-stat-val color-cal">{avgEstIntake.toLocaleString()}</span> avg kcal</span>
+                  <span className="step-stat-sep">·</span>
+                  <span className="step-stat">target <span className="step-stat-val">{targetCalories.toLocaleString()}</span></span>
+                </div>
+              )}
+            </div>
+            {calorieHasData ? (
+              <ResponsiveContainer width="100%" height={220}>
+                <ComposedChart data={calorieChartData} margin={{ left: 0, right: 10, top: 10, bottom: 8 }}>
+                  <defs>
+                    <linearGradient id="intakeFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#FF8A0055" />
+                      <stop offset="100%" stopColor="#FF8A0005" />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+                  <XAxis dataKey="day" stroke="rgba(255,255,255,0.1)" tick={chartXTick} interval={displayInterval} tickLine={false} height={36} padding={{ left: 6, right: 6 }} />
+                  <YAxis stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} width={40} axisLine={false} tickLine={false} domain={['dataMin - 200', 'dataMax + 200']} tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v)} />
+                  <Tooltip
+                    cursor={{ stroke: 'rgba(255,255,255,0.15)' }}
+                    contentStyle={{ background: '#160E06', border: '1px solid #3a2a14', borderRadius: 10, fontSize: 12 }}
+                    labelStyle={{ color: '#caa' }}
+                    formatter={(v: any) => [`${Number(v).toLocaleString()} kcal`, 'Est. intake']}
+                  />
+                  <ReferenceLine y={targetCalories} stroke="#2E8BFF" strokeDasharray="4 4" label={{ value: `${targetCalories} target`, fill: '#2E8BFF', fontSize: 10, position: 'insideTopRight' }} />
+                  <Area type="monotone" dataKey="intake" stroke="none" fill="url(#intakeFill)" connectNulls isAnimationActive={false} legendType="none" />
+                  <Line type="monotone" dataKey="intake" name="Est. intake" stroke="#FF8A00" strokeWidth={2.5} dot={{ r: 3, fill: '#0E0E14', stroke: '#FF8A00', strokeWidth: 2 }} connectNulls isAnimationActive={false} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="walk-empty" style={{ margin: '16px 0' }}>Log your weight and steps for a few days and we'll estimate your probable daily calorie intake here.</p>
+            )}
+            <p className="calorie-chart-note">Back-calculated from energy balance (weight trend + steps + activity), assuming ~7,700 kcal/kg. An estimate — not a substitute for food logging.</p>
           </div>
         </div>
       </section>
