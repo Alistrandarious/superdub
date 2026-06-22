@@ -1847,6 +1847,17 @@ h1, h2, h3, h4, .sora {
   margin: 0;
 }
 .chart-title-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.chart-title-target {
+  margin-left: auto;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255,255,255,0.45);
+  white-space: nowrap;
+}
+/* step/intake headers use the shared title row with their own stats below */
+.step-chart-header .chart-title-row { padding: 4px 6px 6px; }
 .chart-title { margin-right: auto; }                 /* push range group + cog to the right */
 .chart-title-row .chart-range-group { order: 2; }
 .chart-cog-wrap { position: relative; order: 3; }    /* cog sits on the far right */

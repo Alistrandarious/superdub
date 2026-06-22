@@ -1023,7 +1023,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.196</span>
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.197</span>
         </div>
 
         {/* Period picker — compact pill between brand and cog */}
@@ -1483,10 +1483,13 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         <div className="chart-section-inner">
           <div className="chart-container">
             <div className="step-chart-header">
-              <span className="step-chart-eyebrow">
-                Daily Steps · target {effectiveStepTarget.toLocaleString()}
-                {effectiveStepTarget !== stepTarget && <span className="step-target-adjusted"> (energy-adjusted)</span>}
-              </span>
+              <div className="chart-title-row">
+                <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#2FD27E' }} />Daily Steps</h3>
+                <span className="chart-title-target">
+                  {effectiveStepTarget.toLocaleString()} target
+                  {effectiveStepTarget !== stepTarget && <span className="step-target-adjusted"> · energy-adj</span>}
+                </span>
+              </div>
               {coachingMsg?.advisableSteps != null && coachingMsg.advisableSteps !== effectiveStepTarget && (
                 <span className="step-advisable">
                   Coach suggests <strong>{coachingMsg.advisableSteps.toLocaleString()}</strong> steps today
@@ -1524,7 +1527,17 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                     labelStyle={{ color: '#9aa' }}
                     formatter={(v: any) => [Number(v).toLocaleString() + ' steps', '']}
                   />
-                  <ReferenceLine y={effectiveStepTarget} stroke="#2E8BFF" strokeDasharray="4 4" label={{ value: effectiveStepTarget >= 1000 ? `${Math.round(effectiveStepTarget/1000)}k target` : `${effectiveStepTarget} target`, fill: '#2E8BFF', fontSize: 10, position: 'insideTopRight' }} />
+                  <ReferenceLine y={effectiveStepTarget} stroke="#2E8BFF" strokeWidth={1.5} strokeDasharray="8 4" label={(props: any) => {
+                    const { viewBox } = props;
+                    const text = `${effectiveStepTarget.toLocaleString()} target`;
+                    const w = text.length * 6.4 + 14;
+                    return (
+                      <g transform={`translate(${viewBox.x + viewBox.width - w - 6}, ${viewBox.y - 19})`}>
+                        <rect x={0} y={0} width={w} height={15} rx={4} fill="rgba(10,12,18,0.92)" stroke="rgba(46,139,255,0.45)" strokeWidth={1} />
+                        <text x={7} y={11} fill="#2E8BFF" fontSize={10} fontWeight={700} fontFamily="'Space Mono', monospace">{text}</text>
+                      </g>
+                    );
+                  }} />
                   <Bar dataKey="steps" radius={[6, 6, 0, 0]} isAnimationActive={false}>
                     {stepChartData.map((d, i) => (
                       <Cell key={i} fill={d.steps == null ? 'rgba(255,255,255,0.05)' : d.hit ? 'url(#stepHit)' : 'url(#stepMiss)'} />
@@ -1544,12 +1557,15 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         <div className="chart-section-inner">
           <div className="chart-container">
             <div className="step-chart-header">
-              <span className="step-chart-eyebrow">Estimated Intake · from weight trend, steps &amp; activity</span>
+              <div className="chart-title-row">
+                <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#FF8A00' }} />Estimated Intake</h3>
+                {calorieHasData && <span className="chart-title-target">{targetCalories.toLocaleString()} kcal target</span>}
+              </div>
               {calorieHasData && (
                 <div className="step-chart-stats">
                   <span className="step-stat"><span className="step-stat-val color-cal">{avgEstIntake.toLocaleString()}</span> avg kcal</span>
                   <span className="step-stat-sep">·</span>
-                  <span className="step-stat">target <span className="step-stat-val">{targetCalories.toLocaleString()}</span></span>
+                  <span className="step-stat">from weight trend, steps &amp; activity</span>
                 </div>
               )}
             </div>
