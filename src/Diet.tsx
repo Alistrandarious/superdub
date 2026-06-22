@@ -909,177 +909,116 @@ const Diet: React.FC = () => {
       {/* ── Full scrollable content ── */}
       <div className="diet-content page-content">
 
-      {/* Plan summary */}
-      <div style={{ borderBottom: '1px solid #2A2D3A', margin: '-20px -20px 20px', background: '#08091400' }}>
-        {/* Accent bar */}
-        <div style={{ height: 3, background: `linear-gradient(90deg, ${accent}, ${accent}22)` }} />
+      <div className="plan-topbar">
+        <div className="hb-brand">
+          <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span>
+        </div>
+        <span className="plan-topbar-eyebrow">Plans</span>
+      </div>
 
-        {/* Goal + edit */}
-        <div style={{ display: 'flex', alignItems: 'center', padding: '12px 20px 8px', gap: 10 }}>
-          <span style={{
-            fontSize: '0.7rem', fontWeight: 700, color: accent,
-            background: accent + '18', border: `1px solid ${accent}40`,
-            borderRadius: 20, padding: '3px 11px',
-          }}>
-            {goalLabel}
-          </span>
-          {weeksLeft && (
-            <span style={{ fontSize: '0.7rem', color: '#555', flex: 1 }}>~{weeksLeft}w to goal</span>
-          )}
-          <button onClick={() => navigate('/profile')} style={{
-            marginLeft: 'auto', background: 'none', border: '1px solid #252532',
-            color: '#777', padding: '4px 12px', borderRadius: 7,
-            fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer',
-          }}>Edit →</button>
+      {/* Plan summary hero */}
+      <section className="plan-hero">
+        <div className="plan-hero-accent" style={{ background: `linear-gradient(90deg, ${accent}, ${accent}22)` }} />
+
+        <div className="plan-hero-head">
+          <span className="plan-goal-pill" style={{ color: accent, background: accent + '18', borderColor: accent + '40' }}>{goalLabel}</span>
+          {weeksLeft && <span className="plan-hero-eta">~{weeksLeft}w to goal</span>}
+          <button className="plan-hero-edit" onClick={() => navigate('/profile')}>Edit →</button>
         </div>
 
-        {/* Weight row */}
-        <div style={{ display: 'flex', alignItems: 'center', padding: '4px 20px 12px', gap: 0 }}>
-          {/* Current */}
-          <div style={{ minWidth: 80 }}>
-            <div style={{ fontSize: '0.55rem', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-              {todayWeight !== null ? 'Today' : 'Current'}
-            </div>
-            <div style={{ fontSize: '1.9rem', fontWeight: 800, color: '#e0e4f0', lineHeight: 1.1 }}>
-              {displayWeight > 0 ? displayWeight.toFixed(1) : '—'}
-            </div>
-            <div style={{ fontSize: '0.75rem', color: '#555', display: 'flex', alignItems: 'center', gap: 4 }}>
-              kg
-              {todayWeight !== null && (
-                <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#2FD27E', display: 'inline-block' }} />
-              )}
-            </div>
+        <div className="plan-hero-weights">
+          <div className="plan-weight-col">
+            <span className="plan-weight-label">{todayWeight !== null ? 'Today' : 'Current'}</span>
+            <span className="plan-weight-num">{displayWeight > 0 ? displayWeight.toFixed(1) : '—'}</span>
+            <span className="plan-weight-unit">kg{todayWeight !== null && <i className="plan-weight-dot" />}</span>
           </div>
-
-          {/* Arrow */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '0 8px' }}>
-            <div style={{ width: '100%', display: 'flex', alignItems: 'center' }}>
-              <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#2a3a4a', flexShrink: 0 }} />
-              <div style={{ flex: 1, height: 1.5, background: `linear-gradient(90deg, #ffffff18, ${accent}55)` }} />
-              <div style={{ width: 6, height: 6, borderRadius: '50%', background: accent, flexShrink: 0, boxShadow: `0 0 6px ${accent}80` }} />
+          <div className="plan-weight-track">
+            <div className="plan-track-line">
+              <span className="plan-track-dot start" />
+              <span className="plan-track-bar" style={{ background: `linear-gradient(90deg, #ffffff18, ${accent}55)` }} />
+              <span className="plan-track-dot end" style={{ background: accent, boxShadow: `0 0 6px ${accent}80` }} />
             </div>
             {weightDiff !== null && (
-              <span style={{ fontSize: '0.65rem', color: '#555' }}>
-                {goal === 'bulk' ? '+' : '−'}{weightDiff.toFixed(1)} kg
-              </span>
+              <span className="plan-track-delta">{goal === 'bulk' ? '+' : '−'}{weightDiff.toFixed(1)} kg</span>
             )}
           </div>
-
-          {/* Goal weight */}
-          <div style={{ minWidth: 80, textAlign: 'right' }}>
-            <div style={{ fontSize: '0.55rem', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Goal</div>
-            <div style={{ fontSize: '1.9rem', fontWeight: 800, color: accent, lineHeight: 1.1 }}>
-              {goalWeight > 0 ? goalWeight.toFixed(1) : '—'}
-            </div>
-            <div style={{ fontSize: '0.75rem', color: '#555' }}>kg</div>
+          <div className="plan-weight-col right">
+            <span className="plan-weight-label">Goal</span>
+            <span className="plan-weight-num" style={{ color: accent }}>{goalWeight > 0 ? goalWeight.toFixed(1) : '—'}</span>
+            <span className="plan-weight-unit">kg</span>
           </div>
         </div>
 
-        {/* Calorie strip */}
-        <div style={{ display: 'flex', borderTop: '1px solid #0d1825', borderBottom: '1px solid #0d1825', background: 'rgba(0,0,0,0.25)' }}>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 0', gap: 2 }}>
-            <span style={{ fontSize: '1rem', fontWeight: 800, color: '#dde' }}>{macroCalories.toLocaleString()}</span>
-            <span style={{ fontSize: '0.58rem', color: '#555', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Goal kcal</span>
+        <div className="plan-kcal-strip">
+          <div className="plan-kcal-cell">
+            <span className="plan-kcal-num">{macroCalories.toLocaleString()}</span>
+            <span className="plan-kcal-lbl">Goal kcal</span>
           </div>
           {maintenance > 0 && (
             <>
-              <div style={{ width: 1, background: '#252532' }} />
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 0', gap: 2 }}>
-                <span style={{ fontSize: '1rem', fontWeight: 800, color: '#dde' }}>{maintenance.toLocaleString()}</span>
-                <span style={{ fontSize: '0.58rem', color: '#555', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Maintenance</span>
+              <div className="plan-kcal-div" />
+              <div className="plan-kcal-cell">
+                <span className="plan-kcal-num">{maintenance.toLocaleString()}</span>
+                <span className="plan-kcal-lbl">Maintenance</span>
               </div>
-              <div style={{ width: 1, background: '#252532' }} />
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 0', gap: 2 }}>
-                <span style={{ fontSize: '1rem', fontWeight: 800, color: deficit < 0 ? '#2FD27E' : deficit > 0 ? '#ff453a' : '#888' }}>
+              <div className="plan-kcal-div" />
+              <div className="plan-kcal-cell">
+                <span className={`plan-kcal-num ${deficit < 0 ? 'good' : deficit > 0 ? 'bad' : ''}`}>
                   {deficit === 0 ? '±0' : `${deficit > 0 ? '+' : ''}${deficit.toLocaleString()}`}
                 </span>
-                <span style={{ fontSize: '0.58rem', color: '#555', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  {deficit < 0 ? 'Deficit' : deficit > 0 ? 'Surplus' : 'Balance'}
-                </span>
+                <span className="plan-kcal-lbl">{deficit < 0 ? 'Deficit' : deficit > 0 ? 'Surplus' : 'Balance'}</span>
               </div>
             </>
           )}
         </div>
 
-        {/* Macro chips */}
-        <div style={{ display: 'flex', gap: 8, padding: '10px 20px 14px' }}>
+        <div className="plan-macro-row">
           {[
-            { val: target.protein, lbl: 'Protein', color: '#ff6ec7' },
+            { val: target.protein, lbl: 'Protein', color: '#FF6EC7' },
             { val: target.carbs,   lbl: 'Carbs',   color: '#2E8BFF' },
-            { val: target.fats,    lbl: 'Fats',     color: '#ffd60a' },
+            { val: target.fats,    lbl: 'Fats',    color: '#FFD60A' },
           ].map(m => (
-            <div key={m.lbl} style={{
-              flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-              background: 'rgba(255,255,255,0.03)', border: `1px solid ${m.color}25`,
-              borderRadius: 10, padding: '8px 4px', gap: 2,
-            }}>
-              <span style={{ fontSize: '0.95rem', fontWeight: 800, color: m.color }}>{m.val}g</span>
-              <span style={{ fontSize: '0.56rem', color: '#555', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{m.lbl}</span>
+            <div key={m.lbl} className="plan-macro-chip" style={{ borderColor: m.color + '30' }}>
+              <span className="plan-macro-num" style={{ color: m.color }}>{m.val}g</span>
+              <span className="plan-macro-lbl">{m.lbl}</span>
             </div>
           ))}
         </div>
 
-        {/* Rate → deficit line */}
         {lossPerWeek > 0 && goal !== 'maintain' && (
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '8px 20px 12px', fontSize: '0.7rem',
-          }}>
-            <span style={{ color: '#444' }}>
+          <div className="plan-rate-line">
+            <span className="plan-rate-text">
               {goal === 'bulk' ? 'Gain' : 'Lose'} {lossPerWeek} kg/wk
-              <span style={{ color: '#333', margin: '0 6px' }}>→</span>
+              <span className="plan-rate-arrow">→</span>
               {Math.round(lossPerWeek * 7700 / 7).toLocaleString()} kcal/day {goal === 'bulk' ? 'surplus' : 'deficit'} needed
             </span>
             {maintenance > 0 && (
-              <span style={{
-                fontSize: '0.65rem', fontWeight: 700,
-                color: Math.abs(deficit) >= Math.round(lossPerWeek * 7700 / 7) * 0.85 ? '#2FD27E' : '#FFD233',
-              }}>
+              <span className={`plan-rate-flag ${Math.abs(deficit) >= Math.round(lossPerWeek * 7700 / 7) * 0.85 ? 'ok' : 'warn'}`}>
                 {Math.abs(deficit) >= Math.round(lossPerWeek * 7700 / 7) * 0.85 ? '✓ On track' : '⚠ Off target'}
               </span>
             )}
           </div>
         )}
-      </div>
+      </section>
 
         {/* Today's Meal Plan */}
         {latestPlan && (
-          <div style={{
-            background: '#15151E', border: '1px solid #252532',
-            borderRadius: 14, overflow: 'hidden',
-          }}>
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '12px 16px 10px',
-              borderBottom: '1px solid #111d2a',
-            }}>
-              <span style={{ fontSize: '0.72rem', color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
-                Today's Meal Plan
-              </span>
-              <span style={{ fontSize: '0.72rem', color: '#333' }}>{latestPlan.label}</span>
+          <div className="plan-card">
+            <div className="plan-card-head">
+              <span className="plan-card-title">Today's Meal Plan</span>
+              <span className="plan-card-sub">{latestPlan.label}</span>
             </div>
             {(latestPlan.meals ?? []).map((m: any) => (
-              <div key={m.slot} style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '9px 16px', borderBottom: '1px solid #0e1520',
-              }}>
-                <span style={{ fontSize: '0.65rem', color: '#2E8BFF', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', width: 68, flexShrink: 0 }}>
-                  {m.slot}
-                </span>
-                <span style={{ flex: 1, fontSize: '0.8rem', color: '#ccc', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {m.recipe?.title ?? 'Protein Shake'}
-                </span>
-                <span style={{ fontSize: '0.72rem', color: '#444', flexShrink: 0 }}>
-                  {m.macros?.calories} kcal
-                </span>
+              <div key={m.slot} className="plan-meal-row">
+                <span className="plan-meal-slot">{m.slot}</span>
+                <span className="plan-meal-name">{m.recipe?.title ?? 'Protein Shake'}</span>
+                <span className="plan-meal-cal">{m.macros?.calories} kcal</span>
               </div>
             ))}
-            <div style={{
-              display: 'flex', justifyContent: 'space-between', padding: '10px 16px',
-              background: 'rgba(0,0,0,0.2)',
-            }}>
-              <span style={{ fontSize: '0.72rem', color: '#555' }}>Total</span>
-              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#2E8BFF' }}>
+            <div className="plan-meal-total">
+              <span className="plan-meal-total-lbl">Total</span>
+              <span className="plan-meal-total-val">
                 {latestPlan.totals?.calories} kcal · P {latestPlan.totals?.protein}g · C {latestPlan.totals?.carbs}g · F {latestPlan.totals?.fat}g
               </span>
             </div>
