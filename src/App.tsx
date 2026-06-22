@@ -973,7 +973,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.150</span>
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.151</span>
         </div>
 
         {/* Period picker — compact pill between brand and cog */}
@@ -1368,9 +1368,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             })()} width={42} axisLine={false} tickLine={false} />
             <Tooltip
               cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-              contentStyle={{ background: 'rgba(14,14,20,0.96)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, boxShadow: '0 10px 30px rgba(0,0,0,0.55)', padding: '9px 12px' }}
-              labelStyle={{ color: '#FFFFFF', fontWeight: 700, fontFamily: "'Space Mono', monospace", fontSize: 12, marginBottom: 5 }}
-              itemStyle={{ color: '#C4C4D0', fontFamily: "'Sora', sans-serif", fontSize: 12, padding: '2px 0' }}
+              content={renderTooltip}
             />
             {(() => {
               // Prefer adaptive plan target weight, fall back to weight-settings goal
