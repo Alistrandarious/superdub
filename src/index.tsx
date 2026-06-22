@@ -17,6 +17,7 @@ import DailyCheckIn from './DailyCheckIn';
 import EnergyCheckIn from './EnergyCheckIn';
 import StepEntry from './StepEntry';
 import BottomNav from './BottomNav';
+import UpdateBanner from './UpdateBanner';
 import { Auth } from './Auth';
 import { isLoggedIn, clearToken, api } from './api';
 import { initStepSync } from './stepSync';
@@ -94,6 +95,7 @@ function Root() {
   return (
     <BrowserRouter>
       <XPProvider>
+        <UpdateBanner />
         <AppRouter />
       </XPProvider>
     </BrowserRouter>
