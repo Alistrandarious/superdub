@@ -781,7 +781,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     hmStart.setDate(hmStart.getDate() - ((hmStart.getDay() + 6) % 7));
     weeks = Math.ceil((Math.floor((hmEnd.getTime() - hmStart.getTime()) / 86400000) + 1) / 7);
   }
-  const heatmapCells: { ddmm: string; ratio: number; monthIdx: number; state: 'good' | 'change' | 'off' }[] = [];
+  const heatmapCells: { ddmm: string; ratio: number; monthIdx: number; state: 'active' | 'off' }[] = [];
   for (let w = 0; w < weeks; w++) {
     for (let dow = 0; dow < 7; dow++) {
       const dt = new Date(hmStart);
@@ -794,10 +794,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       const ratio = habits.length > 0 ? done / habits.length : 0;
       // "On the app" that day = any logged activity
       const onApp = !!d && (!!d.weight || !!d.calories || !!d.steps || habits.some(h => d.habits[h] === true || d.habits[h] === ('failed' as any)));
-      let state: 'good' | 'change' | 'off';
-      if (future || preSignup || !onApp) state = 'off';                       // wasn't on the app → black
-      else if (habits.length > 0 && done === habits.length) state = 'good';   // perfect day → blue
-      else state = 'change';                                                  // on app but missed → white
+      // Active days FILL (blue, by completion); days not on the app are WHITE
+      const state: 'active' | 'off' = (future || preSignup || !onApp) ? 'off' : 'active';
       heatmapCells.push({ ddmm, ratio, monthIdx: dt.getMonth(), state });
     }
   }
@@ -1023,7 +1021,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.190</span>
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.191</span>
         </div>
 
         {/* Period picker — compact pill between brand and cog */}
@@ -1614,7 +1612,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               <div
                 key={i}
                 className={`heatmap-cell hm-${c.state}`}
-                title={`${c.ddmm}: ${c.state === 'off' ? 'no activity' : c.state === 'good' ? 'all habits done' : `${Math.round(c.ratio * 100)}% — needs attention`}`}
+                style={c.state === 'active' ? ({ '--lvl': Math.max(c.ratio, 0.22) } as React.CSSProperties) : undefined}
+                title={`${c.ddmm}: ${c.state === 'off' ? 'not on the app' : `${Math.round(c.ratio * 100)}% of habits done`}`}
               />
             ))}
           </div>

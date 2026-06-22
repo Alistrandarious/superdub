@@ -8071,14 +8071,13 @@ h3, h4,
   border-radius: 3px;
   background: rgba(255,255,255,0.04);
 }
-/* Perfect day — all habits done → blue */
-.heatmap-cell.hm-good { background: #2E8BFF; }
-/* On the app but missed habits — needs to change → white */
-.heatmap-cell.hm-change { background: #FFFFFF; }
-/* Wasn't on the app (before signup, no activity, or future) → black */
+/* Active day (on the app) — filled blue, intensity by habit completion */
+.heatmap-cell.hm-active {
+  background: color-mix(in srgb, #2E8BFF calc(var(--lvl, 0.22) * 92%), rgba(255,255,255,0.06));
+}
+/* Not on the app (before signup, no activity, or future) → white */
 .heatmap-cell.hm-off {
-  background: #000000;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
+  background: rgba(255,255,255,0.9);
 }
 .heatmap-months {
   display: grid;
