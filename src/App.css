@@ -10069,6 +10069,52 @@ details[open] .plan-explainer-summary::before { content: '▾  '; }
 .plan-track-bar { flex: 1; height: 1.5px; }
 .plan-track-delta { font-family: 'Space Mono', monospace; font-size: 0.65rem; color: rgba(255,255,255,0.4); }
 
+/* Two progress lines in the hero: time elapsed (flame) vs weight done (accent) */
+.plan-hero-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 2px 16px 14px;
+}
+.plan-pbar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.plan-pbar-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.45);
+  width: 44px;
+  flex-shrink: 0;
+}
+.plan-pbar-track {
+  flex: 1;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: rgba(255,255,255,0.06);
+  overflow: hidden;
+}
+.plan-pbar-fill {
+  height: 100%;
+  border-radius: var(--r-pill);
+  transition: width 0.4s ease;
+}
+.plan-pbar-flame {
+  background: linear-gradient(90deg, #FF4D00 0%, #FF8A00 55%, #FFC247 100%);
+}
+.plan-pbar-pct {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #E8ECF4;
+  width: 36px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
 /* kcal strip */
 .plan-kcal-strip {
   display: flex;

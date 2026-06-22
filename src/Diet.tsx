@@ -775,11 +775,14 @@ const Diet: React.FC = () => {
   const [weeklyActivities, setWeeklyActivities] = useState<WeeklyActivity[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [latestPlan, setLatestPlan] = useState<any | null>(null);
+  const [planGoal, setPlanGoal] = useState<any | null>(null);
 
   useEffect(() => {
     api.getDietPlans().then((plans: any[]) => {
       if (plans.length > 0) setLatestPlan(plans[0]);
     }).catch(() => {});
+    // Plan goal drives the time-vs-weight progress bars in the hero
+    api.getPlanStatus().then((s: any) => { if (s?.active) setPlanGoal(s.goal); }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -905,6 +908,17 @@ const Diet: React.FC = () => {
   const weeksLeft = weightDiff && lossPerWeek > 0 ? Math.ceil(weightDiff / lossPerWeek) : null;
   const deficit = maintenance > 0 ? macroCalories - maintenance : 0;
 
+  // ── Two progress tracks for the hero: time elapsed (flame) vs weight done (accent) ──
+  const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
+  const startW = planGoal?.startWeight ?? null;
+  const targetW = planGoal?.targetWeight ?? (goalWeight > 0 ? goalWeight : null);
+  const startMs = planGoal?.startDate ? new Date(planGoal.startDate).getTime() : null;
+  const targetMs = planGoal?.targetDate ? new Date(planGoal.targetDate).getTime() : null;
+  const weightPct = (startW != null && targetW != null && startW !== targetW && displayWeight > 0)
+    ? clamp01((startW - displayWeight) / (startW - targetW)) : null;
+  const timePct = (startMs != null && targetMs != null && targetMs > startMs)
+    ? clamp01((Date.now() - startMs) / (targetMs - startMs)) : null;
+
   return (
     <div className="app flush" style={{ '--theme': '#2E8BFF', '--theme-dim': '#2E8BFF66', '--theme-glow': '#2E8BFF33' } as React.CSSProperties}>
       {/* ── Full scrollable content ── */}
@@ -915,7 +929,6 @@ const Diet: React.FC = () => {
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
           <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span>
         </div>
-        <span className="plan-topbar-eyebrow">Plan</span>
       </div>
 
       {/* Plan summary hero */}
@@ -950,6 +963,26 @@ const Diet: React.FC = () => {
             <span className="plan-weight-unit">kg</span>
           </div>
         </div>
+
+        {/* Two progress lines: time elapsed (flame) vs weight done (accent) */}
+        {(timePct !== null || weightPct !== null) && (
+          <div className="plan-hero-progress">
+            <div className="plan-pbar-row">
+              <span className="plan-pbar-label">Time</span>
+              <div className="plan-pbar-track">
+                <div className="plan-pbar-fill plan-pbar-flame" style={{ width: `${Math.round((timePct ?? 0) * 100)}%` }} />
+              </div>
+              <span className="plan-pbar-pct">{timePct !== null ? `${Math.round(timePct * 100)}%` : '—'}</span>
+            </div>
+            <div className="plan-pbar-row">
+              <span className="plan-pbar-label">Weight</span>
+              <div className="plan-pbar-track">
+                <div className="plan-pbar-fill" style={{ width: `${Math.round((weightPct ?? 0) * 100)}%`, background: accent }} />
+              </div>
+              <span className="plan-pbar-pct">{weightPct !== null ? `${Math.round(weightPct * 100)}%` : '—'}</span>
+            </div>
+          </div>
+        )}
 
         <div className="plan-kcal-strip">
           <div className="plan-kcal-cell">
