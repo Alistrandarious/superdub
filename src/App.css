@@ -1802,7 +1802,7 @@ h1, h2, h3, h4, .sora {
    CHART SECTION
    ===================================================================== */
 .chart-section {
-  margin: 6px 16px 0;
+  margin: 0 16px 22px;
   padding: 6px 0 14px;
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -1826,6 +1826,103 @@ h1, h2, h3, h4, .sora {
   gap: 6px;
   flex-wrap: wrap;
 }
+
+/* ── Chart title row + cog filter ── */
+.chart-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px 8px;
+  flex-wrap: wrap;
+}
+.chart-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: 'Sora', sans-serif;
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: #E8ECF4;
+  margin: 0;
+}
+.chart-title-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.chart-title-row .chart-range-group { margin-left: auto; }
+
+.chart-cog-wrap { position: relative; }
+.chart-cog-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px;
+  border-radius: 9px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255,255,255,0.03);
+  color: rgba(255,255,255,0.6);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.chart-cog-btn.active, .chart-cog-btn:hover { color: #fff; border-color: rgba(255,255,255,0.25); }
+.chart-cog-overlay { position: fixed; inset: 0; z-index: 40; }
+.chart-cog-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 50;
+  width: 210px;
+  max-height: 280px;
+  overflow-y: auto;
+  background: rgba(16,18,26,0.98);
+  border: 1px solid var(--glass-border-strong);
+  border-radius: 14px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+  padding: 8px;
+  animation: fadeUp 0.16s ease both;
+}
+.chart-cog-title, .chart-cog-sub {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.4);
+  padding: 4px 8px;
+}
+.chart-cog-sub { margin-top: 4px; border-top: 1px solid var(--glass-border); padding-top: 8px; }
+.chart-cog-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 9px;
+  color: #d8dce6;
+  font-family: 'Sora', sans-serif;
+  font-size: 0.82rem;
+  text-align: left;
+}
+.chart-cog-row:hover { background: rgba(255,255,255,0.05); }
+.chart-cog-toggle {
+  margin-left: auto;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.5);
+}
+.chart-cog-toggle.on { background: rgba(47,210,126,0.18); color: #2FD27E; }
+.chart-cog-check {
+  width: 18px; height: 18px;
+  flex-shrink: 0;
+  border-radius: 5px;
+  border: 1.5px solid var(--glass-border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; color: #0E0E14; font-weight: 800;
+}
+.chart-cog-check.on { background: #2FD27E; border-color: #2FD27E; }
+.chart-cog-habit { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .chart-range-btn {
   background: transparent;

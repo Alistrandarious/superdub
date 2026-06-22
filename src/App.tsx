@@ -110,7 +110,7 @@ function makeChartTooltip(emaColor: string, todayDDMM: string) {
         {payload.map((entry: any, idx: number) => {
           if (entry.value == null || entry.value === 0) return null;
           // Filter internal zone series — never show in tooltip
-          if (entry.name === 'zoneLow' || entry.name === 'zoneBand' || entry.name === 'zoneHigh') return null;
+          if (entry.name === 'zoneLow' || entry.name === 'zoneBand' || entry.name === 'zoneHigh' || entry.name === 'ema') return null;
           const color = entry.color || entry.fill || emaColor;
           const isCount = entry.name === 'Done' || entry.name === 'Failed';
           // Never show habit counts for future projected days
@@ -296,6 +296,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   // Chart state
   const [chartRange, setChartRange] = useState<'7d' | '1m' | '3m' | '1y' | 'all'>('7d');
   const [weightZoom, setWeightZoom] = useState(false);
+  const [chartCogOpen, setChartCogOpen] = useState(false);
+  const [hiddenHabits, setHiddenHabits] = useState<Set<string>>(new Set());
 
   // Coaching message state (includes today's energy score, advisable steps, workout calories)
   const [coachingMsg, setCoachingMsg] = useState<{
@@ -650,8 +652,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   // Build base (daily) chart data (trend = linear regression line, ema = smoothed signal)
   const dailyChartData = chartDayRange.map(({ ddmm, date }, i) => {
     const d = tracker[ddmm] ?? { weight: '', habits: {}, calories: '', protein: '', carbs: '', fats: '', steps: '' };
-    const completed = habits.filter(h => d.habits[h] === true).length;
-    const failed = habits.filter(h => d.habits[h] === 'failed').length;
+    const completed = habits.filter(h => !hiddenHabits.has(h) && d.habits[h] === true).length;
+    const failed = habits.filter(h => !hiddenHabits.has(h) && d.habits[h] === 'failed').length;
     const ema = chartEMA[i] != null ? chartEMA[i] : null;
     // Only show trend line where we have real weight data nearby (within 3 days)
     const nearbyWeight = weightPoints.some(p => Math.abs(p.i - i) <= 3);
@@ -1021,7 +1023,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.191</span>
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.192</span>
         </div>
 
         {/* Period picker — compact pill between brand and cog */}
@@ -1260,11 +1262,44 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
       {/* Adaptive Weight Plan engine card moved to the Plan page — Progress is visuals/tracking only */}
 
-      <section className="chart-section">
-        <div className="chart-range-tabs">
-          <button className={`chart-expand-btn${!weightZoom ? ' active' : ''}`} onClick={() => setWeightZoom(z => !z)}>
-            Habits <span aria-hidden>{weightZoom ? '✕' : '✓'}</span>
-          </button>
+      <section className="chart-section chart-section--weight">
+        <div className="chart-title-row">
+          <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#FFFFFF' }} />Weight Trend</h3>
+          <div className="chart-cog-wrap">
+            <button className={`chart-cog-btn${chartCogOpen ? ' active' : ''}`} onClick={() => setChartCogOpen(o => !o)} aria-label="Chart options">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </button>
+            {chartCogOpen && (
+              <>
+                <div className="chart-cog-overlay" onClick={() => setChartCogOpen(false)} />
+                <div className="chart-cog-menu">
+                  <div className="chart-cog-title">Habit bars</div>
+                  <button className="chart-cog-row" onClick={() => setWeightZoom(z => !z)}>
+                    <span>{weightZoom ? 'Show habit bars' : 'Hide habit bars'}</span>
+                    <span className={`chart-cog-toggle ${!weightZoom ? 'on' : ''}`}>{!weightZoom ? 'ON' : 'OFF'}</span>
+                  </button>
+                  {!weightZoom && habits.length > 0 && (
+                    <>
+                      <div className="chart-cog-sub">Filter habits</div>
+                      {habits.map(h => {
+                        const shown = !hiddenHabits.has(h);
+                        return (
+                          <button key={h} className="chart-cog-row" onClick={() => setHiddenHabits(prev => {
+                            const next = new Set(prev);
+                            if (next.has(h)) next.delete(h); else next.add(h);
+                            return next;
+                          })}>
+                            <span className={`chart-cog-check ${shown ? 'on' : ''}`}>{shown ? '✓' : ''}</span>
+                            <span className="chart-cog-habit">{h}</span>
+                          </button>
+                        );
+                      })}
+                    </>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
           <div className="chart-range-group">
             {(['7d', '1m', '3m', '1y', 'all'] as const).map(r => {
               const enabled = rangeAvailable(r);
@@ -1307,7 +1342,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               />
             ))}
             <XAxis dataKey="day" stroke="rgba(255,255,255,0.1)" tick={chartXTick} interval={displayInterval} tickLine={false} height={36} padding={{ left: 10 }} />
-            <YAxis yAxisId="left" hide={weightZoom} stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} allowDecimals={false} width={30} axisLine={false} tickLine={false} domain={[0, habits.length]} />
+            <YAxis yAxisId="left" hide={weightZoom} stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} allowDecimals={false} width={30} axisLine={false} tickLine={false} domain={[0, Math.max(1, habits.length - hiddenHabits.size)]} />
             <YAxis yAxisId="right" orientation="right" stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} allowDecimals={false} tickCount={5} allowDataOverflow={true} domain={(() => {
               const weights = chartData.map(d => d.weight).filter(Boolean) as number[];
               const emas    = chartData.map((d: any) => d.ema).filter(Boolean) as number[];
@@ -1466,6 +1501,16 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             {walkHasData ? (
               <ResponsiveContainer width="100%" height={180}>
                 <ComposedChart data={stepChartData} margin={{ left: 0, right: 10, top: 8, bottom: 4 }}>
+                  <defs>
+                    <linearGradient id="stepHit" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#5BF9A6" />
+                      <stop offset="100%" stopColor="#159b53" />
+                    </linearGradient>
+                    <linearGradient id="stepMiss" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#FFA45C" />
+                      <stop offset="100%" stopColor="#FF4D6E" />
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
                   <XAxis dataKey="day" stroke="rgba(255,255,255,0.1)" tick={chartXTick} interval={displayInterval} tickLine={false} height={36} padding={{ left: 6, right: 6 }} />
                   <YAxis stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} width={36} axisLine={false} tickLine={false} tickFormatter={(v: number) => v >= 1000 ? `${Math.round(v / 1000)}k` : String(v)} />
@@ -1476,9 +1521,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                     formatter={(v: any) => [Number(v).toLocaleString() + ' steps', '']}
                   />
                   <ReferenceLine y={effectiveStepTarget} stroke="#2E8BFF" strokeDasharray="4 4" label={{ value: effectiveStepTarget >= 1000 ? `${Math.round(effectiveStepTarget/1000)}k target` : `${effectiveStepTarget} target`, fill: '#2E8BFF', fontSize: 10, position: 'insideTopRight' }} />
-                  <Bar dataKey="steps" radius={[4, 4, 0, 0]} isAnimationActive={false}>
+                  <Bar dataKey="steps" radius={[6, 6, 0, 0]} isAnimationActive={false}>
                     {stepChartData.map((d, i) => (
-                      <Cell key={i} fill={d.steps == null ? 'rgba(255,255,255,0.06)' : d.hit ? '#2FD27E' : '#FF5470'} />
+                      <Cell key={i} fill={d.steps == null ? 'rgba(255,255,255,0.05)' : d.hit ? 'url(#stepHit)' : 'url(#stepMiss)'} />
                     ))}
                   </Bar>
                 </ComposedChart>
