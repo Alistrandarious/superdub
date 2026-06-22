@@ -70,6 +70,49 @@ const ChartXTick: React.FC<any> = ({ x, y, payload }) => {
 };
 
 // ── Color-matched tooltip ─────────────────────────────────────────────────────
+// Near-black colours are invisible on the dark UI — swap them for a light tone in text.
+function legibleColor(c: string): string {
+  if (!c) return '#E8ECF4';
+  const v = c.toLowerCase().replace(/\s/g, '');
+  if (v === '#000' || v === '#000000' || v === 'black') return '#E8ECF4';
+  return c;
+}
+function isDarkColor(c: string): boolean {
+  if (!c) return false;
+  const v = c.toLowerCase().replace(/\s/g, '');
+  return v === '#000' || v === '#000000' || v === 'black';
+}
+
+// Custom weight-chart legend: single row, white-bordered pill, colour-matched markers.
+function renderWeightLegend({ payload }: any) {
+  if (!payload?.length) return null;
+  return (
+    <div style={{
+      display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12,
+      flexWrap: 'nowrap', width: 'fit-content', maxWidth: '100%', margin: '8px auto 0',
+      padding: '5px 12px', border: '1px solid rgba(255,255,255,0.6)', borderRadius: 999,
+      background: 'rgba(255,255,255,0.03)', overflow: 'hidden',
+    }}>
+      {payload.map((e: any, i: number) => {
+        const isRect = e.type === 'rect';
+        const dark = isDarkColor(e.color);
+        return (
+          <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
+            <span style={{
+              width: 14, height: isRect ? 10 : 3, background: e.color, borderRadius: 2,
+              display: 'inline-block', flexShrink: 0,
+              boxShadow: dark ? '0 0 0 1px rgba(255,255,255,0.6)' : 'none',
+            }} />
+            <span style={{ color: legibleColor(e.color), fontFamily: "'Sora', sans-serif", fontSize: 10.5, fontWeight: 600 }}>
+              {e.value}
+            </span>
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 function makeChartTooltip(emaColor: string, todayDDMM: string) {
   return ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
@@ -92,11 +135,13 @@ function makeChartTooltip(emaColor: string, todayDDMM: string) {
           if (isFutureDay && isCount) return null;
           const isLine = !isCount;
           const isProjection = entry.name === 'Projection';
+          const textColor = legibleColor(color);
+          const markerShadow = isDarkColor(color) ? '0 0 0 1px rgba(255,255,255,0.6)' : undefined;
           return (
             <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '2px 0' }}>
               {isLine ? (
                 /* Line series: show a short coloured dash + centre dot */
-                <span style={{ display: 'flex', alignItems: 'center', gap: 0, flexShrink: 0, opacity: isProjection ? 0.55 : 1 }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 0, flexShrink: 0, opacity: isProjection ? 0.55 : 1, boxShadow: markerShadow, borderRadius: markerShadow ? 2 : undefined }}>
                   <span style={{ width: 8, height: 1.5, background: color, borderRadius: 1 }} />
                   <span style={{ width: 4, height: 4, borderRadius: '50%', background: color, margin: '0 1px' }} />
                   <span style={{ width: 8, height: 1.5, background: color, borderRadius: 1 }} />
@@ -104,8 +149,8 @@ function makeChartTooltip(emaColor: string, todayDDMM: string) {
               ) : (
                 <span style={{ width: 8, height: 8, borderRadius: 2, background: color, flexShrink: 0 }} />
               )}
-              <span style={{ color, opacity: isProjection ? 0.65 : 0.85, fontFamily: "'Sora', sans-serif", fontSize: 11 }}>{entry.name}</span>
-              <span style={{ color, opacity: isProjection ? 0.65 : 1, fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700, marginLeft: 'auto', paddingLeft: 12 }}>
+              <span style={{ color: textColor, opacity: isProjection ? 0.65 : 0.85, fontFamily: "'Sora', sans-serif", fontSize: 11 }}>{entry.name}</span>
+              <span style={{ color: textColor, opacity: isProjection ? 0.65 : 1, fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700, marginLeft: 'auto', paddingLeft: 12 }}>
                 {isCount ? entry.value : `${entry.value} kg`}
               </span>
             </div>
@@ -1011,7 +1056,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.156</span>
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.157</span>
         </div>
 
         {/* Period picker — compact pill between brand and cog */}
@@ -1452,14 +1497,27 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               isAnimationActive={false}
               legendType="plainline"
             />
-            {/* ── EMA smoothed trend (primary engine signal) ── */}
+            {/* ── EMA smoothed trend — black line with a white halo so it stays visible on dark ── */}
             {hasTrend && (
               <Line
                 yAxisId="right"
                 type="monotone"
                 dataKey="ema"
-                stroke={emaColor}
-                strokeWidth={3}
+                stroke="rgba(255,255,255,0.65)"
+                strokeWidth={5}
+                dot={false}
+                connectNulls
+                isAnimationActive={false}
+                legendType="none"
+              />
+            )}
+            {hasTrend && (
+              <Line
+                yAxisId="right"
+                type="monotone"
+                dataKey="ema"
+                stroke="#000000"
+                strokeWidth={2.5}
                 dot={false}
                 name="Smoothed"
                 connectNulls
@@ -1481,19 +1539,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             <Legend
               verticalAlign="bottom"
               align="center"
-              height={30}
-              iconType="plainline"
-              iconSize={16}
-              wrapperStyle={{ paddingTop: 10 }}
-              formatter={(value: string, entry: any) => (
-                <span style={{
-                  color: entry?.color || '#C4C4D0',
-                  fontFamily: "'Sora', sans-serif",
-                  fontSize: 11,
-                  fontWeight: 600,
-                  marginRight: 10,
-                }}>{value}</span>
-              )}
+              height={34}
+              content={renderWeightLegend}
             />
           </ComposedChart>
         </ResponsiveContainer>
