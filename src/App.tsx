@@ -14,6 +14,7 @@ import {
   ReferenceArea,
   Cell,
   Brush,
+  Legend,
 } from 'recharts';
 import './App.css';
 import { api } from './api';
@@ -973,7 +974,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.151</span>
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.152</span>
         </div>
 
         {/* Period picker — compact pill between brand and cog */}
@@ -1338,8 +1339,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </div>
         <div className="chart-section-inner">
         <div className="chart-container">
-        <ResponsiveContainer width="100%" height={300}>
-          <ComposedChart data={chartData} margin={{ left: 0, right: 10, top: 5, bottom: 20 }}>
+        <ResponsiveContainer width="100%" height={340}>
+          <ComposedChart data={chartData} margin={{ left: 0, right: 10, top: 5, bottom: 8 }}>
             <defs>
               <linearGradient id="barGradient" x1="0" y1="1" x2="0" y2="0">
                 <stop offset="0%" stopColor={themeColor + '22'} />
@@ -1395,8 +1396,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               </>
             )}
             {/* ── Habit bars: green for done, red for failed, rounded tops ── */}
-            {!weightZoom && <Bar yAxisId="left" dataKey="completed" stackId="habits" fill="#2FD27E" name="Done" radius={[4,4,0,0]} isAnimationActive={false} />}
-            {!weightZoom && <Bar yAxisId="left" dataKey="failed" stackId="habits" fill="#FF5470" name="Failed" radius={[4,4,0,0]} isAnimationActive={false} />}
+            {!weightZoom && <Bar yAxisId="left" dataKey="completed" stackId="habits" fill="#2FD27E" name="Done" radius={[4,4,0,0]} isAnimationActive={false} legendType="rect" />}
+            {!weightZoom && <Bar yAxisId="left" dataKey="failed" stackId="habits" fill="#FF5470" name="Failed" radius={[4,4,0,0]} isAnimationActive={false} legendType="rect" />}
             {/* ── Forward projection (weight zoom only) ── */}
             {weightZoom && (
               <Line yAxisId="right" type="monotone" dataKey="projection" stroke="#2E8BFF" strokeWidth={2} strokeDasharray="5 5" dot={false} name="Projection" connectNulls isAnimationActive={false} />
@@ -1415,13 +1416,14 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 if (payload.weight == null) return <g key={`dot-empty-${index}`} />;
                 return <circle key={`dot-${index}`} cx={cx} cy={cy} r={weightZoom ? 5 : 4} fill="#0E0E14" stroke="#FFFFFF" strokeWidth={2} style={{ cursor: 'pointer' }} onClick={() => setWeightZoom(z => !z)} />;
               }}
-              name="Weight (kg)"
+              name="Weight"
               connectNulls
               isAnimationActive={false}
+              legendType="plainline"
             />
             {/* ── Linear regression trend line — distinct gold so it reads separate from EMA ── */}
             {hasTrend && (
-              <Line yAxisId="right" type="linear" dataKey="trend" stroke="#FFB928" strokeOpacity={0.65} strokeWidth={1.5} strokeDasharray="5 4" dot={false} name="Trend" connectNulls isAnimationActive={false} />
+              <Line yAxisId="right" type="linear" dataKey="trend" stroke="#FFB928" strokeOpacity={0.9} strokeWidth={2} strokeDasharray="6 4" dot={false} name="Trend" connectNulls isAnimationActive={false} legendType="plainline" />
             )}
             {/* ── EMA smoothed trend (primary engine signal) ── */}
             {hasTrend && (
@@ -1432,9 +1434,10 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 stroke={emaColor}
                 strokeWidth={3}
                 dot={false}
-                name="EMA trend"
+                name="Smoothed"
                 connectNulls
                 isAnimationActive={false}
+                legendType="plainline"
               />
             )}
             {/* ── Calorie adjustment markers ── */}
@@ -1448,6 +1451,23 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 label={{ value: '⟳', fill: '#9aa0a6', position: 'insideTop', fontSize: 10 }}
               />
             ))}
+            <Legend
+              verticalAlign="bottom"
+              align="center"
+              height={30}
+              iconType="plainline"
+              iconSize={16}
+              wrapperStyle={{ paddingTop: 10 }}
+              formatter={(value: string, entry: any) => (
+                <span style={{
+                  color: entry?.color || '#C4C4D0',
+                  fontFamily: "'Sora', sans-serif",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  marginRight: 10,
+                }}>{value}</span>
+              )}
+            />
           </ComposedChart>
         </ResponsiveContainer>
         </div>
