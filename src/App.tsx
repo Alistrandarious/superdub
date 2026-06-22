@@ -11,9 +11,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   ReferenceLine,
-  ReferenceArea,
   Cell,
-  Brush,
   Legend,
 } from 'recharts';
 import './App.css';
@@ -39,35 +37,6 @@ const MONTH_COLORS: Record<number, string> = {
   11: '#FFD233', // Dec - gold
 };
 
-// ── Custom chart tick: day number only, month label at boundaries ─────────────
-const ChartXTick: React.FC<any> = ({ x, y, payload }) => {
-  const val = payload?.value as string;
-  if (!val) return null;
-  const parts = val.split('/');
-  if (parts.length !== 2) return null;
-  const dd = parseInt(parts[0], 10);
-  const mm = parseInt(parts[1], 10);
-  const isMonthStart = dd === 1 || dd <= 7; // first week of month shows label
-  const showMonth = dd === 1; // only first day of month gets the month label
-  return (
-    <g transform={`translate(${x},${y})`}>
-      {showMonth && (
-        <text x={0} y={-14} fill="rgba(255,255,255,0.85)" fontSize={9} fontWeight={700}
-          fontFamily="'Space Mono', monospace" textAnchor="middle" letterSpacing="0.08em">
-          {MONTH_SHORT[mm - 1].toUpperCase()}
-        </text>
-      )}
-      <text x={0} y={0} dy={4}
-        fill={showMonth ? '#fff' : 'rgba(255,255,255,0.38)'}
-        fontSize={showMonth ? 10.5 : 9}
-        fontWeight={showMonth ? 700 : 400}
-        fontFamily="'Space Mono', monospace"
-        textAnchor="middle">
-        {dd}
-      </text>
-    </g>
-  );
-};
 
 // ── Color-matched tooltip ─────────────────────────────────────────────────────
 // Near-black colours are invisible on the dark UI — swap them for a light tone in text.
@@ -275,7 +244,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const [trackerModalOpen, setTrackerModalOpen] = useState(false);
   const [trackerTab, setTrackerTab] = useState<'habits' | 'nutrition'>('habits');
 
-  const [name, setName] = useState('');
+  const [, setName] = useState('');
   const [habits, setHabits] = useState<string[]>([]);
   const [newHabit, setNewHabit] = useState('');
   const [tracker, setTracker] = useState<Record<string, DayData>>(INITIAL_TRACKER);
@@ -814,7 +783,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     weeks = Math.ceil((Math.floor((hmEnd.getTime() - hmStart.getTime()) / 86400000) + 1) / 7);
   }
   const heatmapCells: { ddmm: string; ratio: number; monthIdx: number; state: 'good' | 'change' | 'off' }[] = [];
-  let kDone = 0, kPoss = 0;
   for (let w = 0; w < weeks; w++) {
     for (let dow = 0; dow < 7; dow++) {
       const dt = new Date(hmStart);
@@ -832,10 +800,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       else if (habits.length > 0 && done === habits.length) state = 'good';   // perfect day → blue
       else state = 'change';                                                  // on app but missed → white
       heatmapCells.push({ ddmm, ratio, monthIdx: dt.getMonth(), state });
-      if (onApp && !future && !preSignup) { kDone += done; kPoss += habits.length; }
     }
   }
-  const consistencyPct = kPoss > 0 ? Math.round((kDone / kPoss) * 100) : 0;
   const daysLogged = Object.values(tracker).filter((d: any) =>
     d && (d.weight || (d.habits && habits.some(h => d.habits[h] === true || d.habits[h] === 'failed')) || d.calories || d.steps)
   ).length;
@@ -873,7 +839,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     else break;
   }
   // chart: last 14 days, coloured by hit/miss
-  const walkChart = walkAll.slice(-14).map(d => ({ day: d.ddmm, steps: d.steps, hit: d.steps >= effectiveStepTarget }));
   const walkHasData = walkLogged.length > 0;
 
   // ── Estimated calorie intake — energy-balance back-calculation ──────────────
@@ -920,16 +885,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   }, 0);
   const periodStepKm = +(periodStepTotal * 0.00075).toFixed(1);
 
-  // Period habit consistency (within selected month only)
-  let periodDone = 0, periodPossible = 0;
-  monthDays.forEach(day => {
-    const d = tracker[day];
-    if (!d || !habits.some(h => d.habits[h] === true || d.habits[h] === ('failed' as any))) return;
-    periodDone += habits.filter(h => d.habits[h] === true).length;
-    periodPossible += habits.length;
-  });
-  const periodConsistencyPct = periodPossible > 0 ? Math.round((periodDone / periodPossible) * 100) : null;
-
   // Current habit streak — consecutive non-future days with ≥1 habit done (from heatmap cells)
   const habitStreak = (() => {
     const cells = heatmapCells.filter(c => c.state !== 'off');
@@ -954,7 +909,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const weeklyWeightTrend = hasTrend ? +(trendSlope * 7).toFixed(2) : null;
 
   // KPI: days since journey start (Day N counter)
-  const daysSinceStart = Math.max(1, Math.floor((Date.now() - accountCreatedDate.getTime()) / 86400000) + 1);
 
   // KPI: weight change = current weight − weight on first day of selected chart range.
   // Positive = gain (red), negative = loss (green) — sign-agnostic, goal-type independent.
@@ -1070,7 +1024,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.182</span>
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.183</span>
         </div>
 
         {/* Period picker — compact pill between brand and cog */}

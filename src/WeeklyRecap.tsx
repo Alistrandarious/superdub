@@ -79,15 +79,16 @@ const WeeklyRecap: React.FC<WeeklyRecapProps> = ({ habits, tracker }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mon.getTime()]);
 
-  const toKey = (d: Date) =>
-    `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
-
-  const weekKeys: string[] = [];
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(mon);
-    d.setDate(mon.getDate() + i);
-    weekKeys.push(toKey(d));
-  }
+  // Memoised so it doesn't invalidate the downstream useMemo/useCallback every render
+  const weekKeys = useMemo(() => {
+    const keys: string[] = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(mon);
+      d.setDate(mon.getDate() + i);
+      keys.push(`${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`);
+    }
+    return keys;
+  }, [mon.getTime()]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Week stats ─────────────────────────────────────────────────────────────
   let weekDone = 0, weekPossible = 0, weekSteps = 0, daysTracked = 0;

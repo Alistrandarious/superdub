@@ -17,7 +17,6 @@ const PWA_PROMPT_VERSION = '1.0';
 const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !(window as any).MSStream;
 const isInStandaloneMode = ('standalone' in window.navigator) && (window.navigator as any).standalone;
 
-const INSTALL_XP = 100;
 const INSTALL_XP_KEY = 'superdub.installXP';
 
 const OVERLAY_REFRESH_KEY = 'superdub.overlay.refresh';
@@ -44,35 +43,6 @@ const XP_GATES: [number, number][] = [
 ];
 const GATE_LABELS = ['G0', 'G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'MAX'];
 
-const LEVEL_GATES: [number, string][] = [
-  [0,      'Rookie'],
-  [100,    'Beginner'],
-  [300,    'Novice'],
-  [700,    'Apprentice'],
-  [1500,   'Adept'],
-  [3000,   'Journeyman'],
-  [5000,   'Expert'],
-  [8000,   'Elite'],
-  [12000,  'Champion'],
-  [18000,  'Legend'],
-  [28000,  'Grandmaster'],
-  [42000,  'Mythic'],
-  [60000,  'Immortal'],
-  [85000,  'Eternal'],
-  [120000, 'Transcendent'],
-];
-
-function getPlayerLevel(totalXP: number): { level: number; title: string; progress: number; xpForLevel: number; xpForNext: number | null; nextTitle: string | null } {
-  let idx = 0;
-  for (let i = LEVEL_GATES.length - 1; i >= 0; i--) {
-    if (totalXP >= LEVEL_GATES[i][0]) { idx = i; break; }
-  }
-  const xpForLevel = LEVEL_GATES[idx][0];
-  const xpForNext = idx < LEVEL_GATES.length - 1 ? LEVEL_GATES[idx + 1][0] : null;
-  const nextTitle = idx < LEVEL_GATES.length - 1 ? LEVEL_GATES[idx + 1][1] : null;
-  const progress = xpForNext ? (totalXP - xpForLevel) / (xpForNext - xpForLevel) : 1;
-  return { level: idx + 1, title: LEVEL_GATES[idx][1], progress, xpForLevel, xpForNext, nextTitle };
-}
 
 function todayKey(): string {
   const n = new Date();
@@ -488,7 +458,7 @@ const Habits: React.FC = () => {
   });
   const [installClosing, setInstallClosing] = useState(false);
   // +100 XP reward for installing to the home screen (granted once the app runs installed)
-  const [installBonus, setInstallBonus] = useState(() => localStorage.getItem(INSTALL_XP_KEY) === 'granted');
+  const [, setInstallBonus] = useState(() => localStorage.getItem(INSTALL_XP_KEY) === 'granted');
 
   // Grant the install reward when the app is actually running as an installed PWA
   useEffect(() => {
@@ -517,7 +487,7 @@ const Habits: React.FC = () => {
 
   const today = todayKey();
   const weekDays = getWeekDays();
-  const { totalXP: totalXPAll, playerLevel, refresh: refreshXP } = useXP();
+  const { totalXP: totalXPAll, playerLevel } = useXP();
 
   useEffect(() => {
     Promise.all([api.getHabits(), api.getTracker(), api.getGraveyard()]).then(([loadedHabits, trackerData, graveyardData]) => {

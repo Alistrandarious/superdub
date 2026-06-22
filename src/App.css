@@ -4011,13 +4011,6 @@ h1, h2, h3, h4, .sora {
 }
 .hb-week-gold .hb-week-tick { color: #1a1008; }
 
-/* Veteran weeks (after a gold week): gradient fill back, gold hollow ring as a badge */
-.hb-week-veteran .hb-week-circle.done {
-  background: var(--sd-gradient);
-  border: 1.5px solid var(--gold, #FFB928);
-  box-shadow: 0 0 10px rgba(255,178,40,0.3);
-  color: #0E0E14;
-}
 
 .hb-week-celebrating .hb-week-col:nth-child(1) .hb-week-circle { animation: circle-flip 0.5s ease 0.00s both; }
 .hb-week-celebrating .hb-week-col:nth-child(2) .hb-week-circle { animation: circle-flip 0.5s ease 0.08s both; }
@@ -10153,27 +10146,6 @@ details[open] .plan-explainer-summary::before { content: '▾  '; }
   color: rgba(255,255,255,0.4);
 }
 
-/* macro chips */
-.plan-macro-row { display: flex; gap: 8px; padding: 11px 16px 14px; }
-.plan-macro-chip {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid;
-  border-radius: var(--r-sm);
-  padding: 9px 4px;
-}
-.plan-macro-num { font-family: 'Space Mono', monospace; font-size: 0.95rem; font-weight: 700; }
-.plan-macro-lbl {
-  font-family: 'Space Mono', monospace;
-  font-size: 0.55rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: rgba(255,255,255,0.4);
-}
 
 /* rate → deficit line */
 .plan-rate-line {

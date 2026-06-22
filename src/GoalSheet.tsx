@@ -152,7 +152,6 @@ const GoalSheet: React.FC<GoalSheetProps> = ({ open, onClose, latestWeight, onGo
 
   if (!open) return null;
 
-  const todayStr = formatDate(new Date());
   // Minimum target date: 1 week from today
   const minDate = formatDate(addWeeks(new Date(), 1));
 

@@ -88,18 +88,6 @@ function computeHabitXP(
   return { totalXP, totalDays, streak, bestStreak };
 }
 
-function getPlayerLevel(totalXP: number): { level: number; title: string; progress: number; xpForNext: number | null; xpForLevel: number; nextTitle: string | null } {
-  let idx = 0;
-  for (let i = LEVEL_GATES.length - 1; i >= 0; i--) {
-    if (totalXP >= LEVEL_GATES[i][0]) { idx = i; break; }
-  }
-  const xpForLevel = LEVEL_GATES[idx][0];
-  const xpForNext = idx < LEVEL_GATES.length - 1 ? LEVEL_GATES[idx + 1][0] : null;
-  const nextTitle = idx < LEVEL_GATES.length - 1 ? LEVEL_GATES[idx + 1][1] : null;
-  const progress = xpForNext ? (totalXP - xpForLevel) / (xpForNext - xpForLevel) : 1;
-  return { level: idx + 1, title: LEVEL_GATES[idx][1], progress, xpForNext, xpForLevel, nextTitle };
-}
-
 // Big circular level ring (gold gradient), matching the Habits page
 const LevelRing: React.FC<{ level: number; title: string; progress: number; onClick?: () => void }> = ({ level, title, progress, onClick }) => {
   const size = 172, stroke = 13, r = (size - stroke) / 2, circ = 2 * Math.PI * r;
