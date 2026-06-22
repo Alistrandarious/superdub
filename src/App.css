@@ -5684,9 +5684,18 @@ h1, h2, h3, h4, .sora {
 
 .diet-sub-icon {
   font-size: 1.3rem;
-  width: 32px;
-  text-align: center;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  border-radius: var(--r-sm);
+  background: rgba(46,139,255,0.12);
+  color: var(--brand-blue, #2E8BFF);
+}
+.diet-sub-item:hover:not(:disabled) .diet-sub-icon {
+  background: rgba(46,139,255,0.22);
 }
 
 .diet-sub-text {
@@ -9944,3 +9953,219 @@ details[open] .plan-explainer-summary::before { content: '▾  '; }
   opacity: 0.4;
   cursor: default;
 }
+
+/* =====================================================================
+   PLANS — cohesive design kit (shared by Diet, Weight Goal, dropdown)
+   Built on the canonical tokens so the Plans surface matches the app.
+   ===================================================================== */
+
+/* Page eyebrow + brand row reuse — small page header for sub-pages */
+.plan-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: -20px -20px 18px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+}
+.plan-topbar-eyebrow {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--theme, #2FD27E);
+  font-weight: 700;
+}
+
+/* ── Hero card ── */
+.plan-hero {
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-lg);
+  background: var(--glass-bg);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.plan-hero-accent { height: 3px; width: 100%; }
+.plan-hero-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px 9px;
+}
+.plan-goal-pill {
+  font-family: 'Sora', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border: 1px solid;
+  border-radius: var(--r-pill);
+  padding: 3px 12px;
+}
+.plan-hero-eta {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.4);
+  flex: 1;
+}
+.plan-hero-edit {
+  margin-left: auto;
+  background: none;
+  border: 1px solid var(--glass-border);
+  color: rgba(255,255,255,0.6);
+  padding: 5px 13px;
+  border-radius: var(--r-sm);
+  font-family: 'Sora', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.plan-hero-edit:active { transform: scale(0.97); }
+
+/* Weight start → goal row */
+.plan-hero-weights {
+  display: flex;
+  align-items: center;
+  padding: 2px 16px 14px;
+}
+.plan-weight-col { min-width: 78px; display: flex; flex-direction: column; gap: 1px; }
+.plan-weight-col.right { text-align: right; align-items: flex-end; }
+.plan-weight-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(255,255,255,0.4);
+}
+.plan-weight-num {
+  font-family: 'Space Mono', monospace;
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: #E8ECF4;
+  line-height: 1.1;
+}
+.plan-weight-unit {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.4);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.plan-weight-col.right .plan-weight-unit { justify-content: flex-end; }
+.plan-weight-dot { width: 5px; height: 5px; border-radius: 50%; background: #2FD27E; display: inline-block; }
+.plan-weight-track { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 0 8px; }
+.plan-track-line { width: 100%; display: flex; align-items: center; }
+.plan-track-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.plan-track-dot.start { background: #2a3a4a; }
+.plan-track-bar { flex: 1; height: 1.5px; }
+.plan-track-delta { font-family: 'Space Mono', monospace; font-size: 0.65rem; color: rgba(255,255,255,0.4); }
+
+/* kcal strip */
+.plan-kcal-strip {
+  display: flex;
+  border-top: 1px solid var(--glass-border);
+  border-bottom: 1px solid var(--glass-border);
+  background: rgba(0,0,0,0.22);
+}
+.plan-kcal-cell { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 11px 0; gap: 3px; }
+.plan-kcal-div { width: 1px; background: var(--glass-border); }
+.plan-kcal-num { font-family: 'Space Mono', monospace; font-size: 1rem; font-weight: 700; color: #E8ECF4; }
+.plan-kcal-num.good { color: #2FD27E; }
+.plan-kcal-num.bad { color: #FF5470; }
+.plan-kcal-lbl {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: rgba(255,255,255,0.4);
+}
+
+/* macro chips */
+.plan-macro-row { display: flex; gap: 8px; padding: 11px 16px 14px; }
+.plan-macro-chip {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid;
+  border-radius: var(--r-sm);
+  padding: 9px 4px;
+}
+.plan-macro-num { font-family: 'Space Mono', monospace; font-size: 0.95rem; font-weight: 700; }
+.plan-macro-lbl {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255,255,255,0.4);
+}
+
+/* rate → deficit line */
+.plan-rate-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 16px 13px;
+  font-family: 'Sora', sans-serif;
+  font-size: 0.7rem;
+}
+.plan-rate-text { color: rgba(255,255,255,0.5); }
+.plan-rate-arrow { color: rgba(255,255,255,0.3); margin: 0 6px; }
+.plan-rate-flag { font-size: 0.66rem; font-weight: 700; white-space: nowrap; }
+.plan-rate-flag.ok { color: #2FD27E; }
+.plan-rate-flag.warn { color: #FFD233; }
+
+/* Generic plan card (today's meal plan etc.) */
+.plan-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.plan-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px 10px;
+  border-bottom: 1px solid var(--glass-border);
+}
+.plan-card-title {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.5);
+}
+.plan-card-sub { font-size: 0.72rem; color: rgba(255,255,255,0.3); }
+.plan-meal-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--glass-border);
+}
+.plan-meal-slot {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.62rem;
+  color: var(--brand-blue);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  width: 68px;
+  flex-shrink: 0;
+}
+.plan-meal-name { flex: 1; font-size: 0.8rem; color: #c8ccd8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plan-meal-cal { font-family: 'Space Mono', monospace; font-size: 0.7rem; color: rgba(255,255,255,0.4); flex-shrink: 0; }
+.plan-meal-total {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: rgba(0,0,0,0.2);
+}
+.plan-meal-total-lbl { font-family: 'Space Mono', monospace; font-size: 0.68rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.08em; }
+.plan-meal-total-val { font-family: 'Space Mono', monospace; font-size: 0.74rem; font-weight: 700; color: var(--brand-blue); }
