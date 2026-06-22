@@ -8033,10 +8033,17 @@ h3, h4,
 }
 .heatmap-cell {
   border-radius: 3px;
-  /* Hits: light→deep blue scaled by --lvl (0=miss/grey, 0.3–1=light–deep blue) */
-  background: color-mix(in srgb, #2E8BFF calc(var(--lvl, 0) * 90%), rgba(255,255,255,0.04));
+  background: rgba(255,255,255,0.04);
 }
-.heatmap-cell.inactive { background: rgba(255,255,255,0.018); }
+/* Perfect day — all habits done → blue */
+.heatmap-cell.hm-good { background: #2E8BFF; }
+/* On the app but missed habits — needs to change → white */
+.heatmap-cell.hm-change { background: #FFFFFF; }
+/* Wasn't on the app (before signup, no activity, or future) → black */
+.heatmap-cell.hm-off {
+  background: #000000;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
+}
 .heatmap-months {
   display: grid;
   font-family: var(--font-data, 'Space Mono', monospace);

@@ -791,12 +791,15 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   // Tooltip render function (colour-matched per series)
   const renderTooltip = makeChartTooltip(emaColor, todayKey);
 
-  // ── Reporting: consistency heatmap (from start date → today, grows over time) ──
+  // ── Reporting: consistency heatmap — shows the entire month(s) since signup ──
+  // Cell states: 'off' = wasn't on the app (black) · 'change' = on app but missed
+  // habits, needs to change (white) · 'good' = all habits done (blue).
   const nowMs = Date.now();
   const hmEnd = new Date(); hmEnd.setHours(0, 0, 0, 0);
   const startDay = new Date(accountCreatedDate); startDay.setHours(0, 0, 0, 0);
-  let hmStart = new Date(startDay);
-  // back up to the Monday on/before the start date so columns align to weeks
+  // Begin at the 1st of the signup month so the WHOLE month is shown
+  let hmStart = new Date(startDay.getFullYear(), startDay.getMonth(), 1);
+  // back up to the Monday on/before that so columns align to weeks
   hmStart.setDate(hmStart.getDate() - ((hmStart.getDay() + 6) % 7));
   const MAX_WEEKS = 30;
   let weeks = Math.ceil((Math.floor((hmEnd.getTime() - hmStart.getTime()) / 86400000) + 1) / 7);
@@ -808,20 +811,26 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     hmStart.setDate(hmStart.getDate() - ((hmStart.getDay() + 6) % 7));
     weeks = Math.ceil((Math.floor((hmEnd.getTime() - hmStart.getTime()) / 86400000) + 1) / 7);
   }
-  const heatmapCells: { ddmm: string; ratio: number; monthIdx: number; inactive: boolean }[] = [];
+  const heatmapCells: { ddmm: string; ratio: number; monthIdx: number; state: 'good' | 'change' | 'off' }[] = [];
   let kDone = 0, kPoss = 0;
   for (let w = 0; w < weeks; w++) {
     for (let dow = 0; dow < 7; dow++) {
       const dt = new Date(hmStart);
       dt.setDate(hmStart.getDate() + w * 7 + dow);
       const ddmm = `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth() + 1).padStart(2, '0')}`;
-      const inactive = dt.getTime() > nowMs || dt.getTime() < startDay.getTime();
+      const future = dt.getTime() > nowMs;
+      const preSignup = dt.getTime() < startDay.getTime();
       const d = tracker[ddmm];
       const done = d ? habits.filter(h => d.habits[h] === true).length : 0;
       const ratio = habits.length > 0 ? done / habits.length : 0;
-      heatmapCells.push({ ddmm, ratio, monthIdx: dt.getMonth(), inactive });
-      const hasMark = !!d && habits.some(h => d.habits[h] === true || d.habits[h] === ('failed' as any));
-      if (hasMark && !inactive) { kDone += done; kPoss += habits.length; }
+      // "On the app" that day = any logged activity
+      const onApp = !!d && (!!d.weight || !!d.calories || !!d.steps || habits.some(h => d.habits[h] === true || d.habits[h] === ('failed' as any)));
+      let state: 'good' | 'change' | 'off';
+      if (future || preSignup || !onApp) state = 'off';                       // wasn't on the app → black
+      else if (habits.length > 0 && done === habits.length) state = 'good';   // perfect day → blue
+      else state = 'change';                                                  // on app but missed → white
+      heatmapCells.push({ ddmm, ratio, monthIdx: dt.getMonth(), state });
+      if (onApp && !future && !preSignup) { kDone += done; kPoss += habits.length; }
     }
   }
   const consistencyPct = kPoss > 0 ? Math.round((kDone / kPoss) * 100) : 0;
@@ -921,7 +930,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
   // Current habit streak — consecutive non-future days with ≥1 habit done (from heatmap cells)
   const habitStreak = (() => {
-    const cells = heatmapCells.filter(c => !c.inactive);
+    const cells = heatmapCells.filter(c => c.state !== 'off');
     let streak = 0;
     for (let i = cells.length - 1; i >= 0; i--) {
       if (cells[i].ratio > 0) streak++;
@@ -1059,7 +1068,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.167</span>
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.168</span>
         </div>
 
         {/* Period picker — compact pill between brand and cog */}
@@ -1627,9 +1636,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             {heatmapCells.map((c, i) => (
               <div
                 key={i}
-                className={`heatmap-cell${c.inactive ? ' inactive' : ''}`}
-                style={{ '--lvl': c.inactive ? 0 : (c.ratio > 0 ? Math.max(c.ratio, 0.3) : 0) } as React.CSSProperties}
-                title={`${c.ddmm}: ${Math.round(c.ratio * 100)}%`}
+                className={`heatmap-cell hm-${c.state}`}
+                title={`${c.ddmm}: ${c.state === 'off' ? 'no activity' : c.state === 'good' ? 'all habits done' : `${Math.round(c.ratio * 100)}% — needs attention`}`}
               />
             ))}
           </div>
