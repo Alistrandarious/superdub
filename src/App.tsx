@@ -1011,7 +1011,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.155</span>
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.156</span>
         </div>
 
         {/* Period picker — compact pill between brand and cog */}
@@ -1425,13 +1425,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 </>
               );
             })()}
-            {/* ── Diagonal safe-zone corridor toward goal: faint fill only, no border line ── */}
-            {zoneActive && (
-              <>
-                <Area yAxisId="right" type="linear" dataKey="zoneLow" stroke="none" fill="none" legendType="none" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} stackId="zone" />
-                <Area yAxisId="right" type="linear" dataKey="zoneBand" stroke="none" fill="rgba(255,185,0,0.08)" legendType="none" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} stackId="zone" />
-              </>
-            )}
+            {/* Safe-zone corridor removed — was the source of the gold/orange line on the chart */}
             {/* ── Habit bars: green for done, red for failed, rounded tops ── */}
             {!weightZoom && <Bar yAxisId="left" dataKey="completed" stackId="habits" fill="#2FD27E" name="Done" radius={[4,4,0,0]} isAnimationActive={false} legendType="rect" />}
             {!weightZoom && <Bar yAxisId="left" dataKey="failed" stackId="habits" fill="#FF5470" name="Failed" radius={[4,4,0,0]} isAnimationActive={false} legendType="rect" />}

@@ -481,6 +481,8 @@ const Habits: React.FC = () => {
   })();
   const [weekGold, setWeekGold] = useState(() => !!localStorage.getItem(weekGoldKey));
   const [weekCelebrating, setWeekCelebrating] = useState(false);
+  // Whether a gold week has ever been earned — drives the gold hollow ring in later weeks
+  const [goldEver, setGoldEver] = useState(() => localStorage.getItem('superdub.weekgold.ever') === '1');
   const prevPerfectRef = useRef(false);
 
   const pwaKey = `superdub.pwa.${PWA_PROMPT_VERSION}`;
@@ -672,18 +674,22 @@ const Habits: React.FC = () => {
     setTimeout(() => setRestoringHabit(null), 800);
   };
 
-  // Perfect week — all non-future check-in days (MANDATORY_HABIT) are done
+  // Perfect week — gold ONLY lands on Sunday once all 7 days are logged.
+  // (Mid-week "all non-future days done" would otherwise trip gold on Monday.)
   const nonFutureDays = weekDays.filter(d => !d.isFuture);
-  const isPerfectWeek = nonFutureDays.length > 0 &&
+  const isSunday = new Date().getDay() === 0;
+  const isPerfectWeek = isSunday && nonFutureDays.length === 7 &&
     nonFutureDays.every(d => ht[d.key]?.[MANDATORY_HABIT] === 'done');
 
-  // Trigger gold animation the moment perfect week is first achieved this week
+  // Trigger gold animation the moment the perfect (Sunday) week is achieved
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (isPerfectWeek && !prevPerfectRef.current && !weekGold) {
       setWeekGold(true);
       setWeekCelebrating(true);
+      setGoldEver(true);
       localStorage.setItem(weekGoldKey, '1');
+      localStorage.setItem('superdub.weekgold.ever', '1');
       setTimeout(() => setWeekCelebrating(false), 1800);
     }
     prevPerfectRef.current = isPerfectWeek;
@@ -854,21 +860,21 @@ const Habits: React.FC = () => {
         </div>
 
         {/* Weekly strip — the simplified "Logging into Superdub" habit */}
-        <div className={`hb-week${weekGold ? ' hb-week-gold' : ''}${weekCelebrating ? ' hb-week-celebrating' : ''}`}>
+        <div className={`hb-week${weekGold ? ' hb-week-gold' : ''}${weekCelebrating ? ' hb-week-celebrating' : ''}${goldEver && !weekGold ? ' hb-week-veteran' : ''}`}>
           {weekDays.map(({ key, label, isFuture, isToday }) => {
             const state = ht[key]?.[MANDATORY_HABIT] ?? null;
+            // Read-only: this strip mirrors your daily login automatically — not tappable.
             return (
               <div key={key} className="hb-week-col">
                 <span className="hb-week-dow">{label}</span>
-                <button
+                <div
                   className={`hb-week-circle ${state === 'done' ? 'done' : ''} ${state === 'failed' ? 'failed' : ''} ${isToday ? 'today' : ''} ${isFuture ? 'future' : ''}`}
-                  disabled={isFuture}
-                  onClick={() => !isFuture && handleToggleDay(MANDATORY_HABIT, key, cycleState(state))}
+                  role="img"
                   aria-label={`${label}: ${state ?? 'not logged'}`}
                 >
                   {state === 'done' && <span className="hb-week-tick">✓</span>}
                   {state === 'failed' && <span className="hb-week-tick fail">✕</span>}
-                </button>
+                </div>
               </div>
             );
           })}
