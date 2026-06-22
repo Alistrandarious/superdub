@@ -1269,16 +1269,17 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             ))}
             <XAxis dataKey="day" stroke="rgba(255,255,255,0.1)" tick={chartXTick} interval={displayInterval} tickLine={false} height={36} padding={{ left: 10 }} />
             <YAxis yAxisId="left" hide={weightZoom} stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} allowDecimals={false} width={30} axisLine={false} tickLine={false} domain={[0, habits.length]} />
-            <YAxis yAxisId="right" orientation="right" stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} allowDecimals={false} tickCount={5} domain={(() => {
+            <YAxis yAxisId="right" orientation="right" stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} allowDecimals={false} tickCount={5} allowDataOverflow={true} domain={(() => {
               const weights = chartData.map(d => d.weight).filter(Boolean) as number[];
               const emas    = chartData.map((d: any) => d.ema).filter(Boolean) as number[];
               const projs   = chartData.map((d: any) => d.projection).filter(Boolean) as number[];
-              const gw      = parseFloat(goalWeight) || 0;
-              const allVals = [...weights, ...emas, ...projs, ...(gw > 0 ? [gw] : [])];
-              if (allVals.length === 0) return [55, 60] as [number, number];
-              const lo = Math.floor((Math.min(...allVals) - 1) / 2) * 2;
+              const goalKg  = planStatus?.goal?.targetWeight ?? (parseFloat(goalWeight) > 0 ? parseFloat(goalWeight) : null);
+              const allVals = [...weights, ...emas, ...projs];
+              if (allVals.length === 0) return [goalKg ? goalKg - 1 : 55, goalKg ? goalKg + 5 : 60] as [number, number];
+              const dataLo = Math.min(...allVals);
+              const lo = goalKg != null ? Math.min(dataLo, goalKg) - 1 : dataLo - 1;
               const hi = Math.ceil((Math.max(...allVals) + 1) / 2) * 2;
-              return [lo, hi] as [number, number];
+              return [Math.floor(lo), hi] as [number, number];
             })()} width={42} axisLine={false} tickLine={false} />
             <Tooltip
               cursor={{ fill: 'rgba(255,255,255,0.05)' }}
