@@ -937,6 +937,8 @@ const Diet: React.FC = () => {
   const GOAL_LABELS: Record<string, string> = { cut: '🔥 Fat Loss', maintain: '⚖️ Maintain', bulk: '💪 Muscle Gain' };
   const accent = GOAL_COLORS[goal] ?? '#2FD27E';
   const goalLabel = GOAL_LABELS[goal] ?? '🔥 Fat Loss';
+  const goalIcon = goalLabel.split(' ')[0];
+  const goalText = goalLabel.split(' ').slice(1).join(' ');
   const displayWeight = todayWeight ?? kg;
   const weightDiff = displayWeight > 0 && goalWeight > 0 ? Math.abs(displayWeight - goalWeight) : null;
   const weeksLeft = weightDiff && lossPerWeek > 0 ? Math.ceil(weightDiff / lossPerWeek) : null;
@@ -986,7 +988,9 @@ const Diet: React.FC = () => {
         <div className="plan-hero-accent" style={{ background: `linear-gradient(90deg, ${accent}, ${accent}22)` }} />
 
         <div className="plan-hero-head">
-          <span className="plan-goal-pill" style={{ color: accent, background: accent + '18', borderColor: accent + '40' }}>{goalLabel}</span>
+          <span className="plan-goal-pill" style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)`, boxShadow: `0 4px 16px ${accent}40` }}>
+            <span className="plan-goal-pill-icon">{goalIcon}</span>{goalText}
+          </span>
           {weeksLeft && <span className="plan-hero-eta">~{weeksLeft}w to goal</span>}
           <button className="plan-hero-edit" onClick={() => navigate('/profile')}>Edit →</button>
         </div>

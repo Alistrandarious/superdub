@@ -10041,12 +10041,21 @@ details[open] .plan-explainer-summary::before { content: '▾  '; }
   padding: 13px 16px 9px;
 }
 .plan-goal-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-family: 'Sora', sans-serif;
-  font-size: 0.72rem;
-  font-weight: 700;
-  border: 1px solid;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: #07140C;
+  border: none;
   border-radius: var(--r-pill);
-  padding: 3px 12px;
+  padding: 6px 14px;
+}
+.plan-goal-pill-icon {
+  font-size: 0.9rem;
+  filter: saturate(1.2);
 }
 .plan-hero-eta {
   font-family: 'Space Mono', monospace;
