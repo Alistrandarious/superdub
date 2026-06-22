@@ -1024,7 +1024,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.183</span>
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.184</span>
         </div>
 
         {/* Period picker — compact pill between brand and cog */}
@@ -1339,7 +1339,17 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                     stroke="#2E8BFF"
                     strokeWidth={1.5}
                     strokeDasharray="8 4"
-                    label={{ value: `Goal ${goalKg}kg`, fill: '#2E8BFF', fontSize: 11, fontWeight: 700, position: 'insideBottomLeft' }}
+                    label={(props: any) => {
+                      const { viewBox } = props;
+                      const text = `Goal ${goalKg}kg`;
+                      const w = text.length * 6.4 + 14;
+                      return (
+                        <g transform={`translate(${viewBox.x + 4}, ${viewBox.y - 19})`}>
+                          <rect x={0} y={0} width={w} height={15} rx={4} fill="rgba(10,12,18,0.92)" stroke="rgba(46,139,255,0.45)" strokeWidth={1} />
+                          <text x={7} y={11} fill="#2E8BFF" fontSize={10} fontWeight={700} fontFamily="'Space Mono', monospace">{text}</text>
+                        </g>
+                      );
+                    }}
                   />
                 </>
               );
