@@ -86,14 +86,17 @@ function isDarkColor(c: string): boolean {
 // Custom weight-chart legend: single row, white-bordered pill, colour-matched markers.
 function renderWeightLegend({ payload }: any) {
   if (!payload?.length) return null;
+  // Drop internal helper series (the white EMA halo shares dataKey "ema" with no name)
+  const items = payload.filter((e: any) => e.value !== 'ema' && e.value !== 'emaHalo' && e.value);
+  if (!items.length) return null;
   return (
     <div style={{
       display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12,
-      flexWrap: 'nowrap', width: 'fit-content', maxWidth: '100%', margin: '8px auto 0',
-      padding: '5px 12px', border: '1px solid rgba(255,255,255,0.6)', borderRadius: 999,
-      background: 'rgba(255,255,255,0.03)', overflow: 'hidden',
+      flexWrap: 'wrap', maxWidth: '100%', margin: '8px auto 0',
+      padding: '5px 14px', border: '1px solid rgba(255,255,255,0.6)', borderRadius: 16,
+      background: 'rgba(255,255,255,0.03)',
     }}>
-      {payload.map((e: any, i: number) => {
+      {items.map((e: any, i: number) => {
         const isRect = e.type === 'rect';
         const dark = isDarkColor(e.color);
         return (
@@ -1056,7 +1059,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.166</span>
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.167</span>
         </div>
 
         {/* Period picker — compact pill between brand and cog */}
@@ -1368,7 +1371,13 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 </>
               );
             })()}
-            {/* Safe-zone corridor removed — was the source of the gold/orange line on the chart */}
+            {/* ── Safe-zone corridor: faint diagonal band toward goal — no border line (the old gold stroke is gone) ── */}
+            {zoneActive && (
+              <>
+                <Area yAxisId="right" type="linear" dataKey="zoneLow" stroke="none" fill="none" legendType="none" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} stackId="zone" />
+                <Area yAxisId="right" type="linear" dataKey="zoneBand" stroke="none" fill="rgba(46,139,255,0.10)" legendType="none" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} stackId="zone" />
+              </>
+            )}
             {/* ── Habit bars: green for done, red for failed, rounded tops ── */}
             {!weightZoom && <Bar yAxisId="left" dataKey="completed" stackId="habits" fill="#2FD27E" name="Done" radius={[4,4,0,0]} isAnimationActive={false} legendType="rect" />}
             {!weightZoom && <Bar yAxisId="left" dataKey="failed" stackId="habits" fill="#FF5470" name="Failed" radius={[4,4,0,0]} isAnimationActive={false} legendType="rect" />}
