@@ -656,8 +656,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     const failed = habits.filter(h => !hiddenHabits.has(h) && d.habits[h] === 'failed').length;
     const ema = chartEMA[i] != null ? chartEMA[i] : null;
     // Only show trend line where we have real weight data nearby (within 3 days)
-    const nearbyWeight = weightPoints.some(p => Math.abs(p.i - i) <= 3);
-    const trend = hasTrend && nearbyWeight ? +(trendIntercept + trendSlope * i).toFixed(2) : null;
+    const trend = hasTrend ? +(trendIntercept + trendSlope * i).toFixed(2) : null;
     const { zoneLow, zoneBand, zoneHigh } = getZone(date.getTime());
     return { day: ddmm, completed, failed, weight: d.weight ? Number(d.weight) : null, ema, trend, projection: null as number | null, zoneLow, zoneBand, zoneHigh };
   });
@@ -680,8 +679,10 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         const mm = String(futureDate.getMonth() + 1).padStart(2, '0');
         const futureIdx = chartDayRange.length + f;
         const proj = +(lastEMAValue! + trendSlope * (futureIdx - lastEMAIndex)).toFixed(1);
+        // Extend the regression trend line forward so it spans the whole chart on long views
+        const trend = hasTrend ? +(trendIntercept + trendSlope * futureIdx).toFixed(2) : null;
         const { zoneLow, zoneBand, zoneHigh } = getZone(futureDate.getTime());
-        return { day: `${dd}/${mm}`, completed: 0, failed: 0, weight: null as number | null, ema: null as number | null, projection: proj as number | null, zoneLow, zoneBand, zoneHigh };
+        return { day: `${dd}/${mm}`, completed: 0, failed: 0, weight: null as number | null, ema: null as number | null, trend, projection: proj as number | null, zoneLow, zoneBand, zoneHigh };
       })
     : [];
 
@@ -1023,7 +1024,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.197</span>
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.198</span>
         </div>
 
         {/* Period picker — compact pill between brand and cog */}
