@@ -1079,7 +1079,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.170</span>
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.171</span>
         </div>
 
         {/* Period picker — compact pill between brand and cog */}
@@ -1391,16 +1391,16 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 </>
               );
             })()}
-            {/* ── Safe-zone corridor: faint diagonal band toward goal — no border line (the old gold stroke is gone) ── */}
-            {zoneActive && (
-              <>
-                <Area yAxisId="right" type="linear" dataKey="zoneLow" stroke="none" fill="none" legendType="none" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} stackId="zone" />
-                <Area yAxisId="right" type="linear" dataKey="zoneBand" stroke="none" fill="rgba(46,139,255,0.20)" legendType="none" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} stackId="zone" />
-              </>
-            )}
             {/* ── Habit bars: green for done, red for failed, rounded tops ── */}
             {!weightZoom && <Bar yAxisId="left" dataKey="completed" stackId="habits" fill="#2FD27E" name="Done" radius={[4,4,0,0]} isAnimationActive={false} legendType="rect" />}
             {!weightZoom && <Bar yAxisId="left" dataKey="failed" stackId="habits" fill="#FF5470" name="Failed" radius={[4,4,0,0]} isAnimationActive={false} legendType="rect" />}
+            {/* ── Golden safe-zone corridor — drawn AFTER the bars so it stays visible over them ── */}
+            {zoneActive && (
+              <>
+                <Area yAxisId="right" type="linear" dataKey="zoneLow" stroke="none" fill="none" legendType="none" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} stackId="zone" />
+                <Area yAxisId="right" type="linear" dataKey="zoneBand" stroke="none" fill="rgba(255,185,0,0.32)" legendType="none" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} stackId="zone" />
+              </>
+            )}
             {/* ── Forward projection (weight zoom only) ── */}
             {weightZoom && (
               <Line yAxisId="right" type="monotone" dataKey="projection" stroke="#2E8BFF" strokeWidth={2} strokeDasharray="5 5" dot={false} name="Projection" connectNulls isAnimationActive={false} />
