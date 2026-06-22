@@ -553,8 +553,12 @@ const SmartAdjustCard: React.FC<{
     ? actualWeeklyKg > targetWeeklyKg   // cutting but not losing fast enough
     : actualWeeklyKg < targetWeeklyKg;  // bulking but not gaining fast enough
 
-  const actualDisplay = goal === 'cut' ? (-actualWeeklyKg).toFixed(2) : actualWeeklyKg.toFixed(2);
+  // Plain, real-direction display: + = gaining, − = losing (no sign-flipping)
+  const dirWord = actualWeeklyKg > 0.02 ? 'gaining' : actualWeeklyKg < -0.02 ? 'losing' : 'holding steady';
+  const actualSigned = `${actualWeeklyKg > 0 ? '+' : ''}${actualWeeklyKg.toFixed(2)}`;
   const statusColor = isBehind ? '#FFD233' : '#2FD27E';
+  const adjPhrase = cappedAdj < 0 ? `eat about ${Math.abs(cappedAdj)} fewer kcal a day` : `add about ${cappedAdj} kcal a day`;
+  const explain = `Your weight is ${dirWord} ${Math.abs(actualWeeklyKg).toFixed(2)} kg/wk, but your goal is to ${goal === 'cut' ? 'lose' : 'gain'} ${lossPerWeek} kg/wk. ${isBehind ? `To get on track, ${adjPhrase}.` : `You're ahead of pace — ${adjPhrase} to ease off.`}`;
 
   const handleApply = () => {
     const newTarget = buildTarget();
@@ -578,15 +582,18 @@ const SmartAdjustCard: React.FC<{
         </span>
       </div>
 
+      <p className="sa-explain">{explain}</p>
+
       <div className="sa-rates">
         <div className="sa-rate">
-          <span className="sa-rate-lbl">Target</span>
-          <span className="sa-rate-val">{lossPerWeek} kg/wk</span>
+          <span className="sa-rate-lbl">Goal</span>
+          <span className="sa-rate-val">{goal === 'cut' ? '−' : '+'}{lossPerWeek} kg/wk</span>
         </div>
         <div className="sa-rate-arrow">→</div>
         <div className="sa-rate">
-          <span className="sa-rate-lbl">Actual trend</span>
-          <span className="sa-rate-val" style={{ color: statusColor }}>{actualDisplay} kg/wk</span>
+          <span className="sa-rate-lbl">Your trend</span>
+          <span className="sa-rate-val" style={{ color: statusColor }}>{actualSigned} kg/wk</span>
+          <span className="sa-rate-dir" style={{ color: statusColor }}>{dirWord}</span>
         </div>
       </div>
 

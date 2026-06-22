@@ -7277,6 +7277,23 @@ h1, h2, h3, h4, .sora {
   padding: 3px 10px; white-space: nowrap; flex-shrink: 0;
 }
 
+.sa-explain {
+  margin: 12px 0 0;
+  font-family: 'Sora', sans-serif;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: rgba(255,255,255,0.78);
+}
+.sa-rate-dir {
+  display: block;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 1px;
+  opacity: 0.85;
+}
+
 .sa-rates {
   display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
   padding: 12px 14px; background: rgba(0,0,0,0.25); border: 1px solid #1A1A24; border-radius: 10px;
