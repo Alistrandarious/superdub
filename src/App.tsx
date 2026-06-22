@@ -1023,7 +1023,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.194</span>
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.195</span>
         </div>
 
         {/* Period picker — compact pill between brand and cog */}
@@ -1403,6 +1403,10 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             {/* ── Forward projection (weight zoom only) ── */}
             {weightZoom && (
               <Line yAxisId="right" type="monotone" dataKey="projection" stroke="#2E8BFF" strokeWidth={2} strokeDasharray="5 5" dot={false} name="Projection" connectNulls isAnimationActive={false} />
+            )}
+            {/* ── Trend line — linear regression of logged weight (violet dashed) ── */}
+            {hasTrend && (
+              <Line yAxisId="right" type="linear" dataKey="trend" stroke="#A78BFA" strokeWidth={2} strokeDasharray="6 4" dot={false} name="Trend" connectNulls isAnimationActive={false} legendType="plainline" />
             )}
             {/* ── Actual weight line ── */}
             <Line

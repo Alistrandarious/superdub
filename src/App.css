@@ -1847,9 +1847,9 @@ h1, h2, h3, h4, .sora {
   margin: 0;
 }
 .chart-title-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.chart-title-row .chart-range-group { margin-left: auto; }
-
-.chart-cog-wrap { position: relative; }
+.chart-title { margin-right: auto; }                 /* push range group + cog to the right */
+.chart-title-row .chart-range-group { order: 2; }
+.chart-cog-wrap { position: relative; order: 3; }    /* cog sits on the far right */
 .chart-cog-btn {
   display: flex; align-items: center; justify-content: center;
   width: 30px; height: 30px;
@@ -1865,7 +1865,8 @@ h1, h2, h3, h4, .sora {
 .chart-cog-menu {
   position: absolute;
   top: calc(100% + 6px);
-  left: 0;
+  right: 0;
+  left: auto;
   z-index: 50;
   width: 210px;
   max-height: 280px;
