@@ -587,9 +587,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     else if (chartRange === '1m')  { from = new Date(now); from.setDate(now.getDate() - 29); }
     else if (chartRange === '3m')  { from = new Date(now); from.setDate(now.getDate() - 89); }
     else if (chartRange === '1y')  { from = new Date(now); from.setDate(now.getDate() - 364); }
-    else                           { from = new Date(accountCreatedDate.getFullYear(), accountCreatedDate.getMonth(), 1); } // 'all' → 1st of signup month
-    // Clamp to signup only for the rolling ranges; 'all' may roll back to day 1 of the month
-    if (chartRange !== 'all' && from < accountCreatedDate) from = new Date(accountCreatedDate);
+    else                           { from = new Date(accountCreatedDate); } // 'all' → from signup, no earlier
+    if (from < accountCreatedDate) from = new Date(accountCreatedDate);
     return getChartDayRange(from, now);
   }, [chartRange, accountCreatedDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1071,7 +1070,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.177</span>
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.178</span>
         </div>
 
         {/* Period picker — compact pill between brand and cog */}
