@@ -926,7 +926,6 @@ const Diet: React.FC = () => {
   const displayWeight = todayWeight ?? kg;
   const weightDiff = displayWeight > 0 && goalWeight > 0 ? Math.abs(displayWeight - goalWeight) : null;
   const weeksLeft = weightDiff && lossPerWeek > 0 ? Math.ceil(weightDiff / lossPerWeek) : null;
-  const deficit = maintenance > 0 ? macroCalories - maintenance : 0;
 
   // ── Two progress tracks for the hero: time elapsed (flame) vs weight done (accent) ──
   const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
@@ -1011,43 +1010,6 @@ const Diet: React.FC = () => {
           </div>
         )}
 
-        <div className="plan-kcal-strip">
-          <div className="plan-kcal-cell">
-            <span className="plan-kcal-num">{macroCalories.toLocaleString()}</span>
-            <span className="plan-kcal-lbl">Goal kcal</span>
-          </div>
-          {maintenance > 0 && (
-            <>
-              <div className="plan-kcal-div" />
-              <div className="plan-kcal-cell">
-                <span className="plan-kcal-num">{maintenance.toLocaleString()}</span>
-                <span className="plan-kcal-lbl">Maintenance</span>
-              </div>
-              <div className="plan-kcal-div" />
-              <div className="plan-kcal-cell">
-                <span className={`plan-kcal-num ${deficit < 0 ? 'good' : deficit > 0 ? 'bad' : ''}`}>
-                  {deficit === 0 ? '±0' : `${deficit > 0 ? '+' : ''}${deficit.toLocaleString()}`}
-                </span>
-                <span className="plan-kcal-lbl">{deficit < 0 ? 'Deficit' : deficit > 0 ? 'Surplus' : 'Balance'}</span>
-              </div>
-            </>
-          )}
-        </div>
-
-        {lossPerWeek > 0 && goal !== 'maintain' && (
-          <div className="plan-rate-line">
-            <span className="plan-rate-text">
-              {goal === 'bulk' ? 'Gain' : 'Lose'} {lossPerWeek} kg/wk
-              <span className="plan-rate-arrow">→</span>
-              {Math.round(lossPerWeek * 7700 / 7).toLocaleString()} kcal/day {goal === 'bulk' ? 'surplus' : 'deficit'} needed
-            </span>
-            {maintenance > 0 && (
-              <span className={`plan-rate-flag ${Math.abs(deficit) >= Math.round(lossPerWeek * 7700 / 7) * 0.85 ? 'ok' : 'warn'}`}>
-                {Math.abs(deficit) >= Math.round(lossPerWeek * 7700 / 7) * 0.85 ? '✓ On track' : '⚠ Off target'}
-              </span>
-            )}
-          </div>
-        )}
       </section>
 
         {/* Adaptive Weight Plan — engine reasoning (moved here from Progress) */}
