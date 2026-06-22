@@ -16,7 +16,6 @@ import {
 } from 'recharts';
 import './App.css';
 import { api } from './api';
-import WeeklyRecap from './WeeklyRecap';
 import GoalSheet from './GoalSheet';
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -1024,7 +1023,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.188</span>
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.189</span>
         </div>
 
         {/* Period picker — compact pill between brand and cog */}
@@ -1629,8 +1628,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </div>
       </section>
 
-      {/* ── Weekly Recap share card ── */}
-      <WeeklyRecap habits={habits} tracker={tracker} />
+      {/* Weekly Recap moved to the Habits page (Sunday only, under the gold circles) */}
 
       {/* Habits & Nutrition tracker — moved into the cog (opens as a modal) */}
       {trackerModalOpen && (

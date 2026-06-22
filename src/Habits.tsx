@@ -4,6 +4,7 @@ import { flushSync } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import './App.css';
 import { api } from './api';
+import WeeklyRecap from './WeeklyRecap';
 
 // Navigate with a View Transition (shared-element morph) where supported
 function navigateWithTransition(navigate: any, to: string | number) {
@@ -837,6 +838,9 @@ const Habits: React.FC = () => {
           })}
         </div>
         <p className="hb-week-caption">{mandatoryStats.streak}-day check-in streak · keep it alive</p>
+
+        {/* Weekly Recap — Sunday only, right under the gold circles */}
+        {isSunday && <WeeklyRecap />}
 
         {/* Your habits — full cards with weekly circles + done button */}
         {yourHabits.length > 0 ? (

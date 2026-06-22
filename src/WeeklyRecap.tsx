@@ -35,12 +35,23 @@ interface DayData {
   fats: string;
 }
 
-interface WeeklyRecapProps {
-  habits: string[];
-  tracker: Record<string, DayData>;
-}
+const WeeklyRecap: React.FC = () => {
+  // Self-contained: fetches its own habits + full tracker so it can live anywhere.
+  const [habits, setHabits] = useState<string[]>([]);
+  const [tracker, setTracker] = useState<Record<string, DayData>>({});
+  useEffect(() => {
+    Promise.all([api.getHabits(), api.getTracker()]).then(([h, t]: any) => {
+      setHabits((h as any[]).map(x => x.name));
+      const days = (t.days ?? []) as any[];
+      const habitRows = (t.habits ?? []) as any[];
+      const map: Record<string, DayData> = {};
+      const blank = (): DayData => ({ weight: '', steps: '', calories: '', protein: '', carbs: '', fats: '', habits: {} });
+      days.forEach(d => { map[d.day] = { weight: d.weight ?? '', steps: d.steps ?? '', calories: d.calories ?? '', protein: d.protein ?? '', carbs: d.carbs ?? '', fats: d.fats ?? '', habits: {} }; });
+      habitRows.forEach(r => { if (!map[r.day]) map[r.day] = blank(); map[r.day].habits[r.habit_name] = r.state; });
+      setTracker(map);
+    }).catch(() => {});
+  }, []);
 
-const WeeklyRecap: React.FC<WeeklyRecapProps> = ({ habits, tracker }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
