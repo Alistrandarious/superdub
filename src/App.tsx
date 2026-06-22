@@ -69,11 +69,15 @@ const ChartXTick: React.FC<any> = ({ x, y, payload }) => {
 };
 
 // ── Color-matched tooltip ─────────────────────────────────────────────────────
-function makeChartTooltip(emaColor: string) {
+function makeChartTooltip(emaColor: string, todayDDMM: string) {
   return ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
     const hasData = payload.some((e: any) => e.value != null && e.value !== 0);
     if (!hasData) return null;
+    // Compare DD/MM label to today to detect future projected days
+    const [ldd, lmm] = (label as string).split('/').map(Number);
+    const [tdd, tmm] = todayDDMM.split('/').map(Number);
+    const isFutureDay = lmm > tmm || (lmm === tmm && ldd > tdd);
     return (
       <div style={{ background: 'rgba(12,12,18,0.97)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '9px 13px', boxShadow: '0 12px 36px rgba(0,0,0,0.7)', minWidth: 140 }}>
         <div style={{ color: '#fff', fontWeight: 700, fontFamily: "'Space Mono', monospace", fontSize: 11, marginBottom: 7 }}>{label}</div>
@@ -81,7 +85,9 @@ function makeChartTooltip(emaColor: string) {
           if (entry.value == null || entry.value === 0) return null;
           const color = entry.color || entry.fill || emaColor;
           const isCount = entry.name === 'Done' || entry.name === 'Failed';
-          const isLine = !isCount; // weight, ema, trend, projection
+          // Never show habit counts for future projected days
+          if (isFutureDay && isCount) return null;
+          const isLine = !isCount;
           const isProjection = entry.name === 'Projection';
           return (
             <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '2px 0' }}>
@@ -731,7 +737,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     : '#2FD27E';
 
   // Tooltip render function (colour-matched per series)
-  const renderTooltip = makeChartTooltip(emaColor);
+  const renderTooltip = makeChartTooltip(emaColor, todayKey);
 
   // ── Reporting: consistency heatmap (from start date → today, grows over time) ──
   const nowMs = Date.now();
@@ -964,7 +970,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.147</span>
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.148</span>
         </div>
 
         {/* Period picker — compact pill between brand and cog */}
