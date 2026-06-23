@@ -3,9 +3,14 @@ import { api } from './api';
 
 const ENERGY_KEY = 'superdub.energy.checkin';   // value = YYYY-MM-DD
 const ENABLED_KEY = 'superdub.checkin.enabled';  // 'false' = disabled
+const ENERGY_SNOOZE_KEY = 'superdub.energy.snooze'; // timestamp (ms) — "Log later" re-asks after 6 PM
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function snoozeUntilMs() {
+  return parseInt(localStorage.getItem(ENERGY_SNOOZE_KEY) || '0', 10);
 }
 
 function isEnabled() {
@@ -44,11 +49,22 @@ const EnergyCheckIn: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const shouldShowToday = () =>
-    isEnabled() && localStorage.getItem(ENERGY_KEY) !== todayISO();
+    isEnabled() && localStorage.getItem(ENERGY_KEY) !== todayISO() && Date.now() >= snoozeUntilMs();
 
   const dismiss = () => {
     localStorage.setItem(ENERGY_KEY, todayISO());
+    localStorage.removeItem(ENERGY_SNOOZE_KEY);
     setShow(false);
+  };
+
+  // "Log later" — re-ask this evening (after 6 PM), when you can actually rate the day.
+  const logLater = () => {
+    const now = new Date();
+    const six = new Date(now); six.setHours(18, 0, 0, 0);
+    const until = now < six ? six.getTime() : now.getTime() + 2 * 60 * 60 * 1000;
+    localStorage.setItem(ENERGY_SNOOZE_KEY, String(until));
+    setShow(false);
+    setTimeout(() => { if (shouldShowToday()) setShow(true); }, until - now.getTime());
   };
 
   // Show after weight check-in completes (weight dispatches tracker-updated),
@@ -256,6 +272,9 @@ const EnergyCheckIn: React.FC = () => {
                 disabled={saving || !canSave}
               >
                 {saving ? 'Saving…' : error ? 'Retry' : 'Log it'}
+              </button>
+              <button className="checkin-later-btn" onClick={logLater} disabled={saving}>
+                Log later
               </button>
               <button className="checkin-skip-btn" onClick={dismiss} disabled={saving}>
                 Skip today

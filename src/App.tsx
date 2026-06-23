@@ -1024,7 +1024,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.200</span>
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.201</span>
         </div>
 
         {/* Period picker — compact pill between brand and cog */}
@@ -1370,8 +1370,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                     yAxisId="right"
                     y={goalKg}
                     stroke="#2E8BFF"
-                    strokeWidth={1.5}
-                    strokeDasharray="8 4"
+                    strokeWidth={2.5}
+                    strokeDasharray="9 3"
                     label={(props: any) => {
                       const { viewBox } = props;
                       const text = `Goal ${goalKg}kg`;
@@ -1401,13 +1401,19 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 <Line yAxisId="right" type="linear" dataKey="zoneHigh" stroke="rgba(255,200,60,0.85)" strokeWidth={1.5} dot={false} activeDot={false} legendType="none" connectNulls={false} isAnimationActive={false} />
               </>
             )}
-            {/* ── Forward projection (weight zoom only) ── */}
+            {/* ── Forward projection (weight zoom only) — dark outline + bright dashed ── */}
             {weightZoom && (
-              <Line yAxisId="right" type="monotone" dataKey="projection" stroke="#2E8BFF" strokeWidth={2} strokeDasharray="5 5" dot={false} name="Projection" connectNulls isAnimationActive={false} />
+              <Line yAxisId="right" type="monotone" dataKey="projection" stroke="rgba(8,10,16,0.8)" strokeWidth={4.5} strokeDasharray="6 4" dot={false} connectNulls isAnimationActive={false} legendType="none" />
             )}
-            {/* ── Trend line — linear regression of logged weight (violet dashed) ── */}
+            {weightZoom && (
+              <Line yAxisId="right" type="monotone" dataKey="projection" stroke="#4DA3FF" strokeWidth={2.5} strokeDasharray="6 4" dot={false} name="Projection" connectNulls isAnimationActive={false} />
+            )}
+            {/* ── Trend line — violet dashed with a dark outline so it stays crisp over the bars ── */}
             {hasTrend && (
-              <Line yAxisId="right" type="linear" dataKey="trend" stroke="#A78BFA" strokeWidth={2} strokeDasharray="6 4" dot={false} name="Trend" connectNulls isAnimationActive={false} legendType="plainline" />
+              <Line yAxisId="right" type="linear" dataKey="trend" stroke="rgba(8,10,16,0.8)" strokeWidth={4.5} strokeDasharray="7 3" dot={false} connectNulls isAnimationActive={false} legendType="none" />
+            )}
+            {hasTrend && (
+              <Line yAxisId="right" type="linear" dataKey="trend" stroke="#B79CFF" strokeWidth={2.5} strokeDasharray="7 3" dot={false} name="Trend" connectNulls isAnimationActive={false} legendType="plainline" />
             )}
             {/* ── Actual weight line ── */}
             <Line
