@@ -614,6 +614,7 @@ const Habits: React.FC = () => {
   const [startDates, setStartDates] = useState<Record<string, string | null>>({});
   const [ht, setHt] = useState<HabitTracker>({});
   const [weather, setWeather] = useState<WeatherState | null>(null);
+  const [scrolled, setScrolled] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [newHabit, setNewHabit] = useState('');
   const [pendingRemove, setPendingRemove] = useState<string | null>(null);
@@ -984,7 +985,7 @@ const Habits: React.FC = () => {
         </div>
       )}
 
-      <div className="habits-page-scroll">
+      <div className="habits-page-scroll" onScroll={e => setScrolled((e.target as HTMLElement).scrollTop > 40)}>
         {/* Top bar: brand + weather + cog */}
         <div className="hb-topbar">
           <div className="hb-brand">
@@ -1117,7 +1118,7 @@ const Habits: React.FC = () => {
         {isSunday && <WeeklyRecap />}
 
         {/* Your habits — cadence carousel (Daily · Weekly · Monthly · Yearly) */}
-        <CadenceCarousel panels={cadencePanels} startIndex={0} />
+        <CadenceCarousel panels={cadencePanels} startIndex={0} compact={scrolled} />
 
         {/* Featured banner — tap to open & join (below the user's habits) */}
         <button className="hb-featured" onClick={() => setFeaturedOpen(true)}>
