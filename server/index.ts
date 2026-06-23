@@ -233,6 +233,13 @@ const migrations = [
   // Per-user reminder hour (local 24h); defaults to 8 AM. Added post-hoc for
   // existing rows via ADD COLUMN IF NOT EXISTS.
   `ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS reminder_hour INTEGER DEFAULT 8`,
+  // Demographic / job / religion fields (optional, captured at signup + Profile).
+  `ALTER TABLE profile ADD COLUMN IF NOT EXISTS occupation TEXT`,
+  `ALTER TABLE profile ADD COLUMN IF NOT EXISTS ethnicity TEXT`,
+  `ALTER TABLE profile ADD COLUMN IF NOT EXISTS gender_identity TEXT`,
+  `ALTER TABLE profile ADD COLUMN IF NOT EXISTS country TEXT`,
+  `ALTER TABLE profile ADD COLUMN IF NOT EXISTS relationship_status TEXT`,
+  `ALTER TABLE profile ADD COLUMN IF NOT EXISTS religion TEXT`,
 ];
 (async () => {
   for (const sql of migrations) {

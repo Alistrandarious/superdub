@@ -1830,6 +1830,23 @@ h1, h2, h3, h4, .sora {
   flex-wrap: wrap;
 }
 
+/* ── Profile background (demographics) selects ── */
+.bg-fields { display: flex; flex-direction: column; gap: 14px; }
+.bg-select {
+  width: 100%;
+  font-family: 'Sora', sans-serif;
+  font-size: 0.9rem;
+  color: #fff;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-sm);
+  padding: 11px 12px;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.bg-select option { background: #15151E; color: #fff; }
+
 /* ── Patterns card (day-of-week + correlations) ── */
 .patterns-card { padding: 14px 16px 16px; }
 .patterns-head {

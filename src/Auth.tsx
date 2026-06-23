@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { api, setToken } from './api';
+import { OCCUPATIONS, ETHNICITIES, GENDER_IDENTITIES, COUNTRIES, RELATIONSHIP_STATUSES, RELIGIONS } from './demographics';
 import './App.css';
 
 interface AuthProps {
@@ -69,6 +70,13 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
   const [lossPerWeek, setLossPerWeek] = useState('0.5');
   const [gainPerWeek, setGainPerWeek] = useState('0.25');
   const [jobType, setJobType] = useState('desk');
+  // Optional demographic / job / religion fields (signup step 5)
+  const [occupation, setOccupation] = useState('');
+  const [ethnicity, setEthnicity] = useState('');
+  const [genderIdentity, setGenderIdentity] = useState('');
+  const [country, setCountry] = useState('');
+  const [relationshipStatus, setRelationshipStatus] = useState('');
+  const [religion, setReligion] = useState('');
   const [gymFreq, setGymFreq] = useState('3-4');
   const [walkFreq, setWalkFreq] = useState('moderate');
   const activityLevel = String(computeActivity(jobType, gymFreq, walkFreq));
@@ -137,7 +145,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
 
   const maxDob = new Date(new Date().setFullYear(new Date().getFullYear() - 10)).toISOString().split('T')[0];
 
-  const TOTAL_STEPS = 4;
+  const TOTAL_STEPS = 5;
 
   const clearError = () => setError('');
 
@@ -167,6 +175,9 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
     if (step === 2) {
       if (!dob) { setError('Please enter your date of birth'); return; }
     }
+    if (step === 4) {
+      if (habits.length === 0) { setError('Pick at least one habit.'); return; }
+    }
     setStep(s => s + 1);
   };
 
@@ -179,6 +190,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
         email, password, name, dob, sex, heightCm, weightKg,
         goalWeight, lossPerWeek, gainPerWeek, activityLevel, dietGoal, habits,
         jobType, gymFreq, walkFreq,
+        occupation, ethnicity, genderIdentity, country, relationshipStatus, religion,
       });
       setToken(result.token);
       // Persist cohort onboarding message so the dashboard can display it on first load
@@ -671,6 +683,32 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
                 <button type="button" onClick={addCustomHabit} className="auth-add-btn">+</button>
               </div>
               {habits.length === 0 && <p className="auth-error">Pick at least one habit.</p>}
+            </>
+          )}
+
+          {/* Step 5 — About you (optional demographics) */}
+          {step === 5 && (
+            <>
+              <h2 className="auth-step-title">A little about you</h2>
+              <p className="auth-step-sub">All optional — it helps us tailor superdub. You can edit or skip any of these.</p>
+              <div className="auth-form">
+                {([
+                  { label: 'Occupation', value: occupation, set: setOccupation, opts: OCCUPATIONS },
+                  { label: 'Country', value: country, set: setCountry, opts: COUNTRIES },
+                  { label: 'Ethnicity', value: ethnicity, set: setEthnicity, opts: ETHNICITIES },
+                  { label: 'Gender identity', value: genderIdentity, set: setGenderIdentity, opts: GENDER_IDENTITIES },
+                  { label: 'Relationship status', value: relationshipStatus, set: setRelationshipStatus, opts: RELATIONSHIP_STATUSES },
+                  { label: 'Religion', value: religion, set: setReligion, opts: RELIGIONS },
+                ] as const).map(f => (
+                  <div className="auth-field" key={f.label}>
+                    <label>{f.label}</label>
+                    <select value={f.value} onChange={e => f.set(e.target.value)}>
+                      <option value="">Select…</option>
+                      {f.opts.map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </div>
+                ))}
+              </div>
             </>
           )}
 

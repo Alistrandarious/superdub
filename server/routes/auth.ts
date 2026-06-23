@@ -34,6 +34,8 @@ router.post('/signup', async (req: Request, res: Response) => {
     goalWeight = '', lossPerWeek = '0.5', gainPerWeek = '0.25',
     activityLevel = '1.55', dietGoal = 'cut',
     jobType = 'desk', gymFreq = '3-4', walkFreq = 'moderate',
+    occupation = '', ethnicity = '', genderIdentity = '', country = '',
+    relationshipStatus = '', religion = '',
     habits = DEFAULT_HABITS,
   } = req.body;
 
@@ -67,9 +69,11 @@ router.post('/signup', async (req: Request, res: Response) => {
     const userId = user.id;
 
     await client.query(
-      `INSERT INTO profile (user_id, name, dob, age, sex, height_cm, weight_kg, activity, job_type, gym_freq, walk_freq)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-      [userId, name, dob || null, age, sex, heightCm, weightKg, activityLevel, jobType, gymFreq, walkFreq]
+      `INSERT INTO profile (user_id, name, dob, age, sex, height_cm, weight_kg, activity, job_type, gym_freq, walk_freq,
+                            occupation, ethnicity, gender_identity, country, relationship_status, religion)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
+      [userId, name, dob || null, age, sex, heightCm, weightKg, activityLevel, jobType, gymFreq, walkFreq,
+       occupation || null, ethnicity || null, genderIdentity || null, country || null, relationshipStatus || null, religion || null]
     );
 
     await client.query(

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import './App.css';
 import { api, clearToken } from './api';
 import { computeActivity, JOB_OPTS } from './Auth';
+import { OCCUPATIONS, ETHNICITIES, GENDER_IDENTITIES, COUNTRIES, RELATIONSHIP_STATUSES, RELIGIONS } from './demographics';
 
 interface ProfileData {
   dob: string;
@@ -106,6 +107,13 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
   const [habits, setHabits] = useState<string[]>(DEFAULT_HABITS);
   const [newHabit, setNewHabit] = useState('');
   const [jobType, setJobType] = useState('desk');
+  // Optional demographic / job / religion fields
+  const [occupation, setOccupation] = useState('');
+  const [ethnicity, setEthnicity] = useState('');
+  const [genderIdentity, setGenderIdentity] = useState('');
+  const [country, setCountry] = useState('');
+  const [relationshipStatus, setRelationshipStatus] = useState('');
+  const [religion, setReligion] = useState('');
   const [gymFreq, setGymFreq] = useState('3-4');
   const [walkFreq, setWalkFreq] = useState('moderate');
   const [goalWeight, setGoalWeight] = useState('');
@@ -133,8 +141,6 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
   const [aiKeyDone, setAiKeyDone] = useState(false);
 
   // Quick weight log
-  const [weightInput, setWeightInput] = useState('');
-  const [weightSaved, setWeightSaved] = useState(false);
 
   // Avatar picker
   const [avatarSeed, setAvatarSeed] = useState<string | null>(null);
@@ -197,6 +203,12 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
       if (pa.gymMinutes) setGymMinutes(Number(pa.gymMinutes));
       if (Array.isArray(pa.weeklyActivities)) setWeeklyActivities(pa.weeklyActivities);
       if (pa.avatarSeed) setAvatarSeed(pa.avatarSeed);
+      setOccupation(pa.occupation ?? '');
+      setEthnicity(pa.ethnicity ?? '');
+      setGenderIdentity(pa.genderIdentity ?? '');
+      setCountry(pa.country ?? '');
+      setRelationshipStatus(pa.relationshipStatus ?? '');
+      setReligion(pa.religion ?? '');
       if (pa.accountCreatedAt) setAccountCreatedAt(pa.accountCreatedAt);
       if (pa.lastLoginAt) setLastLoginAt(pa.lastLoginAt);
       if (pa.lastActiveAt) setLastActiveAt(pa.lastActiveAt);
@@ -405,21 +417,19 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
     api.updateHabits(newHabits).catch(() => {});
   };
 
-  // Quick weight log → saves to today's tracker entry
-  const weightLogUnit: 'kg' | 'lbs' = weightUnit === 'lbs' ? 'lbs' : 'kg';
-  const logWeight = () => {
-    const val = parseFloat(weightInput);
-    if (!val || val <= 0) return;
-    const kg = weightLogUnit === 'lbs' ? lbsToKg(val) : val;
-    const now = new Date();
-    const todayKey = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}`;
-    api.updateTrackerDay(todayKey, { weight: String(kg) }).catch(() => {});
-    setProfile(p => ({ ...p, weightKg: String(kg) }));
-    window.dispatchEvent(new CustomEvent('superdub:tracker-updated'));
-    setWeightSaved(true);
-    setWeightInput('');
-    setTimeout(() => setWeightSaved(false), 2200);
+  // Persist a single demographic/job/religion field on change.
+  const saveDemographic = (patch: Record<string, string>) => {
+    api.updateProfile({ ...profileRef.current, name: nameRef.current, ...patch }).catch(() => {});
   };
+
+  const DEMOGRAPHIC_FIELDS = [
+    { label: 'Occupation', value: occupation, set: setOccupation, key: 'occupation', opts: OCCUPATIONS },
+    { label: 'Country', value: country, set: setCountry, key: 'country', opts: COUNTRIES },
+    { label: 'Ethnicity', value: ethnicity, set: setEthnicity, key: 'ethnicity', opts: ETHNICITIES },
+    { label: 'Gender identity', value: genderIdentity, set: setGenderIdentity, key: 'genderIdentity', opts: GENDER_IDENTITIES },
+    { label: 'Relationship status', value: relationshipStatus, set: setRelationshipStatus, key: 'relationshipStatus', opts: RELATIONSHIP_STATUSES },
+    { label: 'Religion', value: religion, set: setReligion, key: 'religion', opts: RELIGIONS },
+  ];
 
   if (!loaded) {
     return (
@@ -439,33 +449,6 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
 
         <div className="page-intro">
           <p className="page-intro-sub">Profile, settings & quick actions</p>
-        </div>
-
-        {/* Quick: Log Weight */}
-        <div className="log-weight-card">
-          <div className="log-weight-head">
-            <span className="log-weight-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span>
-            <div>
-              <div className="log-weight-title">Log Weight</div>
-              <div className="log-weight-sub">Save today's weigh-in</div>
-            </div>
-          </div>
-          <div className="log-weight-row">
-            <div className="log-weight-input-unit">
-              <input
-                type="text"
-                inputMode="decimal"
-                value={weightInput}
-                onChange={e => setWeightInput(e.target.value.replace(/[^0-9.]/g, ''))}
-                onKeyDown={e => { if (e.key === 'Enter') logWeight(); }}
-                placeholder={profile.weightKg ? (weightLogUnit === 'lbs' ? String(kgToLbs(parseFloat(profile.weightKg))) : profile.weightKg) : '0'}
-              />
-              <span className="log-weight-unit">{weightLogUnit}</span>
-            </div>
-            <button className="log-weight-btn" onClick={logWeight} disabled={!weightInput}>
-              {weightSaved ? '✓ Saved' : 'Save'}
-            </button>
-          </div>
         </div>
 
         {/* Identity */}
@@ -539,6 +522,27 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
             {accountCreatedAt && <span className="pam-item"><span className="pam-icon">📅</span>Member since <strong>{formatDate(accountCreatedAt)}</strong></span>}
           </div>
         )}
+
+        {/* ── Background (optional demographics / job / religion) ── */}
+        <div className="diet-section">
+          <h2 className="diet-heading">Background</h2>
+          <p className="diet-hint" style={{ marginTop: -6, marginBottom: 14 }}>All optional — helps us tailor superdub.</p>
+          <div className="bg-fields">
+            {DEMOGRAPHIC_FIELDS.map(f => (
+              <div className="bio-field" key={f.key}>
+                <label className="bio-label">{f.label}</label>
+                <select
+                  className="bg-select"
+                  value={f.value}
+                  onChange={e => { f.set(e.target.value); saveDemographic({ [f.key]: e.target.value }); }}
+                >
+                  <option value="">Select…</option>
+                  {f.opts.map(o => <option key={o} value={o}>{o}</option>)}
+                </select>
+              </div>
+            ))}
+          </div>
+        </div>
 
         {/* ── About You ── */}
         <div className="diet-section">
