@@ -5207,10 +5207,12 @@ h1, h2, h3, h4, .sora {
 }
 .hcard-summary .hcard-name {
   flex: 1; min-width: 0;
+  font-size: 0.92rem;
   white-space: normal;
   overflow-wrap: anywhere;
   line-height: 1.25;
 }
+.hcard-summary .hcard-cog { flex-shrink: 0; }
 .hcard-summary .hcard-icon.done { color: var(--theme); }
 
 /* Smooth expand/collapse via grid-template-rows (0fr → 1fr) */
