@@ -426,12 +426,10 @@ const HabitCard: React.FC<{
       className={`hcard ${expanded ? 'hcard--expanded' : 'hcard--collapsed'} ${hasDanger ? 'hcard-danger' : hasWarning ? 'hcard-warning' : ''}`}
       style={{ '--theme': accent, '--theme-dim': `${accent}66`, '--theme-glow': `${accent}22` } as React.CSSProperties}
     >
-      {/* Collapsed summary — tap to expand. Shows name · streak · XP. */}
+      {/* Collapsed summary — tap to expand. Just the habit + expand control. */}
       <div className="hcard-summary" onClick={() => setExpanded(e => !e)}>
         <span className={`hcard-icon ${currentDone ? 'done' : ''}`}>{isFlame ? '🔥' : '✓'}</span>
         <span className="hcard-name">{habit}</span>
-        {stats.streak > 0 && <span className="hcard-streak">{stats.streak}d</span>}
-        <span className="hcard-xp-chip">{stats.totalXP} XP</span>
         <span className={`hcard-chevron ${expanded ? 'open' : ''}`}>▾</span>
       </div>
 
