@@ -646,10 +646,12 @@ const Habits: React.FC = () => {
     api.toggleTrackerHabit(dayKey, habit, state).catch(() => {});
   }, []);
 
-  // Backfill past days — gated by a once-per-session honesty declaration
+  // Backfill past days — gated by a one-time honesty declaration. Persisted in
+  // localStorage so it's accepted once per device, not re-prompted every launch
+  // (sessionStorage was cleared on each app open, so it kept reappearing).
   const editPast = useCallback((habit: string, day: string, cur: HabitState) => {
     const next = cycleState(cur);
-    if (sessionStorage.getItem('superdub.honesty') === '1') {
+    if (localStorage.getItem('superdub.honesty') === '1') {
       handleToggleDay(habit, day, next);
     } else {
       setHonestyPending({ habit, day, next });
@@ -657,7 +659,7 @@ const Habits: React.FC = () => {
   }, [handleToggleDay]);
 
   const confirmHonesty = () => {
-    sessionStorage.setItem('superdub.honesty', '1');
+    localStorage.setItem('superdub.honesty', '1');
     if (honestyPending) handleToggleDay(honestyPending.habit, honestyPending.day, honestyPending.next);
     setHonestyPending(null);
   };
