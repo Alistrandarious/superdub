@@ -4465,15 +4465,13 @@ h1, h2, h3, h4, .sora {
 /* ── Cadence switcher: title + little coloured carousel + content ── */
 .cadx { padding: 6px 0 0; }
 .cadx-title {
-  display: flex; align-items: center; justify-content: center; gap: 7px;
   font-family: 'Sora', sans-serif; font-weight: 800;
-  font-size: 1.45rem; letter-spacing: -0.01em;
+  font-size: 1.18rem; letter-spacing: 0.02em; text-transform: uppercase;
   text-align: center;
   transition: color 0.3s ease;
 }
-.cadx-title-icon { font-size: 1.1rem; }
 .cadx-swipe { touch-action: pan-y; }
-.cadx-strip { overflow: hidden; position: relative; height: 64px; margin: 8px 0 4px; }
+.cadx-strip { overflow: hidden; position: relative; height: 42px; margin: 8px 0 2px; }
 .cadx-strip::before, .cadx-strip::after {
   content: ''; position: absolute; top: 0; bottom: 0; width: 56px; z-index: 2; pointer-events: none;
 }
@@ -4485,24 +4483,26 @@ h1, h2, h3, h4, .sora {
 }
 .cadx-chip {
   flex-shrink: 0;
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  display: flex; flex-direction: row; align-items: center; gap: 6px;
+  justify-content: center;
   background: none; border: none; cursor: pointer;
   will-change: transform, opacity;
 }
 .cadx-chip-dot {
-  width: 34px; height: 34px; border-radius: 50%;
-  background: color-mix(in srgb, var(--chip) 14%, transparent);
-  border: 2px solid color-mix(in srgb, var(--chip) 50%, transparent);
+  width: 9px; height: 9px; border-radius: 50%;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--chip) 20%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--chip) 55%, transparent);
   transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 .cadx-chip.active .cadx-chip-dot {
   background: var(--chip);
   border-color: var(--chip);
-  box-shadow: 0 4px 16px -2px var(--chip);
+  box-shadow: 0 0 10px -1px var(--chip);
 }
 .cadx-chip-label {
-  font-family: 'Sora', sans-serif; font-weight: 700; font-size: 0.6rem;
-  color: rgba(255,255,255,0.45);
+  font-family: 'Sora', sans-serif; font-weight: 700; font-size: 0.62rem;
+  color: rgba(255,255,255,0.45); white-space: nowrap;
 }
 .cadx-chip.active .cadx-chip-label { color: #fff; }
 .cadx-viewport { position: relative; overflow: hidden; }

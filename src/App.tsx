@@ -570,6 +570,27 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     [chartDayRange, tracker, effectiveStepTarget] // eslint-disable-line react-hooks/exhaustive-deps
   );
 
+  // Mood (1–5) chart + KPI data from check-in history
+  const moodChartData = useMemo(() =>
+    chartDayRange.map(({ ddmm }) => {
+      const iso = `${YEAR}-${ddmm.slice(3)}-${ddmm.slice(0, 2)}`;
+      return { day: ddmm, mood: moodByDate[iso] ?? null };
+    }),
+    [chartDayRange, moodByDate] // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const moodHasData = moodChartData.some(d => d.mood != null);
+  const moodStats = useMemo(() => {
+    const v7: number[] = [], v30: number[] = [];
+    for (let i = 0; i < 30; i++) {
+      const d = new Date(now); d.setDate(now.getDate() - i);
+      const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const m = moodByDate[iso];
+      if (m != null) { v30.push(m); if (i < 7) v7.push(m); }
+    }
+    const avg = (a: number[]) => a.length ? Math.round((a.reduce((x, y) => x + y, 0) / a.length) * 10) / 10 : null;
+    return { avg7: avg(v7), avg30: avg(v30), n: v30.length };
+  }, [moodByDate]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // How much history exists → grey out ranges we don't have data for yet
   const daysSinceCreation = Math.max(1, Math.floor((now.getTime() - accountCreatedDate.getTime()) / 86400000) + 1);
   const rangeAvailable = (r: string) =>
@@ -1078,6 +1099,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 </button>
                 <button className="cog-menu-item" onClick={() => { setMenuOpen(false); window.dispatchEvent(new CustomEvent('superdub:show-step-entry')); }}>
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 4h-2L9 9H5l-1 5h14l-1-5h-4z"/><path d="M5 14v5h14v-5"/></svg> Log Steps
+                </button>
+                <button className="cog-menu-item" onClick={() => { setMenuOpen(false); window.dispatchEvent(new CustomEvent('superdub:show-energy-checkin')); }}>
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg> How I'm Feeling
                 </button>
                 <button className="cog-menu-item" onClick={() => { setMenuOpen(false); setTrackerModalOpen(true); }}>
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Habits &amp; Nutrition
@@ -1651,8 +1675,62 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </div>
       </section>
 
+      {/* ── Mood trend (1–5 from daily check-ins) ── */}
+      {moodHasData && (
+        <section className="chart-section">
+          <div className="chart-title-row" style={{ padding: '4px 16px 0' }}>
+            <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#FFB928' }} />Mood</h3>
+          </div>
+          <ResponsiveContainer width="100%" height={180}>
+            <ComposedChart data={moodChartData} margin={{ left: 0, right: 10, top: 10, bottom: 8 }}>
+              <defs>
+                <linearGradient id="moodFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#FFB92855" />
+                  <stop offset="100%" stopColor="#FFB92805" />
+                </linearGradient>
+              </defs>
+              <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+              <XAxis dataKey="day" stroke="rgba(255,255,255,0.1)" tick={chartXTick} interval={displayInterval} tickLine={false} height={36} padding={{ left: 6, right: 6 }} />
+              <YAxis stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} width={26} axisLine={false} tickLine={false} domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} />
+              <Tooltip
+                cursor={{ stroke: 'rgba(255,255,255,0.15)' }}
+                contentStyle={{ background: '#161006', border: '1px solid #3a2f14', borderRadius: 10, fontSize: 12 }}
+                labelStyle={{ color: '#caa' }}
+                formatter={(v: any) => [`${v} / 5`, 'Mood']}
+              />
+              <Area type="monotone" dataKey="mood" stroke="none" fill="url(#moodFill)" connectNulls isAnimationActive={false} legendType="none" />
+              <Line type="monotone" dataKey="mood" name="Mood" stroke="#FFB928" strokeWidth={2.5} dot={{ r: 3, fill: '#0E0E14', stroke: '#FFB928', strokeWidth: 2 }} connectNulls isAnimationActive={false} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </section>
+      )}
+
       {/* ── Day-of-week patterns + correlations across steps/habits/mood ── */}
       <PatternsCard days={patternDays} />
+
+      {/* ── Consistency heatmap — shown above the engagement stats ── */}
+      <section className="report-card consistency-section">
+        <p className="report-eyebrow">Consistency · since {MONTH_SHORT[joinMonth]} {YEAR}</p>
+        <div className="heatmap">
+          <div className="heatmap-grid">
+            {heatmapCells.map((c, i) => (
+              <div
+                key={i}
+                className={`heatmap-cell hm-${c.state}`}
+                style={c.state === 'active' ? ({ '--lvl': Math.max(c.ratio, 0.45) } as React.CSSProperties) : undefined}
+                title={`${c.ddmm}: ${c.state === 'off' ? 'not on the app' : `${Math.round(c.ratio * 100)}% of habits done`}`}
+              />
+            ))}
+          </div>
+          <div className="heatmap-months" style={{ gridTemplateColumns: `repeat(${heatmapCells.length / 7}, 1fr)` }}>
+            {heatmapMonths.map(m => (
+              <span key={m.idx + '-' + m.col} className="heatmap-month" style={{ gridColumn: `${m.col + 1} / span 1` }}>
+                {MONTH_SHORT[m.idx]}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* ── KPI cards — Engagement first, then Weight, then Activity ── */}
       <div className="kpi-section">
@@ -1708,6 +1786,25 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             </span>
           </div>
         </div>
+        <p className="kpi-group-label">Wellbeing</p>
+        <div className="kpi-group">
+          <div className="kpi-card kpi-row-layout">
+            <span className="kpi-label">Mood (7d)</span>
+            <span className={`kpi-value ${moodStats.avg7 != null ? (moodStats.avg7 >= 3.5 ? 'kpi-good' : moodStats.avg7 <= 2.4 ? 'kpi-bad' : '') : ''}`}>
+              {moodStats.avg7 != null ? <>{moodStats.avg7}<span className="kpi-unit">/5</span></> : '—'}
+            </span>
+          </div>
+          <div className="kpi-card kpi-row-layout">
+            <span className="kpi-label">Mood (30d)</span>
+            <span className="kpi-value">
+              {moodStats.avg30 != null ? <>{moodStats.avg30}<span className="kpi-unit">/5</span></> : '—'}
+            </span>
+          </div>
+          <div className="kpi-card kpi-row-layout">
+            <span className="kpi-label">Check-ins</span>
+            <span className="kpi-value">{moodStats.n}</span>
+          </div>
+        </div>
       </div>
 
       {/* ── Coaching message ── */}
@@ -1721,30 +1818,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           <p className="coaching-msg">{coachingMsg.message}</p>
         </div>
       )}
-
-      {/* ── Consistency heatmap — dedicated bottom section ── */}
-      <section className="report-card consistency-section">
-        <p className="report-eyebrow">Consistency · since {MONTH_SHORT[joinMonth]} {YEAR}</p>
-        <div className="heatmap">
-          <div className="heatmap-grid">
-            {heatmapCells.map((c, i) => (
-              <div
-                key={i}
-                className={`heatmap-cell hm-${c.state}`}
-                style={c.state === 'active' ? ({ '--lvl': Math.max(c.ratio, 0.45) } as React.CSSProperties) : undefined}
-                title={`${c.ddmm}: ${c.state === 'off' ? 'not on the app' : `${Math.round(c.ratio * 100)}% of habits done`}`}
-              />
-            ))}
-          </div>
-          <div className="heatmap-months" style={{ gridTemplateColumns: `repeat(${heatmapCells.length / 7}, 1fr)` }}>
-            {heatmapMonths.map(m => (
-              <span key={m.idx + '-' + m.col} className="heatmap-month" style={{ gridColumn: `${m.col + 1} / span 1` }}>
-                {MONTH_SHORT[m.idx]}
-              </span>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Weekly Recap moved to the Habits page (Sunday only, under the gold circles) */}
 
