@@ -392,14 +392,12 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       setHeight(ws.height ?? '');
       setAge(ws.age ?? '');
       setActivityLevel(ws.activityLevel ?? '1.4');
-
-      setLoaded(true);
-    }).catch(() => setLoaded(true));
+    });
   }, []);
 
   // Load plan status and write badge for BottomNav
   const loadPlanStatus = useCallback(() => {
-    api.getPlanStatus()
+    return api.getPlanStatus()
       .then((d: any) => {
         setPlanStatus(d);
         const badge = {
@@ -424,9 +422,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         next[todayKey] = { ...next[todayKey], habits: { ...next[todayKey].habits, [MANDATORY]: true } };
         return next;
       });
-      // Load plan and run adjustment cycle (cycle is idempotent — skips if <7 days)
-      api.getCoachingMessage().then((d: any) => setCoachingMsg(d)).catch(() => {});
-      loadPlanStatus();
+      // Load plan + coaching, then reveal the page only once they're in (no pop-in).
+      const coaching = api.getCoachingMessage().then((d: any) => setCoachingMsg(d)).catch(() => {});
+      const plan = loadPlanStatus();
+      Promise.allSettled([coaching, plan]).then(() => setLoaded(true));
+      // The adjustment cycle is slower and only affects minor styling — run it after reveal.
       api.runPlanCycle()
         .then((c: any) => {
           if (c.ran) { setPlanCycle(c); loadPlanStatus(); }
@@ -441,7 +441,10 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           } catch {}
         })
         .catch(() => {});
-    });
+    }).catch(() => setLoaded(true));
+    // Safety net: never trap the user on the loader if a request hangs
+    const failsafe = setTimeout(() => setLoaded(true), 8000);
+    return () => clearTimeout(failsafe);
   }, [loadData, loadPlanStatus]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Re-sync tracker when DailyCheckIn saves weight
@@ -1024,7 +1027,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.204</span>
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.205</span>
         </div>
 
         {/* Period picker — compact pill between brand and cog */}
