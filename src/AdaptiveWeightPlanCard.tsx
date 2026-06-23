@@ -1,39 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { api } from './api';
+import React from 'react';
 
-// Self-contained Adaptive Weight Plan engine card.
-// Fetches its own plan status, runs the weekly cycle, pulls the coaching
-// signal, and derives the EMA of logged weight — so it can live on any page.
-const AdaptiveWeightPlanCard: React.FC = () => {
-  const [planStatus, setPlanStatus] = useState<any>(null);
-  const [planCycle, setPlanCycle] = useState<any>(null);
-  const [coachingMsg, setCoachingMsg] = useState<any>(null);
-  const [lastEMAValue, setLastEMAValue] = useState<number | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      try {
-        const [status, tracker] = await Promise.all([api.getPlanStatus(), api.getTracker()]);
-        if (!active) return;
-        setPlanStatus(status);
-        // EMA (alpha=0.25) over logged weights, chronological → most-recent value
-        const days: any[] = tracker?.days ?? [];
-        let ema: number | null = null;
-        for (const d of days) {
-          const w = parseFloat(d.weight);
-          if (w > 0) ema = ema == null ? w : 0.25 * w + 0.75 * ema;
-        }
-        setLastEMAValue(ema);
-      } catch { /* page can render nothing if status fails */ }
-
-      // Cycle + coaching are non-fatal extras
-      try { const c = await api.runPlanCycle(); if (active) setPlanCycle(c); } catch { /* noop */ }
-      try { const m = await api.getCoachingMessage(); if (active) setCoachingMsg(m); } catch { /* noop */ }
-    })();
-    return () => { active = false; };
-  }, []);
-
+// Adaptive Weight Plan engine card — pure render.
+// Its data (plan status, weekly cycle, coaching signal, weight EMA) is fetched
+// by the parent page as part of its load gate, so the card never pops in after
+// the page reveals.
+const AdaptiveWeightPlanCard: React.FC<{
+  planStatus: any;
+  planCycle: any;
+  coachingMsg: any;
+  lastEMAValue: number | null;
+}> = ({ planStatus, planCycle, coachingMsg, lastEMAValue }) => {
   if (!planStatus?.active || !planStatus.currentTarget) return null;
 
   const target = planStatus.currentTarget!;

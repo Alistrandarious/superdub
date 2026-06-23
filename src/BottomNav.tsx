@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { enablePush, disablePush, pushIsEnabled, pushSupported } from './push';
-import { api } from './api';
 
 function readPlanBadge(): { active: boolean; calories: number | null; onTrack: boolean | null } | null {
   try {
@@ -161,27 +160,6 @@ const BottomNav: React.FC = () => {
             </button>
           )}
 
-          {pushSupported() && pushOn && (
-            <button className="diet-sub-item" onClick={async () => {
-              if (pushBusy) return;
-              setPushBusy(true);
-              try {
-                const r = await api.pushTest();
-                alert(r.sent > 0 ? 'Test push sent — check your notifications! 🎉' : 'No devices subscribed. Toggle Notifications off and on again.');
-              } catch {
-                alert('Could not send — is the server configured with VAPID keys?');
-              }
-              setPushBusy(false);
-            }}>
-              <span className="diet-sub-icon">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-              </span>
-              <div className="diet-sub-text">
-                <span className="diet-sub-label">Send a test push</span>
-                <span className="diet-sub-desc">Fire one to this device right now</span>
-              </div>
-            </button>
-          )}
         </div>
       )}
 

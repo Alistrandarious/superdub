@@ -685,7 +685,6 @@ const ActivityTargetsCard: React.FC<{
     : 0;
   const foodDeficit = maintenance > 0 ? maintenance - macroCalories : 0;
   const gapKcal = goalDeficit - foodDeficit - totalTrainingBurnPerDay;
-  const stepsNeeded = gapKcal > 0 ? Math.ceil(gapKcal / kcalPerStep) : 0;
   const alreadyCovered = gapKcal <= 0 && (goalDeficit !== 0 || goal === 'maintain') && maintenance > 0;
 
   const hasTraining = gymSessionsPerWeek > 0 || weeklyActivities.length > 0;
@@ -749,30 +748,25 @@ const ActivityTargetsCard: React.FC<{
       )}
 
       <div className="atc-steps">
-        <div className="atc-section-label">Steps Today</div>
+        <div className="atc-section-label">Daily Step Goal</div>
         {maintenance <= 0 ? (
           <p className="diet-hint">Complete your biographics in Profile to see personalised step targets.</p>
-        ) : alreadyCovered ? (
-          <div className="atc-covered">
-            <div className="atc-covered-check" style={{ color: '#2FD27E' }}>✓</div>
-            <div>
-              <p className="atc-covered-main">Food{hasTraining ? ' + training' : ''} already covers your {goal} target.</p>
-              <p className="atc-covered-sub">Every step is bonus burn — aim for {stepTarget.toLocaleString()} for health.</p>
-            </div>
-          </div>
         ) : (
-          <div className="atc-steps-needed">
-            <div className="atc-steps-big">{stepsNeeded > 0 ? stepsNeeded.toLocaleString() : stepTarget.toLocaleString()}</div>
-            <div className="atc-steps-sub">
-              {stepsNeeded > 0
-                ? `steps to close the ${Math.round(Math.abs(gapKcal)).toLocaleString()} kcal gap`
-                : `step target · ≈ ${stepTargetKcal.toLocaleString()} kcal`}
+          <>
+            {/* Always headline the health-based step goal — never the tiny
+                "steps left to close today's calorie gap" figure, which made the
+                target look absurdly low when food + training already covered it. */}
+            <div className="atc-steps-needed">
+              <div className="atc-steps-big">{stepTarget.toLocaleString()}</div>
+              <div className="atc-steps-sub">steps/day · ≈ {stepTargetKcal.toLocaleString()} kcal burn</div>
             </div>
-          </div>
+            <div className="atc-step-context">
+              {alreadyCovered
+                ? `Food${hasTraining ? ' + training' : ''} already covers your ${goal} target — these steps are bonus burn. 💪`
+                : `You're ~${Math.round(Math.abs(gapKcal)).toLocaleString()} kcal short of today's ${goal} target — moving more helps close the gap.`}
+            </div>
+          </>
         )}
-        <div className="atc-step-meta">
-          <span>{stepTarget.toLocaleString()} step target · ≈ {stepTargetKcal.toLocaleString()} kcal</span>
-        </div>
       </div>
 
       {yesterdaySteps !== null && (
@@ -818,13 +812,22 @@ const Diet: React.FC = () => {
   const [loaded, setLoaded] = useState(false);
   const [latestPlan, setLatestPlan] = useState<any | null>(null);
   const [planGoal, setPlanGoal] = useState<any | null>(null);
+  // Adaptive Weight Plan card data — fetched here so it's part of the load gate
+  // (the card itself is now a pure render, so it can't pop in after reveal).
+  const [planStatusFull, setPlanStatusFull] = useState<any | null>(null);
+  const [planCycle, setPlanCycle] = useState<any | null>(null);
+  const [coachingMsg, setCoachingMsg] = useState<any | null>(null);
+  const [lastEMAValue, setLastEMAValue] = useState<number | null>(null);
 
   useEffect(() => {
     // These feed the hero (plan goal drives the progress bars + latest plan card).
     // Run them alongside the main load and only reveal once everything has settled,
     // so the page appears fully formed instead of elements popping in one by one.
     const plans = api.getDietPlans().then((p: any[]) => { if (p.length > 0) setLatestPlan(p[0]); }).catch(() => {});
-    const status = api.getPlanStatus().then((s: any) => { if (s?.active) setPlanGoal(s.goal); }).catch(() => {});
+    const status = api.getPlanStatus().then((s: any) => { setPlanStatusFull(s); if (s?.active) setPlanGoal(s.goal); }).catch(() => {});
+    // Adaptive plan card extras — also part of the gate so the card is complete on reveal.
+    const cycle = api.runPlanCycle().then((c: any) => setPlanCycle(c)).catch(() => {});
+    const coaching = api.getCoachingMessage().then((m: any) => setCoachingMsg(m)).catch(() => {});
 
     const main = Promise.all([
       api.getProfile(),
@@ -837,6 +840,14 @@ const Diet: React.FC = () => {
       const allDays: any[] = td.days ?? [];
       const unique = deduplicateDays(allDays);
       setAllTrackerDays(unique);
+
+      // EMA (alpha=0.25) of logged weights → most-recent value, for the plan card.
+      let ema: number | null = null;
+      for (const d of unique) {
+        const w = parseFloat(d.weight);
+        if (w > 0) ema = ema == null ? w : 0.25 * w + 0.75 * ema;
+      }
+      setLastEMAValue(ema);
 
       const ws = weightSettingsData as any;
       if (ws.goalWeight) setGoalWeight(parseFloat(ws.goalWeight) || 0);
@@ -871,8 +882,8 @@ const Diet: React.FC = () => {
       setLocks({ protein: !!s.lockProtein, carbs: !!s.lockCarbs, fats: !!s.lockFats });
     }).catch(() => {});
 
-    // Reveal only after the main data AND the hero's plan/status have settled.
-    Promise.allSettled([main, plans, status]).then(() => setLoaded(true));
+    // Reveal only after the main data AND every card's data has settled.
+    Promise.allSettled([main, plans, status, cycle, coaching]).then(() => setLoaded(true));
     const failsafe = setTimeout(() => setLoaded(true), 8000);
     return () => clearTimeout(failsafe);
   }, []);
@@ -1052,7 +1063,12 @@ const Diet: React.FC = () => {
       </section>
 
         {/* Adaptive Weight Plan — engine reasoning (moved here from Progress) */}
-        <AdaptiveWeightPlanCard />
+        <AdaptiveWeightPlanCard
+          planStatus={planStatusFull}
+          planCycle={planCycle}
+          coachingMsg={coachingMsg}
+          lastEMAValue={lastEMAValue}
+        />
 
         {/* Weight This Week — prominent, with corridor + trend */}
         <WeightSparkline

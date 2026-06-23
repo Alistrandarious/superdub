@@ -5,27 +5,33 @@ import { vapidPublicKey, sendPush } from '../services/push';
 
 const router = Router();
 
-// Fire an immediate test push to all of this user's devices
-router.post('/test', requireAuth as any, async (req: AuthRequest, res: Response) => {
+// Admin-only broadcast: fire one push to EVERY subscribed device.
+// Guarded by the ADMIN_SECRET env var (sent via the x-admin-secret header) so it
+// can be triggered operationally without exposing a "send" button in the app UI.
+// Returns 403 if the secret isn't configured or doesn't match.
+router.post('/broadcast', async (req, res: Response) => {
   try {
-    const { rows } = await pool.query(
-      'SELECT id, subscription FROM push_subscriptions WHERE user_id = $1',
-      [req.userId]
-    );
+    const secret = process.env.ADMIN_SECRET;
+    if (!secret || req.header('x-admin-secret') !== secret) {
+      return res.status(403).json({ error: 'forbidden' });
+    }
+    const { title, body, url } = (req.body ?? {}) as { title?: string; body?: string; url?: string };
+    const payload = {
+      title: title || 'superdub 🎉',
+      body: body || "You're on track to your target. You can do this.",
+      url: url || '/',
+      tag: 'broadcast',
+    };
+    const { rows } = await pool.query('SELECT id, subscription FROM push_subscriptions');
     let sent = 0;
     for (const r of rows) {
-      const ok = await sendPush(r.subscription, {
-        title: 'superdub 🎉',
-        body: "You're on track to your target. You can do this.",
-        url: '/',
-        tag: 'test',
-      });
+      const ok = await sendPush(r.subscription, payload);
       if (ok) sent++;
       else await pool.query('DELETE FROM push_subscriptions WHERE id = $1', [r.id]).catch(() => {});
     }
-    res.json({ ok: true, sent });
+    res.json({ ok: true, sent, devices: rows.length });
   } catch (err: any) {
-    console.error('[push/test]', err?.message);
+    console.error('[push/broadcast]', err?.message);
     res.status(500).json({ error: 'Server error' });
   }
 });

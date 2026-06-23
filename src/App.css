@@ -7580,6 +7580,17 @@ h1, h2, h3, h4, .sora {
 .atc-step-meta {
   font-size: 0.7rem; color: #3a3a3a; margin-top: 6px; text-align: center;
 }
+.atc-step-context {
+  margin-top: 10px;
+  padding: 9px 12px;
+  border-radius: var(--r-sm);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--glass-border);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: rgba(255,255,255,0.65);
+  text-align: center;
+}
 .atc-covered {
   display: flex; align-items: flex-start; gap: 12px; padding: 8px 0;
 }
