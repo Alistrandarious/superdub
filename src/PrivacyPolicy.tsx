@@ -17,7 +17,7 @@ const PrivacyPolicy: React.FC = () => {
           </div>
 
           <div className="diet-section">
-            <p style={{ fontSize: '0.82rem', color: '#6b7280', margin: 0 }}>Last updated: 16 June 2026</p>
+            <p style={{ fontSize: '0.82rem', color: '#6b7280', margin: 0 }}>Last updated: 23 June 2026</p>
             <p style={{ marginTop: 12, lineHeight: 1.7 }}>
               This Privacy Policy explains how <strong style={{ color: '#fff' }}>Superdub</strong> ("we", "us", "our") collects, uses, and protects your personal data when you use our habit and health tracking application. We are committed to protecting your privacy and complying with the UK General Data Protection Regulation (UK GDPR) and the Data Protection Act 2018.
             </p>
@@ -32,12 +32,14 @@ const PrivacyPolicy: React.FC = () => {
             <ul style={{ marginTop: 10, paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 6 }}>
               <li><strong style={{ color: '#fff' }}>Account data:</strong> email address, hashed password</li>
               <li><strong style={{ color: '#fff' }}>Profile data:</strong> first name, last name, date of birth, sex, height, weight</li>
-              <li><strong style={{ color: '#fff' }}>Health & activity data:</strong> daily weight logs, calorie and macro entries, step counts, habit completions</li>
+              <li><strong style={{ color: '#fff' }}>Optional background data:</strong> occupation, country, ethnicity, gender identity, relationship status, and religion. These are entirely optional — you may leave any of them blank or set them to "Prefer not to say" — and are used only to understand our user base and tailor the experience. <strong style={{ color: '#fff' }}>Ethnicity and religion are special category data</strong> (see Section 3).</li>
+              <li><strong style={{ color: '#fff' }}>Health & activity data:</strong> daily weight logs, calorie and macro entries, step counts, habit completions, and optional energy / mood check-ins</li>
               <li><strong style={{ color: '#fff' }}>Goal data:</strong> goal weight, loss targets, activity level, calorie targets</li>
               <li><strong style={{ color: '#fff' }}>Meal plans:</strong> any meal plans you create within the app</li>
               <li><strong style={{ color: '#fff' }}>Tasks:</strong> to-do items you add</li>
+              <li><strong style={{ color: '#fff' }}>Push notification data:</strong> if you enable notifications, we store your browser's push subscription (a device-specific endpoint), your time-zone offset, and your chosen reminder time, solely to send the reminders you requested. You can disable this at any time, which deletes the subscription.</li>
             </ul>
-            <p style={{ marginTop: 12 }}>We do <strong style={{ color: '#fff' }}>not</strong> collect location data, browsing history, device identifiers, or any data beyond what you directly enter.</p>
+            <p style={{ marginTop: 12 }}>Your country is <strong style={{ color: '#fff' }}>self-reported</strong> — we do not track your location, GPS, IP-based geolocation, or browsing history. Aside from the push subscription described above (only if you opt in), we do not collect device identifiers or any data beyond what you directly enter.</p>
           </Section>
 
           <Section title="3. Legal Basis for Processing">
@@ -47,7 +49,7 @@ const PrivacyPolicy: React.FC = () => {
               <li><strong style={{ color: '#fff' }}>Contract (Article 6(1)(b)):</strong> Processing is necessary to provide you with the Superdub service.</li>
               <li><strong style={{ color: '#fff' }}>Legitimate interests (Article 6(1)(f)):</strong> For security and fraud prevention.</li>
             </ul>
-            <p style={{ marginTop: 12 }}>Health-related data (weight, calories, etc.) constitutes special category data under Article 9 GDPR. We process this solely based on your explicit consent.</p>
+            <p style={{ marginTop: 12 }}>Some of the data we process is <strong style={{ color: '#fff' }}>special category data</strong> under Article 9 UK GDPR — namely health-related data (weight, calories, mood, etc.) and the optional <strong style={{ color: '#fff' }}>ethnicity</strong> and <strong style={{ color: '#fff' }}>religion</strong> fields. We process special category data <strong style={{ color: '#fff' }}>solely on the basis of your explicit consent</strong> (Article 9(2)(a)). The ethnicity and religion fields are optional — leaving them blank means we hold no such data for you, and you can clear them at any time from your Profile.</p>
           </Section>
 
           <Section title="4. How We Use Your Data">
@@ -55,6 +57,8 @@ const PrivacyPolicy: React.FC = () => {
               <li>To provide and operate the Superdub service</li>
               <li>To calculate personalised calorie and macro targets</li>
               <li>To display your progress charts and history</li>
+              <li>To understand our user base and tailor the experience (using optional background data)</li>
+              <li>To send the push reminders you opt into (e.g. your daily weigh-in nudge)</li>
               <li>To send transactional emails (welcome email, password reset)</li>
               <li>To maintain the security of your account</li>
             </ul>
@@ -76,6 +80,7 @@ const PrivacyPolicy: React.FC = () => {
               <li><strong style={{ color: '#fff' }}>Neon (database):</strong> Stores your account and health data. EU-based. <a href="https://neon.tech/privacy" target="_blank" rel="noreferrer" style={{ color: THEME }}>Privacy policy →</a></li>
               <li><strong style={{ color: '#fff' }}>Render (hosting):</strong> Hosts the Superdub server. <a href="https://render.com/privacy" target="_blank" rel="noreferrer" style={{ color: THEME }}>Privacy policy →</a></li>
               <li><strong style={{ color: '#fff' }}>Resend (email):</strong> Sends transactional emails. <a href="https://resend.com/legal/privacy-policy" target="_blank" rel="noreferrer" style={{ color: THEME }}>Privacy policy →</a></li>
+              <li><strong style={{ color: '#fff' }}>Browser push services:</strong> If you enable notifications, reminders are delivered through your browser/device vendor's push service (e.g. Google, Mozilla, or Apple). This only happens if you opt in.</li>
             </ul>
           </Section>
 
