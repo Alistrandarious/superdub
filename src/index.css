@@ -20,8 +20,8 @@ html, body, #root {
 }
 
 body {
-  background: #070810;
-  color: #e2e8f0;
+  background: var(--void, #070810);
+  color: var(--text, #e2e8f0);
   font-family: 'Sora', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

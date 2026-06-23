@@ -24,6 +24,11 @@ import { initStepSync } from './stepSync';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { XPProvider } from './XPContext';
 
+// Apply the saved colour theme before first paint (avoids a flash).
+if (localStorage.getItem('superdub.theme') === 'light') {
+  document.documentElement.setAttribute('data-theme', 'light');
+}
+
 const NO_NAV_PATHS = ['/privacy'];
 
 const HEARTBEAT_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes

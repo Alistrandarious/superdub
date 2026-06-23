@@ -6,6 +6,9 @@
 
 /* CSS Custom Properties */
 :root {
+  /* ── Foreground ink — rgb triplet behind every rgba(var(--fg), α) text/border ── */
+  --fg: 255, 255, 255;
+  --text: #FFFFFF;          /* solid primary text */
   /* ── Canonical neutral surfaces — the single source the whole app uses ── */
   --glass-bg: #0E0E14;            /* base card / panel surface */
   --glass-bg-strong: #15151E;     /* elevated surface (modals, raised) */
@@ -50,6 +53,29 @@
   --gutter: 16px;
 }
 
+/* ── Light theme — remaps the neutral palette; brand accents stay as-is.
+   Most text/borders flow through rgba(var(--fg), α) and surfaces through the
+   --glass-* vars, so flipping these carries the bulk of the app. Per-screen
+   dark literals are converted iteratively. ── */
+[data-theme="light"] {
+  --fg: 28, 30, 40;               /* dark ink for rgba text/borders */
+  --text: #14161D;
+  --glass-bg: #FFFFFF;
+  --glass-bg-strong: #F6F7FA;
+  --glass-border: #E4E6EC;
+  --glass-border-strong: #C7D4DC;
+  --glass-shadow: 0 6px 22px rgba(0,0,0,0.08);
+  --surface: #FFFFFF;
+  --surface-2: #F6F7FA;
+  --surface-raised: #FFFFFF;
+  --line: #E4E6EC;
+  --line-soft: #ECEEF2;
+  --bg: #F3F5F8;
+  --void: #ECEEF2;
+  color-scheme: light;
+}
+[data-theme="light"] body { background: #F3F5F8; }
+
 /* Animatable CSS custom property for the ring */
 @property --pct {
   syntax: '<number>';
@@ -68,7 +94,7 @@
 
 html, body, #root {
   margin: 0; padding: 0; height: 100%;
-  background: #0E0E14;
+  background: var(--glass-bg);
   color: #E0E0F0;
 }
 
@@ -121,7 +147,7 @@ h1, h2, h3, h4, .sora {
     radial-gradient(900px 600px at 5% -5%, var(--theme-glow, rgba(0,255,65,0.1)), transparent 55%),
     radial-gradient(800px 600px at 105% 5%, var(--theme-glow, rgba(0,255,65,0.08)), transparent 50%),
     radial-gradient(700px 700px at 50% 110%, var(--theme-glow, rgba(0,255,65,0.07)), transparent 55%),
-    linear-gradient(160deg, #0E0E14 0%, #0E0E14 50%, #0E0E14 100%);
+    linear-gradient(160deg, var(--glass-bg) 0%, var(--glass-bg) 50%, var(--glass-bg) 100%);
   background-attachment: fixed;
 }
 
@@ -380,7 +406,7 @@ h1, h2, h3, h4, .sora {
 .today-pill.done {
   background: #FFD233;
   border-color: #FFD233;
-  color: #0E0E14;
+  color: var(--glass-bg);
   font-weight: 700;
 }
 
@@ -477,13 +503,13 @@ h1, h2, h3, h4, .sora {
 .today-jump-btn {
   background: var(--theme);
   border-color: var(--theme);
-  color: #0E0E14;
+  color: var(--glass-bg);
   font-weight: 700;
 }
 .today-jump-btn:hover {
   background: var(--theme);
   border-color: var(--theme);
-  color: #0E0E14;
+  color: var(--glass-bg);
   filter: brightness(1.08);
 }
 
@@ -2202,7 +2228,7 @@ h1, h2, h3, h4, .sora {
   border-radius: 5px;
   border: 1.5px solid var(--glass-border);
   display: flex; align-items: center; justify-content: center;
-  font-size: 0.7rem; color: #0E0E14; font-weight: 800;
+  font-size: 0.7rem; color: var(--glass-bg); font-weight: 800;
 }
 .chart-cog-check.on { background: #2FD27E; border-color: #2FD27E; }
 .chart-cog-habit { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -2971,7 +2997,7 @@ h1, h2, h3, h4, .sora {
 .checkin-habit.done .checkin-tick {
   background: var(--theme);
   border-color: var(--theme);
-  color: #0E0E14;
+  color: var(--glass-bg);
 }
 
 .checkin-footer {
@@ -3056,7 +3082,7 @@ h1, h2, h3, h4, .sora {
     radial-gradient(720px 520px at 50% -12%, rgba(46,139,255,0.28), transparent 60%),
     radial-gradient(620px 520px at 102% 8%, rgba(255,77,141,0.16), transparent 55%),
     radial-gradient(620px 520px at -2% 32%, rgba(255,138,0,0.12), transparent 55%),
-    #0E0E14;
+    var(--glass-bg);
 }
 
 .auth-center {
@@ -3643,7 +3669,7 @@ h1, h2, h3, h4, .sora {
 .player-level-badge {
   font-size: 0.58rem;
   font-weight: 800;
-  color: #0E0E14;
+  color: var(--glass-bg);
   background: var(--theme);
   padding: 1px 5px;
   border-radius: 4px;
@@ -3810,7 +3836,7 @@ h1, h2, h3, h4, .sora {
    DIET —MAINTENANCE CARD & MACRO LINK
    ===================================================================== */
 .diet-maintenance-card {
-  background: linear-gradient(135deg, #0E0E14 0%, rgba(46,139,255,0.08) 100%);
+  background: linear-gradient(135deg, var(--glass-bg) 0%, rgba(46,139,255,0.08) 100%);
   border: 1px solid rgba(46,139,255,0.2);
   border-radius: 18px;
   padding: 18px 20px;
@@ -4346,7 +4372,7 @@ h1, h2, h3, h4, .sora {
   justify-content: center;
   cursor: default;
   transition: background 0.15s, border-color 0.15s, transform 0.1s, box-shadow 0.2s;
-  color: #0E0E14;
+  color: var(--glass-bg);
 }
 .hb-week-circle.done {
   background: var(--sd-gradient);
@@ -4371,7 +4397,7 @@ h1, h2, h3, h4, .sora {
 .hb-week-tick {
   font-size: 1rem;
   font-weight: 800;
-  color: #0E0E14;
+  color: var(--glass-bg);
 }
 .hb-week-tick.fail { color: #FF5470; }
 
@@ -4605,7 +4631,7 @@ h1, h2, h3, h4, .sora {
 .hrow-tick {
   font-size: 1rem;
   font-weight: 800;
-  color: #0E0E14;
+  color: var(--glass-bg);
 }
 .hrow-tick.fail { color: #FF5470; }
 .hrow-body {
@@ -6085,8 +6111,8 @@ h1, h2, h3, h4, .sora {
 .bottom-nav-center-btn svg {
   width: 22px;
   height: 22px;
-  color: #0E0E14;
-  stroke: #0E0E14;
+  color: var(--glass-bg);
+  stroke: var(--glass-bg);
 }
 
 .bottom-nav-center:hover .bottom-nav-center-btn,
@@ -6419,7 +6445,7 @@ h1, h2, h3, h4, .sora {
    LEVEL PAGE —fix blue gradients for hero card
    ===================================================================== */
 .level-hero-card {
-  background: linear-gradient(135deg, #0E0E14 0%, rgba(46,139,255,0.12) 100%) !important;
+  background: linear-gradient(135deg, var(--glass-bg) 0%, rgba(46,139,255,0.12) 100%) !important;
   border-color: rgba(46,139,255,0.25) !important;
   box-shadow: 0 0 40px -10px rgba(46,139,255,0.25) !important;
 }
@@ -6656,7 +6682,7 @@ h1, h2, h3, h4, .sora {
 /* ── Frequency segmented selector ── */
 .freq-selector {
   display: flex;
-  background: #0E0E14;
+  background: var(--glass-bg);
   border: 1px solid #15151E;
   border-radius: 14px;
   padding: 4px;
@@ -7294,7 +7320,7 @@ h1, h2, h3, h4, .sora {
 .unit-pref-title { font-size: 0.65rem; color: #555; text-transform: uppercase; letter-spacing: 0.07em; }
 .unit-seg {
   display: inline-flex;
-  background: #0E0E14;
+  background: var(--glass-bg);
   border: 1px solid #15151E;
   border-radius: 10px;
   padding: 3px;
@@ -7458,7 +7484,7 @@ h1, h2, h3, h4, .sora {
   color: #888; font-size: 0.85rem; font-weight: 600;
 }
 .log-weight-btn {
-  background: #FFD233; color: #0E0E14; border: none; border-radius: 12px;
+  background: #FFD233; color: var(--glass-bg); border: none; border-radius: 12px;
   padding: 0 22px; font-family: 'Sora', sans-serif; font-size: 0.9rem; font-weight: 700;
   cursor: pointer; transition: opacity 0.15s, transform 0.1s; white-space: nowrap;
 }
@@ -7508,10 +7534,10 @@ h1, h2, h3, h4, .sora {
 .profile-avatar-edit-badge {
   position: absolute; bottom: 0; right: 0;
   width: 18px; height: 18px; border-radius: 50%;
-  background: var(--theme, #2E8BFF); color: #0E0E14;
+  background: var(--theme, #2E8BFF); color: var(--glass-bg);
   font-size: 0.6rem; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
-  border: 1.5px solid #0E0E14;
+  border: 1.5px solid var(--glass-bg);
 }
 .avatar-picker-sheet { max-height: 72dvh; overflow-y: auto; }
 .avatar-grid {
@@ -7984,7 +8010,7 @@ h1, h2, h3, h4, .sora {
 /* ── Diet tab bar ── */
 .diet-tab-bar {
   display: flex; gap: 0; border-bottom: 1px solid #1A1A24;
-  background: #0E0E14; flex-shrink: 0; padding: 0 16px;
+  background: var(--glass-bg); flex-shrink: 0; padding: 0 16px;
 }
 .diet-tab-btn {
   flex: 1; padding: 11px 0; font-size: 0.82rem; font-weight: 600;
@@ -8079,7 +8105,7 @@ h1, h2, h3, h4, .sora {
    ====================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================笊・*/
 
 .mp-tab-bar {
-  display: flex; gap: 0; border-bottom: 1px solid #252532; background: #0E0E14;
+  display: flex; gap: 0; border-bottom: 1px solid #252532; background: var(--glass-bg);
 }
 .mp-tab {
   flex: 1; padding: 12px 0; background: none; border: none;
@@ -8359,7 +8385,7 @@ h1, h2, h3, h4, .sora {
 /* Day label column */
 .mp-grid-day-label {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  background: #0E0E14; border-radius: 6px; padding: 6px 2px; gap: 2px;
+  background: var(--glass-bg); border-radius: 6px; padding: 6px 2px; gap: 2px;
 }
 .mp-grid-day-name {
   font-size: 0.7rem; font-weight: 700; color: #ccc; letter-spacing: 0.04em;
@@ -8393,7 +8419,7 @@ h1, h2, h3, h4, .sora {
 .mp-grid-cell--shake { border-color: #FFB92833; }
 .mp-grid-cell--shake .mp-grid-cell-cal { color: #FFB928; }
 .mp-grid-cell--empty {
-  background: #0E0E14; border: 1px dashed #252532; border-radius: 8px;
+  background: var(--glass-bg); border: 1px dashed #252532; border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
   font-size: 0.8rem; color: #333; min-width: 100px;
 }
@@ -8856,8 +8882,8 @@ h3, h4,
   white-space: nowrap;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
-.chart-expand-btn:hover { background: var(--theme); color: #0E0E14; }
-.chart-expand-btn.active { background: var(--theme); border-color: var(--theme); color: #0E0E14; }
+.chart-expand-btn:hover { background: var(--theme); color: var(--glass-bg); }
+.chart-expand-btn.active { background: var(--theme); border-color: var(--theme); color: var(--glass-bg); }
 
 .weight-modal-overlay {
   z-index: 800;
@@ -9966,7 +9992,7 @@ h3, h4,
   height: 100vh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  background: #0e0e14;
+  background: var(--glass-bg);
   padding-bottom: 90px;
 }
 
