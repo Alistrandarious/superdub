@@ -1,9 +1,34 @@
 import { Router, Response } from 'express';
 import { pool } from '../db';
 import { requireAuth, AuthRequest } from '../middleware/auth';
-import { vapidPublicKey } from '../services/push';
+import { vapidPublicKey, sendPush } from '../services/push';
 
 const router = Router();
+
+// Fire an immediate test push to all of this user's devices
+router.post('/test', requireAuth as any, async (req: AuthRequest, res: Response) => {
+  try {
+    const { rows } = await pool.query(
+      'SELECT id, subscription FROM push_subscriptions WHERE user_id = $1',
+      [req.userId]
+    );
+    let sent = 0;
+    for (const r of rows) {
+      const ok = await sendPush(r.subscription, {
+        title: 'superdub 🎉',
+        body: "You're on track to your target. You can do this.",
+        url: '/',
+        tag: 'test',
+      });
+      if (ok) sent++;
+      else await pool.query('DELETE FROM push_subscriptions WHERE id = $1', [r.id]).catch(() => {});
+    }
+    res.json({ ok: true, sent });
+  } catch (err: any) {
+    console.error('[push/test]', err?.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 
 // Client fetches the public key before subscribing
 router.get('/vapid-public-key', (_req, res) => {

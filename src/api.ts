@@ -156,6 +156,7 @@ export const api = {
     request('/push/subscribe', { method: 'POST', body: JSON.stringify({ subscription, tzOffsetMinutes }) }),
   pushUnsubscribe: (endpoint?: string) =>
     request('/push/unsubscribe', { method: 'POST', body: JSON.stringify({ endpoint }) }),
+  pushTest: (): Promise<{ ok: boolean; sent: number }> => request('/push/test', { method: 'POST' }),
 
   // food log
   parseFoodLog: (transcript: string) =>
