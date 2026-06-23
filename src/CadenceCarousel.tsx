@@ -8,7 +8,7 @@ export interface CarouselPanel {
   content: React.ReactNode;
 }
 
-const CHIP_W = 76; // px per chip in the little coloured carousel
+const CHIP_W = 46; // px per chip in the little coloured carousel
 
 // Cadence switcher: a big title + a little coloured carousel of chips, with the
 // habit list sliding purely along the X axis (no skew/rotate/scale) as you swipe.
@@ -101,9 +101,9 @@ const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number; 
                       ['--chip' as any]: p.color,
                     }}
                     onClick={() => go(i)}
+                    aria-label={p.label}
                   >
                     <span className="cadx-chip-dot" />
-                    <span className="cadx-chip-label">{p.label}</span>
                   </button>
                 );
               })}
