@@ -5223,8 +5223,7 @@ h1, h2, h3, h4, .sora {
 }
 .hcard--expanded .hcard-body-wrap { grid-template-rows: 1fr; }
 .hcard-body { overflow: hidden; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
-.hcard--expanded .hcard-body { padding-top: 14px; }
-.hcard-tools { margin-top: 0; }
+.hcard--expanded .hcard-body { padding-top: 4px; }
 .hcard-xp-chip {
   margin-left: auto;
   font-family: 'Space Mono', monospace;
