@@ -95,6 +95,12 @@ export const api = {
     request(`/tasks/${id}`, { method: 'PUT', body: JSON.stringify({ done }) }),
   deleteTask: (id: string) => request(`/tasks/${id}`, { method: 'DELETE' }),
 
+  // SMART goals
+  getGoals: () => request('/goals'),
+  createGoal: (goal: object) => request('/goals', { method: 'POST', body: JSON.stringify(goal) }),
+  updateGoal: (id: string, data: object) => request(`/goals/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteGoal: (id: string) => request(`/goals/${id}`, { method: 'DELETE' }),
+
   // diet
   getDietTarget: () => request('/diet/target'),
   updateDietTarget: (data: object) =>

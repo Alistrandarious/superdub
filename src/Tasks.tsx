@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import { api } from './api';
+import GoalsPanel from './GoalsPanel';
+
+const GOAL_ACCENT = '#A855F7';
+
+const TargetIcon: React.FC<{ size?: number }> = ({ size = 16 }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
+    <circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" />
+  </svg>
+);
 
 interface Task {
   id: string;
@@ -30,7 +39,7 @@ const CartIcon: React.FC<{ size?: number }> = ({ size = 16 }) => (
 
 const Tasks: React.FC = () => {
   const [tasks, setTasks]   = useState<Task[]>([]);
-  const [tab, setTab]       = useState<'todo' | 'shopping'>('todo');
+  const [tab, setTab]       = useState<'todo' | 'shopping' | 'goals'>('todo');
   const [input, setInput]   = useState('');
   const [loaded, setLoaded] = useState(false);
 
@@ -43,9 +52,10 @@ const Tasks: React.FC = () => {
 
   const addItem = async () => {
     const text = input.trim();
-    if (!text) return;
+    if (!text || tab === 'goals') return;
+    const listType: 'todo' | 'shopping' = tab;
     const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const newTask: Task = { id, text, done: false, type: tab };
+    const newTask: Task = { id, text, done: false, type: listType };
     setTasks(prev => [...prev, newTask]);
     setInput('');
     if (tab === 'shopping') {
@@ -79,7 +89,8 @@ const Tasks: React.FC = () => {
   const doneCount = visible.filter(t => t.done).length;
 
   const isShopping = tab === 'shopping';
-  const accent = isShopping ? SHOP_ACCENT : TODO_ACCENT;
+  const isGoals = tab === 'goals';
+  const accent = isGoals ? GOAL_ACCENT : isShopping ? SHOP_ACCENT : TODO_ACCENT;
   const themeVars = {
     '--theme': accent,
     '--theme-dim': accent + '66',
@@ -102,9 +113,19 @@ const Tasks: React.FC = () => {
         >
           <CartIcon /> Shopping
         </button>
+        <button
+          className={`lists-tab${tab === 'goals' ? ' lists-tab--active' : ''}`}
+          onClick={() => setTab('goals')}
+        >
+          <TargetIcon /> Goals
+        </button>
       </div>
 
       <div className="tasks-content page-content">
+        {isGoals ? (
+          <GoalsPanel accent={GOAL_ACCENT} />
+        ) : (
+        <>
         {/* Input row */}
         <div className="lists-input-row">
           <input
@@ -158,6 +179,8 @@ const Tasks: React.FC = () => {
               </button>
             )}
           </>
+        )}
+        </>
         )}
       </div>
     </div>

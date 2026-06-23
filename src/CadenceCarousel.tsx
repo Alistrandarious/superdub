@@ -71,11 +71,13 @@ const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number }
         {panels.map((p, i) => {
           const offset = i - current;            // 0 = centred
           const abs = Math.abs(offset);
-          const rotateY = Math.max(-80, Math.min(80, offset * -52));
-          const translate = offset * 86;          // % — fan the panels out
-          const depth = -abs * 180;               // px — push neighbours back
-          const opacity = abs > 1.25 ? 0 : 1 - Math.min(0.75, abs * 0.65);
-          const hidden = abs > 1.6;
+          const rotateY = Math.max(-80, Math.min(80, offset * -55));
+          const translate = offset * 100;          // % — neighbours sit fully to the side
+          const depth = -abs * 160;                // px — push neighbours back
+          // Fade out by the time a panel is one step away, so other cadences never
+          // linger in the centre at rest — only the active level shows when settled.
+          const opacity = Math.max(0, 1 - abs * 1.1);
+          const hidden = abs > 1.02;
           // The nearest panel flows in the document so the stage takes its height;
           // the others overlay it absolutely.
           const nearest = i === Math.round(current);

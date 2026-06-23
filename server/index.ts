@@ -16,6 +16,7 @@ import stepsRoutes from './routes/steps';
 import planRoutes from './routes/plan';
 import checkinRoutes from './routes/checkin';
 import pushRoutes from './routes/push';
+import goalsRoutes from './routes/goals';
 import { sendPush, pushEnabled } from './services/push';
 import { pool } from './db';
 
@@ -40,6 +41,7 @@ app.use('/api/steps', stepsRoutes);
 app.use('/api/plan', planRoutes);
 app.use('/api/checkin', checkinRoutes);
 app.use('/api/push', pushRoutes);
+app.use('/api/goals', goalsRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
@@ -244,6 +246,19 @@ const migrations = [
   `ALTER TABLE weight_goals ADD COLUMN IF NOT EXISTS reached_dismissed BOOLEAN DEFAULT FALSE`,
   // Habit cadence: daily (default) | weekly | monthly | yearly.
   `ALTER TABLE habits ADD COLUMN IF NOT EXISTS cadence TEXT DEFAULT 'daily'`,
+  // Personal SMART goals (Lists → Goals tab).
+  `CREATE TABLE IF NOT EXISTS smart_goals (
+    id          TEXT PRIMARY KEY,
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title       TEXT NOT NULL,
+    specific    TEXT DEFAULT '',
+    measurable  TEXT DEFAULT '',
+    achievable  TEXT DEFAULT '',
+    relevant    TEXT DEFAULT '',
+    time_bound  DATE,
+    done        BOOLEAN DEFAULT FALSE,
+    created_at  TIMESTAMPTZ DEFAULT NOW()
+  )`,
 ];
 (async () => {
   for (const sql of migrations) {
