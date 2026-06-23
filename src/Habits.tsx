@@ -415,10 +415,6 @@ const HabitCard: React.FC<{
   const accent = CADENCE_META[cadence].color;
   const [expanded, setExpanded] = useState(false);
   const currentDone = isDaily ? todayState === 'done' : !!currentUnit?.done;
-  const toggleCurrent = () => {
-    if (isDaily) onToggleDay(habit, today, cycleState(todayState));
-    else if (currentUnit) toggleUnit(currentUnit);
-  };
 
   const gateDots = XP_GATES.map(([t], i) => ({
     label: GATE_LABELS[i],
@@ -430,23 +426,17 @@ const HabitCard: React.FC<{
       className={`hcard ${expanded ? 'hcard--expanded' : 'hcard--collapsed'} ${hasDanger ? 'hcard-danger' : hasWarning ? 'hcard-warning' : ''}`}
       style={{ '--theme': accent, '--theme-dim': `${accent}66`, '--theme-glow': `${accent}22` } as React.CSSProperties}
     >
-      {/* Collapsed summary — tap to expand. Shows name · streak · XP · done. */}
+      {/* Collapsed summary — tap to expand. Shows name · streak · XP. */}
       <div className="hcard-summary" onClick={() => setExpanded(e => !e)}>
-        <span className="hcard-icon">{isFlame ? '🔥' : '✓'}</span>
+        <span className={`hcard-icon ${currentDone ? 'done' : ''}`}>{isFlame ? '🔥' : '✓'}</span>
         <span className="hcard-name">{habit}</span>
         {stats.streak > 0 && <span className="hcard-streak">{stats.streak}d</span>}
         <span className="hcard-xp-chip">{stats.totalXP} XP</span>
-        <button
-          className={`hcard-done-mini ${currentDone ? 'done' : ''}`}
-          onClick={e => { e.stopPropagation(); toggleCurrent(); }}
-          aria-label={currentDone ? 'Done — tap to clear' : 'Mark done'}
-        >
-          {currentDone ? <span className="hcard-day-tick">{isFlame ? '🔥' : '✓'}</span> : '+'}
-        </button>
         <span className={`hcard-chevron ${expanded ? 'open' : ''}`}>▾</span>
       </div>
 
-      {expanded && (<>
+      <div className="hcard-body-wrap">
+      <div className="hcard-body">
       <div className="hcard-tools">
         <button
           className={`hcard-cog ${histOpen ? 'active' : ''}`}
@@ -563,7 +553,8 @@ const HabitCard: React.FC<{
           <MiniMonthHeatmap habit={habit} year={dispYear} monthIdx={dispMonth} ht={ht} onEdit={onEditDay} />
         </div>
       )}
-      </>)}
+      </div>
+      </div>
     </div>
   );
 };

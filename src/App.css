@@ -5195,9 +5195,9 @@ h1, h2, h3, h4, .sora {
 }
 
 /* Collapsible card spacing */
-.hcard--collapsed { padding: 14px 16px; gap: 0; }
+.hcard { padding: 14px 16px; gap: 0; }
 
-/* Collapsed summary row — name · streak · XP · done · chevron */
+/* Collapsed summary row — name · streak · XP · chevron */
 .hcard-summary {
   display: flex;
   align-items: center;
@@ -5205,6 +5205,24 @@ h1, h2, h3, h4, .sora {
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
+.hcard-summary .hcard-name {
+  flex: 1; min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+}
+.hcard-summary .hcard-icon.done { color: var(--theme); }
+
+/* Smooth expand/collapse via grid-template-rows (0fr → 1fr) */
+.hcard-body-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s cubic-bezier(0.22,1,0.36,1);
+}
+.hcard--expanded .hcard-body-wrap { grid-template-rows: 1fr; }
+.hcard-body { overflow: hidden; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
+.hcard--expanded .hcard-body { padding-top: 14px; }
+.hcard-tools { margin-top: 0; }
 .hcard-xp-chip {
   margin-left: auto;
   font-family: 'Space Mono', monospace;
