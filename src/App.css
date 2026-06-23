@@ -5877,6 +5877,21 @@ h1, h2, h3, h4, .sora {
   font-family: inherit;
 }
 
+.reminder-time-row { cursor: default; }
+.reminder-time-select {
+  flex-shrink: 0;
+  font-family: 'Sora', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-sm);
+  padding: 6px 8px;
+  cursor: pointer;
+}
+.reminder-time-select option { background: #15151E; color: #fff; }
+
 .diet-sub-item {
   width: 100%;
   display: flex;

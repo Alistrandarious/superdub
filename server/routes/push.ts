@@ -44,14 +44,16 @@ router.get('/vapid-public-key', (_req, res) => {
 // Save / refresh a subscription for this user
 router.post('/subscribe', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
-    const { subscription, tzOffsetMinutes } = req.body as { subscription: any; tzOffsetMinutes?: number };
+    const { subscription, tzOffsetMinutes, reminderHour } = req.body as { subscription: any; tzOffsetMinutes?: number; reminderHour?: number };
     if (!subscription?.endpoint) return res.status(400).json({ error: 'invalid subscription' });
+    const hour = Number.isInteger(reminderHour) ? Math.max(0, Math.min(23, reminderHour as number)) : 8;
     await pool.query(
-      `INSERT INTO push_subscriptions (user_id, endpoint, subscription, tz_offset)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO push_subscriptions (user_id, endpoint, subscription, tz_offset, reminder_hour)
+       VALUES ($1, $2, $3, $4, $5)
        ON CONFLICT (endpoint) DO UPDATE
-         SET user_id = EXCLUDED.user_id, subscription = EXCLUDED.subscription, tz_offset = EXCLUDED.tz_offset`,
-      [req.userId, subscription.endpoint, JSON.stringify(subscription), tzOffsetMinutes ?? 0]
+         SET user_id = EXCLUDED.user_id, subscription = EXCLUDED.subscription,
+             tz_offset = EXCLUDED.tz_offset, reminder_hour = EXCLUDED.reminder_hour`,
+      [req.userId, subscription.endpoint, JSON.stringify(subscription), tzOffsetMinutes ?? 0, hour]
     );
     res.json({ ok: true });
   } catch (err: any) {
@@ -72,6 +74,21 @@ router.post('/unsubscribe', requireAuth as any, async (req: AuthRequest, res: Re
     res.json({ ok: true });
   } catch (err: any) {
     console.error('[push/unsubscribe]', err?.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Update the daily reminder hour (local 24h) for all of this user's devices.
+router.post('/reminder-time', requireAuth as any, async (req: AuthRequest, res: Response) => {
+  try {
+    const { hour } = req.body as { hour?: number };
+    if (!Number.isInteger(hour) || (hour as number) < 0 || (hour as number) > 23) {
+      return res.status(400).json({ error: 'hour must be 0–23' });
+    }
+    await pool.query('UPDATE push_subscriptions SET reminder_hour = $2 WHERE user_id = $1', [req.userId, hour]);
+    res.json({ ok: true, hour });
+  } catch (err: any) {
+    console.error('[push/reminder-time]', err?.message);
     res.status(500).json({ error: 'Server error' });
   }
 });

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { enablePush, disablePush, pushIsEnabled, pushSupported } from './push';
+import { enablePush, disablePush, pushIsEnabled, pushSupported, getReminderHour, setReminderHour } from './push';
 
 function readPlanBadge(): { active: boolean; calories: number | null; onTrack: boolean | null } | null {
   try {
@@ -21,6 +21,12 @@ const BottomNav: React.FC = () => {
   const [checkinEnabled, setCheckinEnabled] = useState(readCheckinEnabled);
   const [pushOn, setPushOn] = useState(pushIsEnabled);
   const [pushBusy, setPushBusy] = useState(false);
+  const [reminderHour, setReminderHourState] = useState(getReminderHour);
+
+  const changeReminderHour = (hour: number) => {
+    setReminderHourState(hour);
+    setReminderHour(hour);
+  };
 
   const togglePush = async () => {
     if (pushBusy) return;
@@ -158,6 +164,29 @@ const BottomNav: React.FC = () => {
                 {pushOn ? 'ON' : 'OFF'}
               </span>
             </button>
+          )}
+
+          {pushSupported() && pushOn && (
+            <div className="diet-sub-item reminder-time-row">
+              <span className="diet-sub-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+              </span>
+              <div className="diet-sub-text">
+                <span className="diet-sub-label">Reminder time</span>
+                <span className="diet-sub-desc">When to nudge your daily weigh-in</span>
+              </div>
+              <select
+                className="reminder-time-select"
+                value={reminderHour}
+                onChange={e => changeReminderHour(parseInt(e.target.value, 10))}
+              >
+                {Array.from({ length: 24 }, (_, h) => (
+                  <option key={h} value={h}>
+                    {h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`}
+                  </option>
+                ))}
+              </select>
+            </div>
           )}
 
         </div>

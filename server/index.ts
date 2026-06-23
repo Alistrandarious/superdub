@@ -230,6 +230,9 @@ const migrations = [
     last_reminded DATE,
     created_at    TIMESTAMPTZ DEFAULT NOW()
   )`,
+  // Per-user reminder hour (local 24h); defaults to 8 AM. Added post-hoc for
+  // existing rows via ADD COLUMN IF NOT EXISTS.
+  `ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS reminder_hour INTEGER DEFAULT 8`,
 ];
 (async () => {
   for (const sql of migrations) {
@@ -243,12 +246,13 @@ async function runReminders() {
   if (!pushEnabled) return;
   try {
     const { rows } = await pool.query(
-      'SELECT id, user_id, endpoint, subscription, tz_offset, last_reminded FROM push_subscriptions'
+      'SELECT id, user_id, endpoint, subscription, tz_offset, last_reminded, reminder_hour FROM push_subscriptions'
     );
     const nowUtcMs = Date.now();
     for (const r of rows) {
       const local = new Date(nowUtcMs - (Number(r.tz_offset) || 0) * 60000);
-      if (local.getUTCHours() !== 8) continue;               // reminder hour: 8 AM local
+      const hour = Number.isInteger(r.reminder_hour) ? r.reminder_hour : 8;
+      if (local.getUTCHours() !== hour) continue;            // user-picked reminder hour, local
       const localDate = local.toISOString().slice(0, 10);
       if (r.last_reminded && new Date(r.last_reminded).toISOString().slice(0, 10) >= localDate) continue;
 

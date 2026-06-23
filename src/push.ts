@@ -2,6 +2,17 @@
 import { api } from './api';
 
 const ENABLED_KEY = 'superdub.push.enabled';
+const REMINDER_HOUR_KEY = 'superdub.push.reminderHour';
+
+export function getReminderHour(): number {
+  const v = parseInt(localStorage.getItem(REMINDER_HOUR_KEY) ?? '8', 10);
+  return Number.isInteger(v) && v >= 0 && v <= 23 ? v : 8;
+}
+
+export async function setReminderHour(hour: number): Promise<void> {
+  localStorage.setItem(REMINDER_HOUR_KEY, String(hour));
+  try { await api.pushSetReminderTime(hour); } catch { /* will apply on next subscribe */ }
+}
 
 function urlBase64ToUint8Array(base64: string): Uint8Array {
   const padding = '='.repeat((4 - (base64.length % 4)) % 4);
@@ -38,7 +49,7 @@ export async function enablePush(): Promise<{ ok: boolean; reason?: string }> {
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(key) as BufferSource,
     });
-    await api.pushSubscribe(sub.toJSON(), new Date().getTimezoneOffset());
+    await api.pushSubscribe(sub.toJSON(), new Date().getTimezoneOffset(), getReminderHour());
     localStorage.setItem(ENABLED_KEY, '1');
     return { ok: true };
   } catch (e: any) {

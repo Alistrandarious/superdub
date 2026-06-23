@@ -154,10 +154,12 @@ export const api = {
 
   // push notifications
   getVapidKey: (): Promise<{ key: string }> => request('/push/vapid-public-key'),
-  pushSubscribe: (subscription: any, tzOffsetMinutes: number) =>
-    request('/push/subscribe', { method: 'POST', body: JSON.stringify({ subscription, tzOffsetMinutes }) }),
+  pushSubscribe: (subscription: any, tzOffsetMinutes: number, reminderHour?: number) =>
+    request('/push/subscribe', { method: 'POST', body: JSON.stringify({ subscription, tzOffsetMinutes, reminderHour }) }),
   pushUnsubscribe: (endpoint?: string) =>
     request('/push/unsubscribe', { method: 'POST', body: JSON.stringify({ endpoint }) }),
+  pushSetReminderTime: (hour: number) =>
+    request('/push/reminder-time', { method: 'POST', body: JSON.stringify({ hour }) }),
 
   // food log
   parseFoodLog: (transcript: string) =>
