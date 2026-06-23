@@ -311,6 +311,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     onTrack: boolean; actualSlope: number | null; targetSlope: number; flaggedDays: string[];
     metabolicProtection?: boolean;
   } | null>(null);
+  // "You reached your goal weight!" celebration
+  const [goalReached, setGoalReached] = useState<{ goalType: string; targetWeight: number; latestWeight: number } | null>(null);
+  const [goalReachedBusy, setGoalReachedBusy] = useState(false);
 
   // Weight plan state
   const [currentWeight, setCurrentWeight] = useState('');
@@ -422,6 +425,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       api.runPlanCycle()
         .then((c: any) => {
           if (c.ran) { setPlanCycle(c); loadPlanStatus(); }
+          if (c.goalReached) setGoalReached({ goalType: c.goalType, targetWeight: c.targetWeight, latestWeight: c.latestWeight });
           // Update badge with onTrack so BottomNav shows current pace
           try {
             const existing = JSON.parse(localStorage.getItem('superdub.plan.badge') ?? '{}');
@@ -1181,6 +1185,54 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         })()}
         onGoalSaved={() => { loadPlanStatus(); api.runPlanCycle().then((c: any) => { if (c.ran) setPlanCycle(c); }).catch(() => {}); }}
       />
+
+      {/* ── Goal reached celebration ── */}
+      {goalReached && (
+        <div className="goal-reached-overlay" onClick={() => !goalReachedBusy && setGoalReached(null)}>
+          <div className="goal-reached-card" onClick={e => e.stopPropagation()}>
+            <div className="goal-reached-burst">🎉</div>
+            <h3 className="goal-reached-title">You hit your goal weight!</h3>
+            <p className="goal-reached-sub">
+              You're at <strong>{goalReached.latestWeight} kg</strong> — your target was{' '}
+              <strong>{goalReached.targetWeight} kg</strong>. However you got here, that's real work. What now?
+            </p>
+            <div className="goal-reached-actions">
+              <button
+                className="goal-reached-btn primary"
+                disabled={goalReachedBusy}
+                onClick={async () => {
+                  setGoalReachedBusy(true);
+                  await api.resolvePlanReached('maintain').catch(() => {});
+                  await loadPlanStatus().catch(() => {});
+                  setGoalReachedBusy(false);
+                  setGoalReached(null);
+                }}
+              >
+                ⚖️ Switch to maintenance
+              </button>
+              <button
+                className="goal-reached-btn"
+                disabled={goalReachedBusy}
+                onClick={() => { setGoalReached(null); setGoalSheetOpen(true); }}
+              >
+                🎯 Set a new goal
+              </button>
+              <button
+                className="goal-reached-btn ghost"
+                disabled={goalReachedBusy}
+                onClick={async () => {
+                  setGoalReachedBusy(true);
+                  await api.resolvePlanReached('dismiss').catch(() => {});
+                  setGoalReachedBusy(false);
+                  setGoalReached(null);
+                }}
+              >
+                💪 Keep going
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {nutritionOpen && (
         <div className="modal-overlay" onClick={closeNutritionModal}>

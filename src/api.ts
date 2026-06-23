@@ -119,6 +119,8 @@ export const api = {
     request('/plan/goal', { method: 'POST', body: JSON.stringify({ targetWeight, targetDate }) }),
   abandonPlanGoal: () => request('/plan/goal', { method: 'DELETE' }),
   runPlanCycle: () => request('/plan/cycle', { method: 'POST' }),
+  resolvePlanReached: (action: 'maintain' | 'dismiss') =>
+    request('/plan/resolve-reached', { method: 'POST', body: JSON.stringify({ action }) }),
 
   // AI key
   getAiKeyStatus: () => request('/profile/ai-key'),

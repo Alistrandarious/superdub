@@ -126,7 +126,8 @@ async function getBiometrics(userId: number, weightKg?: number): Promise<Biometr
 async function getActiveGoal(userId: number) {
   const { rows } = await pool.query(
     `SELECT id, goal_type, start_weight::NUMERIC, start_date,
-            target_weight::NUMERIC, target_date, rate_pct_bw::NUMERIC, status
+            target_weight::NUMERIC, target_date, rate_pct_bw::NUMERIC, status,
+            COALESCE(reached_dismissed, FALSE) AS reached_dismissed
      FROM weight_goals WHERE user_id = $1 AND status = 'active' LIMIT 1`,
     [userId]
   );
@@ -374,21 +375,36 @@ router.post('/cycle', requireAuth as any, async (req: AuthRequest, res: Response
     const lastAt = target?.effective_from ? new Date(target.effective_from) : null;
     const daysSinceLast = lastAt ? (Date.now() - lastAt.getTime()) / 86400000 : 999;
 
+    const pts = await getWeightPoints(req.userId!);
+    const emaPoints = computeEMA(pts);
+    const latestWeight = pts.length > 0 ? pts[pts.length - 1].weight : Number(goal.start_weight);
+
+    // ── Goal-reached detection (by achievement, not just date) ──────────────────
+    // Fires when smoothed (EMA) weight crosses the target. Suppressed once the
+    // user has dismissed it ("keep going") so we don't nag every load.
+    const latestEMA = emaPoints.length > 0 ? emaPoints[emaPoints.length - 1].ema : latestWeight;
+    const startW = Number(goal.start_weight);
+    const targetW = Number(goal.target_weight);
+    const TOL = 0.25; // kg — close enough to call it
+    let goalReached = false;
+    if (Math.abs(startW - targetW) >= 0.5 && !goal.reached_dismissed) {
+      if (goal.goal_type === 'lose') goalReached = latestEMA <= targetW + TOL;
+      else if (goal.goal_type === 'gain') goalReached = latestEMA >= targetW - TOL;
+    }
+    const reachedPayload = { goalReached, goalType: goal.goal_type, targetWeight: targetW, latestWeight: Math.round(latestEMA * 10) / 10 };
+
     if (daysSinceLast < 7) {
       return res.json({
         ran: false,
         reason: `Next cycle in ${Math.ceil(7 - daysSinceLast)} day(s)`,
         currentCalories,
         daysUntilNext: Math.ceil(7 - daysSinceLast),
+        ...reachedPayload,
       });
     }
 
-    const pts = await getWeightPoints(req.userId!);
-    const emaPoints = computeEMA(pts);
-    const latestWeight = pts.length > 0 ? pts[pts.length - 1].weight : Number(goal.start_weight);
-
     const bio = await getBiometrics(req.userId!, latestWeight);
-    if (!bio) return res.json({ ran: false, reason: 'Profile incomplete' });
+    if (!bio) return res.json({ ran: false, reason: 'Profile incomplete', ...reachedPayload });
 
     // Auto-complete goal if target date has passed
     if (new Date(goal.target_date) < new Date()) {
@@ -396,7 +412,7 @@ router.post('/cycle', requireAuth as any, async (req: AuthRequest, res: Response
         `UPDATE weight_goals SET status = 'completed' WHERE id = $1`,
         [goal.id]
       );
-      return res.json({ ran: false, reason: 'Goal target date has passed — marked complete' });
+      return res.json({ ran: false, reason: 'Goal target date has passed — marked complete', ...reachedPayload });
     }
 
     const result = runCycle(rowToGoal(goal), currentCalories, emaPoints, bio);
@@ -464,10 +480,43 @@ router.post('/cycle', requireAuth as any, async (req: AuthRequest, res: Response
       bmrFloor: result.bmrFloor,
       flaggedDays: result.flaggedDays,
       metabolicProtection: result.metabolicProtection ?? false,
+      ...reachedPayload,
     });
   } catch (err: any) {
     console.error('[plan/cycle]', err?.message);
     res.status(500).json({ error: err?.message ?? 'Server error' });
+  }
+});
+
+// ── POST /api/plan/resolve-reached ───────────────────────────────────────────
+// Handle the user's choice from the "you hit your goal!" celebration.
+//   action 'maintain' → complete the goal + switch diet settings to maintenance
+//   action 'dismiss'  → keep the goal but stop showing the celebration
+router.post('/resolve-reached', requireAuth as any, async (req: AuthRequest, res: Response) => {
+  try {
+    const { action } = req.body as { action: 'maintain' | 'dismiss' };
+    const goal = await getActiveGoal(req.userId!);
+    if (!goal) return res.json({ ok: true, note: 'no active goal' });
+
+    if (action === 'maintain') {
+      await pool.query(`UPDATE weight_goals SET status = 'completed' WHERE id = $1`, [goal.id]);
+      const upd = await pool.query(`UPDATE diet_settings SET goal = 'maintain' WHERE user_id = $1`, [req.userId]);
+      if (upd.rowCount === 0) {
+        await pool.query(
+          `INSERT INTO diet_settings (user_id, lock_protein, lock_carbs, lock_fats, calorie_lock, goal)
+           VALUES ($1, FALSE, FALSE, FALSE, FALSE, 'maintain')`,
+          [req.userId]
+        );
+      }
+      return res.json({ ok: true, switched: 'maintain' });
+    }
+
+    // dismiss → remember so we don't nag again
+    await pool.query(`UPDATE weight_goals SET reached_dismissed = TRUE WHERE id = $1`, [goal.id]);
+    res.json({ ok: true, dismissed: true });
+  } catch (err: any) {
+    console.error('[plan/resolve-reached]', err?.message);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

@@ -1830,6 +1830,69 @@ h1, h2, h3, h4, .sora {
   flex-wrap: wrap;
 }
 
+/* ── Goal reached celebration ── */
+.goal-reached-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(8,10,16,0.72);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease;
+}
+.goal-reached-card {
+  width: 100%;
+  max-width: 360px;
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-card);
+  padding: 26px 22px 22px;
+  text-align: center;
+  box-shadow: var(--glass-shadow), 0 0 60px -20px #2FD27E;
+  animation: pillIn 0.35s cubic-bezier(0.22,1,0.36,1) both;
+}
+.goal-reached-burst { font-size: 2.6rem; line-height: 1; }
+.goal-reached-title {
+  margin: 12px 0 8px;
+  font-family: 'Sora', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #fff;
+}
+.goal-reached-sub {
+  margin: 0 0 20px;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: rgba(255,255,255,0.66);
+}
+.goal-reached-sub strong { color: #fff; }
+.goal-reached-actions { display: flex; flex-direction: column; gap: 9px; }
+.goal-reached-btn {
+  width: 100%;
+  padding: 13px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--glass-border);
+  background: rgba(255,255,255,0.05);
+  color: #fff;
+  font-family: 'Sora', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+}
+.goal-reached-btn:hover:not(:disabled) { background: rgba(255,255,255,0.09); }
+.goal-reached-btn.primary {
+  background: linear-gradient(135deg, #2FD27E, #1FA862);
+  border-color: transparent;
+  color: #07120B;
+}
+.goal-reached-btn.ghost { background: none; color: rgba(255,255,255,0.6); }
+.goal-reached-btn:disabled { opacity: 0.5; cursor: default; }
+
 /* ── Profile background (demographics) selects ── */
 .bg-fields { display: flex; flex-direction: column; gap: 14px; }
 .bg-select {

@@ -240,6 +240,8 @@ const migrations = [
   `ALTER TABLE profile ADD COLUMN IF NOT EXISTS country TEXT`,
   `ALTER TABLE profile ADD COLUMN IF NOT EXISTS relationship_status TEXT`,
   `ALTER TABLE profile ADD COLUMN IF NOT EXISTS religion TEXT`,
+  // Suppress the "goal reached" celebration once the user has chosen "keep going".
+  `ALTER TABLE weight_goals ADD COLUMN IF NOT EXISTS reached_dismissed BOOLEAN DEFAULT FALSE`,
 ];
 (async () => {
   for (const sql of migrations) {
