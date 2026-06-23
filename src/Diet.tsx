@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ComposedChart, Line, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import './App.css';
 import { api } from './api';
+import { BUILD_TAG } from './version';
 import AdaptiveWeightPlanCard from './AdaptiveWeightPlanCard';
 
 interface ProfileData {
@@ -985,10 +986,10 @@ const Diet: React.FC = () => {
       {/* ── Full scrollable content ── */}
       <div className="diet-content page-content">
 
-      <div className="plan-topbar">
+      <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span>
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">{BUILD_TAG}</span>
         </div>
       </div>
 

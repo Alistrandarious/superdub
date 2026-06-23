@@ -43,6 +43,7 @@
   --r-md: 12px;
   --r-lg: 16px;
   --r-xl: 20px;
+  --r-card: 18px;   /* one radius for every page-level card/section */
   --r-pill: 999px;
 
   /* ── Spacing ── */
@@ -680,8 +681,15 @@ h1, h2, h3, h4, .sora {
 }
 
 .page-content {
-  padding: 24px 32px;
+  padding: 16px 18px;
   min-height: 60vh;
+}
+/* The shared topbar already carries its own gutter — when it sits inside a
+   padded page-content wrapper (Plan/Diet), drop its horizontal padding so it
+   lines up with the topbars on Progress/Habits instead of double-indenting. */
+.page-content > .hb-topbar {
+  padding-left: 0;
+  padding-right: 0;
 }
 
 /* =====================================================================
@@ -701,8 +709,8 @@ h1, h2, h3, h4, .sora {
 }
 
 .diet-section {
-  border-radius: 18px;
-  padding: 22px 24px;
+  border-radius: var(--r-card);
+  padding: 20px 18px;
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
@@ -1802,11 +1810,11 @@ h1, h2, h3, h4, .sora {
    CHART SECTION
    ===================================================================== */
 .chart-section {
-  margin: 0 16px 22px;
+  margin: 0 18px 22px;
   padding: 6px 0 14px;
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
-  border-radius: 20px;
+  border-radius: var(--r-card);
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -4796,7 +4804,7 @@ h1, h2, h3, h4, .sora {
   flex-direction: column;
   gap: 12px;
   padding: 20px;
-  border-radius: 22px;
+  border-radius: var(--r-card);
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   border-left: 3px solid var(--theme-dim);
@@ -10372,7 +10380,7 @@ details[open] .plan-explainer-summary::before { content: '▾  '; }
 /* ── Hero card ── */
 .plan-hero {
   border: 1px solid var(--glass-border);
-  border-radius: var(--r-lg);
+  border-radius: var(--r-card);
   background: var(--glass-bg);
   overflow: hidden;
 }

@@ -4,6 +4,7 @@ import { flushSync } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import './App.css';
 import { api } from './api';
+import { BUILD_TAG } from './version';
 import WeeklyRecap from './WeeklyRecap';
 
 // Navigate with a View Transition (shared-element morph) where supported
@@ -817,7 +818,7 @@ const Habits: React.FC = () => {
         <div className="hb-topbar">
           <div className="hb-brand">
             <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-            <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.144</span>
+            <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">{BUILD_TAG}</span>
           </div>
           <div className="hb-topbar-actions">
             {weather && (
