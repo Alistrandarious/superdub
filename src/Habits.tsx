@@ -413,6 +413,12 @@ const HabitCard: React.FC<{
   };
   const currentUnit = units.find(u => u.isCurrent) ?? units[0];
   const accent = CADENCE_META[cadence].color;
+  const [expanded, setExpanded] = useState(false);
+  const currentDone = isDaily ? todayState === 'done' : !!currentUnit?.done;
+  const toggleCurrent = () => {
+    if (isDaily) onToggleDay(habit, today, cycleState(todayState));
+    else if (currentUnit) toggleUnit(currentUnit);
+  };
 
   const gateDots = XP_GATES.map(([t], i) => ({
     label: GATE_LABELS[i],
@@ -421,13 +427,27 @@ const HabitCard: React.FC<{
 
   return (
     <div
-      className={`hcard ${hasDanger ? 'hcard-danger' : hasWarning ? 'hcard-warning' : ''}`}
+      className={`hcard ${expanded ? 'hcard--expanded' : 'hcard--collapsed'} ${hasDanger ? 'hcard-danger' : hasWarning ? 'hcard-warning' : ''}`}
       style={{ '--theme': accent, '--theme-dim': `${accent}66`, '--theme-glow': `${accent}22` } as React.CSSProperties}
     >
-      <div className="hcard-header">
+      {/* Collapsed summary — tap to expand. Shows name · streak · XP · done. */}
+      <div className="hcard-summary" onClick={() => setExpanded(e => !e)}>
         <span className="hcard-icon">{isFlame ? '🔥' : '✓'}</span>
         <span className="hcard-name">{habit}</span>
-        <span className="hcard-streak">{stats.streak}d</span>
+        {stats.streak > 0 && <span className="hcard-streak">{stats.streak}d</span>}
+        <span className="hcard-xp-chip">{stats.totalXP} XP</span>
+        <button
+          className={`hcard-done-mini ${currentDone ? 'done' : ''}`}
+          onClick={e => { e.stopPropagation(); toggleCurrent(); }}
+          aria-label={currentDone ? 'Done — tap to clear' : 'Mark done'}
+        >
+          {currentDone ? <span className="hcard-day-tick">{isFlame ? '🔥' : '✓'}</span> : '+'}
+        </button>
+        <span className={`hcard-chevron ${expanded ? 'open' : ''}`}>▾</span>
+      </div>
+
+      {expanded && (<>
+      <div className="hcard-tools">
         <button
           className={`hcard-cog ${histOpen ? 'active' : ''}`}
           onClick={() => { setMonthOffset(0); setHistOpen(o => !o); }}
@@ -543,6 +563,7 @@ const HabitCard: React.FC<{
           <MiniMonthHeatmap habit={habit} year={dispYear} monthIdx={dispMonth} ht={ht} onEdit={onEditDay} />
         </div>
       )}
+      </>)}
     </div>
   );
 };
@@ -882,7 +903,12 @@ const Habits: React.FC = () => {
     const meta = CADENCE_META[cad];
     const list = cadenceGroups[cad];
     const content = list.length === 0 ? (
-      <div className="cad-empty">No {meta.label.toLowerCase()} habits yet.<br />Add one from the ⚙ cog.</div>
+      <div className="hb-rows">
+        <button className="hcard hcard-add" onClick={() => { setNewHabitCadence(cad); setAddOpen(true); }} aria-label={`Add ${meta.label.toLowerCase()} habit`}>
+          <span className="hcard-add-plus" style={{ color: meta.color }}>+</span>
+          <span className="hcard-add-label">Add a {meta.label.toLowerCase()} habit</span>
+        </button>
+      </div>
     ) : (
       <div className="hb-rows">
         {list.map(habit => (
@@ -899,6 +925,10 @@ const Habits: React.FC = () => {
             onRequestRemove={setPendingRemove}
           />
         ))}
+        <button className="hcard-add hcard-add--mini" onClick={() => { setNewHabitCadence(cad); setAddOpen(true); }} aria-label={`Add ${meta.label.toLowerCase()} habit`}>
+          <span className="hcard-add-plus" style={{ color: meta.color }}>+</span>
+          <span className="hcard-add-label">Add a {meta.label.toLowerCase()} habit</span>
+        </button>
       </div>
     );
     return { key: cad, label: meta.label, color: meta.color, icon: meta.icon, content };
