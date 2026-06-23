@@ -56,7 +56,6 @@ const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number; 
 
   // Continuous position; the centred panel sits at `current`.
   const current = index - dragPx / width();
-  const active = panels[index];
   const chipShift = -(index * CHIP_W + CHIP_W / 2) + (dragPx / width()) * CHIP_W;
 
   const swipeProps = {
@@ -70,8 +69,6 @@ const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number; 
   return (
     <div className={`cadx${compact ? ' cadx--compact' : ''}`}>
       <div className="cadx-header">
-        <div className="cadx-title" style={{ color: active.color }}>{active.label}</div>
-
         {compact ? (
           // Collapsed: just the four colour dots, evenly spaced, still tappable.
           <div className="cadx-dotrow">
