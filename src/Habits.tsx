@@ -571,7 +571,7 @@ const FeaturedSheet: React.FC<{
                   <div className="hb-feat-name">
                     {f.name}
                     <span className="hb-feat-cadence" style={{ background: `${CADENCE_META[f.cadence].color}22`, color: CADENCE_META[f.cadence].color }}>
-                      {CADENCE_META[f.cadence].icon} {CADENCE_META[f.cadence].label}
+                      {CADENCE_META[f.cadence].label}
                     </span>
                   </div>
                   <div className="hb-feat-tag">{f.tagline}</div>
@@ -952,7 +952,7 @@ const Habits: React.FC = () => {
                     style={active ? { color: m.color, borderColor: m.color, background: `${m.color}1f` } : undefined}
                     onClick={() => setNewHabitCadence(cad)}
                   >
-                    <span className="cadence-pick-icon">{m.icon}</span>
+                    <span className="cadence-pick-dot" style={{ background: m.color }} />
                     <span className="cadence-pick-label">{m.label}</span>
                   </button>
                 );

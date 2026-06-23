@@ -61,9 +61,7 @@ const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number }
 
   return (
     <div className="cadx">
-      <div className="cadx-title" style={{ color: active.color }}>
-        <span className="cadx-title-icon">{active.icon}</span>{active.label}
-      </div>
+      <div className="cadx-title" style={{ color: active.color }}>{active.label}</div>
 
       <div
         className="cadx-swipe"
@@ -92,7 +90,7 @@ const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number }
                   }}
                   onClick={() => go(i)}
                 >
-                  <span className="cadx-chip-dot">{p.icon}</span>
+                  <span className="cadx-chip-dot" />
                   <span className="cadx-chip-label">{p.label}</span>
                 </button>
               );

@@ -4490,11 +4490,10 @@ h1, h2, h3, h4, .sora {
   will-change: transform, opacity;
 }
 .cadx-chip-dot {
-  width: 38px; height: 38px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center; font-size: 1.05rem;
-  background: color-mix(in srgb, var(--chip) 18%, transparent);
-  border: 2px solid color-mix(in srgb, var(--chip) 45%, transparent);
-  transition: background 0.2s, border-color 0.2s;
+  width: 34px; height: 34px; border-radius: 50%;
+  background: color-mix(in srgb, var(--chip) 14%, transparent);
+  border: 2px solid color-mix(in srgb, var(--chip) 50%, transparent);
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 .cadx-chip.active .cadx-chip-dot {
   background: var(--chip);
@@ -4542,7 +4541,7 @@ h1, h2, h3, h4, .sora {
   font-family: 'Sora', sans-serif; font-weight: 700;
   transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
-.cadence-pick-icon { font-size: 1.2rem; line-height: 1; }
+.cadence-pick-dot { width: 12px; height: 12px; border-radius: 50%; }
 .cadence-pick-label { font-size: 0.62rem; }
 
 .hrow {
