@@ -242,6 +242,8 @@ const migrations = [
   `ALTER TABLE profile ADD COLUMN IF NOT EXISTS religion TEXT`,
   // Suppress the "goal reached" celebration once the user has chosen "keep going".
   `ALTER TABLE weight_goals ADD COLUMN IF NOT EXISTS reached_dismissed BOOLEAN DEFAULT FALSE`,
+  // Habit cadence: daily (default) | weekly | monthly | yearly.
+  `ALTER TABLE habits ADD COLUMN IF NOT EXISTS cadence TEXT DEFAULT 'daily'`,
 ];
 (async () => {
   for (const sql of migrations) {

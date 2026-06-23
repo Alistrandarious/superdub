@@ -19,10 +19,10 @@ router.get('/graveyard', requireAuth as any, async (req: AuthRequest, res: Respo
 router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
     const { rows } = await pool.query(
-      'SELECT name, start_date FROM habits WHERE user_id = $1 AND (archived = FALSE OR archived IS NULL) ORDER BY position',
+      "SELECT name, start_date, COALESCE(cadence, 'daily') AS cadence FROM habits WHERE user_id = $1 AND (archived = FALSE OR archived IS NULL) ORDER BY position",
       [req.userId]
     );
-    res.json(rows.map((r: any) => ({ name: r.name, startDate: r.start_date })));
+    res.json(rows.map((r: any) => ({ name: r.name, startDate: r.start_date, cadence: r.cadence })));
   } catch {
     res.status(500).json({ error: 'Server error' });
   }
@@ -30,7 +30,14 @@ router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
 
 router.put('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
-    const { habits } = req.body as { habits: string[] };
+    const { habits: rawHabits } = req.body as { habits: (string | { name: string; cadence?: string })[] };
+    // Accept both plain strings (legacy) and { name, cadence } objects.
+    const CADENCES = new Set(['daily', 'weekly', 'monthly', 'yearly']);
+    const habits = (rawHabits ?? []).map(h => {
+      const name = typeof h === 'string' ? h : h.name;
+      const cadence = typeof h === 'string' ? 'daily' : (CADENCES.has(h.cadence ?? '') ? h.cadence! : 'daily');
+      return { name, cadence };
+    });
     const today = new Date().toISOString().slice(0, 10);
 
     const currentRes = await pool.query(
@@ -39,7 +46,7 @@ router.put('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
     );
     const existingMap = new Map<string, string | null>(currentRes.rows.map((r: any) => [r.name as string, r.start_date as string | null]));
 
-    const habitSet = new Set<string>(habits);
+    const habitSet = new Set<string>(habits.map(h => h.name));
     const removed = Array.from(existingMap.keys()).filter((n: string) => !habitSet.has(n));
     // Removed habits are ARCHIVED (soft delete → graveyard), never hard-deleted.
     // Their tracker_habits history is preserved so nothing is ever lost.
@@ -53,15 +60,16 @@ router.put('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
     // Upsert each habit in the desired order. Update the existing row (un-archiving
     // it if it was in the graveyard) or insert a new one — without deleting anything.
     for (let i = 0; i < habits.length; i++) {
-      const startDate = existingMap.has(habits[i]) ? existingMap.get(habits[i]) : today;
+      const { name, cadence } = habits[i];
+      const startDate = existingMap.has(name) ? existingMap.get(name) : today;
       const upd = await pool.query(
-        'UPDATE habits SET position = $3, archived = FALSE, start_date = COALESCE(start_date, $4) WHERE user_id = $1 AND name = $2',
-        [req.userId, habits[i], i, startDate]
+        'UPDATE habits SET position = $3, archived = FALSE, start_date = COALESCE(start_date, $4), cadence = $5 WHERE user_id = $1 AND name = $2',
+        [req.userId, name, i, startDate, cadence]
       );
       if (upd.rowCount === 0) {
         await pool.query(
-          'INSERT INTO habits (user_id, name, position, start_date, archived) VALUES ($1, $2, $3, $4, FALSE)',
-          [req.userId, habits[i], i, startDate]
+          'INSERT INTO habits (user_id, name, position, start_date, archived, cadence) VALUES ($1, $2, $3, $4, FALSE, $5)',
+          [req.userId, name, i, startDate, cadence]
         );
       }
     }

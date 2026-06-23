@@ -6,6 +6,16 @@ import './App.css';
 import { api } from './api';
 import { BUILD_TAG } from './version';
 import WeeklyRecap from './WeeklyRecap';
+import CadenceCarousel from './CadenceCarousel';
+
+export type Cadence = 'daily' | 'weekly' | 'monthly' | 'yearly';
+export const CADENCE_ORDER: Cadence[] = ['daily', 'weekly', 'monthly', 'yearly'];
+export const CADENCE_META: Record<Cadence, { label: string; color: string; icon: string }> = {
+  daily:   { label: 'Daily',   color: '#22C55E', icon: '✓' },
+  weekly:  { label: 'Weekly',  color: '#2E8BFF', icon: '📅' },
+  monthly: { label: 'Monthly', color: '#A855F7', icon: '🗓️' },
+  yearly:  { label: 'Yearly',  color: '#FF6B35', icon: '🔥' },
+};
 
 // Navigate with a View Transition (shared-element morph) where supported
 function navigateWithTransition(navigate: any, to: string | number) {
@@ -447,6 +457,86 @@ const HabitCard: React.FC<{
   );
 };
 
+// Swipe-to-complete card for non-daily habits. Drag left→right; a coloured fill
+// grows under the finger and, past the threshold, marks the period complete.
+const SwipeHabitCard: React.FC<{
+  habit: string;
+  color: string;
+  periodLabel: string;
+  done: boolean;
+  onComplete: () => void;
+  onClear: () => void;
+  onRequestRemove: (h: string) => void;
+}> = ({ habit, color, periodLabel, done, onComplete, onClear, onRequestRemove }) => {
+  const [dx, setDx] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const startX = useRef(0);
+  const startY = useRef(0);
+  const axis = useRef<'h' | 'v' | null>(null);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const w = () => ref.current?.clientWidth ?? 300;
+
+  const onDown = (e: React.PointerEvent) => {
+    if (done) return;
+    startX.current = e.clientX; startY.current = e.clientY; axis.current = null;
+    setDragging(true);
+    ref.current?.setPointerCapture?.(e.pointerId);
+  };
+  const onMove = (e: React.PointerEvent) => {
+    if (!dragging) return;
+    const dxRaw = e.clientX - startX.current;
+    const dyRaw = e.clientY - startY.current;
+    if (axis.current === null) {
+      if (Math.abs(dxRaw) < 6 && Math.abs(dyRaw) < 6) return;
+      axis.current = Math.abs(dxRaw) > Math.abs(dyRaw) ? 'h' : 'v';
+    }
+    if (axis.current === 'v') return;
+    setDx(Math.max(0, Math.min(dxRaw, w())));
+  };
+  const onUp = () => {
+    if (!dragging) return;
+    setDragging(false);
+    if (dx > w() * 0.55) onComplete();
+    setDx(0);
+    axis.current = null;
+  };
+
+  const progress = done ? 1 : dx / w();
+
+  return (
+    <div
+      className={`swipe-card${done ? ' done' : ''}`}
+      data-no-carousel
+      ref={ref}
+      style={{ ['--cad' as any]: color }}
+      onPointerDown={onDown}
+      onPointerMove={onMove}
+      onPointerUp={onUp}
+      onPointerCancel={onUp}
+      onClick={() => { if (done) onClear(); }}
+    >
+      <div
+        className="swipe-fill"
+        style={{ width: `${progress * 100}%`, transition: dragging ? 'none' : 'width 0.32s cubic-bezier(0.22,1,0.36,1)' }}
+      />
+      <div className="swipe-content">
+        <div className="swipe-main">
+          <span className="swipe-name">{habit}</span>
+          <span className="swipe-hint">{done ? `✓ Done ${periodLabel} · tap to undo` : `Swipe to complete →`}</span>
+        </div>
+        {!done && <span className="swipe-arrow" style={{ opacity: 0.3 + progress * 0.7 }}>→</span>}
+      </div>
+      <button
+        className="swipe-remove"
+        data-no-carousel
+        onClick={e => { e.stopPropagation(); onRequestRemove(habit); }}
+        aria-label="Remove habit"
+      >✕</button>
+    </div>
+  );
+};
+
 // Featured habits bottom-sheet (tap the banner to open, then join)
 const FeaturedSheet: React.FC<{
   open: boolean;
@@ -497,6 +587,15 @@ const MANDATORY_HABIT = 'Logging into Superdub';
 const Habits: React.FC = () => {
   const navigate = useNavigate();
   const [habits, setHabits] = useState<string[]>([]);
+  const [habitCadence, setHabitCadence] = useState<Record<string, Cadence>>({});
+  const [newHabitCadence, setNewHabitCadence] = useState<Cadence>('daily');
+  const cadenceRef = useRef<Record<string, Cadence>>({});
+  useEffect(() => { cadenceRef.current = habitCadence; }, [habitCadence]);
+  // Persist habit names + their cadence (objects), using the latest cadence map.
+  const persistHabits = useCallback((names: string[], overrides?: Record<string, Cadence>) => {
+    const map = { ...cadenceRef.current, ...(overrides ?? {}) };
+    api.updateHabits(names.map(n => ({ name: n, cadence: map[n] ?? 'daily' }))).catch(() => {});
+  }, []);
   const [startDates, setStartDates] = useState<Record<string, string | null>>({});
   const [ht, setHt] = useState<HabitTracker>({});
   const [weather, setWeather] = useState<WeatherState | null>(null);
@@ -565,7 +664,11 @@ const Habits: React.FC = () => {
     Promise.all([api.getHabits(), api.getTracker(), api.getGraveyard()]).then(([loadedHabits, trackerData, graveyardData]) => {
       let names = loadedHabits.map(h => h.name);
       const dates: Record<string, string | null> = {};
-      loadedHabits.forEach(h => { dates[h.name] = h.startDate; });
+      const cad: Record<string, Cadence> = {};
+      loadedHabits.forEach(h => { dates[h.name] = h.startDate; cad[h.name] = ((h as any).cadence as Cadence) || 'daily'; });
+      cad[MANDATORY_HABIT] = 'daily';
+      setHabitCadence(cad);
+      cadenceRef.current = cad;
 
       // Mandatory habit is always present in state.
       // Only write to DB if getHabits returned a real response — guards against
@@ -574,7 +677,7 @@ const Habits: React.FC = () => {
         names = [MANDATORY_HABIT, ...names];
         dates[MANDATORY_HABIT] = new Date().toISOString().slice(0, 10);
         if (loadedHabits.length > 0) {
-          api.updateHabits(names).catch(() => {});
+          persistHabits(names, cad);
         }
       }
 
@@ -596,7 +699,7 @@ const Habits: React.FC = () => {
       setHt(map);
       setLoaded(true);
     }).catch(() => setLoaded(true));
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!navigator.geolocation) return;
@@ -670,13 +773,14 @@ const Habits: React.FC = () => {
     const updated = [...habits, name];
     setHabits(updated);
     setStartDates(prev => ({ ...prev, [name]: today }));
+    setHabitCadence(prev => ({ ...prev, [name]: 'daily' }));
     setHt(prev => {
       const next = { ...prev };
       ALL_DAYS.forEach(d => { next[d] = { ...next[d], [name]: null }; });
       return next;
     });
-    api.updateHabits(updated).catch(() => {});
-  }, [habits]);
+    persistHabits(updated, { [name]: 'daily' });
+  }, [habits, persistHabits]);
 
   const addHabit = () => {
     const n = newHabit.trim();
@@ -685,14 +789,16 @@ const Habits: React.FC = () => {
     const updated = [...habits, n];
     setHabits(updated);
     setStartDates(prev => ({ ...prev, [n]: startDate }));
+    setHabitCadence(prev => ({ ...prev, [n]: newHabitCadence }));
     setHt(prev => {
       const next = { ...prev };
       ALL_DAYS.forEach(d => { next[d] = { ...next[d], [n]: null }; });
       return next;
     });
+    persistHabits(updated, { [n]: newHabitCadence });
     setNewHabit('');
+    setNewHabitCadence('daily');
     setAddOpen(false);
-    api.updateHabits(updated).catch(() => {});
   };
 
   const confirmRemove = (name: string) => {
@@ -752,6 +858,70 @@ const Habits: React.FC = () => {
 
   const yourHabits = habits.filter(h => h !== MANDATORY_HABIT);
 
+  // ── Cadence grouping + period completion (weekly/monthly/yearly) ─────────────
+  const cadenceGroups: Record<Cadence, string[]> = { daily: [], weekly: [], monthly: [], yearly: [] };
+  yourHabits.forEach(h => { cadenceGroups[habitCadence[h] ?? 'daily'].push(h); });
+
+  const nowDate = new Date();
+  const periodDaysFor = (cad: Cadence): string[] => {
+    if (cad === 'weekly') return weekDays.map(d => d.key);
+    if (cad === 'monthly') {
+      const mm = String(nowDate.getMonth() + 1).padStart(2, '0');
+      return ALL_DAYS.filter(d => d.slice(3) === mm);
+    }
+    if (cad === 'yearly') return ALL_DAYS;
+    return [today];
+  };
+  const isPeriodDone = (habit: string, cad: Cadence) => periodDaysFor(cad).some(d => ht[d]?.[habit] === 'done');
+  const clearPeriod = (habit: string, cad: Cadence) =>
+    periodDaysFor(cad).forEach(d => { if (ht[d]?.[habit] === 'done') handleToggleDay(habit, d, null); });
+  const PERIOD_LABEL: Record<Cadence, string> = { daily: 'today', weekly: 'this week', monthly: 'this month', yearly: 'this year' };
+
+  const cadencePanels = CADENCE_ORDER.map(cad => {
+    const meta = CADENCE_META[cad];
+    const list = cadenceGroups[cad];
+    let content: React.ReactNode;
+    if (list.length === 0) {
+      content = <div className="cad-empty">No {meta.label.toLowerCase()} habits yet.<br />Add one from the ⚙ cog.</div>;
+    } else if (cad === 'daily') {
+      content = (
+        <div className="hb-rows">
+          {list.map(habit => (
+            <HabitCard
+              key={habit}
+              habit={habit}
+              stats={computeHabitStats(habit, ht, today, startDates[habit])}
+              weekDays={weekDays}
+              ht={ht}
+              today={today}
+              onToggleDay={handleToggleDay}
+              onEditDay={editPast}
+              onRequestRemove={setPendingRemove}
+            />
+          ))}
+        </div>
+      );
+    } else {
+      content = (
+        <div className="swipe-list">
+          {list.map(habit => (
+            <SwipeHabitCard
+              key={habit}
+              habit={habit}
+              color={meta.color}
+              periodLabel={PERIOD_LABEL[cad]}
+              done={isPeriodDone(habit, cad)}
+              onComplete={() => handleToggleDay(habit, today, 'done')}
+              onClear={() => clearPeriod(habit, cad)}
+              onRequestRemove={setPendingRemove}
+            />
+          ))}
+        </div>
+      );
+    }
+    return { key: cad, label: meta.label, color: meta.color, icon: meta.icon, content };
+  });
+
   const mandatoryStats = computeHabitStats(MANDATORY_HABIT, ht, today, startDates[MANDATORY_HABIT]);
 
   return (
@@ -791,6 +961,24 @@ const Habits: React.FC = () => {
                 placeholder="Name your new habit…"
               />
               <button className="habit-add-btn" onClick={addHabit}>+</button>
+            </div>
+            <p className="hb-sheet-sub" style={{ marginTop: 16, marginBottom: 8 }}>How often?</p>
+            <div className="cadence-picker">
+              {CADENCE_ORDER.map(cad => {
+                const m = CADENCE_META[cad];
+                const active = newHabitCadence === cad;
+                return (
+                  <button
+                    key={cad}
+                    className={`cadence-pick${active ? ' active' : ''}`}
+                    style={active ? { color: m.color, borderColor: m.color, background: `${m.color}1f` } : undefined}
+                    onClick={() => setNewHabitCadence(cad)}
+                  >
+                    <span className="cadence-pick-icon">{m.icon}</span>
+                    <span className="cadence-pick-label">{m.label}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -947,31 +1135,8 @@ const Habits: React.FC = () => {
         {/* Weekly Recap — Sunday only, right under the gold circles */}
         {isSunday && <WeeklyRecap />}
 
-        {/* Your habits — full cards with weekly circles + done button */}
-        {yourHabits.length > 0 ? (
-          <div className="hb-rows">
-            {yourHabits.map(habit => {
-              const stats = computeHabitStats(habit, ht, today, startDates[habit]);
-              return (
-                <HabitCard
-                  key={habit}
-                  habit={habit}
-                  stats={stats}
-                  weekDays={weekDays}
-                  ht={ht}
-                  today={today}
-                  onToggleDay={handleToggleDay}
-                  onEditDay={editPast}
-                  onRequestRemove={setPendingRemove}
-                />
-              );
-            })}
-          </div>
-        ) : (
-          <div className="habits-empty">
-            <p>No habits yet. Tap the cog to add one, or join a featured habit.</p>
-          </div>
-        )}
+        {/* Your habits — cadence carousel (Daily · Weekly · Monthly · Yearly) */}
+        <CadenceCarousel panels={cadencePanels} startIndex={0} />
 
         {/* Featured banner — tap to open & join (below the user's habits) */}
         <button className="hb-featured" onClick={() => setFeaturedOpen(true)}>
@@ -1025,7 +1190,9 @@ const Habits: React.FC = () => {
       {/* ── Habit day overlay — triggered by weigh-in or 6-hour refresh ── */}
       {showDayOverlay && loaded && (() => {
         const todayHabits = ht[today] ?? {};
-        const displayHabits = yourHabits;
+        // Daily check-in popup only covers daily habits — weekly/monthly/yearly
+        // are completed via their swipe cards in the cadence carousel.
+        const displayHabits = yourHabits.filter(h => (habitCadence[h] ?? 'daily') === 'daily');
         const doneCount = displayHabits.filter(h => todayHabits[h] === 'done').length;
         const total = displayHabits.length;
         const allDone = total > 0 && doneCount === total;

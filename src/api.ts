@@ -63,8 +63,9 @@ export const api = {
   heartbeat: () => request('/profile/heartbeat', { method: 'POST' }),
 
   // habits
-  getHabits: (): Promise<{ name: string; startDate: string | null }[]> => request('/habits'),
-  updateHabits: (habits: string[]) => request('/habits', { method: 'PUT', body: JSON.stringify({ habits }) }),
+  getHabits: (): Promise<{ name: string; startDate: string | null; cadence?: string }[]> => request('/habits'),
+  updateHabits: (habits: (string | { name: string; cadence: string })[]) =>
+    request('/habits', { method: 'PUT', body: JSON.stringify({ habits }) }),
   archiveHabit: (name: string) => request(`/habits/${encodeURIComponent(name)}`, { method: 'DELETE' }),
   restoreHabit: (name: string) => request(`/habits/${encodeURIComponent(name)}/restore`, { method: 'POST' }),
   getGraveyard: (): Promise<{ name: string; startDate: string | null }[]> => request('/habits/graveyard'),
