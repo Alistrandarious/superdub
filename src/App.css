@@ -9184,6 +9184,13 @@ h3, h4,
 .plan-engine-stall.stall-medium { background: rgba(255,138,0,0.1); color: #FFC062; }
 .plan-engine-stall.stall-high { background: rgba(255,84,112,0.12); color: #FF8FA3; }
 .plan-engine-stall-icon { flex-shrink: 0; }
+.plan-engine-stall-body { display: flex; flex-direction: column; gap: 4px; }
+.plan-engine-stall-text { font-weight: 600; }
+.plan-engine-stall-action {
+  font-size: 0.74rem;
+  color: rgba(255,255,255,0.75);
+  line-height: 1.4;
+}
 
 .plan-engine-metabolic-warning {
   display: flex;

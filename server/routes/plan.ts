@@ -293,16 +293,37 @@ router.post('/goal', requireAuth as any, async (req: AuthRequest, res: Response)
     );
     const goalId: string = goalRes.rows[0].id;
 
-    // Initial calorie prescription: TDEE ± daily equivalent of chosen rate
+    // Initial calorie prescription: TDEE ± daily equivalent of chosen rate.
+    // Use the LEARNED TDEE when we have enough history, else the formula estimate.
     const bmr = computeBMR(bio);
-    const tdee = computeTDEE(bio);
+    const formulaTDEE = computeTDEE(bio);
+    let tdee = formulaTDEE;
+    let tdeeSource = 'formula';
+    try {
+      const emaPoints = computeEMA(pts);
+      if (emaPoints.length >= 2) {
+        const metrics = await getRecentMetrics(req.userId!);
+        const dataDays = (emaPoints[emaPoints.length - 1].date.getTime() - emaPoints[0].date.getTime()) / 86400000 + 1;
+        const est = estimatePersonalTDEE({
+          emaSlopePerWeek: weeklySlope(emaPoints),
+          avgDailyIntake: metrics.avgDailyIntake,
+          prescribedCalories: formulaTDEE,
+          formulaTDEE,
+          dataDays,
+        });
+        if (est.confidence >= 0.4 && est.observedTDEE != null) {
+          tdee = est.blendedTDEE;
+          tdeeSource = 'learned';
+        }
+      }
+    } catch { /* fall back to formula */ }
     const dailyEquiv = Math.round(ratePctBw * startWeight * 7700 / 7);
     const direction = goalType === 'gain' ? 1 : -1;
     const initialCalories = Math.max(tdee + direction * dailyEquiv, bmr);
 
     const rateKgPerWk = +(ratePctBw * startWeight).toFixed(2);
     const reason = `Goal created — ${goalType} ${Math.abs(startWeight - targetWeight).toFixed(1)} kg`
-      + ` by ${targetDate} (${rateKgPerWk} kg/wk, TDEE ${tdee} kcal)`;
+      + ` by ${targetDate} (${rateKgPerWk} kg/wk, ${tdeeSource} TDEE ${tdee} kcal)`;
 
     await pool.query(
       `INSERT INTO weight_plan_targets (user_id, goal_id, prescribed_calories, reason)

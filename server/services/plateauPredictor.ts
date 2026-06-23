@@ -15,6 +15,7 @@ export interface StallSignal {
   score: number;        // 0–1
   message: string;      // plain-English summary
   factors: string[];    // contributing causes, ordered by weight
+  action: string;       // the single concrete thing to do about it
 }
 
 export function predictStall(params: {
@@ -78,6 +79,7 @@ export function predictStall(params: {
   else if (score >= 0.18) risk = 'low';
 
   let message: string;
+  let action = '';
   if (risk === 'none') {
     message = 'No stall signals — progress and habits look healthy.';
   } else {
@@ -85,7 +87,21 @@ export function predictStall(params: {
     const extra = labels.length > 1 ? `, plus ${labels.slice(1, 3).join(' and ')}` : '';
     const verdict = risk === 'high' ? 'Likely stalling' : risk === 'medium' ? 'Early stall signs' : 'Watch for a stall';
     message = `${verdict}: ${lead}${extra}.`;
+
+    // One concrete next step, keyed off the dominant cause
+    const top = labels[0] ?? '';
+    if (top.includes('energy')) {
+      action = 'Energy is low — a 3–5 day break at maintenance calories often restores it and breaks the stall.';
+    } else if (top.includes('steps')) {
+      action = 'Activity has dropped — get your daily steps back to your prior average before cutting calories.';
+    } else if (top.includes('mood')) {
+      action = 'Mood is dipping — hold calories steady and protect adherence rather than adding restriction.';
+    } else if (top.includes('weigh-ins') || top.includes('sparse')) {
+      action = 'Log your weight more consistently for a week so the trend is reliable before adjusting.';
+    } else {
+      action = 'Trend has slowed — tighten ~150 kcal/day, or take a planned refeed day if you have dieted 8+ weeks.';
+    }
   }
 
-  return { risk, score: +score.toFixed(2), message, factors: labels };
+  return { risk, score: +score.toFixed(2), message, factors: labels, action };
 }

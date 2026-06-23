@@ -148,11 +148,16 @@ const AdaptiveWeightPlanCard: React.FC = () => {
         </div>
       )}
 
-      {/* Plateau / stall prediction */}
+      {/* Plateau / stall prediction + the one thing to do about it */}
       {planStatus.stall && planStatus.stall.risk !== 'none' && (
         <div className={`plan-engine-stall stall-${planStatus.stall.risk}`}>
           <span className="plan-engine-stall-icon">{planStatus.stall.risk === 'high' ? '🟠' : '🟡'}</span>
-          <span className="plan-engine-stall-text">{planStatus.stall.message}</span>
+          <span className="plan-engine-stall-body">
+            <span className="plan-engine-stall-text">{planStatus.stall.message}</span>
+            {planStatus.stall.action && (
+              <span className="plan-engine-stall-action">→ {planStatus.stall.action}</span>
+            )}
+          </span>
         </div>
       )}
     </div>
