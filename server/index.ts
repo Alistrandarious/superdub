@@ -15,6 +15,8 @@ import mealplansRoutes from './routes/mealplans';
 import stepsRoutes from './routes/steps';
 import planRoutes from './routes/plan';
 import checkinRoutes from './routes/checkin';
+import pushRoutes from './routes/push';
+import { sendPush, pushEnabled } from './services/push';
 import { pool } from './db';
 
 dotenv.config();
@@ -37,6 +39,7 @@ app.use('/api/meal-plans', mealplansRoutes);
 app.use('/api/steps', stepsRoutes);
 app.use('/api/plan', planRoutes);
 app.use('/api/checkin', checkinRoutes);
+app.use('/api/push', pushRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
@@ -217,6 +220,16 @@ const migrations = [
     created_at  TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE (user_id, week_start)
   )`,
+  // ── Web Push subscriptions ───────────────────────────────────────────────────
+  `CREATE TABLE IF NOT EXISTS push_subscriptions (
+    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    endpoint      TEXT NOT NULL UNIQUE,
+    subscription  JSONB NOT NULL,
+    tz_offset     INTEGER DEFAULT 0,
+    last_reminded DATE,
+    created_at    TIMESTAMPTZ DEFAULT NOW()
+  )`,
 ];
 (async () => {
   for (const sql of migrations) {
@@ -224,6 +237,45 @@ const migrations = [
   }
   console.log('[migrate] done');
 })();
+
+// ── Daily reminder push — runs every 30 min, nudges at ~8 AM local once/day ──
+async function runReminders() {
+  if (!pushEnabled) return;
+  try {
+    const { rows } = await pool.query(
+      'SELECT id, user_id, endpoint, subscription, tz_offset, last_reminded FROM push_subscriptions'
+    );
+    const nowUtcMs = Date.now();
+    for (const r of rows) {
+      const local = new Date(nowUtcMs - (Number(r.tz_offset) || 0) * 60000);
+      if (local.getUTCHours() !== 8) continue;               // reminder hour: 8 AM local
+      const localDate = local.toISOString().slice(0, 10);
+      if (r.last_reminded && new Date(r.last_reminded).toISOString().slice(0, 10) >= localDate) continue;
+
+      // Skip if they've already weighed in today (local)
+      const ddmm = `${String(local.getUTCDate()).padStart(2, '0')}/${String(local.getUTCMonth() + 1).padStart(2, '0')}`;
+      const w = await pool.query(
+        `SELECT 1 FROM tracker WHERE user_id = $1 AND day = $2 AND weight IS NOT NULL AND weight != '' AND weight::NUMERIC > 0 LIMIT 1`,
+        [r.user_id, ddmm]
+      ).catch(() => ({ rows: [] as any[] }));
+
+      if (w.rows.length === 0) {
+        const ok = await sendPush(r.subscription, {
+          title: 'Morning — superdub 🌅',
+          body: 'Quick weigh-in + how are you feeling today?',
+          url: '/',
+          tag: 'daily-reminder',
+        });
+        if (!ok) { await pool.query('DELETE FROM push_subscriptions WHERE id = $1', [r.id]).catch(() => {}); continue; }
+      }
+      await pool.query('UPDATE push_subscriptions SET last_reminded = $2 WHERE id = $1', [r.id, localDate]).catch(() => {});
+    }
+  } catch (err: any) {
+    console.error('[reminders]', err?.message);
+  }
+}
+setInterval(runReminders, 30 * 60 * 1000);
+runReminders();
 
 // Serve React build in production
 const buildDir = path.join(__dirname, '..', 'build');

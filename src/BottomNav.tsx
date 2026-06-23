@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { enablePush, disablePush, pushIsEnabled, pushSupported } from './push';
 
 function readPlanBadge(): { active: boolean; calories: number | null; onTrack: boolean | null } | null {
   try {
@@ -18,6 +19,22 @@ const BottomNav: React.FC = () => {
   const [moreOpen, setMoreOpen] = useState(false);
   const [planBadge, setPlanBadge] = useState(readPlanBadge);
   const [checkinEnabled, setCheckinEnabled] = useState(readCheckinEnabled);
+  const [pushOn, setPushOn] = useState(pushIsEnabled);
+  const [pushBusy, setPushBusy] = useState(false);
+
+  const togglePush = async () => {
+    if (pushBusy) return;
+    setPushBusy(true);
+    if (pushOn) {
+      await disablePush();
+      setPushOn(false);
+    } else {
+      const res = await enablePush();
+      if (res.ok) setPushOn(true);
+      else alert(res.reason || 'Could not enable notifications.');
+    }
+    setPushBusy(false);
+  };
 
   useEffect(() => {
     const sync = () => setPlanBadge(readPlanBadge());
@@ -127,6 +144,21 @@ const BottomNav: React.FC = () => {
               {checkinEnabled ? 'ON' : 'OFF'}
             </span>
           </button>
+
+          {pushSupported() && (
+            <button className="diet-sub-item" onClick={togglePush}>
+              <span className="diet-sub-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              </span>
+              <div className="diet-sub-text">
+                <span className="diet-sub-label">Notifications</span>
+                <span className="diet-sub-desc">{pushBusy ? 'Working…' : pushOn ? 'On — daily weigh-in reminder' : 'Off — get a daily nudge'}</span>
+              </div>
+              <span className={`checkin-toggle-pill ${pushOn ? 'on' : 'off'}`}>
+                {pushOn ? 'ON' : 'OFF'}
+              </span>
+            </button>
+          )}
         </div>
       )}
 

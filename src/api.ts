@@ -150,6 +150,13 @@ export const api = {
   saveWeeklyIntention: (weekStart: string, intention: string) =>
     request('/checkin/weekly-intention', { method: 'POST', body: JSON.stringify({ weekStart, intention }) }),
 
+  // push notifications
+  getVapidKey: (): Promise<{ key: string }> => request('/push/vapid-public-key'),
+  pushSubscribe: (subscription: any, tzOffsetMinutes: number) =>
+    request('/push/subscribe', { method: 'POST', body: JSON.stringify({ subscription, tzOffsetMinutes }) }),
+  pushUnsubscribe: (endpoint?: string) =>
+    request('/push/unsubscribe', { method: 'POST', body: JSON.stringify({ endpoint }) }),
+
   // food log
   parseFoodLog: (transcript: string) =>
     request('/food-log/parse', { method: 'POST', body: JSON.stringify({ transcript }) }),
