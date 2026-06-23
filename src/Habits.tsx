@@ -10,12 +10,57 @@ import CadenceCarousel from './CadenceCarousel';
 
 export type Cadence = 'daily' | 'weekly' | 'monthly' | 'yearly';
 export const CADENCE_ORDER: Cadence[] = ['daily', 'weekly', 'monthly', 'yearly'];
-export const CADENCE_META: Record<Cadence, { label: string; color: string; icon: string }> = {
-  daily:   { label: 'Daily',   color: '#22C55E', icon: '✓' },
-  weekly:  { label: 'Weekly',  color: '#2E8BFF', icon: '📅' },
-  monthly: { label: 'Monthly', color: '#A855F7', icon: '🗓️' },
-  yearly:  { label: 'Yearly',  color: '#FF6B35', icon: '🔥' },
+export const CADENCE_META: Record<Cadence, { label: string; color: string; icon: string; period: string }> = {
+  daily:   { label: 'Daily',   color: '#22C55E', icon: '✓',  period: 'today' },
+  weekly:  { label: 'Weekly',  color: '#2E8BFF', icon: '📅', period: 'this week' },
+  monthly: { label: 'Monthly', color: '#A855F7', icon: '🗓️', period: 'this month' },
+  yearly:  { label: 'Yearly',  color: '#FF6B35', icon: '🔥', period: 'this year' },
 };
+const MONTH_INITIALS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
+
+// A completion "dot" for a habit card. Daily = 7 weekday dots; weekly = 4 week
+// dots (of the month); monthly = 12 month dots; yearly = 1 dot. Each carries the
+// days that back it so completing/clearing can write the underlying tracker.
+interface PeriodUnit { key: string; label: string; done: boolean; isFuture: boolean; isCurrent: boolean; repDay: string; doneDays: string[]; }
+
+function ddmmToDateNum(ddmm: string): number {
+  return new Date(YEAR, parseInt(ddmm.slice(3)) - 1, parseInt(ddmm.slice(0, 2))).getTime();
+}
+
+function computePeriodUnits(habit: string, cadence: Cadence, ht: HabitTracker, today: string): PeriodUnit[] {
+  const now = new Date();
+  const todayNum = ddmmToDateNum(today);
+  const doneIn = (days: string[]) => days.filter(d => ht[d]?.[habit] === 'done');
+
+  if (cadence === 'weekly') {
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const monthDays = ALL_DAYS.filter(d => d.slice(3) === mm);
+    const weekOf = (d: string) => Math.min(4, Math.ceil(parseInt(d.slice(0, 2)) / 7));
+    return [1, 2, 3, 4].map(w => {
+      const bucket = monthDays.filter(d => weekOf(d) === w);
+      const doneDays = doneIn(bucket);
+      const inBucket = bucket.includes(today);
+      const repDay = inBucket ? today : (bucket[0] ?? today);
+      return { key: `w${w}`, label: `W${w}`, done: doneDays.length > 0, isFuture: bucket.length > 0 && ddmmToDateNum(bucket[0]) > todayNum, isCurrent: inBucket, repDay, doneDays };
+    });
+  }
+  if (cadence === 'monthly') {
+    return Array.from({ length: 12 }, (_, m) => {
+      const mm = String(m + 1).padStart(2, '0');
+      const bucket = ALL_DAYS.filter(d => d.slice(3) === mm);
+      const doneDays = doneIn(bucket);
+      const isCurrent = m === now.getMonth();
+      const repDay = isCurrent ? today : (bucket[0] ?? today);
+      return { key: `m${m}`, label: MONTH_INITIALS[m], done: doneDays.length > 0, isFuture: m > now.getMonth(), isCurrent, repDay, doneDays };
+    });
+  }
+  if (cadence === 'yearly') {
+    const doneDays = doneIn(ALL_DAYS);
+    return [{ key: 'y', label: String(YEAR), done: doneDays.length > 0, isFuture: false, isCurrent: true, repDay: today, doneDays }];
+  }
+  // daily handled inline by the existing weekday row
+  return [];
+}
 
 // Navigate with a View Transition (shared-element morph) where supported
 function navigateWithTransition(navigate: any, to: string | number) {
@@ -341,10 +386,11 @@ const HabitCard: React.FC<{
   weekDays: ReturnType<typeof getWeekDays>;
   ht: HabitTracker;
   today: string;
+  cadence: Cadence;
   onToggleDay: (habit: string, dayKey: string, state: HabitState) => void;
   onEditDay: (habit: string, dayKey: string, cur: HabitState) => void;
   onRequestRemove: (habit: string) => void;
-}> = ({ habit, stats, weekDays, ht, today, onToggleDay, onEditDay, onRequestRemove }) => {
+}> = ({ habit, stats, weekDays, ht, today, cadence, onToggleDay, onEditDay, onRequestRemove }) => {
   const [histOpen, setHistOpen] = useState(false);
   const [monthOffset, setMonthOffset] = useState(0); // 0 = this month, -1 = last month …
   const nowD = new Date();
@@ -352,10 +398,19 @@ const HabitCard: React.FC<{
   const dispMonth = dispBase.getMonth();
   const dispYear = dispBase.getFullYear();
   const rank = getRank(stats.totalDays);
+  const isDaily = cadence === 'daily';
   const todayState = ht[today]?.[habit] ?? null;
   const isFlame = stats.streak >= 7;
-  const hasDanger = stats.misses >= 2;
-  const hasWarning = stats.misses === 1 && todayState !== 'done';
+  const hasDanger = isDaily && stats.misses >= 2;
+  const hasWarning = isDaily && stats.misses === 1 && todayState !== 'done';
+  // Period dots for non-daily cadences (weekly 4 · monthly 12 · yearly 1).
+  const units = isDaily ? [] : computePeriodUnits(habit, cadence, ht, today);
+  const toggleUnit = (u: PeriodUnit) => {
+    if (u.done) u.doneDays.forEach(d => onToggleDay(habit, d, null));
+    else onToggleDay(habit, u.repDay, 'done');
+  };
+  const currentUnit = units.find(u => u.isCurrent) ?? units[0];
+  const accent = CADENCE_META[cadence].color;
 
   const gateDots = XP_GATES.map(([t], i) => ({
     label: GATE_LABELS[i],
@@ -415,32 +470,62 @@ const HabitCard: React.FC<{
         </div>
       )}
 
-      <div className="hcard-week">
-        {weekDays.map(({ key, label, isFuture, isToday }) => {
-          const state = ht[key]?.[habit] ?? null;
-          return (
-            <div key={key} className={`hcard-day ${state === 'done' ? 'done' : ''} ${state === 'failed' ? 'failed' : ''} ${isFuture ? 'future' : ''} ${isToday ? 'is-today' : ''}`}>
+      {isDaily ? (
+        <div className="hcard-week">
+          {weekDays.map(({ key, label, isFuture, isToday }) => {
+            const state = ht[key]?.[habit] ?? null;
+            return (
+              <div key={key} className={`hcard-day ${state === 'done' ? 'done' : ''} ${state === 'failed' ? 'failed' : ''} ${isFuture ? 'future' : ''} ${isToday ? 'is-today' : ''}`}>
+                <button
+                  className="hcard-day-circle"
+                  disabled={isFuture}
+                  onClick={() => !isFuture && onToggleDay(habit, key, cycleState(state))}
+                  aria-label={`${label}: ${state ?? 'blank'}`}
+                >
+                  {state === 'done' && <span className="hcard-day-tick">{isFlame ? '🔥' : '✓'}</span>}
+                  {state === 'failed' && <span className="hcard-day-tick hcard-day-fail">✗</span>}
+                </button>
+                <span className="hcard-day-label">{label}</span>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className={`hcard-week hcard-week--${units.length}`} style={{ ['--cad' as any]: accent }}>
+          {units.map(u => (
+            <div key={u.key} className={`hcard-day cad-unit ${u.done ? 'done' : ''} ${u.isFuture ? 'future' : ''} ${u.isCurrent ? 'is-today' : ''}`}>
               <button
                 className="hcard-day-circle"
-                disabled={isFuture}
-                onClick={() => !isFuture && onToggleDay(habit, key, cycleState(state))}
-                aria-label={`${label}: ${state ?? 'blank'}`}
+                disabled={u.isFuture}
+                onClick={() => !u.isFuture && toggleUnit(u)}
+                aria-label={`${u.label}: ${u.done ? 'done' : 'blank'}`}
               >
-                {state === 'done' && <span className="hcard-day-tick">{isFlame ? '🔥' : '✓'}</span>}
-                {state === 'failed' && <span className="hcard-day-tick hcard-day-fail">✗</span>}
+                {u.done && <span className="hcard-day-tick">{isFlame ? '🔥' : '✓'}</span>}
               </button>
-              <span className="hcard-day-label">{label}</span>
+              <span className="hcard-day-label">{u.label}</span>
             </div>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      )}
 
-      <button
-        className={`hcard-today-btn ${todayState === 'done' ? 'done' : ''} ${todayState === 'failed' ? 'failed' : ''}`}
-        onClick={() => onToggleDay(habit, today, cycleState(todayState))}
-      >
-        {todayState === 'done' ? '✓ Done today' : todayState === 'failed' ? '✗ Failed today — tap to clear' : '+ Mark done today'}
-      </button>
+      {isDaily ? (
+        <button
+          className={`hcard-today-btn ${todayState === 'done' ? 'done' : ''} ${todayState === 'failed' ? 'failed' : ''}`}
+          onClick={() => onToggleDay(habit, today, cycleState(todayState))}
+        >
+          {todayState === 'done' ? '✓ Done today' : todayState === 'failed' ? '✗ Failed today — tap to clear' : '+ Mark done today'}
+        </button>
+      ) : (
+        currentUnit && (
+          <button
+            className={`hcard-today-btn ${currentUnit.done ? 'done' : ''}`}
+            style={currentUnit.done ? { ['--cad' as any]: accent } : undefined}
+            onClick={() => toggleUnit(currentUnit)}
+          >
+            {currentUnit.done ? `✓ Done ${CADENCE_META[cadence].period}` : `+ Mark done ${CADENCE_META[cadence].period}`}
+          </button>
+        )
+      )}
 
       {histOpen && (
         <div className="hcard-history">
@@ -453,86 +538,6 @@ const HabitCard: React.FC<{
           <MiniMonthHeatmap habit={habit} year={dispYear} monthIdx={dispMonth} ht={ht} onEdit={onEditDay} />
         </div>
       )}
-    </div>
-  );
-};
-
-// Swipe-to-complete card for non-daily habits. Drag left→right; a coloured fill
-// grows under the finger and, past the threshold, marks the period complete.
-const SwipeHabitCard: React.FC<{
-  habit: string;
-  color: string;
-  periodLabel: string;
-  done: boolean;
-  onComplete: () => void;
-  onClear: () => void;
-  onRequestRemove: (h: string) => void;
-}> = ({ habit, color, periodLabel, done, onComplete, onClear, onRequestRemove }) => {
-  const [dx, setDx] = useState(0);
-  const [dragging, setDragging] = useState(false);
-  const startX = useRef(0);
-  const startY = useRef(0);
-  const axis = useRef<'h' | 'v' | null>(null);
-  const ref = useRef<HTMLDivElement>(null);
-
-  const w = () => ref.current?.clientWidth ?? 300;
-
-  const onDown = (e: React.PointerEvent) => {
-    if (done) return;
-    startX.current = e.clientX; startY.current = e.clientY; axis.current = null;
-    setDragging(true);
-    ref.current?.setPointerCapture?.(e.pointerId);
-  };
-  const onMove = (e: React.PointerEvent) => {
-    if (!dragging) return;
-    const dxRaw = e.clientX - startX.current;
-    const dyRaw = e.clientY - startY.current;
-    if (axis.current === null) {
-      if (Math.abs(dxRaw) < 6 && Math.abs(dyRaw) < 6) return;
-      axis.current = Math.abs(dxRaw) > Math.abs(dyRaw) ? 'h' : 'v';
-    }
-    if (axis.current === 'v') return;
-    setDx(Math.max(0, Math.min(dxRaw, w())));
-  };
-  const onUp = () => {
-    if (!dragging) return;
-    setDragging(false);
-    if (dx > w() * 0.55) onComplete();
-    setDx(0);
-    axis.current = null;
-  };
-
-  const progress = done ? 1 : dx / w();
-
-  return (
-    <div
-      className={`swipe-card${done ? ' done' : ''}`}
-      data-no-carousel
-      ref={ref}
-      style={{ ['--cad' as any]: color }}
-      onPointerDown={onDown}
-      onPointerMove={onMove}
-      onPointerUp={onUp}
-      onPointerCancel={onUp}
-      onClick={() => { if (done) onClear(); }}
-    >
-      <div
-        className="swipe-fill"
-        style={{ width: `${progress * 100}%`, transition: dragging ? 'none' : 'width 0.32s cubic-bezier(0.22,1,0.36,1)' }}
-      />
-      <div className="swipe-content">
-        <div className="swipe-main">
-          <span className="swipe-name">{habit}</span>
-          <span className="swipe-hint">{done ? `✓ Done ${periodLabel} · tap to undo` : `Swipe to complete →`}</span>
-        </div>
-        {!done && <span className="swipe-arrow" style={{ opacity: 0.3 + progress * 0.7 }}>→</span>}
-      </div>
-      <button
-        className="swipe-remove"
-        data-no-carousel
-        onClick={e => { e.stopPropagation(); onRequestRemove(habit); }}
-        aria-label="Remove habit"
-      >✕</button>
     </div>
   );
 };
@@ -862,63 +867,29 @@ const Habits: React.FC = () => {
   const cadenceGroups: Record<Cadence, string[]> = { daily: [], weekly: [], monthly: [], yearly: [] };
   yourHabits.forEach(h => { cadenceGroups[habitCadence[h] ?? 'daily'].push(h); });
 
-  const nowDate = new Date();
-  const periodDaysFor = (cad: Cadence): string[] => {
-    if (cad === 'weekly') return weekDays.map(d => d.key);
-    if (cad === 'monthly') {
-      const mm = String(nowDate.getMonth() + 1).padStart(2, '0');
-      return ALL_DAYS.filter(d => d.slice(3) === mm);
-    }
-    if (cad === 'yearly') return ALL_DAYS;
-    return [today];
-  };
-  const isPeriodDone = (habit: string, cad: Cadence) => periodDaysFor(cad).some(d => ht[d]?.[habit] === 'done');
-  const clearPeriod = (habit: string, cad: Cadence) =>
-    periodDaysFor(cad).forEach(d => { if (ht[d]?.[habit] === 'done') handleToggleDay(habit, d, null); });
-  const PERIOD_LABEL: Record<Cadence, string> = { daily: 'today', weekly: 'this week', monthly: 'this month', yearly: 'this year' };
-
   const cadencePanels = CADENCE_ORDER.map(cad => {
     const meta = CADENCE_META[cad];
     const list = cadenceGroups[cad];
-    let content: React.ReactNode;
-    if (list.length === 0) {
-      content = <div className="cad-empty">No {meta.label.toLowerCase()} habits yet.<br />Add one from the ⚙ cog.</div>;
-    } else if (cad === 'daily') {
-      content = (
-        <div className="hb-rows">
-          {list.map(habit => (
-            <HabitCard
-              key={habit}
-              habit={habit}
-              stats={computeHabitStats(habit, ht, today, startDates[habit])}
-              weekDays={weekDays}
-              ht={ht}
-              today={today}
-              onToggleDay={handleToggleDay}
-              onEditDay={editPast}
-              onRequestRemove={setPendingRemove}
-            />
-          ))}
-        </div>
-      );
-    } else {
-      content = (
-        <div className="swipe-list">
-          {list.map(habit => (
-            <SwipeHabitCard
-              key={habit}
-              habit={habit}
-              color={meta.color}
-              periodLabel={PERIOD_LABEL[cad]}
-              done={isPeriodDone(habit, cad)}
-              onComplete={() => handleToggleDay(habit, today, 'done')}
-              onClear={() => clearPeriod(habit, cad)}
-              onRequestRemove={setPendingRemove}
-            />
-          ))}
-        </div>
-      );
-    }
+    const content = list.length === 0 ? (
+      <div className="cad-empty">No {meta.label.toLowerCase()} habits yet.<br />Add one from the ⚙ cog.</div>
+    ) : (
+      <div className="hb-rows">
+        {list.map(habit => (
+          <HabitCard
+            key={habit}
+            habit={habit}
+            stats={computeHabitStats(habit, ht, today, startDates[habit])}
+            weekDays={weekDays}
+            ht={ht}
+            today={today}
+            cadence={cad}
+            onToggleDay={handleToggleDay}
+            onEditDay={editPast}
+            onRequestRemove={setPendingRemove}
+          />
+        ))}
+      </div>
+    );
     return { key: cad, label: meta.label, color: meta.color, icon: meta.icon, content };
   });
 

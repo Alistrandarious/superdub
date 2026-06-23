@@ -8,9 +8,9 @@ export interface CarouselPanel {
   content: React.ReactNode;
 }
 
-// Touch-driven horizontal carousel. Drag follows the finger in real time with a
-// half-and-half peek of the adjacent panel, then snaps to the nearest on release.
-// Used for the habit cadence levels (Daily → Weekly → Monthly → Yearly).
+// Touch-driven cadence wheel — no buttons. Drag follows the finger and the
+// panels rotate past each other like a revolving door (perspective + rotateY),
+// snapping to the nearest level on release. Starts on the given index.
 const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number }> = ({ panels, startIndex = 0 }) => {
   const [index, setIndex] = useState(startIndex);
   const [dragPx, setDragPx] = useState(0);
@@ -20,15 +20,11 @@ const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number }
   const startY = useRef(0);
   const axisLock = useRef<'h' | 'v' | null>(null);
   const n = panels.length;
-
   const width = () => wrapRef.current?.clientWidth ?? 1;
 
   const onDown = useCallback((e: React.PointerEvent) => {
-    // Don't hijack drags that begin on an interactive swipe card / button.
     if ((e.target as HTMLElement).closest('[data-no-carousel]')) return;
-    startX.current = e.clientX;
-    startY.current = e.clientY;
-    axisLock.current = null;
+    startX.current = e.clientX; startY.current = e.clientY; axisLock.current = null;
     setDragging(true);
   }, []);
 
@@ -40,8 +36,7 @@ const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number }
       if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
       axisLock.current = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
     }
-    if (axisLock.current === 'v') return; // let the page scroll vertically
-    // Rubber-band at the ends.
+    if (axisLock.current === 'v') return;
     let d = dx;
     if ((index === 0 && d > 0) || (index === n - 1 && d < 0)) d *= 0.35;
     setDragPx(d);
@@ -50,7 +45,7 @@ const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number }
   const onUp = useCallback(() => {
     if (!dragging) return;
     setDragging(false);
-    const threshold = width() * 0.2;
+    const threshold = width() * 0.18;
     let next = index;
     if (dragPx < -threshold && index < n - 1) next = index + 1;
     else if (dragPx > threshold && index > 0) next = index - 1;
@@ -59,26 +54,13 @@ const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number }
     axisLock.current = null;
   }, [dragging, dragPx, index, n]);
 
-  const pct = -index * 100 + (dragPx / width()) * 100;
+  // Continuous position; centre panel sits at `current`.
+  const current = index - dragPx / width();
 
   return (
     <div className="cad-carousel">
-      <div className="cad-tabs">
-        {panels.map((p, i) => (
-          <button
-            key={p.key}
-            className={`cad-tab${i === index ? ' active' : ''}`}
-            style={i === index ? { color: p.color, borderColor: p.color, background: `${p.color}1f` } : undefined}
-            onClick={() => setIndex(i)}
-          >
-            <span className="cad-tab-icon">{p.icon}</span>
-            <span className="cad-tab-label">{p.label}</span>
-          </button>
-        ))}
-      </div>
-
       <div
-        className="cad-viewport"
+        className="cad-stage"
         ref={wrapRef}
         onPointerDown={onDown}
         onPointerMove={onMove}
@@ -86,20 +68,39 @@ const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number }
         onPointerCancel={onUp}
         onPointerLeave={onUp}
       >
-        <div
-          className="cad-track"
-          style={{
-            width: `${n * 100}%`,
-            transform: `translateX(${pct / n}%)`,
-            transition: dragging ? 'none' : 'transform 0.34s cubic-bezier(0.22,1,0.36,1)',
-          }}
-        >
-          {panels.map(p => (
-            <div className="cad-panel" key={p.key} style={{ width: `${100 / n}%` }}>
+        {panels.map((p, i) => {
+          const offset = i - current;            // 0 = centred
+          const abs = Math.abs(offset);
+          const rotateY = Math.max(-80, Math.min(80, offset * -52));
+          const translate = offset * 86;          // % — fan the panels out
+          const depth = -abs * 180;               // px — push neighbours back
+          const opacity = abs > 1.25 ? 0 : 1 - Math.min(0.75, abs * 0.65);
+          const hidden = abs > 1.6;
+          // The nearest panel flows in the document so the stage takes its height;
+          // the others overlay it absolutely.
+          const nearest = i === Math.round(current);
+          return (
+            <div
+              key={p.key}
+              className="cad-door"
+              aria-hidden={i !== index}
+              style={{
+                position: nearest ? 'relative' : 'absolute',
+                top: nearest ? undefined : 0,
+                left: nearest ? undefined : 0,
+                right: nearest ? undefined : 0,
+                transform: `translateX(${translate}%) translateZ(${depth}px) rotateY(${rotateY}deg)`,
+                opacity,
+                zIndex: 100 - Math.round(abs * 10),
+                pointerEvents: i === index ? 'auto' : 'none',
+                visibility: hidden ? 'hidden' : 'visible',
+                transition: dragging ? 'none' : 'transform 0.4s cubic-bezier(0.22,1,0.36,1), opacity 0.4s ease',
+              }}
+            >
               {p.content}
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
 
       <div className="cad-dots">
@@ -107,7 +108,7 @@ const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number }
           <span
             key={p.key}
             className={`cad-dot${i === index ? ' active' : ''}`}
-            style={i === index ? { background: p.color, width: 18 } : undefined}
+            style={i === index ? { background: p.color, width: 20 } : undefined}
           />
         ))}
       </div>
