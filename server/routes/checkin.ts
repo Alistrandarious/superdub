@@ -122,6 +122,32 @@ router.get('/recent', requireAuth as any, async (req: AuthRequest, res: Response
   }
 });
 
+// ── GET /api/checkin/history ──────────────────────────────────────────────────
+// Longer mood/energy history (default 90 days) for day-of-week pattern analysis.
+router.get('/history', requireAuth as any, async (req: AuthRequest, res: Response) => {
+  try {
+    const days = Math.min(365, Math.max(7, parseInt(String(req.query.days ?? '90')) || 90));
+    const { rows } = await pool.query(
+      `SELECT date::text AS date, energy, mood, adherence
+       FROM daily_checkins
+       WHERE user_id = $1 AND date >= CURRENT_DATE - ($2 || ' days')::interval
+       ORDER BY date ASC`,
+      [req.userId, days]
+    );
+    res.json({
+      entries: rows.map((r: any) => ({
+        date: r.date,
+        energy: r.energy != null ? Number(r.energy) : null,
+        mood: r.mood != null ? Number(r.mood) : null,
+        adherence: r.adherence ?? null,
+      })),
+    });
+  } catch (err: any) {
+    console.error('[checkin/history]', err?.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // ── GET /api/checkin/coaching ─────────────────────────────────────────────────
 // Return today's coaching message + churn risk.
 // Derives trend from stored plan target reason text (no re-running the full cycle).

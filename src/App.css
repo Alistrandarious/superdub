@@ -1829,6 +1829,103 @@ h1, h2, h3, h4, .sora {
   justify-content: space-between;
   flex-wrap: wrap;
 }
+
+/* ── Patterns card (day-of-week + correlations) ── */
+.patterns-card { padding: 14px 16px 16px; }
+.patterns-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.patterns-tabs { display: flex; gap: 6px; }
+.patterns-tab {
+  font-family: 'Sora', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--glass-border);
+  background: rgba(255,255,255,0.03);
+  color: rgba(255,255,255,0.5);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.patterns-tab.active { background: rgba(255,255,255,0.06); }
+.patterns-bars {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  align-items: end;
+  height: 132px;
+}
+.patterns-bar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  height: 100%;
+}
+.patterns-bar-track {
+  width: 100%;
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.patterns-bar-fill {
+  width: 72%;
+  min-height: 2px;
+  border-radius: 6px 6px 3px 3px;
+  transition: height 0.35s cubic-bezier(0.22,1,0.36,1);
+}
+.patterns-bar-fill.best { box-shadow: 0 0 14px -2px currentColor; }
+.patterns-bar-val {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.56rem;
+  color: rgba(255,255,255,0.6);
+  white-space: nowrap;
+}
+.patterns-bar-label {
+  font-family: 'Sora', sans-serif;
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.4);
+}
+.patterns-bar-label.best { color: rgba(255,255,255,0.85); }
+.patterns-summary {
+  margin: 14px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: rgba(255,255,255,0.6);
+}
+.patterns-summary strong { font-weight: 700; color: rgba(255,255,255,0.85); }
+.patterns-insights {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--glass-border);
+}
+.patterns-insight {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: rgba(255,255,255,0.7);
+}
+.patterns-insight-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--theme, #2E8BFF);
+  margin-top: 6px;
+  flex-shrink: 0;
+}
 .chart-range-group {
   display: flex;
   gap: 6px;

@@ -144,6 +144,8 @@ export const api = {
   ) =>
     request('/checkin', { method: 'POST', body: JSON.stringify({ energy, adherence, mood, workoutDone, workoutIntensity, workoutDurationMin }) }),
   getRecentCheckIns: () => request('/checkin/recent'),
+  getCheckInHistory: (days = 90): Promise<{ entries: { date: string; energy: number | null; mood: number | null; adherence: string | null }[] }> =>
+    request(`/checkin/history?days=${days}`),
   getCoachingMessage: () => request('/checkin/coaching'),
   getWeeklyIntention: (weekStart: string) =>
     request(`/checkin/weekly-intention?weekStart=${encodeURIComponent(weekStart)}`),

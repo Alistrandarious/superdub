@@ -17,6 +17,7 @@ import {
 import './App.css';
 import { api } from './api';
 import { BUILD_TAG } from './version';
+import PatternsCard, { PatternDay } from './PatternsCard';
 import GoalSheet from './GoalSheet';
 
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -230,6 +231,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
   const [, setName] = useState('');
   const [habits, setHabits] = useState<string[]>([]);
+  const [moodByDate, setMoodByDate] = useState<Record<string, number>>({}); // ISO date → mood 1..5
   const [newHabit, setNewHabit] = useState('');
   const [tracker, setTracker] = useState<Record<string, DayData>>(INITIAL_TRACKER);
   const [loaded, setLoaded] = useState(false);
@@ -409,7 +411,13 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       // Load plan + coaching, then reveal the page only once they're in (no pop-in).
       const coaching = api.getCoachingMessage().then((d: any) => setCoachingMsg(d)).catch(() => {});
       const plan = loadPlanStatus();
-      Promise.allSettled([coaching, plan]).then(() => setLoaded(true));
+      // Mood history feeds the Patterns card (day-of-week + correlations).
+      const moods = api.getCheckInHistory(120).then((h) => {
+        const m: Record<string, number> = {};
+        for (const e of h.entries) if (e.mood != null) m[e.date] = e.mood;
+        setMoodByDate(m);
+      }).catch(() => {});
+      Promise.allSettled([coaching, plan, moods]).then(() => setLoaded(true));
       // The adjustment cycle is slower and only affects minor styling — run it after reveal.
       api.runPlanCycle()
         .then((c: any) => {
@@ -998,6 +1006,32 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     api.updateHabits(newHabits).catch(() => {});
   };
 
+  // Join per-day signals (steps, habit completion, mood) for the Patterns card.
+  const patternDays = useMemo<PatternDay[]>(() => {
+    const realHabits = habits.filter(h => h !== 'Logging into Superdub');
+    const out: PatternDay[] = [];
+    for (const ddmm of ALL_DAYS) {
+      const d = tracker[ddmm];
+      if (!d) continue;
+      const dt = new Date(YEAR, parseInt(ddmm.slice(3)) - 1, parseInt(ddmm.slice(0, 2)));
+      if (dt.getTime() > now.getTime()) continue;
+      const steps = parseInt(d.steps ?? '') || null;
+      let habitRate: number | null = null;
+      if (realHabits.length > 0) {
+        const done = realHabits.filter(h => d.habits?.[h] === true).length;
+        // Only count the day if at least one habit was actually marked either way,
+        // so untouched past days don't read as 0% completion.
+        const touched = realHabits.some(h => d.habits?.[h] === true || d.habits?.[h] === 'failed');
+        if (touched) habitRate = done / realHabits.length;
+      }
+      const iso = `${YEAR}-${ddmm.slice(3)}-${ddmm.slice(0, 2)}`;
+      const mood = moodByDate[iso] ?? null;
+      if (steps == null && habitRate == null && mood == null) continue;
+      out.push({ dow: (dt.getDay() + 6) % 7, steps, habitRate, mood });
+    }
+    return out;
+  }, [tracker, habits, moodByDate]); // eslint-disable-line react-hooks/exhaustive-deps
+
   if (!loaded) {
     return (
       <div className="app" style={{ '--theme': '#3B9EFF', '--theme-dim': '#3B9EFF66', '--theme-glow': '#3B9EFF14' } as React.CSSProperties}>
@@ -1564,6 +1598,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           </div>
         </div>
       </section>
+
+      {/* ── Day-of-week patterns + correlations across steps/habits/mood ── */}
+      <PatternsCard days={patternDays} />
 
       {/* ── KPI cards — Engagement first, then Weight, then Activity ── */}
       <div className="kpi-section">
