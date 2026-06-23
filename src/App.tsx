@@ -18,23 +18,7 @@ import './App.css';
 import { api } from './api';
 import GoalSheet from './GoalSheet';
 
-const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-const MONTH_COLORS: Record<number, string> = {
-  0: '#FF4D8D',  // Jan - hot pink
-  1: '#FFB928',  // Feb - violet
-  2: '#2E8BFF',  // Mar - deep purple
-  3: '#FF8A00',  // Apr - orange
-  4: '#FFD233',  // May - gold
-  5: '#FF4D8D',  // Jun - hot pink
-  6: '#2E8BFF',  // Jul - deep purple
-  7: '#FFB928',  // Aug - violet
-  8: '#FFD233',  // Sep - gold
-  9: '#FF8A00',  // Oct - orange
-  10: '#FF4D8D', // Nov - hot pink
-  11: '#FFD233', // Dec - gold
-};
 
 
 // ── Color-matched tooltip ─────────────────────────────────────────────────────
@@ -254,7 +238,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const currentMonth = now.getMonth();
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
-  const [calendarOpen, setCalendarOpen] = useState(false);
 
   // Progress page is fixed "growth blue" (month colours still drive the month picker)
   const themeColor = '#3B9EFF';
@@ -1027,36 +1010,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.206</span>
-        </div>
-
-        {/* Period picker — compact pill between brand and cog */}
-        <div className="progress-period-pill" style={{ position: 'relative' }}>
-          <button className="calendar-btn" onClick={() => setCalendarOpen(!calendarOpen)}>
-            {MONTH_NAMES[selectedMonth]} {YEAR}
-            {selectedWeek !== null && ` · W${selectedWeek}`}
-            <span className="calendar-arrow">{calendarOpen ? '▲' : '▾'}</span>
-          </button>
-          {calendarOpen && (
-            <div className="calendar-dropdown">
-              <div className="calendar-grid">
-                {MONTH_SHORT.map((m, i) => {
-                  const isBeforeJoin = i < joinMonth;
-                  return (
-                    <button
-                      key={m}
-                      className={`calendar-month ${i === selectedMonth ? 'selected' : ''} ${i === currentMonth ? 'current' : ''} ${isBeforeJoin ? 'disabled' : ''}`}
-                      style={{ '--month-color': MONTH_COLORS[i] } as React.CSSProperties}
-                      disabled={isBeforeJoin}
-                      onClick={() => { setSelectedMonth(i); setSelectedWeek(null); setCalendarOpen(false); }}
-                    >
-                      {m}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">v2.207</span>
         </div>
 
         {/* Cog dropdown — top right */}

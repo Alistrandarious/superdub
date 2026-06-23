@@ -819,15 +819,13 @@ const Diet: React.FC = () => {
   const [planGoal, setPlanGoal] = useState<any | null>(null);
 
   useEffect(() => {
-    api.getDietPlans().then((plans: any[]) => {
-      if (plans.length > 0) setLatestPlan(plans[0]);
-    }).catch(() => {});
-    // Plan goal drives the time-vs-weight progress bars in the hero
-    api.getPlanStatus().then((s: any) => { if (s?.active) setPlanGoal(s.goal); }).catch(() => {});
-  }, []);
+    // These feed the hero (plan goal drives the progress bars + latest plan card).
+    // Run them alongside the main load and only reveal once everything has settled,
+    // so the page appears fully formed instead of elements popping in one by one.
+    const plans = api.getDietPlans().then((p: any[]) => { if (p.length > 0) setLatestPlan(p[0]); }).catch(() => {});
+    const status = api.getPlanStatus().then((s: any) => { if (s?.active) setPlanGoal(s.goal); }).catch(() => {});
 
-  useEffect(() => {
-    Promise.all([
+    const main = Promise.all([
       api.getProfile(),
       api.getDietTarget(),
       api.getDietSettings(),
@@ -870,8 +868,12 @@ const Diet: React.FC = () => {
       const s = settingsData as any;
       setGoal((s.goal as 'cut' | 'maintain' | 'bulk') ?? 'cut');
       setLocks({ protein: !!s.lockProtein, carbs: !!s.lockCarbs, fats: !!s.lockFats });
-      setLoaded(true);
-    }).catch(() => setLoaded(true));
+    }).catch(() => {});
+
+    // Reveal only after the main data AND the hero's plan/status have settled.
+    Promise.allSettled([main, plans, status]).then(() => setLoaded(true));
+    const failsafe = setTimeout(() => setLoaded(true), 8000);
+    return () => clearTimeout(failsafe);
   }, []);
 
   useEffect(() => {
