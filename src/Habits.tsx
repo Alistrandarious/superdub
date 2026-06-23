@@ -304,7 +304,6 @@ const MiniMonthHeatmap: React.FC<{
   }
   return (
     <div className="mini-hm">
-      <div className="mini-hm-title">{MINI_MONTHS[monthIdx]}</div>
       <div className="mini-hm-grid">
         {MINI_DOW.map((l, i) => <span key={`h${i}`} className="mini-hm-dow">{l}</span>)}
         {cells.map((c, i) => c === null
@@ -336,11 +335,11 @@ const HabitCard: React.FC<{
   onRequestRemove: (habit: string) => void;
 }> = ({ habit, stats, weekDays, ht, today, onToggleDay, onEditDay, onRequestRemove }) => {
   const [histOpen, setHistOpen] = useState(false);
+  const [monthOffset, setMonthOffset] = useState(0); // 0 = this month, -1 = last month …
   const nowD = new Date();
-  const curMonth = nowD.getMonth();
-  const curYear = nowD.getFullYear();
-  const prevMonth = curMonth === 0 ? 11 : curMonth - 1;
-  const prevYear = curMonth === 0 ? curYear - 1 : curYear;
+  const dispBase = new Date(nowD.getFullYear(), nowD.getMonth() + monthOffset, 1);
+  const dispMonth = dispBase.getMonth();
+  const dispYear = dispBase.getFullYear();
   const rank = getRank(stats.totalDays);
   const todayState = ht[today]?.[habit] ?? null;
   const isFlame = stats.streak >= 7;
@@ -358,6 +357,14 @@ const HabitCard: React.FC<{
         <span className="hcard-icon">{isFlame ? '🔥' : '✓'}</span>
         <span className="hcard-name">{habit}</span>
         <span className="hcard-streak">{stats.streak}d</span>
+        <button
+          className={`hcard-cog ${histOpen ? 'active' : ''}`}
+          onClick={() => { setMonthOffset(0); setHistOpen(o => !o); }}
+          aria-label="Edit past days"
+          title="Edit past days"
+        >
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
+        </button>
         <button className="hcard-remove" onClick={() => onRequestRemove(habit)} aria-label="Remove habit">✕</button>
       </div>
 
@@ -424,16 +431,15 @@ const HabitCard: React.FC<{
         {todayState === 'done' ? '✓ Done today' : todayState === 'failed' ? '✗ Failed today — tap to clear' : '+ Mark done today'}
       </button>
 
-      <button className="hcard-history-toggle" onClick={() => setHistOpen(o => !o)}>
-        {histOpen ? 'Hide history ▲' : '📅 View & edit past days ▾'}
-      </button>
       {histOpen && (
         <div className="hcard-history">
-          <p className="hcard-history-hint">Tap any past day — cycles done → missed → blank.</p>
-          <div className="hcard-history-months">
-            <MiniMonthHeatmap habit={habit} year={prevYear} monthIdx={prevMonth} ht={ht} onEdit={onEditDay} />
-            <MiniMonthHeatmap habit={habit} year={curYear} monthIdx={curMonth} ht={ht} onEdit={onEditDay} />
+          <div className="hcard-month-nav">
+            <button className="hcard-month-arrow" onClick={() => setMonthOffset(o => o - 1)} aria-label="Previous month">‹</button>
+            <span className="hcard-month-label">{MINI_MONTHS[dispMonth]} {dispYear}</span>
+            <button className="hcard-month-arrow" disabled={monthOffset >= 0} onClick={() => setMonthOffset(o => Math.min(0, o + 1))} aria-label="Next month">›</button>
           </div>
+          <p className="hcard-history-hint">Tap any past day — cycles done → missed → blank.</p>
+          <MiniMonthHeatmap habit={habit} year={dispYear} monthIdx={dispMonth} ht={ht} onEdit={onEditDay} />
         </div>
       )}
     </div>
