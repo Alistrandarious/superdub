@@ -10,24 +10,22 @@ export interface CarouselPanel {
 
 const CHIP_W = 76; // px per chip in the little coloured carousel
 
-// Cadence switcher: a big title + a small coloured carousel of chips you swipe
-// to change level. The habit list below cross-fades in from the swipe direction.
+// Cadence switcher: a big title + a little coloured carousel of chips, with the
+// habit list sliding purely along the X axis (no skew/rotate/scale) as you swipe.
 const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number }> = ({ panels, startIndex = 0 }) => {
   const [index, setIndex] = useState(startIndex);
-  const [dir, setDir] = useState(1);
   const [dragPx, setDragPx] = useState(0);
   const [dragging, setDragging] = useState(false);
+  const vpRef = useRef<HTMLDivElement>(null);
   const startX = useRef(0);
   const startY = useRef(0);
   const axis = useRef<'h' | 'v' | null>(null);
   const n = panels.length;
+  const width = () => vpRef.current?.clientWidth ?? 1;
 
   const go = useCallback((next: number) => {
-    const clamped = Math.max(0, Math.min(n - 1, next));
-    if (clamped === index) return;
-    setDir(clamped > index ? 1 : -1);
-    setIndex(clamped);
-  }, [index, n]);
+    setIndex(Math.max(0, Math.min(n - 1, next)));
+  }, [n]);
 
   const onDown = useCallback((e: React.PointerEvent) => {
     startX.current = e.clientX; startY.current = e.clientY; axis.current = null;
@@ -49,14 +47,17 @@ const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number }
   const onUp = useCallback(() => {
     if (!dragging) return;
     setDragging(false);
-    if (dragPx < -CHIP_W * 0.45) go(index + 1);
-    else if (dragPx > CHIP_W * 0.45) go(index - 1);
+    const frac = dragPx / width();
+    if (frac < -0.2 && index < n - 1) go(index + 1);
+    else if (frac > 0.2 && index > 0) go(index - 1);
     setDragPx(0);
     axis.current = null;
-  }, [dragging, dragPx, index, go]);
+  }, [dragging, dragPx, index, n, go]);
 
+  // Continuous position; the centred panel sits at `current`.
+  const current = index - dragPx / width();
   const active = panels[index];
-  const trackShift = -(index * CHIP_W + CHIP_W / 2) + dragPx;
+  const chipShift = -(index * CHIP_W + CHIP_W / 2) + (dragPx / width()) * CHIP_W;
 
   return (
     <div className="cadx">
@@ -75,19 +76,18 @@ const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number }
         <div className="cadx-strip">
           <div
             className="cadx-strip-track"
-            style={{ transform: `translateX(${trackShift}px)`, transition: dragging ? 'none' : 'transform 0.32s cubic-bezier(0.22,1,0.36,1)' }}
+            style={{ transform: `translateX(${chipShift}px)`, transition: dragging ? 'none' : 'transform 0.32s cubic-bezier(0.22,1,0.36,1)' }}
           >
             {panels.map((p, i) => {
-              const offset = Math.abs(i - index - (dragging ? -dragPx / CHIP_W : 0));
-              const isActive = i === index;
+              const off = Math.abs(i - current);
               return (
                 <button
                   key={p.key}
-                  className={`cadx-chip${isActive ? ' active' : ''}`}
+                  className={`cadx-chip${i === index ? ' active' : ''}`}
                   style={{
                     width: CHIP_W,
-                    transform: `scale(${Math.max(0.74, 1.12 - offset * 0.26)})`,
-                    opacity: Math.max(0.35, 1 - offset * 0.4),
+                    transform: `scale(${Math.max(0.74, 1.12 - off * 0.26)})`,
+                    opacity: Math.max(0.35, 1 - off * 0.4),
                     ['--chip' as any]: p.color,
                   }}
                   onClick={() => go(i)}
@@ -100,8 +100,30 @@ const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number }
           </div>
         </div>
 
-        <div className="cadx-content" key={index} data-dir={dir}>
-          {active.content}
+        <div className="cadx-viewport" ref={vpRef}>
+          {panels.map((p, i) => {
+            const offset = i - current;
+            const nearest = i === Math.round(current);
+            const off = Math.abs(offset);
+            if (off > 1.5) return null; // off-screen — don't render
+            return (
+              <div
+                key={p.key}
+                className="cadx-slide"
+                style={{
+                  position: nearest ? 'relative' : 'absolute',
+                  top: nearest ? undefined : 0,
+                  left: nearest ? undefined : 0,
+                  right: nearest ? undefined : 0,
+                  transform: `translateX(${offset * 100}%)`,
+                  transition: dragging ? 'none' : 'transform 0.34s cubic-bezier(0.22,1,0.36,1)',
+                  pointerEvents: i === index ? 'auto' : 'none',
+                }}
+              >
+                {p.content}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
