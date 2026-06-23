@@ -254,38 +254,40 @@ function computeHabitStats(
 
 /* ── featured habits ─────────────────────────────────────── */
 
-const FEATURED = [
+const FEATURED: { id: string; name: string; tagline: string; icon: string; accent: string; bgClass: string; cadence: Cadence }[] = [
+  // 3 daily
   {
-    id: 'walk-10k',
-    name: '10K Steps',
+    id: 'walk-10k', name: '10K Steps', cadence: 'daily',
     tagline: 'Build the daily movement habit, one step at a time.',
-    icon: '🚶‍♂️',
-    accent: '#22C55E',
-    bgClass: 'featured-bg-walk',
+    icon: '🚶‍♂️', accent: '#22C55E', bgClass: 'featured-bg-walk',
   },
   {
-    id: 'quit-smoking',
-    name: 'Quit Smoking',
-    tagline: 'Every cigarette-free day is a victory. Start yours now.',
-    icon: '🚭',
-    accent: '#FF8A00',
-    bgClass: 'featured-bg-smoke',
-  },
-  {
-    id: 'yoga',
-    name: 'Yoga',
-    tagline: 'Stretch, breathe, and reset. A few minutes goes a long way.',
-    icon: '🧘',
-    accent: '#ff6ec7',
-    bgClass: 'featured-bg-yoga',
-  },
-  {
-    id: 'reading',
-    name: 'Reading',
+    id: 'reading', name: 'Reading', cadence: 'daily',
     tagline: 'Sharpen your mind with just 20 pages a day.',
-    icon: '📖',
-    accent: '#2E8BFF',
-    bgClass: 'featured-bg-read',
+    icon: '📖', accent: '#22C55E', bgClass: 'featured-bg-read',
+  },
+  {
+    id: 'quit-smoking', name: 'Quit Smoking', cadence: 'daily',
+    tagline: 'Every cigarette-free day is a victory. Start yours now.',
+    icon: '🚭', accent: '#22C55E', bgClass: 'featured-bg-smoke',
+  },
+  // 1 weekly
+  {
+    id: 'meal-prep', name: 'Meal Prep', cadence: 'weekly',
+    tagline: 'Cook ahead once a week — eat well all week.',
+    icon: '🥘', accent: '#2E8BFF', bgClass: 'featured-bg-walk',
+  },
+  // 1 monthly
+  {
+    id: 'budget-review', name: 'Budget Review', cadence: 'monthly',
+    tagline: 'Check your spending once a month and stay on track.',
+    icon: '💰', accent: '#A855F7', bgClass: 'featured-bg-read',
+  },
+  // 1 yearly
+  {
+    id: 'health-checkup', name: 'Health Check-up', cadence: 'yearly',
+    tagline: 'Book your annual check-up — future you will thank you.',
+    icon: '🩺', accent: '#FF6B35', bgClass: 'featured-bg-yoga',
   },
 ];
 
@@ -547,7 +549,7 @@ const FeaturedSheet: React.FC<{
   open: boolean;
   onClose: () => void;
   userHabits: string[];
-  onAdd: (name: string) => void;
+  onAdd: (name: string, cadence: Cadence) => void;
 }> = ({ open, onClose, userHabits, onAdd }) => {
   if (!open) return null;
   return (
@@ -566,12 +568,17 @@ const FeaturedSheet: React.FC<{
               <div key={f.id} className="hb-feat-item" style={{ '--featured-accent': f.accent } as React.CSSProperties}>
                 <span className="hb-feat-icon">{f.icon}</span>
                 <div className="hb-feat-text">
-                  <div className="hb-feat-name">{f.name}</div>
+                  <div className="hb-feat-name">
+                    {f.name}
+                    <span className="hb-feat-cadence" style={{ background: `${CADENCE_META[f.cadence].color}22`, color: CADENCE_META[f.cadence].color }}>
+                      {CADENCE_META[f.cadence].icon} {CADENCE_META[f.cadence].label}
+                    </span>
+                  </div>
                   <div className="hb-feat-tag">{f.tagline}</div>
                 </div>
                 <button
                   className={`hb-feat-add ${added ? 'added' : ''}`}
-                  onClick={() => !added && onAdd(f.name)}
+                  onClick={() => !added && onAdd(f.name, f.cadence)}
                   disabled={added}
                 >
                   {added ? '✓' : '+ Join'}
@@ -772,19 +779,19 @@ const Habits: React.FC = () => {
     setHonestyPending(null);
   };
 
-  const handleAddFeatured = useCallback((name: string) => {
+  const handleAddFeatured = useCallback((name: string, cadence: Cadence = 'daily') => {
     if (habits.includes(name)) return;
     const today = new Date().toISOString().slice(0, 10);
     const updated = [...habits, name];
     setHabits(updated);
     setStartDates(prev => ({ ...prev, [name]: today }));
-    setHabitCadence(prev => ({ ...prev, [name]: 'daily' }));
+    setHabitCadence(prev => ({ ...prev, [name]: cadence }));
     setHt(prev => {
       const next = { ...prev };
       ALL_DAYS.forEach(d => { next[d] = { ...next[d], [name]: null }; });
       return next;
     });
-    persistHabits(updated, { [name]: 'daily' });
+    persistHabits(updated, { [name]: cadence });
   }, [habits, persistHabits]);
 
   const addHabit = () => {

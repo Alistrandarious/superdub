@@ -4462,25 +4462,57 @@ h1, h2, h3, h4, .sora {
   padding: 10px 18px 0;
 }
 
-/* ── Cadence wheel (Daily · Weekly · Monthly · Yearly) — swipe, no buttons ── */
-.cad-carousel { padding: 4px 0 0; }
-.cad-stage {
-  position: relative;
-  perspective: 1200px;
-  perspective-origin: 50% 45%;
-  transform-style: preserve-3d;
-  touch-action: pan-y;
-  overflow: visible;
+/* ── Cadence switcher: title + little coloured carousel + content ── */
+.cadx { padding: 6px 0 0; }
+.cadx-title {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  font-family: 'Sora', sans-serif; font-weight: 800;
+  font-size: 1.45rem; letter-spacing: -0.01em;
+  text-align: center;
+  transition: color 0.3s ease;
 }
-.cad-door {
-  width: 100%;
-  box-sizing: border-box;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
+.cadx-title-icon { font-size: 1.1rem; }
+.cadx-swipe { touch-action: pan-y; }
+.cadx-strip { overflow: hidden; position: relative; height: 64px; margin: 8px 0 4px; }
+.cadx-strip::before, .cadx-strip::after {
+  content: ''; position: absolute; top: 0; bottom: 0; width: 56px; z-index: 2; pointer-events: none;
+}
+.cadx-strip::before { left: 0; background: linear-gradient(90deg, var(--glass-bg), transparent); }
+.cadx-strip::after { right: 0; background: linear-gradient(-90deg, var(--glass-bg), transparent); }
+.cadx-strip-track {
+  position: absolute; left: 50%; top: 0; height: 100%;
+  display: flex; align-items: center; will-change: transform;
+}
+.cadx-chip {
+  flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  background: none; border: none; cursor: pointer;
   will-change: transform, opacity;
 }
-.cad-dots { display: flex; gap: 6px; justify-content: center; padding: 16px 0 2px; }
-.cad-dot { width: 6px; height: 6px; border-radius: 999px; background: rgba(255,255,255,0.2); transition: width 0.3s, background 0.3s; }
+.cadx-chip-dot {
+  width: 38px; height: 38px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 1.05rem;
+  background: color-mix(in srgb, var(--chip) 18%, transparent);
+  border: 2px solid color-mix(in srgb, var(--chip) 45%, transparent);
+  transition: background 0.2s, border-color 0.2s;
+}
+.cadx-chip.active .cadx-chip-dot {
+  background: var(--chip);
+  border-color: var(--chip);
+  box-shadow: 0 4px 16px -2px var(--chip);
+}
+.cadx-chip-label {
+  font-family: 'Sora', sans-serif; font-weight: 700; font-size: 0.6rem;
+  color: rgba(255,255,255,0.45);
+}
+.cadx-chip.active .cadx-chip-label { color: #fff; }
+.cadx-content { animation: cadxIn 0.34s cubic-bezier(0.22,1,0.36,1) both; }
+.cadx-content[data-dir="1"] { --from: 28px; }
+.cadx-content[data-dir="-1"] { --from: -28px; }
+@keyframes cadxIn {
+  from { opacity: 0; transform: translateX(var(--from, 24px)); }
+  to { opacity: 1; transform: none; }
+}
 .cad-empty {
   text-align: center; color: rgba(255,255,255,0.4);
   font-size: 0.85rem; line-height: 1.7; padding: 44px 18px;
@@ -4495,6 +4527,12 @@ h1, h2, h3, h4, .sora {
 /* Non-daily dots take the cadence colour when done */
 .cad-unit.done .hcard-day-circle { background: var(--cad); border-color: var(--cad); }
 .hcard-today-btn.done[style*="--cad"] { background: var(--cad); border-color: var(--cad); }
+
+.hb-feat-cadence {
+  display: inline-block; margin-left: 8px; vertical-align: middle;
+  font-family: 'Sora', sans-serif; font-weight: 700; font-size: 0.58rem;
+  padding: 2px 7px; border-radius: var(--r-pill);
+}
 
 /* ── Cadence picker (add-habit sheet) ── */
 .cadence-picker { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
