@@ -10184,6 +10184,133 @@ details[open] .plan-explainer-summary::before { content: '▾  '; }
   cursor: default;
 }
 
+/* ── Habit backfill: history toggle + mini month heatmaps ── */
+.hcard-history-toggle {
+  width: 100%;
+  margin-top: 8px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--glass-border);
+  color: rgba(255,255,255,0.6);
+  font-family: 'Sora', sans-serif;
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.hcard-history-toggle:hover { background: rgba(255,255,255,0.06); color: #fff; }
+.hcard-history { margin-top: 10px; }
+.hcard-history-hint {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6rem;
+  color: rgba(255,255,255,0.4);
+  margin: 0 0 8px;
+  text-align: center;
+}
+.hcard-history-months {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.mini-hm-title {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.45);
+  text-align: center;
+  margin-bottom: 5px;
+}
+.mini-hm-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+.mini-hm-dow {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.5rem;
+  color: rgba(255,255,255,0.3);
+  text-align: center;
+}
+.mini-hm-cell {
+  aspect-ratio: 1;
+  min-width: 18px;
+  border: none;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.4);
+  font-family: 'Space Mono', monospace;
+  font-size: 0.55rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s;
+}
+.mini-hm-cell:not(:disabled):active { transform: scale(0.88); }
+.mini-hm-cell.mini-hm-pad { background: none; cursor: default; }
+.mini-hm-cell.done { background: #2FD27E; color: #06210F; }
+.mini-hm-cell.failed { background: #FF5470; color: #2a0a10; }
+.mini-hm-cell.future { opacity: 0.25; cursor: default; }
+
+/* ── Honesty declaration modal ── */
+.honesty-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.7);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  backdrop-filter: blur(4px);
+}
+.honesty-modal {
+  width: min(340px, 100%);
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border-strong);
+  border-radius: 20px;
+  padding: 24px 22px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+.honesty-icon { font-size: 2rem; }
+.honesty-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 8px 0 6px;
+}
+.honesty-text {
+  font-family: 'Sora', sans-serif;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: rgba(255,255,255,0.7);
+  margin: 0 0 18px;
+}
+.honesty-confirm {
+  width: 100%;
+  background: var(--sd-gradient);
+  color: #07140C;
+  border: none;
+  border-radius: 12px;
+  padding: 12px;
+  font-family: 'Sora', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.honesty-cancel {
+  width: 100%;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.45);
+  font-family: 'Sora', sans-serif;
+  font-size: 0.78rem;
+  padding: 10px;
+  margin-top: 4px;
+  cursor: pointer;
+}
+
 /* =====================================================================
    PLANS — cohesive design kit (shared by Diet, Weight Goal, dropdown)
    Built on the canonical tokens so the Plans surface matches the app.

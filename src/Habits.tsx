@@ -281,6 +281,49 @@ const LevelRing: React.FC<{ level: number; title: string; progress: number; onCl
   );
 };
 
+// Mini month calendar for one habit — tappable past days for backfill
+const MINI_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MINI_DOW = ['M','T','W','T','F','S','S'];
+const MiniMonthHeatmap: React.FC<{
+  habit: string;
+  year: number;
+  monthIdx: number;
+  ht: HabitTracker;
+  onEdit: (habit: string, day: string, cur: HabitState) => void;
+}> = ({ habit, year, monthIdx, ht, onEdit }) => {
+  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+  const daysInMonth = new Date(year, monthIdx + 1, 0).getDate();
+  const firstDow = (new Date(year, monthIdx, 1).getDay() + 6) % 7; // Mon=0
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const cells: ({ d: number; ddmm: string; state: HabitState; future: boolean } | null)[] = [];
+  for (let i = 0; i < firstDow; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ddmm = `${pad(d)}/${pad(monthIdx + 1)}`;
+    const future = new Date(year, monthIdx, d).getTime() > todayStart.getTime();
+    cells.push({ d, ddmm, state: ht[ddmm]?.[habit] ?? null, future });
+  }
+  return (
+    <div className="mini-hm">
+      <div className="mini-hm-title">{MINI_MONTHS[monthIdx]}</div>
+      <div className="mini-hm-grid">
+        {MINI_DOW.map((l, i) => <span key={`h${i}`} className="mini-hm-dow">{l}</span>)}
+        {cells.map((c, i) => c === null
+          ? <span key={`p${i}`} className="mini-hm-cell mini-hm-pad" />
+          : (
+            <button
+              key={c.ddmm}
+              className={`mini-hm-cell ${c.state === 'done' ? 'done' : c.state === 'failed' ? 'failed' : ''} ${c.future ? 'future' : ''}`}
+              disabled={c.future}
+              onClick={() => !c.future && onEdit(habit, c.ddmm, c.state)}
+              title={`${c.ddmm}: ${c.state ?? 'blank'}`}
+            >{c.d}</button>
+          )
+        )}
+      </div>
+    </div>
+  );
+};
+
 // Full habit card — XP bar · gate dots · weekly M-T-W circles · big done button
 const HabitCard: React.FC<{
   habit: string;
@@ -289,8 +332,15 @@ const HabitCard: React.FC<{
   ht: HabitTracker;
   today: string;
   onToggleDay: (habit: string, dayKey: string, state: HabitState) => void;
+  onEditDay: (habit: string, dayKey: string, cur: HabitState) => void;
   onRequestRemove: (habit: string) => void;
-}> = ({ habit, stats, weekDays, ht, today, onToggleDay, onRequestRemove }) => {
+}> = ({ habit, stats, weekDays, ht, today, onToggleDay, onEditDay, onRequestRemove }) => {
+  const [histOpen, setHistOpen] = useState(false);
+  const nowD = new Date();
+  const curMonth = nowD.getMonth();
+  const curYear = nowD.getFullYear();
+  const prevMonth = curMonth === 0 ? 11 : curMonth - 1;
+  const prevYear = curMonth === 0 ? curYear - 1 : curYear;
   const rank = getRank(stats.totalDays);
   const todayState = ht[today]?.[habit] ?? null;
   const isFlame = stats.streak >= 7;
@@ -373,6 +423,19 @@ const HabitCard: React.FC<{
       >
         {todayState === 'done' ? '✓ Done today' : todayState === 'failed' ? '✗ Failed today — tap to clear' : '+ Mark done today'}
       </button>
+
+      <button className="hcard-history-toggle" onClick={() => setHistOpen(o => !o)}>
+        {histOpen ? 'Hide history ▲' : '📅 View & edit past days ▾'}
+      </button>
+      {histOpen && (
+        <div className="hcard-history">
+          <p className="hcard-history-hint">Tap any past day — cycles done → missed → blank.</p>
+          <div className="hcard-history-months">
+            <MiniMonthHeatmap habit={habit} year={prevYear} monthIdx={prevMonth} ht={ht} onEdit={onEditDay} />
+            <MiniMonthHeatmap habit={habit} year={curYear} monthIdx={curMonth} ht={ht} onEdit={onEditDay} />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -446,6 +509,7 @@ const Habits: React.FC = () => {
   // Resets to original colour automatically on Monday (no persisted state, no veteran ring).
   const [weekCelebrating, setWeekCelebrating] = useState(false);
   const prevPerfectRef = useRef(false);
+  const [honestyPending, setHonestyPending] = useState<{ habit: string; day: string; next: HabitState } | null>(null);
 
   const pwaKey = `superdub.pwa.${PWA_PROMPT_VERSION}`;
   const pwaDayKey = `superdub.pwa.day.${PWA_PROMPT_VERSION}`;
@@ -574,6 +638,22 @@ const Habits: React.FC = () => {
     setHt(prev => ({ ...prev, [dayKey]: { ...prev[dayKey], [habit]: state } }));
     api.toggleTrackerHabit(dayKey, habit, state).catch(() => {});
   }, []);
+
+  // Backfill past days — gated by a once-per-session honesty declaration
+  const editPast = useCallback((habit: string, day: string, cur: HabitState) => {
+    const next = cycleState(cur);
+    if (sessionStorage.getItem('superdub.honesty') === '1') {
+      handleToggleDay(habit, day, next);
+    } else {
+      setHonestyPending({ habit, day, next });
+    }
+  }, [handleToggleDay]);
+
+  const confirmHonesty = () => {
+    sessionStorage.setItem('superdub.honesty', '1');
+    if (honestyPending) handleToggleDay(honestyPending.habit, honestyPending.day, honestyPending.next);
+    setHonestyPending(null);
+  };
 
   const handleAddFeatured = useCallback((name: string) => {
     if (habits.includes(name)) return;
@@ -709,6 +789,22 @@ const Habits: React.FC = () => {
 
       {/* Featured habits sheet */}
       <FeaturedSheet open={featuredOpen} onClose={() => setFeaturedOpen(false)} userHabits={habits} onAdd={handleAddFeatured} />
+
+      {/* Honesty declaration — shown once per session before backfilling past days */}
+      {honestyPending && (
+        <div className="honesty-overlay" onClick={() => setHonestyPending(null)}>
+          <div className="honesty-modal" onClick={e => e.stopPropagation()}>
+            <div className="honesty-icon">🤝</div>
+            <h3 className="honesty-title">Quick honesty check</h3>
+            <p className="honesty-text">
+              You're editing a past day. Only log what you <strong>genuinely did</strong> —
+              your streaks, XP and trends are only worth something if they're real. No one's watching but you.
+            </p>
+            <button className="honesty-confirm" onClick={confirmHonesty}>I'll be honest — let me edit</button>
+            <button className="honesty-cancel" onClick={() => setHonestyPending(null)}>Cancel</button>
+          </div>
+        </div>
+      )}
 
       <div className="habits-page-scroll">
         {/* Top bar: brand + weather + cog */}
@@ -856,6 +952,7 @@ const Habits: React.FC = () => {
                   ht={ht}
                   today={today}
                   onToggleDay={handleToggleDay}
+                  onEditDay={editPast}
                   onRequestRemove={setPendingRemove}
                 />
               );
