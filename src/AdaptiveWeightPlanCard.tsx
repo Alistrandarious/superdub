@@ -133,6 +133,28 @@ const AdaptiveWeightPlanCard: React.FC = () => {
           </span>
         </div>
       )}
+
+      {/* Learned personal maintenance (TDEE) */}
+      {planStatus.tdee && planStatus.tdee.observedTDEE != null && (
+        <div className="plan-engine-ml-row">
+          <span className="plan-engine-ml-label">Learned maintenance</span>
+          <span className="plan-engine-ml-val">
+            {planStatus.tdee.blendedTDEE.toLocaleString()} kcal
+            <span className="plan-engine-ml-sub">
+              {' '}· {Math.round(planStatus.tdee.confidence * 100)}% confident
+              {planStatus.tdee.blendedTDEE !== planStatus.tdee.formulaTDEE && ` · formula est. ${planStatus.tdee.formulaTDEE.toLocaleString()}`}
+            </span>
+          </span>
+        </div>
+      )}
+
+      {/* Plateau / stall prediction */}
+      {planStatus.stall && planStatus.stall.risk !== 'none' && (
+        <div className={`plan-engine-stall stall-${planStatus.stall.risk}`}>
+          <span className="plan-engine-stall-icon">{planStatus.stall.risk === 'high' ? '🟠' : '🟡'}</span>
+          <span className="plan-engine-stall-text">{planStatus.stall.message}</span>
+        </div>
+      )}
     </div>
   );
 };

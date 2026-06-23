@@ -2,9 +2,65 @@ import { Router, Response } from 'express';
 import { pool } from '../db';
 import { requireAuth, AuthRequest } from '../middleware/auth';
 import {
-  computeEMA, computeBMR, computeTDEE, runCycle,
+  computeEMA, computeBMR, computeTDEE, runCycle, weeklySlope,
 } from '../services/planEngine';
-import type { WeightPoint, Biometrics, Goal } from '../services/planEngine';
+import type { WeightPoint, Biometrics, Goal, EMAPoint } from '../services/planEngine';
+import { estimatePersonalTDEE } from '../services/tdeeEstimator';
+import { predictStall } from '../services/plateauPredictor';
+
+// ── Gather recent behavioural metrics for the ML models ──────────────────────
+async function getRecentMetrics(userId: number) {
+  const num = (v: any) => { const n = parseFloat(v); return isNaN(n) ? null : n; };
+  // Avg logged calories over the last 14 days (null if nothing logged)
+  const cal = await pool.query(
+    `SELECT AVG(calories::NUMERIC) AS avg FROM tracker
+     WHERE user_id = $1 AND calories IS NOT NULL AND calories != '' AND calories::NUMERIC > 0
+       AND TO_DATE('2026-'||lpad(split_part(day,'/',2),2,'0')||'-'||lpad(split_part(day,'/',1),2,'0'),'YYYY-MM-DD') >= CURRENT_DATE - INTERVAL '14 days'`,
+    [userId]
+  ).catch(() => ({ rows: [{ avg: null }] }));
+
+  // Steps: last 7 days vs the 7 before
+  const stepsRow = await pool.query(
+    `SELECT
+       AVG(CASE WHEN d >= CURRENT_DATE - INTERVAL '7 days' THEN s END) AS s7,
+       AVG(CASE WHEN d <  CURRENT_DATE - INTERVAL '7 days' AND d >= CURRENT_DATE - INTERVAL '14 days' THEN s END) AS sprev
+     FROM (
+       SELECT steps::NUMERIC AS s,
+              TO_DATE('2026-'||lpad(split_part(day,'/',2),2,'0')||'-'||lpad(split_part(day,'/',1),2,'0'),'YYYY-MM-DD') AS d
+       FROM tracker WHERE user_id = $1 AND steps IS NOT NULL AND steps != '' AND steps::NUMERIC > 0
+     ) t`,
+    [userId]
+  ).catch(() => ({ rows: [{ s7: null, sprev: null }] }));
+
+  // Energy + mood, last 7 days of check-ins
+  const ci = await pool.query(
+    `SELECT AVG(energy::NUMERIC) AS energy, AVG(mood::NUMERIC) AS mood
+     FROM daily_checkins WHERE user_id = $1 AND date >= CURRENT_DATE - INTERVAL '7 days'`,
+    [userId]
+  ).catch(() => ({ rows: [{ energy: null, mood: null }] }));
+
+  // Logging rate: distinct weigh-in days in the last 14 days / 14
+  const lg = await pool.query(
+    `SELECT COUNT(DISTINCT day) AS n FROM tracker
+     WHERE user_id = $1 AND weight IS NOT NULL AND weight != '' AND weight::NUMERIC > 0
+       AND TO_DATE('2026-'||lpad(split_part(day,'/',2),2,'0')||'-'||lpad(split_part(day,'/',1),2,'0'),'YYYY-MM-DD') >= CURRENT_DATE - INTERVAL '14 days'`,
+    [userId]
+  ).catch(() => ({ rows: [{ n: 0 }] }));
+
+  return {
+    avgDailyIntake: num(cal.rows[0]?.avg),
+    steps7: num(stepsRow.rows[0]?.s7),
+    stepsPrev7: num(stepsRow.rows[0]?.sprev),
+    energyAvg: num(ci.rows[0]?.energy),
+    moodAvg: num(ci.rows[0]?.mood),
+    loggingRate: Math.min(1, (Number(lg.rows[0]?.n) || 0) / 14),
+  };
+}
+
+function slopeOfLast(emaPoints: EMAPoint[], n: number): number | null {
+  if (emaPoints.length < 2) return null;
+  return weeklySlope(emaPoints.slice(Math.max(0, emaPoints.length - n)));
+}
 
 const router = Router();
 
@@ -114,8 +170,46 @@ router.get('/status', requireAuth as any, async (req: AuthRequest, res: Response
       [req.userId, goal.id]
     );
 
+    // ── ML: personalized TDEE + plateau/stall prediction ────────────────────
+    let tdee: any = null;
+    let stall: any = null;
+    try {
+      const pts = await getWeightPoints(req.userId!);
+      const emaPoints = computeEMA(pts);
+      const latestWeight = pts.length > 0 ? pts[pts.length - 1].weight : Number(goal.start_weight);
+      const bio = await getBiometrics(req.userId!, latestWeight);
+      if (bio && emaPoints.length >= 2) {
+        const metrics = await getRecentMetrics(req.userId!);
+        const formulaTDEE = computeTDEE(bio);
+        const dataDays = (emaPoints[emaPoints.length - 1].date.getTime() - emaPoints[0].date.getTime()) / 86400000 + 1;
+
+        tdee = estimatePersonalTDEE({
+          emaSlopePerWeek: weeklySlope(emaPoints),
+          avgDailyIntake: metrics.avgDailyIntake,
+          prescribedCalories: target?.prescribed_calories ?? formulaTDEE,
+          formulaTDEE,
+          dataDays,
+        });
+
+        stall = predictStall({
+          goalType: goal.goal_type as 'lose' | 'gain' | 'maintain',
+          recentSlope: slopeOfLast(emaPoints, 10),
+          priorSlope: emaPoints.length >= 12 ? weeklySlope(emaPoints.slice(Math.max(0, emaPoints.length - 20), emaPoints.length - 10)) : null,
+          steps7: metrics.steps7,
+          stepsPrev7: metrics.stepsPrev7,
+          energyAvg: metrics.energyAvg,
+          moodAvg: metrics.moodAvg,
+          loggingRate: metrics.loggingRate,
+        });
+      }
+    } catch (e: any) {
+      console.error('[plan/status ml]', e?.message);
+    }
+
     res.json({
       active: true,
+      tdee,
+      stall,
       goal: {
         id: goal.id,
         goalType: goal.goal_type,

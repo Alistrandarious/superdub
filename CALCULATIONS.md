@@ -123,6 +123,38 @@ each habit earns XP per day based on streak length (streak gates at
 
 ---
 
+## 11. Learned personal maintenance (TDEE)   `server/services/tdeeEstimator.ts`
+The formula TDEE (BMR × activity) is a population guess. This derives your *real*
+maintenance from what actually happened to your weight:
+```
+intake − TDEE = (Δweight_kg/day) × 7700
+⇒ observedTDEE = avgDailyIntake − (weeklyEmaSlope / 7) × 7700
+```
+- `avgDailyIntake` = your logged calories (last 14 days) if available, else your
+  prescribed target (assume adherence, at half confidence).
+- The result is **blended** with the formula TDEE, trusting the observed value
+  more as (a) weigh-in history grows toward 4 weeks and (b) you log real intake:
+  `confidence = clamp(days/28, 0,1) × (loggedIntake ? 1 : 0.5)`.
+- Clamped to ±35% of the formula so noisy early data can't run wild.
+
+Worked: ate ~1,800/day, EMA losing 0.5 kg/wk over 3 weeks →
+`observed = 1800 − (−0.5/7)×7700 = 2,350`. confidence ≈ `(21/28)×1 = 0.75` →
+blended ≈ `0.75×2350 + 0.25×formula`.
+
+## 12. Plateau / stall prediction   `server/services/plateauPredictor.ts`
+A transparent additive risk score (0–1) from signals the app already collects:
+- **Weight-trend deceleration** (primary): recent-10-day slope vs the prior 10
+  days. Keeping <65% of your earlier pace, or going flat, adds the most weight.
+- **Steps** down >15% (last 7 vs prior 7) — activity drop.
+- **Energy** avg ≤ 2.6 — possible metabolic adaptation / fatigue.
+- **Mood** avg ≤ 2.4 — adherence risk.
+- **Logging rate** < 50% of recent days — trend getting unreliable.
+
+Score → risk: ≥0.6 high · ≥0.35 medium · ≥0.18 low. The message names the
+top contributing factor(s), so it's always actionable.
+
+---
+
 *Every formula above maps to code in `src/App.tsx`, `src/Diet.tsx`,
 `src/XPContext.tsx`, and `server/services/`. If any number on screen doesn't
 match this doc, that's a bug — flag it.*

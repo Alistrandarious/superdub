@@ -9141,6 +9141,50 @@ h3, h4,
   color: rgba(255, 255, 255, 0.38);
   font-family: 'Sora', sans-serif;
 }
+.plan-engine-ml-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--glass-border);
+}
+.plan-engine-ml-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.45);
+}
+.plan-engine-ml-val {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #E8ECF4;
+  text-align: right;
+}
+.plan-engine-ml-sub {
+  font-weight: 400;
+  font-size: 0.62rem;
+  color: rgba(255,255,255,0.4);
+}
+.plan-engine-stall {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-family: 'Sora', sans-serif;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+.plan-engine-stall.stall-low { background: rgba(255,210,51,0.08); color: rgba(255,225,140,0.95); }
+.plan-engine-stall.stall-medium { background: rgba(255,138,0,0.1); color: #FFC062; }
+.plan-engine-stall.stall-high { background: rgba(255,84,112,0.12); color: #FF8FA3; }
+.plan-engine-stall-icon { flex-shrink: 0; }
+
 .plan-engine-metabolic-warning {
   display: flex;
   align-items: flex-start;
