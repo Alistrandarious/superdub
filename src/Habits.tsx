@@ -420,7 +420,10 @@ const HabitCard: React.FC<{
   }));
 
   return (
-    <div className={`hcard ${hasDanger ? 'hcard-danger' : hasWarning ? 'hcard-warning' : ''}`}>
+    <div
+      className={`hcard ${hasDanger ? 'hcard-danger' : hasWarning ? 'hcard-warning' : ''}`}
+      style={{ '--theme': accent, '--theme-dim': `${accent}66`, '--theme-glow': `${accent}22` } as React.CSSProperties}
+    >
       <div className="hcard-header">
         <span className="hcard-icon">{isFlame ? '🔥' : '✓'}</span>
         <span className="hcard-name">{habit}</span>
