@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import { api } from './api';
 import GoalsPanel from './GoalsPanel';
+import SuperdubHeader from './SuperdubHeader';
 
 const GOAL_ACCENT = '#A855F7';
 
@@ -99,6 +100,7 @@ const Tasks: React.FC = () => {
 
   return (
     <div className="app flush" style={themeVars}>
+      <SuperdubHeader />
       {/* Tab bar */}
       <div className="lists-tab-bar lists-tab-bar--top">
         <button

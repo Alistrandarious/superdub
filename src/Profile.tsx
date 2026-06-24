@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import './App.css';
 import { api, clearToken } from './api';
 import { computeActivity, JOB_OPTS } from './Auth';
+import SuperdubHeader from './SuperdubHeader';
 import { OCCUPATIONS, ETHNICITIES, GENDER_IDENTITIES, COUNTRIES, RELATIONSHIP_STATUSES, RELIGIONS } from './demographics';
 
 interface ProfileData {
@@ -445,6 +446,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
 
   return (
     <div className="app flush" style={{ '--theme': '#2E8BFF', '--theme-dim': '#2E8BFF66', '--theme-glow': '#2E8BFF33' } as React.CSSProperties}>
+      <SuperdubHeader />
       <div className="profile-content page-content">
 
         <div className="page-intro">
