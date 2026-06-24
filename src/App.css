@@ -690,6 +690,9 @@ h1, h2, h3, h4, .sora {
 .page-content > .hb-topbar {
   padding-left: 0;
   padding-right: 0;
+  /* Cancel the page-content top padding so the brand sits at the same height as
+     the Progress/Habits topbars (their hb-topbar isn't nested in a padded wrapper). */
+  margin-top: -16px;
 }
 
 /* =====================================================================
