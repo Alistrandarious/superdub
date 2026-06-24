@@ -1066,7 +1066,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   }
 
   return (
-    <div className="app" style={{ '--theme': themeColor, '--theme-dim': themeColor + '66', '--theme-glow': themeColor + '14' } as React.CSSProperties}>
+    <div className="app flush" style={{ '--theme': themeColor, '--theme-dim': themeColor + '66', '--theme-glow': themeColor + '14' } as React.CSSProperties}>
       <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
