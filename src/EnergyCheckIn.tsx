@@ -48,8 +48,11 @@ const EnergyCheckIn: React.FC = () => {
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Only auto-prompt in the evening (6 PM+) — you can't rate a day that isn't over.
+  // The manual cog trigger ('superdub:show-energy-checkin') bypasses this.
   const shouldShowToday = () =>
-    isEnabled() && localStorage.getItem(ENERGY_KEY) !== todayISO() && Date.now() >= snoozeUntilMs();
+    isEnabled() && localStorage.getItem(ENERGY_KEY) !== todayISO()
+    && Date.now() >= snoozeUntilMs() && new Date().getHours() >= 18;
 
   const dismiss = () => {
     localStorage.setItem(ENERGY_KEY, todayISO());

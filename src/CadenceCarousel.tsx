@@ -8,8 +8,6 @@ export interface CarouselPanel {
   content: React.ReactNode;
 }
 
-const CHIP_W = 46; // px per chip in the little coloured carousel
-
 // Cadence switcher: a big title + a little coloured carousel of chips, with the
 // habit list sliding purely along the X axis (no skew/rotate/scale) as you swipe.
 const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number; compact?: boolean }> = ({ panels, startIndex = 0, compact = false }) => {
@@ -56,7 +54,6 @@ const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number; 
 
   // Continuous position; the centred panel sits at `current`.
   const current = index - dragPx / width();
-  const chipShift = -(index * CHIP_W + CHIP_W / 2) + (dragPx / width()) * CHIP_W;
 
   const swipeProps = {
     onPointerDown: onDown,
@@ -69,47 +66,18 @@ const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number; 
   return (
     <div className={`cadx${compact ? ' cadx--compact' : ''}`}>
       <div className="cadx-header">
-        {compact ? (
-          // Collapsed: just the four colour dots, evenly spaced, still tappable.
-          <div className="cadx-dotrow">
-            {panels.map((p, i) => (
-              <button
-                key={p.key}
-                className={`cadx-dot2${i === index ? ' active' : ''}`}
-                style={{ ['--chip' as any]: p.color }}
-                onClick={() => go(i)}
-                aria-label={p.label}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="cadx-strip" {...swipeProps}>
-            <div
-              className="cadx-strip-track"
-              style={{ transform: `translateX(${chipShift}px)`, transition: dragging ? 'none' : 'transform 0.32s cubic-bezier(0.22,1,0.36,1)' }}
-            >
-              {panels.map((p, i) => {
-                const off = Math.abs(i - current);
-                return (
-                  <button
-                    key={p.key}
-                    className={`cadx-chip${i === index ? ' active' : ''}`}
-                    style={{
-                      width: CHIP_W,
-                      transform: `scale(${Math.max(0.74, 1.12 - off * 0.26)})`,
-                      opacity: Math.max(0.35, 1 - off * 0.4),
-                      ['--chip' as any]: p.color,
-                    }}
-                    onClick={() => go(i)}
-                    aria-label={p.label}
-                  >
-                    <span className="cadx-chip-dot" />
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        {/* The four colour dots — tight + small, tappable to switch level. */}
+        <div className="cadx-dotrow">
+          {panels.map((p, i) => (
+            <button
+              key={p.key}
+              className={`cadx-dot2${i === index ? ' active' : ''}`}
+              style={{ ['--chip' as any]: p.color }}
+              onClick={() => go(i)}
+              aria-label={p.label}
+            />
+          ))}
+        </div>
       </div>
 
       <div className="cadx-swipe">
