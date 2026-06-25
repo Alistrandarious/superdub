@@ -5600,17 +5600,8 @@ h1, h2, h3, h4, .sora {
   font-weight: 600;
 }
 
-.hcard-day.done .hcard-day-label {
-  color: rgba(255,255,255,0.55);
-}
-
-.hcard-day.failed .hcard-day-label {
-  color: rgba(255,69,58,0.6);
-}
-
-.hcard-day.is-today .hcard-day-label {
-  color: var(--theme);
-}
+/* Day-of-week letters stay a constant neutral colour regardless of state —
+   only the circles change colour, not the labels. */
 
 /* Today button */
 .hcard-today-btn {
