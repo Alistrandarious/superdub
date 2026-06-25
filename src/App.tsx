@@ -145,6 +145,11 @@ function getYearDays(year: number): string[] {
 const YEAR = 2026;
 const ALL_DAYS = getYearDays(YEAR);
 
+// Chart ranges — historical (week/all) + forward-projection horizons.
+type ChartRange = 'week' | 'm' | '3m' | 'goal' | 'all';
+const RANGE_ORDER: ChartRange[] = ['week', 'm', '3m', 'goal', 'all'];
+const RANGE_LABEL: Record<ChartRange, string> = { week: 'Week', m: '1M', '3m': '3M', goal: 'Goal', all: 'All' };
+
 function getChartDayRange(from: Date, to: Date): Array<{ ddmm: string; date: Date }> {
   const result: Array<{ ddmm: string; date: Date }> = [];
   const cur = new Date(from);
@@ -341,7 +346,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const todayKey = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}`;
 
   // Chart state
-  const [chartRange, setChartRange] = useState<'7d' | '1m' | '3m' | '1y' | 'all'>('7d');
+  const [chartRange, setChartRange] = useState<ChartRange>('week');
   const [chartOffset, setChartOffset] = useState(0); // 0 = most recent window; higher = further back
   // Reset to the most-recent window whenever the interval changes.
   useEffect(() => { setChartOffset(0); }, [chartRange]);
@@ -619,46 +624,36 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const dShort = (d: Date) => `${d.getDate()} ${MON[d.getMonth()]}`;
 
-    // How far back we can page before the whole window precedes signup.
+    // Only the Week view pages (through Mon–Sun weeks). The ahead/all views are
+    // anchored to now, so paging is off for them.
     const daysSinceJoin = Math.floor((today.getTime() - accountCreatedDate.getTime()) / 86400000);
-    let maxOff = 0;
-    if (chartRange === '7d') maxOff = Math.floor(daysSinceJoin / 7);
-    else if (chartRange === '1m') maxOff = (today.getFullYear() - accountCreatedDate.getFullYear()) * 12 + (today.getMonth() - accountCreatedDate.getMonth());
-    else if (chartRange === '3m') maxOff = Math.floor(((today.getFullYear() - accountCreatedDate.getFullYear()) * 12 + (today.getMonth() - accountCreatedDate.getMonth())) / 3);
-    else if (chartRange === '1y') maxOff = today.getFullYear() - accountCreatedDate.getFullYear();
+    const maxOff = chartRange === 'week' ? Math.floor(daysSinceJoin / 7) : 0;
     const off = Math.min(chartOffset, Math.max(0, maxOff));
 
     let from: Date, to: Date, label: string;
-    if (chartRange === '7d') {
-      to = new Date(today); to.setDate(today.getDate() - off * 7);
-      from = new Date(to); from.setDate(to.getDate() - 6);
+    if (chartRange === 'week') {
+      // Monday-anchored 7-day week.
+      const base = new Date(today); base.setDate(today.getDate() - off * 7);
+      const dow = (base.getDay() + 6) % 7; // Mon = 0
+      from = new Date(base); from.setDate(base.getDate() - dow);
+      to = new Date(from); to.setDate(from.getDate() + 6);
       label = `${dShort(from)} – ${dShort(to)}`;
-    } else if (chartRange === '1m') {
-      const m = new Date(now.getFullYear(), now.getMonth() - off, 1);
-      from = m; to = new Date(m.getFullYear(), m.getMonth() + 1, 0);
-      label = `${MON[m.getMonth()]} ${m.getFullYear()}`;
-    } else if (chartRange === '3m') {
-      const endM = new Date(now.getFullYear(), now.getMonth() - off * 3, 1);
-      to = new Date(endM.getFullYear(), endM.getMonth() + 1, 0);
-      from = new Date(endM.getFullYear(), endM.getMonth() - 2, 1);
-      label = `${MON[from.getMonth()]} – ${MON[endM.getMonth()]} ${endM.getFullYear()}`;
-    } else if (chartRange === '1y') {
-      const y = now.getFullYear() - off;
-      from = new Date(y, 0, 1); to = new Date(y, 11, 31);
-      label = String(y);
-    } else { // all
+    } else {
+      // all / ahead views show the full history to today (projection added later).
       from = new Date(accountCreatedDate); to = new Date(today);
-      label = 'All time';
+      label = chartRange === 'all' ? 'All data'
+        : chartRange === 'm' ? 'Next month'
+        : chartRange === '3m' ? 'Next 3 months'
+        : 'To goal';
     }
-    if (to > today) to = new Date(today);            // never show future days
+    if (to > today) to = new Date(today);            // never show future days as data
     if (from < accountCreatedDate) from = new Date(accountCreatedDate);
     return { chartDayRange: getChartDayRange(from, to), chartWindowLabel: label, maxChartOffset: Math.max(0, maxOff) };
   }, [chartRange, chartOffset, accountCreatedDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Drag a chart to pan through windows (positive delta = older). No buttons —
-  // just a label showing the current window; the chart itself is the control.
+  // Drag the Week view to page through weeks; a label shows the current window.
   const pageBy = (delta: number) => setChartOffset(o => Math.max(0, Math.min(maxChartOffset, o + delta)));
-  const renderChartPager = () => chartRange === 'all' ? null : (
+  const renderChartPager = () => (
     <div className="chart-pager"><span className="chart-pager-label">{chartWindowLabel}</span></div>
   );
 
@@ -695,10 +690,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   // How much history exists → grey out ranges we don't have data for yet
   const daysSinceCreation = Math.max(1, Math.floor((now.getTime() - accountCreatedDate.getTime()) / 86400000) + 1);
   const rangeAvailable = (r: string) =>
-    r === '7d' || r === 'all' ? true
-    : r === '1m' ? daysSinceCreation > 7
-    : r === '3m' ? daysSinceCreation > 30
-    : r === '1y' ? daysSinceCreation > 90
+    r === 'week' || r === 'all' ? true
+    : r === 'm' || r === '3m' ? daysSinceCreation > 5   // need ~a week to project a trend
+    : r === 'goal' ? !!planGoal                         // only if a goal is set
     : true;
 
   // Days to reach goal (drives the macro/loss math)
@@ -754,7 +748,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   );
 
   // Weekly aggregation for Y / All views with >60 days of history
-  const shouldAggregate = (chartRange === '1y' || chartRange === 'all') && chartDayRange.length > 60;
+  // Aggregate weekly only for a long 'All' history; ahead views stay daily so the projection shows.
+  const shouldAggregate = chartRange === 'all' && chartDayRange.length > 70;
 
   // Diagonal safe-zone corridor: ±1.5 kg around the ideal linear path from plan start → target
   const zoneActive = !!(planGoal?.startDate && planGoal?.targetDate && planGoal?.startWeight != null && planGoal?.targetWeight != null);
@@ -790,11 +785,10 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   // Projection only makes sense looking forward from today — i.e. the most-recent
   // window (chartOffset 0). Show a short forward projection on every interval.
   const projectionLen = hasTrend && lastEMAValue !== null && !shouldAggregate && chartOffset === 0
-    ? (chartRange === '7d' ? 3
-      : chartRange === '1m' ? 7
-      : chartRange === '3m' ? 14
-      : chartRange === 'all' && daysToGoalPlus3 != null && daysToGoalPlus3 > 3 ? daysToGoalPlus3
-      : 30)
+    ? (chartRange === 'm' ? 30
+      : chartRange === '3m' ? 90
+      : chartRange === 'goal' && daysToGoalPlus3 != null && daysToGoalPlus3 > 3 ? daysToGoalPlus3
+      : 0)   // week / all → no forward projection
     : 0;
   const futureChartData = projectionLen > 0
     ? Array.from({ length: projectionLen }, (_, f) => {
@@ -1440,7 +1434,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         <div className="chart-title-row">
           <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#FFFFFF' }} />Weight Trend</h3>
           <div className="chart-range-group">
-            {(['7d', '1m', '3m', '1y', 'all'] as const).map(r => {
+            {RANGE_ORDER.map(r => {
               const enabled = rangeAvailable(r);
               return (
                 <button
@@ -1448,9 +1442,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                   disabled={!enabled}
                   className={`chart-range-btn ${chartRange === r ? 'active' : ''}${enabled ? '' : ' chart-range-btn--locked'}`}
                   onClick={() => enabled && setChartRange(r)}
-                  title={enabled ? undefined : 'Not enough history yet'}
+                  title={enabled ? undefined : (r === 'goal' ? 'Set a weight goal first' : 'Not enough history yet')}
                 >
-                  {r === '7d' ? '7D' : r === '1m' ? '1M' : r === '3m' ? '3M' : r === '1y' ? '1Y' : 'All'}
+                  {RANGE_LABEL[r]}
                 </button>
               );
             })}
@@ -1459,7 +1453,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         {renderChartPager()}
         <div className="chart-section-inner">
         <div className="chart-container">
-        <DraggableChart disabled={chartRange === 'all'} onPage={pageBy}>
+        <DraggableChart disabled={chartRange !== 'week'} onPage={pageBy}>
         <ResponsiveContainer width="100%" height={340}>
           <ComposedChart data={chartData} margin={{ left: 0, right: 10, top: 5, bottom: 8 }}>
             <defs>
@@ -1648,7 +1642,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               )}
             </div>
             <div className="chart-range-group">
-              {(['7d', '1m', '3m', '1y', 'all'] as const).map(r => {
+              {RANGE_ORDER.map(r => {
                 const enabled = rangeAvailable(r);
                 return (
                   <button
@@ -1657,7 +1651,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                     className={`chart-range-btn ${chartRange === r ? 'active' : ''}${enabled ? '' : ' chart-range-btn--locked'}`}
                     onClick={() => enabled && setChartRange(r)}
                   >
-                    {r === '7d' ? '7D' : r === '1m' ? '1M' : r === '3m' ? '3M' : r === '1y' ? '1Y' : 'All'}
+                    {RANGE_LABEL[r]}
                   </button>
                 );
               })}
@@ -1666,7 +1660,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           {renderChartPager()}
           <div className="chart-section-inner">
             <div className="chart-container">
-              <DraggableChart disabled={chartRange === 'all'} onPage={pageBy}>
+              <DraggableChart disabled={chartRange !== 'week'} onPage={pageBy}>
               <ResponsiveContainer width="100%" height={200}>
                 <ComposedChart data={chartData} margin={{ left: 0, right: 10, top: 10, bottom: 8 }}>
                   <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
@@ -1716,7 +1710,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               )}
             </div>
             {walkHasData ? (
-              <DraggableChart disabled={chartRange === 'all'} onPage={pageBy}>
+              <DraggableChart disabled={chartRange !== 'week'} onPage={pageBy}>
               <ResponsiveContainer width="100%" height={180}>
                 <ComposedChart data={stepChartData} margin={{ left: 0, right: 10, top: 8, bottom: 4 }}>
                   <defs>
@@ -1783,7 +1777,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               )}
             </div>
             {calorieHasData ? (
-              <DraggableChart disabled={chartRange === 'all'} onPage={pageBy}>
+              <DraggableChart disabled={chartRange !== 'week'} onPage={pageBy}>
               <ResponsiveContainer width="100%" height={220}>
                 <ComposedChart data={calorieChartData} margin={{ left: 0, right: 10, top: 10, bottom: 8 }}>
                   <defs>
@@ -1822,7 +1816,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#FFB928' }} />Mood</h3>
           </div>
           {renderChartPager()}
-          <DraggableChart disabled={chartRange === 'all'} onPage={pageBy}>
+          <DraggableChart disabled={chartRange !== 'week'} onPage={pageBy}>
           <ResponsiveContainer width="100%" height={180}>
             <ComposedChart data={moodChartData} margin={{ left: 0, right: 10, top: 10, bottom: 8 }}>
               <defs>
