@@ -787,8 +787,12 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   // "All" extends all the way to the goal date + 3 days so you can see the finish line.
   const goalTargetMs = planGoal?.targetDate ? new Date(planGoal.targetDate).getTime() : null;
   const daysToGoalPlus3 = goalTargetMs ? Math.ceil((goalTargetMs - now.getTime()) / 86400000) + 3 : null;
-  const projectionLen = hasTrend && lastEMAValue !== null && !shouldAggregate && chartRange !== '7d' && chartRange !== '1m'
-    ? (chartRange === '3m' ? 14
+  // Projection only makes sense looking forward from today — i.e. the most-recent
+  // window (chartOffset 0). Show a short forward projection on every interval.
+  const projectionLen = hasTrend && lastEMAValue !== null && !shouldAggregate && chartOffset === 0
+    ? (chartRange === '7d' ? 3
+      : chartRange === '1m' ? 7
+      : chartRange === '3m' ? 14
       : chartRange === 'all' && daysToGoalPlus3 != null && daysToGoalPlus3 > 3 ? daysToGoalPlus3
       : 30)
     : 0;
