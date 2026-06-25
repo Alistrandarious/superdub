@@ -415,6 +415,10 @@ const HabitCard: React.FC<{
   const accent = CADENCE_META[cadence].color;
   const [expanded, setExpanded] = useState(false);
   const currentDone = isDaily ? todayState === 'done' : !!currentUnit?.done;
+  const toggleCurrent = () => {
+    if (isDaily) onToggleDay(habit, today, cycleState(todayState));
+    else if (currentUnit) toggleUnit(currentUnit);
+  };
 
   const gateDots = XP_GATES.map(([t], i) => ({
     label: GATE_LABELS[i],
@@ -428,7 +432,13 @@ const HabitCard: React.FC<{
     >
       {/* Collapsed summary — tap to expand. Habit + cog + expand control. */}
       <div className="hcard-summary" onClick={() => setExpanded(e => !e)}>
-        <span className={`hcard-icon ${currentDone ? 'done' : ''}`}>{isFlame ? '🔥' : '✓'}</span>
+        <button
+          className={`hcard-icon hcard-icon-btn ${currentDone ? 'done' : ''}`}
+          onClick={e => { e.stopPropagation(); toggleCurrent(); }}
+          aria-label={currentDone ? 'Done — tap to clear' : 'Mark done'}
+        >
+          {currentDone ? (isFlame ? '🔥' : '✓') : ''}
+        </button>
         <span className="hcard-name">{habit}</span>
         <button
           className={`hcard-cog ${histOpen ? 'active' : ''}`}

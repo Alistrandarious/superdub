@@ -5294,11 +5294,24 @@ h1, h2, h3, h4, .sora {
   height: 30px;
   border-radius: 50%;
   background: var(--theme-glow);
-  border: 1px solid var(--theme);
+  border: 2px solid var(--theme-dim);
   font-size: 0.95rem;
   flex-shrink: 0;
   color: var(--theme);
   font-weight: 700;
+}
+/* Tickable done box on the collapsed card */
+.hcard-icon-btn {
+  cursor: pointer;
+  padding: 0;
+  background: rgba(255,255,255,0.03);
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.hcard-icon-btn:active { transform: scale(0.9); }
+.hcard-icon-btn.done {
+  background: var(--theme);
+  border-color: var(--theme);
+  color: #07120B;
 }
 
 .hcard-name {
