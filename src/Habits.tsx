@@ -838,12 +838,17 @@ const Habits: React.FC = () => {
   const confirmRemove = (name: string) => {
     if (name === MANDATORY_HABIT) { setPendingRemove(null); return; }
     setPendingRemove(null);
-    const updated = habits.filter(h => h !== name);
-    setHabits(updated);
+    setHabits(prev => prev.filter(h => h !== name));      // optimistic
     setStartDates(prev => { const next = { ...prev }; delete next[name]; return next; });
-    // Archive in DB (soft delete → graveyard)
+    // Archive in DB (soft delete → graveyard), then re-sync from the server so the
+    // active list + graveyard reflect the truth regardless of any local edge case.
     api.archiveHabit(name).then(() => {
-      api.getGraveyard().then(g => setGraveyard(g)).catch(() => {});
+      Promise.all([api.getHabits(), api.getGraveyard()]).then(([active, g]) => {
+        const names = active.map(h => h.name);
+        if (!names.includes(MANDATORY_HABIT)) names.unshift(MANDATORY_HABIT);
+        setHabits(names);
+        setGraveyard(g);
+      }).catch(() => {});
     }).catch(() => {});
   };
 

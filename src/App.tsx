@@ -183,6 +183,9 @@ const DraggableChart: React.FC<{ disabled?: boolean; onPage: (deltaWindows: numb
     if (axisRef.current === null) {
       if (Math.abs(mx) < 6 && Math.abs(my) < 6) return;
       axisRef.current = Math.abs(mx) > Math.abs(my) ? 'h' : 'v';
+      // Capture the pointer once we commit to a horizontal drag so the chart
+      // keeps following the finger even over the recharts SVG.
+      if (axisRef.current === 'h') { try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch {} }
     }
     if (axisRef.current === 'v') return;
     setDx(mx);
@@ -652,16 +655,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     return { chartDayRange: getChartDayRange(from, to), chartWindowLabel: label, maxChartOffset: Math.max(0, maxOff) };
   }, [chartRange, chartOffset, accountCreatedDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const goOlder = () => setChartOffset(o => Math.min(maxChartOffset, o + 1));
-  const goNewer = () => setChartOffset(o => Math.max(0, o - 1));
-  // Drag a chart to pan through windows (positive delta = older).
+  // Drag a chart to pan through windows (positive delta = older). No buttons —
+  // just a label showing the current window; the chart itself is the control.
   const pageBy = (delta: number) => setChartOffset(o => Math.max(0, Math.min(maxChartOffset, o + delta)));
   const renderChartPager = () => chartRange === 'all' ? null : (
-    <div className="chart-pager">
-      <button className="chart-pager-arrow" disabled={chartOffset >= maxChartOffset} onClick={goOlder} aria-label="Earlier period">‹</button>
-      <span className="chart-pager-label">{chartWindowLabel}</span>
-      <button className="chart-pager-arrow" disabled={chartOffset <= 0} onClick={goNewer} aria-label="Later period">›</button>
-    </div>
+    <div className="chart-pager"><span className="chart-pager-label">{chartWindowLabel}</span></div>
   );
 
   // Step chart data — one bar per day for current chartRange
