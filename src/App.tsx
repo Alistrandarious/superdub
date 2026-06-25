@@ -12,7 +12,6 @@ import {
   ResponsiveContainer,
   ReferenceLine,
   Cell,
-  Legend,
 } from 'recharts';
 import './App.css';
 import { api } from './api';
@@ -35,50 +34,6 @@ function isDarkColor(c: string): boolean {
   if (!c) return false;
   const v = c.toLowerCase().replace(/\s/g, '');
   return v === '#000' || v === '#000000' || v === 'black';
-}
-
-// Custom weight-chart legend: bars on one row, lines on the next, in a white-bordered pill.
-function renderWeightLegend({ payload }: any) {
-  if (!payload?.length) return null;
-  // Drop internal helper series that have no user-facing name (EMA halo + zone band/base)
-  const HIDDEN = ['ema', 'emaHalo', 'zoneLow', 'zoneBand', 'zoneHigh'];
-  const items = payload.filter((e: any) => e.value && !HIDDEN.includes(e.value));
-  if (!items.length) return null;
-  const bars = items.filter((e: any) => e.type === 'rect');
-  const lines = items.filter((e: any) => e.type !== 'rect');
-
-  const renderItem = (e: any, i: number) => {
-    const isRect = e.type === 'rect';
-    const dark = isDarkColor(e.color);
-    return (
-      <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
-        <span style={{
-          width: 14, height: isRect ? 10 : 3, background: e.color, borderRadius: 2,
-          display: 'inline-block', flexShrink: 0,
-          boxShadow: dark ? '0 0 0 1px rgba(255,255,255,0.6)' : 'none',
-        }} />
-        <span style={{ color: legibleColor(e.color), fontFamily: "'Sora', sans-serif", fontSize: 10.5, fontWeight: 600 }}>
-          {e.value}
-        </span>
-      </span>
-    );
-  };
-
-  return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
-      maxWidth: '100%', margin: '8px auto 0', width: 'fit-content',
-      padding: '6px 14px', border: '1px solid rgba(255,255,255,0.6)', borderRadius: 16,
-      background: 'rgba(255,255,255,0.03)',
-    }}>
-      {bars.length > 0 && (
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 14 }}>{bars.map(renderItem)}</div>
-      )}
-      {lines.length > 0 && (
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 14 }}>{lines.map(renderItem)}</div>
-      )}
-    </div>
-  );
 }
 
 function makeChartTooltip(emaColor: string, todayDDMM: string) {
@@ -1597,12 +1552,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 label={{ value: '⟳', fill: '#9aa0a6', position: 'insideTop', fontSize: 10 }}
               />
             ))}
-            <Legend
-              verticalAlign="bottom"
-              align="center"
-              height={34}
-              content={renderWeightLegend}
-            />
           </ComposedChart>
         </ResponsiveContainer>
         </DraggableChart>
