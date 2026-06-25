@@ -1833,6 +1833,31 @@ h1, h2, h3, h4, .sora {
   flex-wrap: wrap;
 }
 
+/* ── Chart pager (swipe / arrows through interval windows) ── */
+.chart-pager {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 2px 16px 4px;
+}
+.chart-pager-arrow {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px;
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.03);
+  color: rgba(255,255,255,0.75);
+  font-size: 1rem; line-height: 1; cursor: pointer;
+  transition: background 0.15s, color 0.15s, opacity 0.15s;
+}
+.chart-pager-arrow:hover:not(:disabled) { background: rgba(255,255,255,0.08); color: #fff; }
+.chart-pager-arrow:disabled { opacity: 0.28; cursor: default; }
+.chart-pager-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.68rem; font-weight: 700;
+  color: rgba(255,255,255,0.7);
+  min-width: 110px; text-align: center;
+  letter-spacing: 0.02em;
+}
+
 /* ── SMART Goals (Lists → Goals) ── */
 .goals-wrap { display: flex; flex-direction: column; gap: 14px; padding-top: 4px; }
 .goals-new-btn {

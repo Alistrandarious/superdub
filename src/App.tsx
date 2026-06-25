@@ -281,6 +281,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
   // Chart state
   const [chartRange, setChartRange] = useState<'7d' | '1m' | '3m' | '1y' | 'all'>('7d');
+  const [chartOffset, setChartOffset] = useState(0); // 0 = most recent window; higher = further back
+  // Reset to the most-recent window whenever the interval changes.
+  useEffect(() => { setChartOffset(0); }, [chartRange]);
   const [chartCogOpen, setChartCogOpen] = useState(false);
   const [hiddenHabits, setHiddenHabits] = useState<Set<string>>(new Set());
 
@@ -548,17 +551,70 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     return d;
   }, [accountCreatedAt]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Chart day range based on selected range tab
-  const chartDayRange = useMemo(() => {
-    let from: Date;
-    if      (chartRange === '7d')  { from = new Date(now); from.setDate(now.getDate() - 6); }
-    else if (chartRange === '1m')  { from = new Date(now); from.setDate(now.getDate() - 29); }
-    else if (chartRange === '3m')  { from = new Date(now); from.setDate(now.getDate() - 89); }
-    else if (chartRange === '1y')  { from = new Date(now); from.setDate(now.getDate() - 364); }
-    else                           { from = new Date(accountCreatedDate); } // 'all' → from signup, no earlier
+  // Windowed chart range — interval-sized window you can page back through.
+  // Months/years align to the calendar (1st of month, Jan 1); 7d is rolling weeks.
+  const { chartDayRange, chartWindowLabel, maxChartOffset } = useMemo(() => {
+    const today = new Date(now); today.setHours(0, 0, 0, 0);
+    const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const dShort = (d: Date) => `${d.getDate()} ${MON[d.getMonth()]}`;
+
+    // How far back we can page before the whole window precedes signup.
+    const daysSinceJoin = Math.floor((today.getTime() - accountCreatedDate.getTime()) / 86400000);
+    let maxOff = 0;
+    if (chartRange === '7d') maxOff = Math.floor(daysSinceJoin / 7);
+    else if (chartRange === '1m') maxOff = (today.getFullYear() - accountCreatedDate.getFullYear()) * 12 + (today.getMonth() - accountCreatedDate.getMonth());
+    else if (chartRange === '3m') maxOff = Math.floor(((today.getFullYear() - accountCreatedDate.getFullYear()) * 12 + (today.getMonth() - accountCreatedDate.getMonth())) / 3);
+    else if (chartRange === '1y') maxOff = today.getFullYear() - accountCreatedDate.getFullYear();
+    const off = Math.min(chartOffset, Math.max(0, maxOff));
+
+    let from: Date, to: Date, label: string;
+    if (chartRange === '7d') {
+      to = new Date(today); to.setDate(today.getDate() - off * 7);
+      from = new Date(to); from.setDate(to.getDate() - 6);
+      label = `${dShort(from)} – ${dShort(to)}`;
+    } else if (chartRange === '1m') {
+      const m = new Date(now.getFullYear(), now.getMonth() - off, 1);
+      from = m; to = new Date(m.getFullYear(), m.getMonth() + 1, 0);
+      label = `${MON[m.getMonth()]} ${m.getFullYear()}`;
+    } else if (chartRange === '3m') {
+      const endM = new Date(now.getFullYear(), now.getMonth() - off * 3, 1);
+      to = new Date(endM.getFullYear(), endM.getMonth() + 1, 0);
+      from = new Date(endM.getFullYear(), endM.getMonth() - 2, 1);
+      label = `${MON[from.getMonth()]} – ${MON[endM.getMonth()]} ${endM.getFullYear()}`;
+    } else if (chartRange === '1y') {
+      const y = now.getFullYear() - off;
+      from = new Date(y, 0, 1); to = new Date(y, 11, 31);
+      label = String(y);
+    } else { // all
+      from = new Date(accountCreatedDate); to = new Date(today);
+      label = 'All time';
+    }
+    if (to > today) to = new Date(today);            // never show future days
     if (from < accountCreatedDate) from = new Date(accountCreatedDate);
-    return getChartDayRange(from, now);
-  }, [chartRange, accountCreatedDate]); // eslint-disable-line react-hooks/exhaustive-deps
+    return { chartDayRange: getChartDayRange(from, to), chartWindowLabel: label, maxChartOffset: Math.max(0, maxOff) };
+  }, [chartRange, chartOffset, accountCreatedDate]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const goOlder = () => setChartOffset(o => Math.min(maxChartOffset, o + 1));
+  const goNewer = () => setChartOffset(o => Math.max(0, o - 1));
+  // Swipe a chart to page through windows: drag right → older, drag left → newer.
+  const pagerStart = useRef({ x: 0, y: 0 });
+  const chartSwipe = chartRange === 'all' ? {} : {
+    onPointerDown: (e: React.PointerEvent) => { pagerStart.current = { x: e.clientX, y: e.clientY }; },
+    onPointerUp: (e: React.PointerEvent) => {
+      const dx = e.clientX - pagerStart.current.x;
+      const dy = e.clientY - pagerStart.current.y;
+      if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+        if (dx > 0) goOlder(); else goNewer();
+      }
+    },
+  };
+  const renderChartPager = () => chartRange === 'all' ? null : (
+    <div className="chart-pager">
+      <button className="chart-pager-arrow" disabled={chartOffset >= maxChartOffset} onClick={goOlder} aria-label="Earlier period">‹</button>
+      <span className="chart-pager-label">{chartWindowLabel}</span>
+      <button className="chart-pager-arrow" disabled={chartOffset <= 0} onClick={goNewer} aria-label="Later period">›</button>
+    </div>
+  );
 
   // Step chart data — one bar per day for current chartRange
   const stepChartData = useMemo(() =>
@@ -1330,7 +1386,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
       {/* Adaptive Weight Plan engine card moved to the Plan page — Progress is visuals/tracking only */}
 
-      <section className="chart-section chart-section--weight">
+      <section className="chart-section chart-section--weight" {...chartSwipe}>
         <div className="chart-title-row">
           <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#FFFFFF' }} />Weight Trend</h3>
           <div className="chart-range-group">
@@ -1350,6 +1406,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             })}
           </div>
         </div>
+        {renderChartPager()}
         <div className="chart-section-inner">
         <div className="chart-container">
         <ResponsiveContainer width="100%" height={340}>
@@ -1509,7 +1566,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
       {/* ── Habits Chart — completion bars, split out from the weight chart ── */}
       {habits.length > 0 && (
-        <section className="chart-section">
+        <section className="chart-section" {...chartSwipe}>
           <div className="chart-title-row">
             <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#2FD27E' }} />Habits</h3>
             <div className="chart-cog-wrap">
@@ -1554,6 +1611,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               })}
             </div>
           </div>
+          {renderChartPager()}
           <div className="chart-section-inner">
             <div className="chart-container">
               <ResponsiveContainer width="100%" height={200}>
@@ -1576,7 +1634,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       )}
 
       {/* ── Step Chart ── */}
-      <section className="chart-section step-chart-section">
+      <section className="chart-section step-chart-section" {...chartSwipe}>
         <div className="chart-section-inner">
           <div className="chart-container">
             <div className="step-chart-header">
@@ -1587,6 +1645,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                   {effectiveStepTarget !== stepTarget && <span className="step-target-adjusted"> · energy-adj</span>}
                 </span>
               </div>
+              {renderChartPager()}
               {coachingMsg?.advisableSteps != null && coachingMsg.advisableSteps !== effectiveStepTarget && (
                 <span className="step-advisable">
                   Coach suggests <strong>{coachingMsg.advisableSteps.toLocaleString()}</strong> steps today
@@ -1650,7 +1709,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       </section>
 
       {/* ── Estimated Calorie Intake (energy-balance back-calculation) ── */}
-      <section className="chart-section calorie-chart-section">
+      <section className="chart-section calorie-chart-section" {...chartSwipe}>
         <div className="chart-section-inner">
           <div className="chart-container">
             <div className="step-chart-header">
@@ -1658,6 +1717,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#FF8A00' }} />Estimated Intake</h3>
                 {calorieHasData && <span className="chart-title-target">{targetCalories.toLocaleString()} kcal target</span>}
               </div>
+              {renderChartPager()}
               {calorieHasData && (
                 <div className="step-chart-stats">
                   <span className="step-stat"><span className="step-stat-val color-cal">{avgEstIntake.toLocaleString()}</span> avg kcal</span>
@@ -1699,10 +1759,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
       {/* ── Mood trend (1–5 from daily check-ins) ── */}
       {moodHasData && (
-        <section className="chart-section">
+        <section className="chart-section" {...chartSwipe}>
           <div className="chart-title-row" style={{ padding: '4px 16px 0' }}>
             <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#FFB928' }} />Mood</h3>
           </div>
+          {renderChartPager()}
           <ResponsiveContainer width="100%" height={180}>
             <ComposedChart data={moodChartData} margin={{ left: 0, right: 10, top: 10, bottom: 8 }}>
               <defs>
