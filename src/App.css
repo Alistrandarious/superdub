@@ -5573,6 +5573,16 @@ h1, h2, h3, h4, .sora {
   border-color: var(--theme);
   box-shadow: 0 0 0 2px var(--theme-glow);
 }
+/* A failed/done day that happens to be today keeps its own colour — the green
+   "today" ring must not override a red failed (or green done) state. */
+.hcard-day.is-today.failed .hcard-day-circle {
+  border-color: #ff453a;
+  box-shadow: 0 0 0 2px rgba(255,69,58,0.22);
+}
+.hcard-day.is-today.done .hcard-day-circle {
+  border-color: #22C55E;
+  box-shadow: 0 0 0 2px rgba(34,197,94,0.22);
+}
 
 .hcard-day-tick {
   font-size: 0.65rem;
