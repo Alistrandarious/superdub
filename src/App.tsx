@@ -160,6 +160,64 @@ function getChartDayRange(from: Date, to: Date): Array<{ ddmm: string; date: Dat
   return result;
 }
 
+// Drag-to-pan wrapper: the chart physically follows your finger left/right, then
+// settles into the new interval window on release (positive drag = older).
+const DraggableChart: React.FC<{ disabled?: boolean; onPage: (deltaWindows: number) => void; children: React.ReactNode }> = ({ disabled, onPage, children }) => {
+  const [dx, setDx] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const startRef = useRef({ x: 0, y: 0 });
+  const axisRef = useRef<'h' | 'v' | null>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const width = () => wrapRef.current?.clientWidth ?? 1;
+
+  const down = (e: React.PointerEvent) => {
+    if (disabled) return;
+    startRef.current = { x: e.clientX, y: e.clientY };
+    axisRef.current = null;
+    setDragging(true);
+  };
+  const move = (e: React.PointerEvent) => {
+    if (!dragging) return;
+    const mx = e.clientX - startRef.current.x;
+    const my = e.clientY - startRef.current.y;
+    if (axisRef.current === null) {
+      if (Math.abs(mx) < 6 && Math.abs(my) < 6) return;
+      axisRef.current = Math.abs(mx) > Math.abs(my) ? 'h' : 'v';
+    }
+    if (axisRef.current === 'v') return;
+    setDx(mx);
+  };
+  const up = () => {
+    if (!dragging) return;
+    setDragging(false);
+    const w = width();
+    let delta = 0;
+    if (Math.abs(dx) > w * 0.28) {
+      delta = dx > 0 ? Math.max(1, Math.round(dx / w)) : Math.min(-1, Math.round(dx / w));
+    }
+    if (delta !== 0) onPage(delta);
+    setDx(0);
+    axisRef.current = null;
+  };
+
+  return (
+    <div
+      ref={wrapRef}
+      className="chart-drag"
+      style={{ touchAction: 'pan-y', cursor: disabled ? 'default' : 'grab' }}
+      onPointerDown={down}
+      onPointerMove={move}
+      onPointerUp={up}
+      onPointerCancel={up}
+      onPointerLeave={up}
+    >
+      <div style={{ transform: `translateX(${dx}px)`, transition: dragging ? 'none' : 'transform 0.34s cubic-bezier(0.22,1,0.36,1)', willChange: 'transform' }}>
+        {children}
+      </div>
+    </div>
+  );
+};
+
 function getMonthDays(month: number): string[] {
   const mm = String(month + 1).padStart(2, '0');
   return ALL_DAYS.filter(d => d.slice(3) === mm);
@@ -596,18 +654,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
   const goOlder = () => setChartOffset(o => Math.min(maxChartOffset, o + 1));
   const goNewer = () => setChartOffset(o => Math.max(0, o - 1));
-  // Swipe a chart to page through windows: drag right → older, drag left → newer.
-  const pagerStart = useRef({ x: 0, y: 0 });
-  const chartSwipe = chartRange === 'all' ? {} : {
-    onPointerDown: (e: React.PointerEvent) => { pagerStart.current = { x: e.clientX, y: e.clientY }; },
-    onPointerUp: (e: React.PointerEvent) => {
-      const dx = e.clientX - pagerStart.current.x;
-      const dy = e.clientY - pagerStart.current.y;
-      if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.4) {
-        if (dx > 0) goOlder(); else goNewer();
-      }
-    },
-  };
+  // Drag a chart to pan through windows (positive delta = older).
+  const pageBy = (delta: number) => setChartOffset(o => Math.max(0, Math.min(maxChartOffset, o + delta)));
   const renderChartPager = () => chartRange === 'all' ? null : (
     <div className="chart-pager">
       <button className="chart-pager-arrow" disabled={chartOffset >= maxChartOffset} onClick={goOlder} aria-label="Earlier period">‹</button>
@@ -1386,7 +1434,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
       {/* Adaptive Weight Plan engine card moved to the Plan page — Progress is visuals/tracking only */}
 
-      <section className="chart-section chart-section--weight" {...chartSwipe}>
+      <section className="chart-section chart-section--weight">
         <div className="chart-title-row">
           <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#FFFFFF' }} />Weight Trend</h3>
           <div className="chart-range-group">
@@ -1409,6 +1457,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         {renderChartPager()}
         <div className="chart-section-inner">
         <div className="chart-container">
+        <DraggableChart disabled={chartRange === 'all'} onPage={pageBy}>
         <ResponsiveContainer width="100%" height={340}>
           <ComposedChart data={chartData} margin={{ left: 0, right: 10, top: 5, bottom: 8 }}>
             <defs>
@@ -1560,13 +1609,14 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             />
           </ComposedChart>
         </ResponsiveContainer>
+        </DraggableChart>
         </div>
         </div>{/* /chart-section-inner */}
       </section>
 
       {/* ── Habits Chart — completion bars, split out from the weight chart ── */}
       {habits.length > 0 && (
-        <section className="chart-section" {...chartSwipe}>
+        <section className="chart-section">
           <div className="chart-title-row">
             <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#2FD27E' }} />Habits</h3>
             <div className="chart-cog-wrap">
@@ -1614,6 +1664,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           {renderChartPager()}
           <div className="chart-section-inner">
             <div className="chart-container">
+              <DraggableChart disabled={chartRange === 'all'} onPage={pageBy}>
               <ResponsiveContainer width="100%" height={200}>
                 <ComposedChart data={chartData} margin={{ left: 0, right: 10, top: 10, bottom: 8 }}>
                   <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
@@ -1628,13 +1679,14 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                   <Bar dataKey="failed" stackId="habits" fill="#FF5470" name="Failed" radius={[4, 4, 0, 0]} isAnimationActive={false} />
                 </ComposedChart>
               </ResponsiveContainer>
+              </DraggableChart>
             </div>
           </div>
         </section>
       )}
 
       {/* ── Step Chart ── */}
-      <section className="chart-section step-chart-section" {...chartSwipe}>
+      <section className="chart-section step-chart-section">
         <div className="chart-section-inner">
           <div className="chart-container">
             <div className="step-chart-header">
@@ -1662,6 +1714,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               )}
             </div>
             {walkHasData ? (
+              <DraggableChart disabled={chartRange === 'all'} onPage={pageBy}>
               <ResponsiveContainer width="100%" height={180}>
                 <ComposedChart data={stepChartData} margin={{ left: 0, right: 10, top: 8, bottom: 4 }}>
                   <defs>
@@ -1701,6 +1754,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                   </Bar>
                 </ComposedChart>
               </ResponsiveContainer>
+              </DraggableChart>
             ) : (
               <p className="walk-empty" style={{ margin: '16px 0' }}>No step data yet — steps will appear once they sync from your phone or you add them manually.</p>
             )}
@@ -1709,7 +1763,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       </section>
 
       {/* ── Estimated Calorie Intake (energy-balance back-calculation) ── */}
-      <section className="chart-section calorie-chart-section" {...chartSwipe}>
+      <section className="chart-section calorie-chart-section">
         <div className="chart-section-inner">
           <div className="chart-container">
             <div className="step-chart-header">
@@ -1727,6 +1781,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               )}
             </div>
             {calorieHasData ? (
+              <DraggableChart disabled={chartRange === 'all'} onPage={pageBy}>
               <ResponsiveContainer width="100%" height={220}>
                 <ComposedChart data={calorieChartData} margin={{ left: 0, right: 10, top: 10, bottom: 8 }}>
                   <defs>
@@ -1749,6 +1804,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                   <Line type="monotone" dataKey="intake" name="Est. intake" stroke="#FF8A00" strokeWidth={2.5} dot={{ r: 3, fill: '#0E0E14', stroke: '#FF8A00', strokeWidth: 2 }} connectNulls isAnimationActive={false} />
                 </ComposedChart>
               </ResponsiveContainer>
+              </DraggableChart>
             ) : (
               <p className="walk-empty" style={{ margin: '16px 0' }}>Log your weight and steps for a few days and we'll estimate your probable daily calorie intake here.</p>
             )}
@@ -1759,11 +1815,12 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
       {/* ── Mood trend (1–5 from daily check-ins) ── */}
       {moodHasData && (
-        <section className="chart-section" {...chartSwipe}>
+        <section className="chart-section">
           <div className="chart-title-row" style={{ padding: '4px 16px 0' }}>
             <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#FFB928' }} />Mood</h3>
           </div>
           {renderChartPager()}
+          <DraggableChart disabled={chartRange === 'all'} onPage={pageBy}>
           <ResponsiveContainer width="100%" height={180}>
             <ComposedChart data={moodChartData} margin={{ left: 0, right: 10, top: 10, bottom: 8 }}>
               <defs>
@@ -1785,6 +1842,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               <Line type="monotone" dataKey="mood" name="Mood" stroke="#FFB928" strokeWidth={2.5} dot={{ r: 3, fill: '#0E0E14', stroke: '#FFB928', strokeWidth: 2 }} connectNulls isAnimationActive={false} />
             </ComposedChart>
           </ResponsiveContainer>
+          </DraggableChart>
         </section>
       )}
 
