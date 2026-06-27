@@ -5260,23 +5260,21 @@ h1, h2, h3, h4, .sora {
   box-shadow: var(--glass-shadow), 0 0 28px -8px var(--theme-glow);
 }
 
-/* Warning/danger — keep card border green, pulse the icon circle instead */
-@keyframes warn-pulse {
-  0%, 100% { box-shadow: 0 0 0 3px rgba(255,165,0,0.35); }
-  50%       { box-shadow: 0 0 0 5px rgba(255,165,0,0.15); }
+/* Warning/danger — recolour the progress ring, with a soft pulse on the wrap.
+   No more harsh red box-shadow stacked on the button (looked cluttered). */
+@keyframes ring-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
 }
-@keyframes danger-pulse {
-  0%, 100% { box-shadow: 0 0 0 3px rgba(255,69,58,0.5); }
-  50%       { box-shadow: 0 0 0 6px rgba(255,69,58,0.12); }
-}
-.hcard-warning .hcard-icon-btn { animation: warn-pulse 2s ease-in-out infinite; }
-.hcard-danger .hcard-icon-btn  { animation: danger-pulse 1.2s ease-in-out infinite; }
+.hcard-warning .hcard-icon-ring-arc { stroke: #FFB928; filter: drop-shadow(0 0 4px rgba(255,185,40,0.7)); }
+.hcard-warning .hcard-icon-ring-arc { animation: ring-pulse 2s ease-in-out infinite; }
+.hcard-danger .hcard-icon-ring-track { stroke: rgba(255,69,58,0.4); }
+.hcard-danger .hcard-icon-ring-track { animation: ring-pulse 1.4s ease-in-out infinite; }
 
 /* Collapsible card spacing */
 .hcard { padding: 14px 16px; gap: 0; }
-/* Collapsed card — left accent line pulses with cadence colour */
+/* Collapsed card — left accent line in cadence colour */
 .hcard--collapsed { border-left-color: var(--theme); }
-.hcard--collapsed .hcard-icon-btn { box-shadow: 0 0 0 3px var(--theme-glow); }
 
 /* Collapsed summary row — name · streak · XP · chevron */
 .hcard-summary {
@@ -5364,6 +5362,36 @@ h1, h2, h3, h4, .sora {
   gap: 10px;
 }
 
+/* Progress-ring wrapper around the tappable done circle */
+.hcard-icon-wrap {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hcard-icon-ring {
+  position: absolute;
+  inset: 0;
+  transform: rotate(-90deg);
+  pointer-events: none;
+}
+.hcard-icon-ring-track {
+  fill: none;
+  stroke: rgba(255,255,255,0.07);
+  stroke-width: 2.5;
+}
+.hcard-icon-ring-arc {
+  fill: none;
+  stroke: var(--theme);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--theme) 60%, transparent));
+  transition: stroke-dashoffset 0.6s cubic-bezier(0.22,1,0.36,1), stroke 0.3s;
+}
+
 .hcard-icon {
   display: inline-flex;
   align-items: center;
@@ -5378,8 +5406,10 @@ h1, h2, h3, h4, .sora {
   color: var(--theme);
   font-weight: 700;
 }
-/* Tickable done box on the collapsed card */
+/* Tickable done box on the collapsed card — nested inside the progress ring */
 .hcard-icon-btn {
+  width: 28px;
+  height: 28px;
   cursor: pointer;
   padding: 0;
   background: rgba(255,255,255,0.03);
@@ -5476,24 +5506,6 @@ h1, h2, h3, h4, .sora {
   border-radius: var(--r-pill);
   flex-shrink: 0;
   letter-spacing: 0.02em;
-}
-
-/* Always-visible thin progress strip — hidden when expanded (full XP row takes over) */
-.hcard--expanded .hcard-progress-strip { display: none; }
-.hcard-progress-strip {
-  height: 3px;
-  border-radius: 99px;
-  background: rgba(255,255,255,0.06);
-  margin: 6px 0 0;
-  overflow: hidden;
-}
-.hcard-progress-fill {
-  height: 100%;
-  border-radius: 99px;
-  background: var(--theme);
-  box-shadow: 0 0 8px var(--theme);
-  transition: width 0.4s cubic-bezier(0.22,1,0.36,1);
-  min-width: 4px;
 }
 
 /* Earned title line — the rank, styled like a badge the user holds */

@@ -436,15 +436,25 @@ const HabitCard: React.FC<{
       className={`hcard ${expanded ? 'hcard--expanded' : 'hcard--collapsed'} ${hasDanger ? 'hcard-danger' : hasWarning ? 'hcard-warning' : ''}`}
       style={{ '--theme': accent, '--theme-dim': `${accent}66`, '--theme-glow': `${accent}22` } as React.CSSProperties}
     >
-      {/* Summary row — circle · name · [archive] · calendar · chevron */}
+      {/* Summary row — progress-ring circle · name · [archive] · calendar · chevron */}
       <div className="hcard-summary" onClick={() => setExpanded(e => !e)}>
-        <button
-          className={`hcard-icon hcard-icon-btn ${currentDone ? 'done' : ''}`}
-          onClick={e => { e.stopPropagation(); toggleCurrent(); }}
-          aria-label={currentDone ? 'Done — tap to clear' : 'Mark done'}
-        >
-          {currentDone ? <CheckSVG size={14} strokeWidth={2.5} /> : <span className="hcard-icon-empty-dot" />}
-        </button>
+        <div className="hcard-icon-wrap">
+          <svg className="hcard-icon-ring" viewBox="0 0 40 40" width="40" height="40" aria-hidden>
+            <circle className="hcard-icon-ring-track" cx="20" cy="20" r="18" />
+            <circle
+              className="hcard-icon-ring-arc"
+              cx="20" cy="20" r="18"
+              style={{ strokeDasharray: 113.1, strokeDashoffset: 113.1 * (1 - stats.gateProgress) }}
+            />
+          </svg>
+          <button
+            className={`hcard-icon hcard-icon-btn ${currentDone ? 'done' : ''}`}
+            onClick={e => { e.stopPropagation(); toggleCurrent(); }}
+            aria-label={currentDone ? 'Done — tap to clear' : 'Mark done'}
+          >
+            {currentDone ? <CheckSVG size={14} strokeWidth={2.5} /> : <span className="hcard-icon-empty-dot" />}
+          </button>
+        </div>
         <span className="hcard-name">{habit}</span>
         {stats.streak > 0 && !expanded && (
           <span className="hcard-streak-mini">🔥 {stats.streak}d</span>
@@ -468,10 +478,6 @@ const HabitCard: React.FC<{
         <span className={`hcard-chevron ${expanded ? 'open' : ''}`}>▾</span>
       </div>
 
-      {/* Thin progress bar — always visible, shows gate progress at a glance */}
-      <div className="hcard-progress-strip">
-        <div className="hcard-progress-fill" style={{ width: `${stats.gateProgress * 100}%` }} />
-      </div>
 
       <div className="hcard-body-wrap">
       <div className="hcard-body">
