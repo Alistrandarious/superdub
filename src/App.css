@@ -5469,6 +5469,35 @@ h1, h2, h3, h4, .sora {
 }
 .hcard-archive-icon.visible:hover { color: rgba(255,69,58,0.7); background: rgba(255,69,58,0.08); }
 
+/* Streak badge in collapsed summary */
+.hcard-streak-mini {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--theme);
+  opacity: 0.75;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+
+/* Always-visible thin progress strip — hidden when expanded (full XP row takes over) */
+.hcard--expanded .hcard-progress-strip { display: none; }
+.hcard-progress-strip {
+  height: 3px;
+  border-radius: 99px;
+  background: rgba(255,255,255,0.06);
+  margin: 6px 0 0;
+  overflow: hidden;
+}
+.hcard-progress-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: var(--theme);
+  box-shadow: 0 0 8px var(--theme);
+  transition: width 0.4s cubic-bezier(0.22,1,0.36,1);
+  min-width: 4px;
+}
+
 /* Rank + streak row */
 .hcard-rank-row {
   display: flex; align-items: baseline; gap: 8px;
