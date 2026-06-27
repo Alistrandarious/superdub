@@ -437,7 +437,7 @@ const HabitCard: React.FC<{
           onClick={e => { e.stopPropagation(); toggleCurrent(); }}
           aria-label={currentDone ? 'Done — tap to clear' : 'Mark done'}
         >
-          {currentDone ? '✓' : ''}
+          {currentDone ? '✓' : <span className="hcard-icon-initial">{habit[0].toUpperCase()}</span>}
         </button>
         <span className="hcard-name">{habit}</span>
         <span className={`hcard-chevron ${expanded ? 'open' : ''}`}>▾</span>
@@ -471,16 +471,8 @@ const HabitCard: React.FC<{
 
       <div className="hcard-rank" style={{ color: rank.color }}>{rank.title}</div>
 
-      {hasDanger && (
-        <div className="hcard-alert danger">
-          🔴 2 consecutive misses — streak reset. Start fresh today!
-        </div>
-      )}
-      {hasWarning && (
-        <div className="hcard-alert warning">
-          ⚠️ You missed yesterday — don't break your streak!
-        </div>
-      )}
+      {hasDanger && <p className="hcard-risk-chip danger">streak reset — start fresh today</p>}
+      {hasWarning && <p className="hcard-risk-chip warning">missed yesterday — keep going</p>}
 
       {isDaily ? (
         <div className="hcard-week">
@@ -525,7 +517,7 @@ const HabitCard: React.FC<{
           className={`hcard-today-btn ${todayState === 'done' ? 'done' : ''} ${todayState === 'failed' ? 'failed' : ''}`}
           onClick={() => onToggleDay(habit, today, cycleState(todayState))}
         >
-          {todayState === 'done' ? '✓ Done today' : todayState === 'failed' ? '✗ Failed today — tap to clear' : '+ Mark done today'}
+          {todayState === 'done' ? '✓ Done today' : todayState === 'failed' ? 'Clear failed' : '+ Mark done today'}
         </button>
       ) : (
         currentUnit && (

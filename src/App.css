@@ -5381,6 +5381,14 @@ h1, h2, h3, h4, .sora {
   border-color: var(--theme);
   color: #07120B;
 }
+.hcard-icon-initial {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--theme);
+  opacity: 0.55;
+  font-family: 'Sora', sans-serif;
+  line-height: 1;
+}
 
 .hcard-name {
   flex: 1;
@@ -5561,25 +5569,17 @@ h1, h2, h3, h4, .sora {
 }
 
 /* Alerts */
-.hcard-alert {
-  font-size: 0.75rem;
-  padding: 8px 12px;
-  border-radius: 10px;
-  font-family: inherit;
-  font-weight: 500;
+/* Compact inline risk indicator — replaces the old full-width alert box */
+.hcard-risk-chip {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 600;
+  font-family: 'Sora', sans-serif;
+  letter-spacing: 0.03em;
+  text-transform: lowercase;
 }
-
-.hcard-alert.warning {
-  background: rgba(255,165,0,0.1);
-  border: 1px solid rgba(255,165,0,0.3);
-  color: #FFD233;
-}
-
-.hcard-alert.danger {
-  background: rgba(255,69,58,0.1);
-  border: 1px solid rgba(255,69,58,0.3);
-  color: #ff453a;
-}
+.hcard-risk-chip.warning { color: rgba(255,185,40,0.75); }
+.hcard-risk-chip.danger  { color: rgba(255,69,58,0.75); }
 
 /* Week circles */
 .hcard-week {
