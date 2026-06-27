@@ -381,6 +381,12 @@ const MiniMonthHeatmap: React.FC<{
   );
 };
 
+const CheckSVG: React.FC<{ size?: number; strokeWidth?: number }> = ({ size = 14, strokeWidth = 2.8 }) => (
+  <svg viewBox="0 0 14 14" width={size} height={size} fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="2.5,7.5 5.5,10.5 11.5,4" />
+  </svg>
+);
+
 // Full habit card — XP bar · gate dots · weekly M-T-W circles · big done button
 const HabitCard: React.FC<{
   habit: string;
@@ -437,7 +443,7 @@ const HabitCard: React.FC<{
           onClick={e => { e.stopPropagation(); toggleCurrent(); }}
           aria-label={currentDone ? 'Done — tap to clear' : 'Mark done'}
         >
-          {currentDone ? '✓' : <span className="hcard-icon-initial">{habit[0].toUpperCase()}</span>}
+          {currentDone ? <CheckSVG size={14} strokeWidth={3} /> : <span className="hcard-icon-empty-dot" />}
         </button>
         <span className="hcard-name">{habit}</span>
         <span className={`hcard-chevron ${expanded ? 'open' : ''}`}>▾</span>
@@ -486,7 +492,7 @@ const HabitCard: React.FC<{
                   onClick={() => !isFuture && onToggleDay(habit, key, cycleState(state))}
                   aria-label={`${label}: ${state ?? 'blank'}`}
                 >
-                  {state === 'done' && <span className="hcard-day-tick">✓</span>}
+                  {state === 'done' && <span className="hcard-day-tick"><CheckSVG size={13} strokeWidth={3} /></span>}
                   {state === 'failed' && <span className="hcard-day-tick hcard-day-fail">✗</span>}
                 </button>
                 <span className="hcard-day-label">{label}</span>
@@ -504,7 +510,7 @@ const HabitCard: React.FC<{
                 onClick={() => !u.isFuture && toggleUnit(u)}
                 aria-label={`${u.label}: ${u.done ? 'done' : 'blank'}`}
               >
-                {u.done && <span className="hcard-day-tick">✓</span>}
+                {u.done && <span className="hcard-day-tick"><CheckSVG size={13} strokeWidth={3} /></span>}
               </button>
               <span className="hcard-day-label">{u.label}</span>
             </div>
@@ -517,7 +523,7 @@ const HabitCard: React.FC<{
           className={`hcard-today-btn ${todayState === 'done' ? 'done' : ''} ${todayState === 'failed' ? 'failed' : ''}`}
           onClick={() => onToggleDay(habit, today, cycleState(todayState))}
         >
-          {todayState === 'done' ? '✓ Done today' : todayState === 'failed' ? 'Clear failed' : '+ Mark done today'}
+          {todayState === 'done' ? <><CheckSVG size={13} strokeWidth={3} /> Done today</> : todayState === 'failed' ? 'Clear failed' : '+ Mark done today'}
         </button>
       ) : (
         currentUnit && (
@@ -1135,7 +1141,7 @@ const Habits: React.FC = () => {
                   role="img"
                   aria-label={`${label}: ${state ?? 'not logged'}`}
                 >
-                  {state === 'done' && <span className="hb-week-tick">✓</span>}
+                  {state === 'done' && <span className="hb-week-tick"><CheckSVG size={16} strokeWidth={3} /></span>}
                   {state === 'failed' && <span className="hb-week-tick fail">✕</span>}
                 </div>
               </div>

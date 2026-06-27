@@ -4424,10 +4424,11 @@ h1, h2, h3, h4, .sora {
   cursor: default;
 }
 .hb-week-tick {
-  font-size: 1.05rem;
-  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: rgba(7,18,11,0.9);
-  text-shadow: 0 1px 0 rgba(255,255,255,0.2);
+  filter: drop-shadow(0 1px 0 rgba(255,255,255,0.2));
 }
 .hb-week-tick.fail { color: #FF5470; }
 
@@ -5381,13 +5382,14 @@ h1, h2, h3, h4, .sora {
   border-color: var(--theme);
   color: #07120B;
 }
-.hcard-icon-initial {
-  font-size: 0.85rem;
-  font-weight: 800;
-  color: var(--theme);
-  opacity: 0.55;
-  font-family: 'Sora', sans-serif;
-  line-height: 1;
+/* Undone habit circle — small dot so it never looks forgotten */
+.hcard-icon-empty-dot {
+  display: block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--theme);
+  opacity: 0.3;
 }
 
 .hcard-name {
@@ -5672,10 +5674,10 @@ h1, h2, h3, h4, .sora {
 }
 
 .hcard-day-tick {
-  font-size: 0.65rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--theme);
-  font-weight: 700;
-  line-height: 1;
 }
 
 .hcard-day-label {
