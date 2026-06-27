@@ -95,14 +95,14 @@ function buildAllDays(): string[] {
 }
 const ALL_DAYS = buildAllDays();
 
-const XP_GATES: [number, number][] = [
-  [0, 10], [7, 15], [14, 20], [30, 25], [60, 30], [100, 35], [200, 40], [365, 50],
-];
-const GATE_LABELS = ['G0', 'G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'MAX'];
-
-// Persistent habit level — total days logged crossing each tier bumps the level.
-// Unlike streak gates, these never reset when you miss a day. LV1 = just started.
-const HABIT_LEVEL_TIERS = [0, 7, 14, 30, 60, 100, 200, 365];
+// ── Single progression system: LEVEL ────────────────────────────────────────
+// A habit's level is driven by TOTAL days logged (persistent — never resets when
+// you miss). Each level pays a higher XP-per-completion rate: that raise IS the
+// bonus for levelling up. LV1 = just started … LV8 = maxed (a year of days).
+const LEVEL_TIERS = [0, 7, 14, 30, 60, 100, 200, 365]; // total days to reach each level
+const LEVEL_RATES = [10, 15, 20, 25, 30, 35, 40, 50];  // XP per completion at each level
+const MAX_LEVEL = LEVEL_TIERS.length;
+const levelFromDays = (days: number) => LEVEL_TIERS.filter(t => days >= t).length; // 1..8
 
 
 function todayKey(): string {
@@ -164,10 +164,13 @@ interface HabitStats {
   streak: number;
   totalDays: number;
   totalXP: number;
-  currentGateIndex: number;
-  xpPerDay: number;
-  nextGateAt: number;
-  gateProgress: number;
+  level: number;          // 1..MAX_LEVEL
+  xpPerDay: number;       // XP per completion at the current level
+  nextLevelAt: number;    // total days required to reach the next level
+  daysToNext: number;     // days remaining to next level
+  levelProgress: number;  // 0..1 within the current level band
+  nextRate: number;       // XP/day at the next level (the bonus you unlock)
+  maxed: boolean;
   misses: number;
 }
 
@@ -182,7 +185,7 @@ function computeHabitStats(
 ): HabitStats {
   const todayIdx = ALL_DAYS.indexOf(today);
   if (todayIdx < 0) {
-    return { streak: 0, totalDays: 0, totalXP: 0, currentGateIndex: 0, xpPerDay: 10, nextGateAt: 7, gateProgress: 0, misses: 0 };
+    return { streak: 0, totalDays: 0, totalXP: 0, level: 1, xpPerDay: LEVEL_RATES[0], nextLevelAt: LEVEL_TIERS[1], daysToNext: LEVEL_TIERS[1], levelProgress: 0, nextRate: LEVEL_RATES[1], maxed: false, misses: 0 };
   }
 
   let startIdx = 0;
@@ -207,9 +210,9 @@ function computeHabitStats(
     if (state === 'done') {
       rollingStreak++;
       totalDays++;
-      const snap = rollingStreak;
-      const gateIdx = XP_GATES.filter(([t]) => t > 0 && snap >= t).length;
-      totalXP += XP_GATES[Math.min(gateIdx, XP_GATES.length - 1)][1];
+      // XP for this completion is paid at the rate of the level you'd reached.
+      const lvl = levelFromDays(totalDays);
+      totalXP += LEVEL_RATES[Math.min(lvl - 1, LEVEL_RATES.length - 1)];
     } else if (i < todayIdx) {
       rollingStreak = 0;
     }
@@ -244,16 +247,18 @@ function computeHabitStats(
     }
   }
 
-  const gateIdx = XP_GATES.filter(([t]) => t > 0 && streak >= t).length;
-  const currentGateIndex = gateIdx;
-  const xpPerDay = XP_GATES[Math.min(gateIdx, XP_GATES.length - 1)][1];
-  const currentGateThreshold = XP_GATES[Math.min(gateIdx, XP_GATES.length - 1)][0];
-  const nextGateIdx = Math.min(gateIdx + 1, XP_GATES.length - 1);
-  const nextGateAt = XP_GATES[nextGateIdx][0];
-  const range = nextGateAt - currentGateThreshold;
-  const gateProgress = range > 0 ? Math.min((streak - currentGateThreshold) / range, 1) : 1;
+  // ── Level (persistent, total-days driven) ──
+  const level = levelFromDays(totalDays);
+  const maxed = level >= MAX_LEVEL;
+  const xpPerDay = LEVEL_RATES[Math.min(level - 1, LEVEL_RATES.length - 1)];
+  const curThreshold = LEVEL_TIERS[level - 1];
+  const nextLevelAt = maxed ? LEVEL_TIERS[MAX_LEVEL - 1] : LEVEL_TIERS[level];
+  const daysToNext = Math.max(0, nextLevelAt - totalDays);
+  const band = nextLevelAt - curThreshold;
+  const levelProgress = maxed ? 1 : (band > 0 ? Math.min((totalDays - curThreshold) / band, 1) : 1);
+  const nextRate = maxed ? xpPerDay : LEVEL_RATES[level];
 
-  return { streak, totalDays, totalXP, currentGateIndex, xpPerDay, nextGateAt, gateProgress, misses };
+  return { streak, totalDays, totalXP, level, xpPerDay, nextLevelAt, daysToNext, levelProgress, nextRate, maxed, misses };
 }
 
 /* ── featured habits ─────────────────────────────────────── */
@@ -430,9 +435,6 @@ const HabitCard: React.FC<{
     else if (currentUnit) toggleUnit(currentUnit);
   };
 
-  // Persistent habit level — grows with total days logged, never resets on a miss.
-  const habitLevel = HABIT_LEVEL_TIERS.filter(t => stats.totalDays >= t).length;
-
   // Days since the habit was last marked done (null = never done). Used to show
   // "how long you've been off it" when the streak is broken.
   const daysSinceDone = (() => {
@@ -460,8 +462,8 @@ const HabitCard: React.FC<{
         </button>
         <span className="hcard-name">{habit}</span>
         {!expanded && (
-          <span className="hcard-level-badge" title={`Level ${habitLevel} — ${stats.totalDays} days logged`}>
-            LV{habitLevel}
+          <span className="hcard-level-badge" title={`Level ${stats.level} — ${stats.totalDays} days logged · +${stats.xpPerDay} XP per day`}>
+            LV{stats.level}
           </span>
         )}
         {!expanded && (
@@ -505,7 +507,7 @@ const HabitCard: React.FC<{
       {/* Stat tiles */}
       <div className="hcard-stats">
         <div className="hcard-stat">
-          <span className="hcard-stat-value">LV{habitLevel}</span>
+          <span className="hcard-stat-value">LV{stats.level}</span>
           <span className="hcard-stat-label">level</span>
         </div>
         <div className="hcard-stat">
@@ -520,15 +522,15 @@ const HabitCard: React.FC<{
         </div>
       </div>
 
-      {/* Progress toward next gate */}
+      {/* Progress toward next level */}
       <div className="hcard-gate-progress">
         <div className="hcard-exp-bar">
-          <div className="hcard-exp-fill" style={{ width: `${stats.gateProgress * 100}%` }} />
+          <div className="hcard-exp-fill" style={{ width: `${stats.levelProgress * 100}%` }} />
         </div>
         <span className="hcard-gate-caption">
-          {stats.currentGateIndex >= XP_GATES.length - 1
-            ? 'Max gate reached 🏆'
-            : `${Math.max(0, stats.nextGateAt - stats.streak)} ${Math.max(0, stats.nextGateAt - stats.streak) === 1 ? 'day' : 'days'} to next gate`}
+          {stats.maxed
+            ? `Max level — earning +${stats.xpPerDay} XP/day 🏆`
+            : <>{stats.daysToNext} {stats.daysToNext === 1 ? 'day' : 'days'} to <strong>LV{stats.level + 1}</strong> · unlocks <strong style={{ color: accent }}>+{stats.nextRate} XP/day</strong></>}
         </span>
       </div>
 
