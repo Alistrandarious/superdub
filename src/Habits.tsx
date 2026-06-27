@@ -459,30 +459,13 @@ const HabitCard: React.FC<{
       <div className="hcard-body-wrap">
       <div className="hcard-body">
 
-      <div className="hcard-exp-area">
-        <div className="hcard-exp-bar-wrap">
-          <div className="hcard-exp-bar">
-            <div className="hcard-exp-fill" style={{ width: `${stats.gateProgress * 100}%` }} />
-          </div>
-          <div className="hcard-gate-dots">
-            {gateDots.map((g, i) => (
-              <div key={i} className={`hcard-gate-dot ${g.reached ? 'reached' : ''}`} title={`${g.label}: ${XP_GATES[i][0]}d streak`} />
-            ))}
-          </div>
+      {/* Compact XP row */}
+      <div className="hcard-xp-row">
+        <div className="hcard-exp-bar">
+          <div className="hcard-exp-fill" style={{ width: `${stats.gateProgress * 100}%` }} />
         </div>
-        <div className="hcard-xp-info">
-          <span className="hcard-xp-total">{stats.totalXP} XP</span>
-          <span className="hcard-xp-rate">+{stats.xpPerDay} XP/day</span>
-        </div>
+        <span className="hcard-xp-total">{stats.totalXP} XP</span>
       </div>
-
-      {stats.currentGateIndex < XP_GATES.length - 1 && (
-        <p className="hcard-gate-label">
-          {GATE_LABELS[stats.currentGateIndex]} → next gate at {stats.nextGateAt}d streak
-        </p>
-      )}
-
-      <div className="hcard-rank" style={{ color: rank.color }}>{rank.title}</div>
 
       {hasDanger && <p className="hcard-risk-chip danger">streak reset — start fresh today</p>}
       {hasWarning && <p className="hcard-risk-chip warning">missed yesterday — keep going</p>}
@@ -499,7 +482,7 @@ const HabitCard: React.FC<{
                   onClick={() => !isFuture && onToggleDay(habit, key, cycleState(state))}
                   aria-label={`${label}: ${state ?? 'blank'}`}
                 >
-                  {state === 'done' && <span className="hcard-day-tick"><CheckSVG size={13} strokeWidth={3} /></span>}
+                  {state === 'done' && <span className="hcard-day-tick"><CheckSVG size={15} strokeWidth={2} /></span>}
                   {state === 'failed' && <span className="hcard-day-tick hcard-day-fail">✗</span>}
                 </button>
                 <span className="hcard-day-label">{label}</span>
@@ -517,7 +500,7 @@ const HabitCard: React.FC<{
                 onClick={() => !u.isFuture && toggleUnit(u)}
                 aria-label={`${u.label}: ${u.done ? 'done' : 'blank'}`}
               >
-                {u.done && <span className="hcard-day-tick"><CheckSVG size={13} strokeWidth={3} /></span>}
+                {u.done && <span className="hcard-day-tick"><CheckSVG size={15} strokeWidth={2} /></span>}
               </button>
               <span className="hcard-day-label">{u.label}</span>
             </div>
@@ -525,35 +508,12 @@ const HabitCard: React.FC<{
         </div>
       )}
 
-      {isDaily ? (
-        todayState !== 'failed' && (
-          <button
-            className={`hcard-today-btn ${todayState === 'done' ? 'done' : ''}`}
-            onClick={() => onToggleDay(habit, today, cycleState(todayState))}
-          >
-            {todayState === 'done' ? <><CheckSVG size={13} strokeWidth={3} /> Done today</> : '+ Mark done today'}
-          </button>
-        )
-      ) : (
-        currentUnit && (
-          <button
-            className={`hcard-today-btn ${currentUnit.done ? 'done' : ''}`}
-            style={currentUnit.done ? { ['--cad' as any]: accent } : undefined}
-            onClick={() => toggleUnit(currentUnit)}
-          >
-            {currentUnit.done ? <><CheckSVG size={13} strokeWidth={3} /> Done {CADENCE_META[cadence].period}</> : `+ Mark done ${CADENCE_META[cadence].period}`}
-          </button>
-        )
-      )}
-
-      <div className="hcard-actions-row">
-        <button
-          className="hcard-archive-btn"
-          onClick={e => { e.stopPropagation(); onRequestRemove(habit); }}
-        >
-          Archive
-        </button>
-      </div>
+      <button
+        className="hcard-archive-link"
+        onClick={e => { e.stopPropagation(); onRequestRemove(habit); }}
+      >
+        Archive
+      </button>
 
       {histOpen && (
         <div className="hcard-history">
@@ -1144,7 +1104,7 @@ const Habits: React.FC = () => {
                   role="img"
                   aria-label={`${label}: ${state ?? 'not logged'}`}
                 >
-                  {state === 'done' && <span className="hb-week-tick"><CheckSVG size={16} strokeWidth={3} /></span>}
+                  {state === 'done' && <span className="hb-week-tick"><CheckSVG size={18} strokeWidth={2} /></span>}
                   {state === 'failed' && <span className="hb-week-tick fail">✕</span>}
                 </div>
               </div>
