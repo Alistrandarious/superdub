@@ -100,6 +100,10 @@ const XP_GATES: [number, number][] = [
 ];
 const GATE_LABELS = ['G0', 'G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'MAX'];
 
+// Persistent habit level — total days logged crossing each tier bumps the level.
+// Unlike streak gates, these never reset when you miss a day. LV1 = just started.
+const HABIT_LEVEL_TIERS = [0, 7, 14, 30, 60, 100, 200, 365];
+
 
 function todayKey(): string {
   const n = new Date();
@@ -426,38 +430,48 @@ const HabitCard: React.FC<{
     else if (currentUnit) toggleUnit(currentUnit);
   };
 
-  const gateDots = XP_GATES.map(([t], i) => ({
-    label: GATE_LABELS[i],
-    reached: stats.streak >= t || (t === 0),
-  }));
+  // Persistent habit level — grows with total days logged, never resets on a miss.
+  const habitLevel = HABIT_LEVEL_TIERS.filter(t => stats.totalDays >= t).length;
+
+  // Days since the habit was last marked done (null = never done). Used to show
+  // "how long you've been off it" when the streak is broken.
+  const daysSinceDone = (() => {
+    const todayIdx = ALL_DAYS.indexOf(today);
+    if (todayIdx < 0) return null;
+    for (let i = todayIdx; i >= 0; i--) {
+      if (ht[ALL_DAYS[i]]?.[habit] === 'done') return todayIdx - i;
+    }
+    return null;
+  })();
 
   return (
     <div
       className={`hcard ${expanded ? 'hcard--expanded' : 'hcard--collapsed'} ${hasDanger ? 'hcard-danger' : hasWarning ? 'hcard-warning' : ''}`}
       style={{ '--theme': accent, '--theme-dim': `${accent}66`, '--theme-glow': `${accent}22` } as React.CSSProperties}
     >
-      {/* Summary row — progress-ring circle · name · [archive] · calendar · chevron */}
+      {/* Summary row — circle · name · level · streak · calendar · chevron */}
       <div className="hcard-summary" onClick={() => setExpanded(e => !e)}>
-        <div className="hcard-icon-wrap">
-          <svg className="hcard-icon-ring" viewBox="0 0 40 40" width="40" height="40" aria-hidden>
-            <circle className="hcard-icon-ring-track" cx="20" cy="20" r="18" />
-            <circle
-              className="hcard-icon-ring-arc"
-              cx="20" cy="20" r="18"
-              style={{ strokeDasharray: 113.1, strokeDashoffset: 113.1 * (1 - stats.gateProgress) }}
-            />
-          </svg>
-          <button
-            className={`hcard-icon hcard-icon-btn ${currentDone ? 'done' : ''}`}
-            onClick={e => { e.stopPropagation(); toggleCurrent(); }}
-            aria-label={currentDone ? 'Done — tap to clear' : 'Mark done'}
-          >
-            {currentDone ? <CheckSVG size={14} strokeWidth={2.5} /> : <span className="hcard-icon-empty-dot" />}
-          </button>
-        </div>
+        <button
+          className={`hcard-icon hcard-icon-btn ${currentDone ? 'done' : ''}`}
+          onClick={e => { e.stopPropagation(); toggleCurrent(); }}
+          aria-label={currentDone ? 'Done — tap to clear' : 'Mark done'}
+        >
+          {currentDone ? <CheckSVG size={14} strokeWidth={2.5} /> : <span className="hcard-icon-empty-dot" />}
+        </button>
         <span className="hcard-name">{habit}</span>
-        {stats.streak > 0 && !expanded && (
-          <span className="hcard-streak-mini">🔥 {stats.streak}d</span>
+        {!expanded && (
+          <span className="hcard-level-badge" title={`Level ${habitLevel} — ${stats.totalDays} days logged`}>
+            LV{habitLevel}
+          </span>
+        )}
+        {!expanded && (
+          stats.streak > 0 ? (
+            <span className="hcard-streak-mini on"><span className="hsm-ico">🔥</span>{stats.streak}d</span>
+          ) : daysSinceDone === null ? (
+            <span className="hcard-streak-mini new">new</span>
+          ) : (
+            <span className="hcard-streak-mini off"><span className="hsm-ico">💤</span>{daysSinceDone}d</span>
+          )
         )}
         {/* Archive icon — always rendered so layout never shifts; only interactive when expanded */}
         <button
@@ -491,16 +505,18 @@ const HabitCard: React.FC<{
       {/* Stat tiles */}
       <div className="hcard-stats">
         <div className="hcard-stat">
-          <span className="hcard-stat-value">{stats.streak}</span>
-          <span className="hcard-stat-label">day streak</span>
+          <span className="hcard-stat-value">LV{habitLevel}</span>
+          <span className="hcard-stat-label">level</span>
+        </div>
+        <div className="hcard-stat">
+          <span className="hcard-stat-value">
+            {stats.streak > 0 ? stats.streak : daysSinceDone ?? 0}
+          </span>
+          <span className="hcard-stat-label">{stats.streak > 0 ? 'day streak' : 'days off'}</span>
         </div>
         <div className="hcard-stat">
           <span className="hcard-stat-value">{stats.totalXP}</span>
           <span className="hcard-stat-label">total xp</span>
-        </div>
-        <div className="hcard-stat">
-          <span className="hcard-stat-value">+{stats.xpPerDay}</span>
-          <span className="hcard-stat-label">xp / day</span>
         </div>
       </div>
 

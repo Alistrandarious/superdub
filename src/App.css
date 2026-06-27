@@ -5260,17 +5260,6 @@ h1, h2, h3, h4, .sora {
   box-shadow: var(--glass-shadow), 0 0 28px -8px var(--theme-glow);
 }
 
-/* Warning/danger — recolour the progress ring, with a soft pulse on the wrap.
-   No more harsh red box-shadow stacked on the button (looked cluttered). */
-@keyframes ring-pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.45; }
-}
-.hcard-warning .hcard-icon-ring-arc { stroke: #FFB928; filter: drop-shadow(0 0 4px rgba(255,185,40,0.7)); }
-.hcard-warning .hcard-icon-ring-arc { animation: ring-pulse 2s ease-in-out infinite; }
-.hcard-danger .hcard-icon-ring-track { stroke: rgba(255,69,58,0.4); }
-.hcard-danger .hcard-icon-ring-track { animation: ring-pulse 1.4s ease-in-out infinite; }
-
 /* Collapsible card spacing */
 .hcard { padding: 14px 16px; gap: 0; }
 /* Collapsed card — left accent line in cadence colour */
@@ -5362,36 +5351,6 @@ h1, h2, h3, h4, .sora {
   gap: 10px;
 }
 
-/* Progress-ring wrapper around the tappable done circle */
-.hcard-icon-wrap {
-  position: relative;
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.hcard-icon-ring {
-  position: absolute;
-  inset: 0;
-  transform: rotate(-90deg);
-  pointer-events: none;
-}
-.hcard-icon-ring-track {
-  fill: none;
-  stroke: rgba(255,255,255,0.07);
-  stroke-width: 2.5;
-}
-.hcard-icon-ring-arc {
-  fill: none;
-  stroke: var(--theme);
-  stroke-width: 2.5;
-  stroke-linecap: round;
-  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--theme) 60%, transparent));
-  transition: stroke-dashoffset 0.6s cubic-bezier(0.22,1,0.36,1), stroke 0.3s;
-}
-
 .hcard-icon {
   display: inline-flex;
   align-items: center;
@@ -5406,15 +5365,24 @@ h1, h2, h3, h4, .sora {
   color: var(--theme);
   font-weight: 700;
 }
-/* Tickable done box on the collapsed card — nested inside the progress ring */
+/* Tickable done box on the collapsed card */
 .hcard-icon-btn {
-  width: 28px;
-  height: 28px;
   cursor: pointer;
   padding: 0;
   background: rgba(255,255,255,0.03);
   transition: background 0.15s, border-color 0.15s, transform 0.1s;
 }
+/* Subtle status pulse on the circle when a streak is at risk / broken */
+@keyframes icon-pulse-warn {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(255,185,40,0.4); }
+  50%       { box-shadow: 0 0 0 4px rgba(255,185,40,0.12); }
+}
+@keyframes icon-pulse-danger {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(255,69,58,0.5); }
+  50%       { box-shadow: 0 0 0 5px rgba(255,69,58,0.12); }
+}
+.hcard-warning .hcard-icon-btn { animation: icon-pulse-warn 2.2s ease-in-out infinite; }
+.hcard-danger  .hcard-icon-btn { animation: icon-pulse-danger 1.4s ease-in-out infinite; }
 .hcard-icon-btn:active { transform: scale(0.9); }
 .hcard-icon-btn.done {
   background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--theme) 80%, white), var(--theme));
@@ -5473,26 +5441,36 @@ h1, h2, h3, h4, .sora {
 .hcard-remove--inline { display: none; }
 
 
-/* Archive icon in summary row — fades in on expand, never shifts layout */
+/* Archive icon in summary row — only present when expanded */
 .hcard-archive-icon {
-  display: inline-flex; align-items: center; justify-content: center;
+  display: none;
+  align-items: center; justify-content: center;
   width: 26px; height: 26px;
   padding: 0; border: none; border-radius: 8px;
   background: transparent;
-  color: rgba(255,255,255,0.0);
-  cursor: default;
-  flex-shrink: 0;
-  transition: color 0.2s, background 0.2s;
-  pointer-events: none;
-}
-.hcard-archive-icon.visible {
   color: rgba(255,255,255,0.25);
   cursor: pointer;
-  pointer-events: auto;
+  flex-shrink: 0;
+  transition: color 0.2s, background 0.2s;
 }
+.hcard-archive-icon.visible { display: inline-flex; }
 .hcard-archive-icon.visible:hover { color: rgba(255,69,58,0.7); background: rgba(255,69,58,0.08); }
 
-/* Streak badge in collapsed summary */
+/* Level badge in collapsed summary — persistent, total-days driven */
+.hcard-level-badge {
+  flex-shrink: 0;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--theme);
+  background: color-mix(in srgb, var(--theme) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--theme) 40%, transparent);
+  padding: 2px 7px;
+  border-radius: var(--r-pill);
+}
+
+/* Streak / lapse badge in collapsed summary */
 .hcard-streak-mini {
   display: inline-flex;
   align-items: center;
@@ -5500,12 +5478,29 @@ h1, h2, h3, h4, .sora {
   font-family: 'Space Mono', monospace;
   font-size: 0.68rem;
   font-weight: 700;
-  color: var(--theme);
-  background: color-mix(in srgb, var(--theme) 12%, transparent);
   padding: 2px 8px;
   border-radius: var(--r-pill);
   flex-shrink: 0;
   letter-spacing: 0.02em;
+}
+.hcard-streak-mini .hsm-ico { font-size: 0.72rem; line-height: 1; }
+/* On a streak — warm and alive */
+.hcard-streak-mini.on {
+  color: #FF8A3C;
+  background: rgba(255,138,60,0.12);
+}
+/* Streak broken — cool, muted, shows days off */
+.hcard-streak-mini.off {
+  color: rgba(120,160,255,0.85);
+  background: rgba(120,160,255,0.1);
+}
+/* Brand new habit, never completed */
+.hcard-streak-mini.new {
+  color: rgba(255,255,255,0.4);
+  background: rgba(255,255,255,0.06);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 0.6rem;
 }
 
 /* Earned title line — the rank, styled like a badge the user holds */
