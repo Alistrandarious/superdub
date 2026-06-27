@@ -66,7 +66,7 @@ const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number; 
   return (
     <div className={`cadx${compact ? ' cadx--compact' : ''}`}>
       <div className="cadx-header">
-        {/* The four colour dots — tight + small, tappable to switch level. */}
+        {/* Dots + active label so users know other cadences exist */}
         <div className="cadx-dotrow">
           {panels.map((p, i) => (
             <button
@@ -77,6 +77,9 @@ const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number; 
               aria-label={p.label}
             />
           ))}
+          <span className="cadx-active-label" style={{ color: panels[index].color }}>
+            {panels[index].label}
+          </span>
         </div>
       </div>
 

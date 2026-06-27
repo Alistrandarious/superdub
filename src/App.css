@@ -4369,7 +4369,8 @@ h1, h2, h3, h4, .sora {
   display: flex;
   justify-content: space-between;
   gap: 6px;
-  padding: 10px 18px 0;
+  padding: 10px 18px 10px;
+  overflow: visible;
 }
 .hb-week-col {
   display: flex;
@@ -4389,19 +4390,23 @@ h1, h2, h3, h4, .sora {
   max-width: 42px;
   aspect-ratio: 1;
   border-radius: 50%;
-  background: rgba(255,255,255,0.035);
-  border: 1.5px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  border: 1.5px solid rgba(255,255,255,0.1);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: default;
-  transition: background 0.15s, border-color 0.15s, transform 0.1s, box-shadow 0.2s;
+  transition: background 0.2s, border-color 0.2s, transform 0.1s, box-shadow 0.25s;
   color: #0E0E14;
 }
 .hb-week-circle.done {
-  background: var(--sd-gradient);
+  background: linear-gradient(160deg, #52EFA0 0%, #2FD27E 45%, #28C76F 100%);
   border-color: transparent;
-  box-shadow: 0 0 14px rgba(34,197,94,0.35);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255,255,255,0.5),
+    inset 0 -1px 2px rgba(0,0,0,0.25),
+    0 3px 14px rgba(47,210,126,0.55),
+    0 1px 3px rgba(0,0,0,0.45);
 }
 .hb-week-circle.failed {
   background: rgba(255,84,112,0.15);
@@ -4419,9 +4424,10 @@ h1, h2, h3, h4, .sora {
   cursor: default;
 }
 .hb-week-tick {
-  font-size: 1rem;
-  font-weight: 800;
-  color: #0E0E14;
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: rgba(7,18,11,0.9);
+  text-shadow: 0 1px 0 rgba(255,255,255,0.2);
 }
 .hb-week-tick.fail { color: #FF5470; }
 
@@ -4533,6 +4539,16 @@ h1, h2, h3, h4, .sora {
   transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
 }
 .cadx-dot2.active { background: var(--chip); transform: scale(1.4); box-shadow: 0 0 10px -1px var(--chip); }
+.cadx-active-label {
+  font-family: 'Sora', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.85;
+  margin-left: 4px;
+  transition: color 0.25s;
+}
 .cadx-title {
   font-family: 'Sora', sans-serif; font-weight: 800;
   font-size: 1.18rem; letter-spacing: 0.02em; text-transform: uppercase;
@@ -5234,15 +5250,17 @@ h1, h2, h3, h4, .sora {
   box-shadow: var(--glass-shadow), 0 0 28px -8px var(--theme-glow);
 }
 
-.hcard-warning {
-  border-color: rgba(255,165,0,0.35) !important;
-  box-shadow: var(--glass-shadow), 0 0 24px -8px rgba(255,165,0,0.25) !important;
+/* Warning/danger — keep card border green, pulse the icon circle instead */
+@keyframes warn-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(255,165,0,0.35); }
+  50%       { box-shadow: 0 0 0 5px rgba(255,165,0,0.15); }
 }
-
-.hcard-danger {
-  border-color: rgba(255,69,58,0.4) !important;
-  box-shadow: var(--glass-shadow), 0 0 24px -8px rgba(255,69,58,0.25) !important;
+@keyframes danger-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(255,69,58,0.5); }
+  50%       { box-shadow: 0 0 0 6px rgba(255,69,58,0.12); }
 }
+.hcard-warning .hcard-icon-btn { animation: warn-pulse 2s ease-in-out infinite; }
+.hcard-danger .hcard-icon-btn  { animation: danger-pulse 1.2s ease-in-out infinite; }
 
 /* Collapsible card spacing */
 .hcard { padding: 14px 16px; gap: 0; }
@@ -5400,10 +5418,50 @@ h1, h2, h3, h4, .sora {
   transition: color 0.15s, background 0.15s;
   flex-shrink: 0;
 }
-/* Inline ✕ in the summary row — always takes up space, fades in when expanded
-   so the cog never shifts position. */
-.hcard-remove--inline { opacity: 0; pointer-events: none; }
-.hcard-remove--inline.visible { opacity: 1; pointer-events: auto; }
+/* (legacy inline ✕ — no longer used) */
+.hcard-remove--inline { display: none; }
+
+/* Expanded body: history + archive row */
+.hcard-actions-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.hcard-hist-btn {
+  flex: 1;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--r-sm);
+  color: rgba(255,255,255,0.5);
+  font-family: 'Sora', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 7px 12px;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+.hcard-hist-btn:hover, .hcard-hist-btn.active {
+  color: var(--theme);
+  background: color-mix(in srgb, var(--theme) 10%, transparent);
+  border-color: color-mix(in srgb, var(--theme) 35%, transparent);
+}
+.hcard-archive-btn {
+  background: transparent;
+  border: 1px solid rgba(255,69,58,0.25);
+  border-radius: var(--r-sm);
+  color: rgba(255,69,58,0.5);
+  font-family: 'Sora', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 7px 12px;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+.hcard-archive-btn:hover {
+  color: #ff453a;
+  background: rgba(255,69,58,0.1);
+  border-color: rgba(255,69,58,0.5);
+}
 
 .hcard-remove:hover {
   color: #ff453a;
