@@ -452,7 +452,7 @@ const HabitCard: React.FC<{
       style={{ '--theme': accent, '--theme-dim': `${accent}66`, '--theme-glow': `${accent}22` } as React.CSSProperties}
     >
       {/* Summary row — circle · name · level · streak · calendar · chevron */}
-      <div className="hcard-summary" onClick={() => setExpanded(e => !e)}>
+      <div className="hcard-summary" onClick={() => setExpanded(e => { const next = !e; if (!next) setHistOpen(false); return next; })}>
         <button
           className={`hcard-icon hcard-icon-btn ${currentDone ? 'done' : ''}`}
           onClick={e => { e.stopPropagation(); toggleCurrent(); }}
