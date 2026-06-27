@@ -436,7 +436,7 @@ const HabitCard: React.FC<{
       className={`hcard ${expanded ? 'hcard--expanded' : 'hcard--collapsed'} ${hasDanger ? 'hcard-danger' : hasWarning ? 'hcard-warning' : ''}`}
       style={{ '--theme': accent, '--theme-dim': `${accent}66`, '--theme-glow': `${accent}22` } as React.CSSProperties}
     >
-      {/* Collapsed summary — tap to expand. Clean: circle · name · chevron only. */}
+      {/* Summary row — circle · name · cog (calendar) · chevron */}
       <div className="hcard-summary" onClick={() => setExpanded(e => !e)}>
         <button
           className={`hcard-icon hcard-icon-btn ${currentDone ? 'done' : ''}`}
@@ -446,6 +446,13 @@ const HabitCard: React.FC<{
           {currentDone ? <CheckSVG size={14} strokeWidth={3} /> : <span className="hcard-icon-empty-dot" />}
         </button>
         <span className="hcard-name">{habit}</span>
+        <button
+          className={`hcard-cog${histOpen ? ' active' : ''}`}
+          onClick={e => { e.stopPropagation(); setExpanded(true); setMonthOffset(0); setHistOpen(o => !o); }}
+          aria-label="Edit past days"
+        >
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </button>
         <span className={`hcard-chevron ${expanded ? 'open' : ''}`}>▾</span>
       </div>
 
@@ -519,12 +526,14 @@ const HabitCard: React.FC<{
       )}
 
       {isDaily ? (
-        <button
-          className={`hcard-today-btn ${todayState === 'done' ? 'done' : ''} ${todayState === 'failed' ? 'failed' : ''}`}
-          onClick={() => onToggleDay(habit, today, cycleState(todayState))}
-        >
-          {todayState === 'done' ? <><CheckSVG size={13} strokeWidth={3} /> Done today</> : todayState === 'failed' ? 'Clear failed' : '+ Mark done today'}
-        </button>
+        todayState !== 'failed' && (
+          <button
+            className={`hcard-today-btn ${todayState === 'done' ? 'done' : ''}`}
+            onClick={() => onToggleDay(habit, today, cycleState(todayState))}
+          >
+            {todayState === 'done' ? <><CheckSVG size={13} strokeWidth={3} /> Done today</> : '+ Mark done today'}
+          </button>
+        )
       ) : (
         currentUnit && (
           <button
@@ -532,18 +541,12 @@ const HabitCard: React.FC<{
             style={currentUnit.done ? { ['--cad' as any]: accent } : undefined}
             onClick={() => toggleUnit(currentUnit)}
           >
-            {currentUnit.done ? `✓ Done ${CADENCE_META[cadence].period}` : `+ Mark done ${CADENCE_META[cadence].period}`}
+            {currentUnit.done ? <><CheckSVG size={13} strokeWidth={3} /> Done {CADENCE_META[cadence].period}</> : `+ Mark done ${CADENCE_META[cadence].period}`}
           </button>
         )
       )}
 
       <div className="hcard-actions-row">
-        <button
-          className={`hcard-hist-btn${histOpen ? ' active' : ''}`}
-          onClick={e => { e.stopPropagation(); setMonthOffset(0); setHistOpen(o => !o); }}
-        >
-          {histOpen ? 'Hide history' : 'Edit history'}
-        </button>
         <button
           className="hcard-archive-btn"
           onClick={e => { e.stopPropagation(); onRequestRemove(habit); }}

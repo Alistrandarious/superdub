@@ -10812,7 +10812,7 @@ details[open] .plan-explainer-summary::before { content: '▾  '; }
   transition: color 0.15s, background 0.15s, transform 0.3s;
 }
 .hcard-cog:hover { color: rgba(255,255,255,0.85); background: rgba(255,255,255,0.06); }
-.hcard-cog.active { color: var(--accent, #B79CFF); background: rgba(183,156,255,0.12); transform: rotate(40deg); }
+.hcard-cog.active { color: var(--theme); background: color-mix(in srgb, var(--theme) 14%, transparent); }
 .hcard-history {
   margin-top: 10px;
   animation: hcardHistIn 0.2s ease;
