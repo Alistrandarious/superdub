@@ -102,7 +102,7 @@ const ALL_DAYS = getYearDays(YEAR);
 
 // Chart ranges — historical (week/all) + forward-projection horizons.
 type ChartRange = 'week' | 'm' | '3m' | 'goal' | 'all';
-const RANGE_ORDER: ChartRange[] = ['week', 'm', '3m', 'goal', 'all'];
+const RANGE_ORDER: ChartRange[] = ['week', 'm', 'goal', 'all'];
 const RANGE_LABEL: Record<ChartRange, string> = { week: 'Week', m: '1M', '3m': '3M', goal: 'Goal', all: 'All' };
 
 function getChartDayRange(from: Date, to: Date): Array<{ ddmm: string; date: Date }> {
@@ -713,8 +713,10 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const zoneStartW  = zoneActive ? planGoal!.startWeight  : 0;
   const zoneEndW    = zoneActive ? planGoal!.targetWeight : 0;
   const ZONE_HALF   = 1.5;
-  const getZone = (dateMs: number): { zoneLow: number | null; zoneBand: number; zoneHigh: number | null } => {
-    if (!zoneActive || dateMs < zoneStartMs || dateMs > zoneEndMs) return { zoneLow: null, zoneBand: 0, zoneHigh: null };
+  const getZone = (dateMs: number): { zoneLow: number | null; zoneBand: number | null; zoneHigh: number | null } => {
+    // null (not 0) outside the corridor window, so the gold Area doesn't draw a
+    // steep wedge from the x-axis up to the first active day.
+    if (!zoneActive || dateMs < zoneStartMs || dateMs > zoneEndMs) return { zoneLow: null, zoneBand: null, zoneHigh: null };
     const t = (dateMs - zoneStartMs) / (zoneEndMs - zoneStartMs);
     const ideal = zoneStartW + t * (zoneEndW - zoneStartW);
     return { zoneLow: +(ideal - ZONE_HALF).toFixed(2), zoneBand: ZONE_HALF * 2, zoneHigh: +(ideal + ZONE_HALF).toFixed(2) };
@@ -790,7 +792,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         ema: null,
         projection: null,
         zoneLow: null,
-        zoneBand: 0,
+        zoneBand: null,
         zoneHigh: null,
       }));
   }
@@ -1406,6 +1408,14 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           </div>
         </div>
         {renderChartPager()}
+        {/* Inline legend — always visible so users know what each line is */}
+        <div className="chart-inline-legend">
+          <span className="cil-item"><span className="cil-line" style={{ background: '#fff' }} />Weight</span>
+          <span className="cil-item"><span className="cil-line cil-line--dash" style={{ background: 'rgba(255,255,255,0.55)' }} />Smoothed</span>
+          {hasTrend && <span className="cil-item"><span className="cil-line cil-line--dash" style={{ background: '#B79CFF' }} />Trend</span>}
+          {projectionLen > 0 && <span className="cil-item"><span className="cil-line cil-line--dash" style={{ background: '#4DA3FF' }} />Projection</span>}
+          {zoneActive && <span className="cil-item"><span className="cil-swatch" style={{ background: 'rgba(255,190,30,0.5)' }} />Safe zone</span>}
+        </div>
         <div className="chart-section-inner">
         <div className="chart-container">
         <DraggableChart disabled={chartRange !== 'week'} onPage={pageBy}>

@@ -1833,6 +1833,28 @@ h1, h2, h3, h4, .sora {
   flex-wrap: wrap;
 }
 
+/* ── Inline chart legend ── */
+.chart-inline-legend {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
+  padding: 0 16px 6px;
+}
+.cil-item {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: 'Sora', sans-serif; font-size: 0.68rem; font-weight: 600;
+  color: rgba(255,255,255,0.55);
+  white-space: nowrap;
+}
+.cil-line {
+  display: inline-block; width: 18px; height: 2.5px; border-radius: 2px; flex-shrink: 0;
+}
+.cil-line--dash {
+  background-image: repeating-linear-gradient(90deg, currentColor 0, currentColor 5px, transparent 5px, transparent 9px) !important;
+  background-color: transparent !important;
+}
+.cil-swatch {
+  display: inline-block; width: 12px; height: 8px; border-radius: 3px; flex-shrink: 0;
+}
+
 /* ── Chart pager (swipe / arrows through interval windows) ── */
 .chart-pager {
   display: flex; align-items: center; justify-content: center; gap: 10px;
@@ -5224,6 +5246,9 @@ h1, h2, h3, h4, .sora {
 
 /* Collapsible card spacing */
 .hcard { padding: 14px 16px; gap: 0; }
+/* Collapsed card — left accent line pulses with cadence colour */
+.hcard--collapsed { border-left-color: var(--theme); }
+.hcard--collapsed .hcard-icon-btn { box-shadow: 0 0 0 3px var(--theme-glow); }
 
 /* Collapsed summary row — name · streak · XP · chevron */
 .hcard-summary {
@@ -5375,6 +5400,10 @@ h1, h2, h3, h4, .sora {
   transition: color 0.15s, background 0.15s;
   flex-shrink: 0;
 }
+/* Inline ✕ in the summary row — always takes up space, fades in when expanded
+   so the cog never shifts position. */
+.hcard-remove--inline { opacity: 0; pointer-events: none; }
+.hcard-remove--inline.visible { opacity: 1; pointer-events: auto; }
 
 .hcard-remove:hover {
   color: #ff453a;
