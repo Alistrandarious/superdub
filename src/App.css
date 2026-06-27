@@ -4527,6 +4527,15 @@ h1, h2, h3, h4, .sora {
   padding: 4px 0 6px;
   transition: padding 0.2s ease;
 }
+.cadx-header::after {
+  content: '';
+  position: absolute;
+  bottom: -14px; left: 0; right: 0;
+  height: 14px;
+  background: linear-gradient(to bottom, var(--glass-bg), transparent);
+  pointer-events: none;
+  z-index: 1;
+}
 /* Collapsed-on-scroll: hide the title, leave just the four colour dots */
 .cadx--compact .cadx-header {
   padding: 8px 0;
@@ -5441,21 +5450,41 @@ h1, h2, h3, h4, .sora {
   flex: 1;
 }
 
-/* Tiny archive link at bottom of expanded card */
-.hcard-archive-link {
-  background: none;
-  border: none;
-  padding: 0;
+/* Archive icon in summary row — fades in on expand, never shifts layout */
+.hcard-archive-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px;
+  padding: 0; border: none; border-radius: 8px;
+  background: transparent;
+  color: rgba(255,255,255,0.0);
+  cursor: default;
+  flex-shrink: 0;
+  transition: color 0.2s, background 0.2s;
+  pointer-events: none;
+}
+.hcard-archive-icon.visible {
+  color: rgba(255,255,255,0.25);
+  cursor: pointer;
+  pointer-events: auto;
+}
+.hcard-archive-icon.visible:hover { color: rgba(255,69,58,0.7); background: rgba(255,69,58,0.08); }
+
+/* Rank + streak row */
+.hcard-rank-row {
+  display: flex; align-items: baseline; gap: 8px;
+}
+.hcard-rank-title {
   font-family: 'Sora', sans-serif;
   font-size: 0.7rem;
-  font-weight: 600;
-  color: rgba(255,255,255,0.2);
-  cursor: pointer;
-  align-self: flex-start;
-  transition: color 0.15s;
-  letter-spacing: 0.03em;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
-.hcard-archive-link:hover { color: rgba(255,69,58,0.6); }
+.hcard-streak-badge {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.3);
+}
 
 .hcard-remove:hover {
   color: #ff453a;

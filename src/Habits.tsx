@@ -436,16 +436,25 @@ const HabitCard: React.FC<{
       className={`hcard ${expanded ? 'hcard--expanded' : 'hcard--collapsed'} ${hasDanger ? 'hcard-danger' : hasWarning ? 'hcard-warning' : ''}`}
       style={{ '--theme': accent, '--theme-dim': `${accent}66`, '--theme-glow': `${accent}22` } as React.CSSProperties}
     >
-      {/* Summary row — circle · name · cog (calendar) · chevron */}
+      {/* Summary row — circle · name · [archive] · calendar · chevron */}
       <div className="hcard-summary" onClick={() => setExpanded(e => !e)}>
         <button
           className={`hcard-icon hcard-icon-btn ${currentDone ? 'done' : ''}`}
           onClick={e => { e.stopPropagation(); toggleCurrent(); }}
           aria-label={currentDone ? 'Done — tap to clear' : 'Mark done'}
         >
-          {currentDone ? <CheckSVG size={14} strokeWidth={3} /> : <span className="hcard-icon-empty-dot" />}
+          {currentDone ? <CheckSVG size={14} strokeWidth={2.5} /> : <span className="hcard-icon-empty-dot" />}
         </button>
         <span className="hcard-name">{habit}</span>
+        {/* Archive icon — always rendered so layout never shifts; only interactive when expanded */}
+        <button
+          className={`hcard-archive-icon${expanded ? ' visible' : ''}`}
+          onClick={e => { e.stopPropagation(); if (expanded) onRequestRemove(habit); }}
+          tabIndex={expanded ? 0 : -1}
+          aria-label="Archive habit"
+        >
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+        </button>
         <button
           className={`hcard-cog${histOpen ? ' active' : ''}`}
           onClick={e => { e.stopPropagation(); setExpanded(true); setMonthOffset(0); setHistOpen(o => !o); }}
@@ -458,6 +467,12 @@ const HabitCard: React.FC<{
 
       <div className="hcard-body-wrap">
       <div className="hcard-body">
+
+      {/* Rank + streak */}
+      <div className="hcard-rank-row">
+        <span className="hcard-rank-title" style={{ color: rank.color }}>{rank.title}</span>
+        <span className="hcard-streak-badge">{stats.streak}d streak</span>
+      </div>
 
       {/* Compact XP row */}
       <div className="hcard-xp-row">
@@ -508,12 +523,6 @@ const HabitCard: React.FC<{
         </div>
       )}
 
-      <button
-        className="hcard-archive-link"
-        onClick={e => { e.stopPropagation(); onRequestRemove(habit); }}
-      >
-        Archive
-      </button>
 
       {histOpen && (
         <div className="hcard-history">
