@@ -446,8 +446,8 @@ const HabitCard: React.FC<{
           {currentDone ? <CheckSVG size={14} strokeWidth={2.5} /> : <span className="hcard-icon-empty-dot" />}
         </button>
         <span className="hcard-name">{habit}</span>
-        {stats.streak > 0 && (
-          <span className="hcard-streak-mini">{stats.streak}d</span>
+        {stats.streak > 0 && !expanded && (
+          <span className="hcard-streak-mini">🔥 {stats.streak}d</span>
         )}
         {/* Archive icon — always rendered so layout never shifts; only interactive when expanded */}
         <button
@@ -476,18 +476,38 @@ const HabitCard: React.FC<{
       <div className="hcard-body-wrap">
       <div className="hcard-body">
 
-      {/* Rank + streak */}
-      <div className="hcard-rank-row">
-        <span className="hcard-rank-title" style={{ color: rank.color }}>{rank.title}</span>
-        <span className="hcard-streak-badge">{stats.streak}d streak</span>
+      {/* Earned title */}
+      <div className="hcard-title-line" style={{ color: rank.color }}>
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden><path d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l7.1-1.01z"/></svg>
+        <span>{rank.title}</span>
       </div>
 
-      {/* Compact XP row */}
-      <div className="hcard-xp-row">
+      {/* Stat tiles */}
+      <div className="hcard-stats">
+        <div className="hcard-stat">
+          <span className="hcard-stat-value">{stats.streak}</span>
+          <span className="hcard-stat-label">day streak</span>
+        </div>
+        <div className="hcard-stat">
+          <span className="hcard-stat-value">{stats.totalXP}</span>
+          <span className="hcard-stat-label">total xp</span>
+        </div>
+        <div className="hcard-stat">
+          <span className="hcard-stat-value">+{stats.xpPerDay}</span>
+          <span className="hcard-stat-label">xp / day</span>
+        </div>
+      </div>
+
+      {/* Progress toward next gate */}
+      <div className="hcard-gate-progress">
         <div className="hcard-exp-bar">
           <div className="hcard-exp-fill" style={{ width: `${stats.gateProgress * 100}%` }} />
         </div>
-        <span className="hcard-xp-total">{stats.totalXP} XP</span>
+        <span className="hcard-gate-caption">
+          {stats.currentGateIndex >= XP_GATES.length - 1
+            ? 'Max gate reached 🏆'
+            : `${Math.max(0, stats.nextGateAt - stats.streak)} ${Math.max(0, stats.nextGateAt - stats.streak) === 1 ? 'day' : 'days'} to next gate`}
+        </span>
       </div>
 
       {hasDanger && <p className="hcard-risk-chip danger">streak reset — start fresh today</p>}

@@ -5387,9 +5387,11 @@ h1, h2, h3, h4, .sora {
 }
 .hcard-icon-btn:active { transform: scale(0.9); }
 .hcard-icon-btn.done {
-  background: var(--theme);
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--theme) 80%, white), var(--theme));
   border-color: var(--theme);
   color: #07120B;
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.4),
+              0 2px 10px color-mix(in srgb, var(--theme) 45%, transparent);
 }
 /* Undone habit circle — small dot so it never looks forgotten */
 .hcard-icon-empty-dot {
@@ -5440,15 +5442,6 @@ h1, h2, h3, h4, .sora {
 /* (legacy inline ✕ — no longer used) */
 .hcard-remove--inline { display: none; }
 
-/* Compact XP row in expanded body */
-.hcard-xp-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.hcard-xp-row .hcard-exp-bar {
-  flex: 1;
-}
 
 /* Archive icon in summary row — fades in on expand, never shifts layout */
 .hcard-archive-icon {
@@ -5471,11 +5464,16 @@ h1, h2, h3, h4, .sora {
 
 /* Streak badge in collapsed summary */
 .hcard-streak-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
   font-family: 'Space Mono', monospace;
-  font-size: 0.65rem;
+  font-size: 0.68rem;
   font-weight: 700;
   color: var(--theme);
-  opacity: 0.75;
+  background: color-mix(in srgb, var(--theme) 12%, transparent);
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
   flex-shrink: 0;
   letter-spacing: 0.02em;
 }
@@ -5498,21 +5496,65 @@ h1, h2, h3, h4, .sora {
   min-width: 4px;
 }
 
-/* Rank + streak row */
-.hcard-rank-row {
-  display: flex; align-items: baseline; gap: 8px;
-}
-.hcard-rank-title {
+/* Earned title line — the rank, styled like a badge the user holds */
+.hcard-title-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-family: 'Sora', sans-serif;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, currentColor 35%, transparent));
 }
-.hcard-streak-badge {
-  font-family: 'Space Mono', monospace;
-  font-size: 0.65rem;
-  color: rgba(255,255,255,0.3);
+.hcard-title-line svg { flex-shrink: 0; }
+
+/* Stat tiles — groups the gamification into one designed object */
+.hcard-stats {
+  display: flex;
+  gap: 7px;
+}
+.hcard-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 9px 4px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-md);
+}
+.hcard-stat-value {
+  font-family: 'Sora', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #fff;
+}
+.hcard-stat:first-child .hcard-stat-value { color: var(--theme); }
+.hcard-stat-label {
+  font-family: 'Sora', sans-serif;
+  font-size: 0.55rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: rgba(255,255,255,0.35);
+}
+
+/* Gate progress — bar + responsive caption */
+.hcard-gate-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.hcard-gate-caption {
+  font-family: 'Sora', sans-serif;
+  font-size: 0.62rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.4);
+  letter-spacing: 0.02em;
 }
 
 .hcard-remove:hover {
@@ -5667,12 +5709,14 @@ h1, h2, h3, h4, .sora {
 }
 
 .hcard-day.done .hcard-day-circle {
-  background: rgba(34,197,94,0.18);
-  border-color: #22C55E;
+  background: color-mix(in srgb, var(--theme) 20%, transparent);
+  border-color: var(--theme);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--theme) 30%, transparent),
+              0 0 8px color-mix(in srgb, var(--theme) 25%, transparent);
 }
 
 .hcard-day.done .hcard-day-tick {
-  color: #22C55E;
+  color: var(--theme);
 }
 
 .hcard-day.failed .hcard-day-circle {
