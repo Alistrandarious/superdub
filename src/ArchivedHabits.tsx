@@ -8,11 +8,16 @@ const ArchivedHabits: React.FC = () => {
   const navigate = useNavigate();
   const [graveyard, setGraveyard] = useState<{ name: string; startDate: string | null }[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
   const [restoring, setRestoring] = useState<string | null>(null);
 
-  useEffect(() => {
-    api.getGraveyard().then(g => { setGraveyard(g); setLoaded(true); }).catch(() => setLoaded(true));
-  }, []);
+  const load = () => {
+    setError(false);
+    api.getGraveyard()
+      .then(g => { setGraveyard(Array.isArray(g) ? g : []); setLoaded(true); })
+      .catch(() => { setError(true); setLoaded(true); });
+  };
+  useEffect(() => { load(); }, []);
 
   const restore = async (name: string) => {
     setRestoring(name);
@@ -50,6 +55,13 @@ const ArchivedHabits: React.FC = () => {
 
         {!loaded ? (
           <div className="sd-loader-wrap"><div className="sd-loader"><img className="sd-loader-logo" src="/superdub-logo.png" alt="" /></div></div>
+        ) : error ? (
+          <div className="archived-empty">
+            <div className="archived-empty-icon">⚠️</div>
+            <p className="archived-empty-title">Couldn't load</p>
+            <p className="archived-empty-sub">Check your connection and try again.</p>
+            <button className="archived-back-btn" onClick={load}>Retry</button>
+          </div>
         ) : graveyard.length === 0 ? (
           <div className="archived-empty">
             <div className="archived-empty-icon">🗂️</div>
