@@ -6194,6 +6194,42 @@ h1, h2, h3, h4, .sora {
   overflow: hidden;
 }
 
+/* Entry row on the Habits page → navigates to the Archived screen */
+.archived-entry {
+  width: calc(100% - 40px);
+  margin: 24px 20px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-card);
+  color: rgba(255,255,255,0.5);
+  font-family: 'Sora', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 15px 16px;
+  cursor: pointer;
+  text-align: left;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+.archived-entry:hover { color: #fff; background: var(--glass-bg-strong); border-color: var(--theme-dim); }
+.archived-entry-arrow { margin-left: auto; font-size: 1.1rem; opacity: 0.6; }
+
+/* Archived Habits page */
+.archived-head { padding: 8px 4px 18px; }
+.archived-title { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.5rem; color: #fff; margin: 0 0 6px; }
+.archived-sub { font-size: 0.85rem; color: rgba(255,255,255,0.45); margin: 0; }
+.archived-empty { text-align: center; padding: 48px 20px; }
+.archived-empty-icon { font-size: 3rem; margin-bottom: 12px; }
+.archived-empty-title { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 1.05rem; color: #fff; margin: 0 0 4px; }
+.archived-empty-sub { font-size: 0.85rem; color: rgba(255,255,255,0.4); margin: 0 0 20px; }
+.archived-back-btn {
+  background: var(--grad-health); border: none; border-radius: var(--r-pill);
+  color: #07120B; font-family: 'Sora', sans-serif; font-weight: 700; font-size: 0.85rem;
+  padding: 10px 22px; cursor: pointer;
+}
+
 .graveyard-toggle {
   width: 100%;
   display: flex;
@@ -7563,6 +7599,44 @@ h1, h2, h3, h4, .sora {
 .checkin-weight-display {
   text-align: center; font-size: 2rem; font-weight: 700; color: #e0e0e0;
   margin-bottom: 16px; letter-spacing: 0.02em;
+}
+
+/* Tap-to-type weight input */
+.checkin-weight-input-wrap {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  margin: 8px 0 22px;
+  padding: 14px 18px;
+  border-radius: var(--r-lg);
+  background: rgba(255,255,255,0.04);
+  border: 1.5px solid var(--glass-border);
+  cursor: text;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.checkin-weight-input-wrap:focus-within {
+  border-color: var(--theme, #2FD27E);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme, #2FD27E) 18%, transparent);
+}
+.checkin-weight-input {
+  width: 4.5ch;
+  background: none;
+  border: none;
+  outline: none;
+  text-align: right;
+  font-family: 'Sora', sans-serif;
+  font-size: 2.6rem;
+  font-weight: 800;
+  color: #fff;
+  padding: 0;
+}
+.checkin-weight-input::placeholder { color: rgba(255,255,255,0.25); }
+.checkin-weight-unit {
+  font-family: 'Sora', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.4);
 }
 .checkin-weight-display span { font-size: 1rem; color: #666; margin-left: 4px; }
 .checkin-weight-dot {

@@ -670,13 +670,10 @@ const Habits: React.FC = () => {
   const [newHabit, setNewHabit] = useState('');
   const [pendingRemove, setPendingRemove] = useState<string | null>(null);
   const [graveyard, setGraveyard] = useState<{ name: string; startDate: string | null }[]>([]);
-  const [graveyardOpen, setGraveyardOpen] = useState(false);
-  const [restoringHabit, setRestoringHabit] = useState<string | null>(null);
   const [showCogMenu, setShowCogMenu] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [featuredOpen, setFeaturedOpen] = useState(false);
   const [showDayOverlay, setShowDayOverlay] = useState(false);
-  const graveyardRef = useRef<HTMLDivElement>(null);
 
   // Week gold — purely derived: gold ONLY on Sunday when all 7 days are logged.
   // Resets to original colour automatically on Monday (no persisted state, no veteran ring).
@@ -886,24 +883,6 @@ const Habits: React.FC = () => {
     }).catch(() => {});
   };
 
-  const restoreHabit = async (name: string) => {
-    setRestoringHabit(name);
-    try {
-      await api.restoreHabit(name);
-      // Add back to active habits with today's startDate
-      const today = new Date().toISOString().slice(0, 10);
-      setHabits(prev => [...prev, name]);
-      setStartDates(prev => ({ ...prev, [name]: today }));
-      setHt(prev => {
-        const next = { ...prev };
-        ALL_DAYS.forEach(d => { next[d] = { ...next[d], [name]: null }; });
-        return next;
-      });
-      setGraveyard(prev => prev.filter(h => h.name !== name));
-    } catch {}
-    setTimeout(() => setRestoringHabit(null), 800);
-  };
-
   // Perfect week — gold ONLY lands on Sunday once all 7 days are logged.
   // (Mid-week "all non-future days done" would otherwise trip gold on Monday.)
   const nonFutureDays = weekDays.filter(d => !d.isFuture);
@@ -1082,7 +1061,7 @@ const Habits: React.FC = () => {
                     <button className="cog-menu-item" onClick={() => { setShowCogMenu(false); window.dispatchEvent(new CustomEvent('superdub:show-step-entry')); }}>
                       <span>👟</span> Log Steps
                     </button>
-                    <button className="cog-menu-item" onClick={() => { setShowCogMenu(false); setGraveyardOpen(true); setTimeout(() => graveyardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80); }}>
+                    <button className="cog-menu-item" onClick={() => { setShowCogMenu(false); navigate('/archived'); }}>
                       <span>📦</span> Archived Habits
                     </button>
                   </div>
@@ -1195,42 +1174,12 @@ const Habits: React.FC = () => {
           <span className="hb-featured-icon">🚶</span>
         </button>
 
-        {/* Archived Habits — always rendered so ref is valid for scroll */}
-        <div className="graveyard-section" ref={graveyardRef}>
-          <button className="graveyard-toggle" onClick={() => setGraveyardOpen(g => !g)}>
-            <span>📦 Archived Habits</span>
-            {graveyard.length > 0 && <span className="graveyard-count">{graveyard.length}</span>}
-            <span className="graveyard-arrow">{graveyardOpen ? '▲' : '▾'}</span>
-          </button>
-          {graveyardOpen && (
-            <div className="graveyard-list">
-              {graveyard.length === 0 ? (
-                <p className="graveyard-hint" style={{ textAlign: 'center', opacity: 0.45 }}>
-                  No archived habits yet. Archive a habit to find it here later.
-                </p>
-              ) : (
-                <>
-                  <p className="graveyard-hint">Restore a habit and it'll start fresh from today.</p>
-                  {graveyard.map(h => (
-                    <div
-                      key={h.name}
-                      className={`graveyard-card ${restoringHabit === h.name ? 'rising' : ''}`}
-                    >
-                      <span className="graveyard-card-name">📁 {h.name}</span>
-                      <button
-                        className="graveyard-restore-btn"
-                        onClick={() => restoreHabit(h.name)}
-                        disabled={restoringHabit !== null}
-                      >
-                        {restoringHabit === h.name ? '✨ Restoring…' : 'Restore'}
-                      </button>
-                    </div>
-                  ))}
-                </>
-              )}
-            </div>
-          )}
-        </div>
+        {/* View archived habits on their own screen */}
+        <button className="archived-entry" onClick={() => navigate('/archived')}>
+          <span>📦 Archived Habits</span>
+          {graveyard.length > 0 && <span className="graveyard-count">{graveyard.length}</span>}
+          <span className="archived-entry-arrow">›</span>
+        </button>
 
         <div style={{ height: 100 }} />
       </div>
