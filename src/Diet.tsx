@@ -4,6 +4,7 @@ import { ComposedChart, Line, Area, XAxis, YAxis, Tooltip, ResponsiveContainer }
 import './App.css';
 import { api } from './api';
 import { BUILD_TAG } from './version';
+import CogMenu from './CogMenu';
 import AdaptiveWeightPlanCard from './AdaptiveWeightPlanCard';
 
 interface ProfileData {
@@ -1001,6 +1002,9 @@ const Diet: React.FC = () => {
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
           <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">{BUILD_TAG}</span>
+        </div>
+        <div className="hb-topbar-actions">
+          <CogMenu />
         </div>
       </div>
 

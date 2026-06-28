@@ -11,6 +11,7 @@ import MacroAnalysis from './MacroAnalysis';
 import PrivacyPolicy from './PrivacyPolicy';
 import LevelPage from './LevelPage';
 import ArchivedHabits from './ArchivedHabits';
+import SuccessKit from './SuccessKit';
 import FoodLog from './FoodLog';
 import MealPlans from './MealPlans';
 import PlanPage from './PlanPage';
@@ -82,6 +83,7 @@ function AppRouter() {
         <Route path="/diet/macro" element={<MacroAnalysis />} />
         <Route path="/level" element={<LevelPage />} />
         <Route path="/archived" element={<ArchivedHabits />} />
+        <Route path="/success-kit" element={<SuccessKit />} />
         <Route path="/food-log" element={<FoodLog />} />
         <Route path="/meal-plans" element={<MealPlans />} />
         <Route path="/plan" element={<PlanPage />} />

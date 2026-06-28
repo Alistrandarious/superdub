@@ -6246,6 +6246,50 @@ h1, h2, h3, h4, .sora {
 .archived-entry:hover { color: #fff; background: var(--glass-bg-strong); border-color: var(--theme-dim); }
 .archived-entry-arrow { margin-left: auto; font-size: 1.1rem; opacity: 0.6; }
 
+/* ── Success Kit page ────────────────────────────────────── */
+.success-scroll {
+  flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  display: flex; flex-direction: column;
+  padding: 4px 18px;
+  padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+}
+.success-head { padding: 8px 2px 14px; }
+.success-title { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.55rem; color: #fff; margin: 0 0 6px; }
+.success-sub { font-size: 0.85rem; line-height: 1.45; color: rgba(255,255,255,0.5); margin: 0; }
+.success-section { margin-top: 22px; }
+.success-section-title { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1rem; color: #fff; margin: 0 0 3px; }
+.success-section-blurb { font-size: 0.76rem; color: rgba(255,255,255,0.4); margin: 0 0 12px; }
+.success-grid { display: flex; flex-direction: column; gap: 10px; }
+.success-card {
+  text-align: left; width: 100%;
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(255,185,40,0.08), transparent 55%),
+    var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-left: 3px solid var(--gold);
+  border-radius: var(--r-card);
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.1s, box-shadow 0.2s;
+}
+.success-card:hover { border-color: rgba(255,185,40,0.4); box-shadow: 0 0 24px -10px rgba(255,185,40,0.4); }
+.success-card:active { transform: scale(0.99); }
+.success-card.no-link { cursor: default; border-left-color: var(--glass-border); }
+.success-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
+.success-card-tag {
+  font-family: 'Space Mono', monospace; font-size: 0.58rem; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--gold); background: rgba(255,185,40,0.12);
+  padding: 2px 8px; border-radius: var(--r-pill);
+}
+.success-card-link { color: var(--gold); font-size: 0.95rem; opacity: 0.8; }
+.success-card-title { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.02rem; color: #fff; line-height: 1.2; }
+.success-card-by { font-size: 0.75rem; color: rgba(255,255,255,0.45); margin: 1px 0 8px; }
+.success-card-why { font-size: 0.82rem; line-height: 1.5; color: rgba(255,255,255,0.68); }
+.success-foot { text-align: center; font-size: 0.78rem; color: rgba(255,255,255,0.4); margin: 28px 0 0; }
+.success-foot-link { background: none; border: none; color: var(--gold); font: inherit; cursor: pointer; padding: 0; text-decoration: underline; }
+
 /* Archived Habits page — standalone scroller (mirrors .habits-page-scroll) */
 .archived-scroll {
   flex: 1;
@@ -7489,6 +7533,30 @@ h1, h2, h3, h4, .sora {
   transition: background 0.12s, color 0.12s;
 }
 .cog-menu-item:hover { background: rgba(255,255,255,0.07); color: #fff; }
+
+/* Full unified cog menu — scrollable, sectioned */
+.cog-menu--full {
+  min-width: 232px;
+  max-height: min(76vh, 560px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.cog-menu--full .cog-menu-item { font-size: 0.85rem; padding: 9px 11px; }
+.cog-mi-ico {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; flex-shrink: 0; font-size: 0.95rem; opacity: 0.9;
+}
+.cog-menu-label {
+  font-family: 'Sora', sans-serif; font-size: 0.58rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  padding: 8px 12px 4px;
+}
+.cog-menu-sep { height: 1px; background: rgba(255,255,255,0.08); margin: 4px 6px; }
+.cog-menu--full .reminder-time-select {
+  background: rgba(255,255,255,0.06); color: #ddd; border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 7px; padding: 3px 6px; font-size: 0.78rem;
+}
 
 /* ── Add Habits section (bottom) ── */
 .habit-add-section {

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import './App.css';
 import { api } from './api';
 import { BUILD_TAG } from './version';
+import CogMenu from './CogMenu';
 
 const ArchivedHabits: React.FC = () => {
   const navigate = useNavigate();
@@ -58,7 +59,7 @@ const ArchivedHabits: React.FC = () => {
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
           <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">{BUILD_TAG}</span>
         </div>
-        <div style={{ width: 38 }} />
+        <div className="hb-topbar-actions"><CogMenu /></div>
       </div>
 
       {/* Permanent-delete confirmation */}
