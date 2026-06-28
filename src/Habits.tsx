@@ -7,7 +7,11 @@ import { api } from './api';
 import { BUILD_TAG } from './version';
 import WeeklyRecap from './WeeklyRecap';
 import CadenceCarousel from './CadenceCarousel';
-import { getRingTheme, getSelectedThemeId, type RingTheme } from './levels';
+import {
+  getRingTheme, getSelectedThemeId, type RingTheme,
+  HABIT_LEVEL_TIERS as LEVEL_TIERS, HABIT_LEVEL_RATES as LEVEL_RATES,
+  MAX_HABIT_LEVEL as MAX_LEVEL, habitLevelFromDays as levelFromDays, habitXPForDoneDays,
+} from './levels';
 
 export type Cadence = 'daily' | 'weekly' | 'monthly' | 'yearly';
 export const CADENCE_ORDER: Cadence[] = ['daily', 'weekly', 'monthly', 'yearly'];
@@ -100,10 +104,6 @@ const ALL_DAYS = buildAllDays();
 // A habit's level is driven by TOTAL days logged (persistent — never resets when
 // you miss). Each level pays a higher XP-per-completion rate: that raise IS the
 // bonus for levelling up. LV1 = just started … LV8 = maxed (a year of days).
-const LEVEL_TIERS = [0, 7, 14, 30, 60, 100, 200, 365]; // total days to reach each level
-const LEVEL_RATES = [10, 15, 20, 25, 30, 35, 40, 50];  // XP per completion at each level
-const MAX_LEVEL = LEVEL_TIERS.length;
-const levelFromDays = (days: number) => LEVEL_TIERS.filter(t => days >= t).length; // 1..8
 
 
 function todayKey(): string {
@@ -201,23 +201,12 @@ function computeHabitStats(
     startIdx = firstDone >= 0 ? firstDone : todayIdx;
   }
 
-  let totalXP = 0;
   let totalDays = 0;
-  let rollingStreak = 0;
 
   for (let i = startIdx; i <= todayIdx; i++) {
-    const day = ALL_DAYS[i];
-    const state = ht[day]?.[habit];
-    if (state === 'done') {
-      rollingStreak++;
-      totalDays++;
-      // XP for this completion is paid at the rate of the level you'd reached.
-      const lvl = levelFromDays(totalDays);
-      totalXP += LEVEL_RATES[Math.min(lvl - 1, LEVEL_RATES.length - 1)];
-    } else if (i < todayIdx) {
-      rollingStreak = 0;
-    }
+    if (ht[ALL_DAYS[i]]?.[habit] === 'done') totalDays++;
   }
+  const totalXP = habitXPForDoneDays(totalDays);
 
   // Consecutive misses (done=null or failed) before today
   let misses = 0;
@@ -434,7 +423,6 @@ const HabitCard: React.FC<{
   const rank = getRank(stats.totalDays);
   const isDaily = cadence === 'daily';
   const todayState = ht[today]?.[habit] ?? null;
-  const isFlame = stats.streak >= 7;
   const hasDanger = isDaily && stats.misses >= 2;
   const hasWarning = isDaily && stats.misses === 1 && todayState !== 'done';
   // Period dots for non-daily cadences (weekly 4 · monthly 12 · yearly 1).

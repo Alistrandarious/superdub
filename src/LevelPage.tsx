@@ -7,7 +7,7 @@ import { useXP } from './XPContext';
 import { BUILD_TAG } from './version';
 import {
   PLAYER_LEVELS, RING_THEMES, getRingTheme, getSelectedThemeId,
-  SELECTED_THEME_KEY, type RingTheme,
+  SELECTED_THEME_KEY, type RingTheme, habitXPForDoneDays,
 } from './levels';
 
 function navigateWithTransition(navigate: any, to: string) {
@@ -30,10 +30,6 @@ function buildAllDays(): string[] {
   return d;
 }
 const ALL_DAYS = buildAllDays();
-
-const XP_GATES: [number, number][] = [
-  [0, 10], [7, 15], [14, 20], [30, 25], [60, 30], [100, 35], [200, 40], [365, 50],
-];
 
 function todayKey(): string {
   const n = new Date();
@@ -63,7 +59,6 @@ function computeHabitXP(
     }
   }
 
-  let totalXP = 0;
   let totalDays = 0;
   let rollingStreak = 0;
   let bestStreak = 0;
@@ -74,15 +69,13 @@ function computeHabitXP(
       rollingStreak++;
       totalDays++;
       bestStreak = Math.max(bestStreak, rollingStreak);
-      const snap = rollingStreak;
-      const gateIdx = XP_GATES.filter(([t]) => t > 0 && snap >= t).length;
-      totalXP += XP_GATES[Math.min(gateIdx, XP_GATES.length - 1)][1];
     } else if (i < todayIdx) {
       rollingStreak = 0;
     }
   }
 
   const streak = rollingStreak;
+  const totalXP = habitXPForDoneDays(totalDays);
   return { totalXP, totalDays, streak, bestStreak };
 }
 

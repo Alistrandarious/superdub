@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { api, isLoggedIn } from './api';
-import { computePlayerLevel, type PlayerLevel } from './levels';
+import { computePlayerLevel, habitXPForDoneDays, type PlayerLevel } from './levels';
 
 export type { PlayerLevel } from './levels';
 
@@ -8,43 +8,23 @@ const INSTALL_XP = 100;
 const INSTALL_XP_KEY = 'superdub.installXP';
 const XP_CACHE_KEY = 'superdub.xp.cache';
 
-const XP_GATES: [number, number][] = [
-  [0, 10], [7, 15], [14, 20], [30, 25], [60, 30], [100, 35], [200, 40], [365, 50],
-];
-
 function computeXPFromRaw(
   habits: { name: string }[],
   trackerHabits: { day: string; habit_name: string; state: string }[],
   installBonus: boolean,
 ): number {
   const habitNames = habits.map(h => h.name);
-  // Build day→habit→state map
-  const byDay: Record<string, Record<string, boolean | 'failed'>> = {};
+  const known = new Set(habitNames);
+  // XP is per-habit and level-based: it only depends on each habit's TOTAL
+  // completed-day count (paid at the level rate). Count dones per habit, then
+  // sum each habit's level-based XP — this matches the habit cards exactly.
+  const doneCount: Record<string, number> = {};
   for (const row of trackerHabits) {
-    if (!byDay[row.day]) byDay[row.day] = {};
-    byDay[row.day][row.habit_name] = row.state === 'done' ? true : row.state === 'failed' ? 'failed' : false;
-  }
-  const sortedDays = Object.keys(byDay).sort((a, b) => {
-    const [ad, am] = a.split('/').map(Number);
-    const [bd, bm] = b.split('/').map(Number);
-    return am !== bm ? am - bm : ad - bd;
-  });
-
-  let xp = 0;
-  const streakMap: Record<string, number> = {};
-  for (const day of sortedDays) {
-    const d = byDay[day];
-    for (const h of habitNames) {
-      if (d[h] === true) {
-        streakMap[h] = (streakMap[h] ?? 0) + 1;
-        const streak = streakMap[h];
-        const gateIdx = XP_GATES.filter(([t]) => t > 0 && streak >= t).length;
-        xp += XP_GATES[Math.min(gateIdx, XP_GATES.length - 1)][1];
-      } else if (d[h] === 'failed') {
-        streakMap[h] = 0;
-      }
+    if (row.state === 'done' && known.has(row.habit_name)) {
+      doneCount[row.habit_name] = (doneCount[row.habit_name] ?? 0) + 1;
     }
   }
+  const xp = habitNames.reduce((sum, name) => sum + habitXPForDoneDays(doneCount[name] ?? 0), 0);
   return xp + (installBonus ? INSTALL_XP : 0);
 }
 

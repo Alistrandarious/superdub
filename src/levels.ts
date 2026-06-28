@@ -6,6 +6,30 @@
 // actually equip, plus journey milestones.
 // =====================================================================
 
+// ── Per-habit progression (separate from the global player level) ────────────
+// A habit's level is driven by TOTAL days logged (persistent — never resets on a
+// miss). Each level pays a higher XP-per-completion rate. These helpers are the
+// single source used by the habit cards, the Level-page breakdown AND the global
+// XP sum, so all three always agree.
+export const HABIT_LEVEL_TIERS = [0, 7, 14, 30, 60, 100, 200, 365]; // total days for each level
+export const HABIT_LEVEL_RATES = [10, 15, 20, 25, 30, 35, 40, 50];  // XP per completion at each level
+export const MAX_HABIT_LEVEL = HABIT_LEVEL_TIERS.length;
+
+export const habitLevelFromDays = (days: number) =>
+  HABIT_LEVEL_TIERS.filter(t => days >= t).length; // 1..8
+
+// Total XP a habit has earned given how many days it's been completed. XP only
+// depends on the COUNT of completions (each paid at the rate of the level you'd
+// reached), so it's order-independent.
+export function habitXPForDoneDays(totalDoneDays: number): number {
+  let xp = 0;
+  for (let n = 1; n <= totalDoneDays; n++) {
+    const lvl = habitLevelFromDays(n);
+    xp += HABIT_LEVEL_RATES[Math.min(lvl - 1, HABIT_LEVEL_RATES.length - 1)];
+  }
+  return xp;
+}
+
 export type RewardKind = 'theme' | 'milestone' | 'flair';
 
 export interface LevelReward {
