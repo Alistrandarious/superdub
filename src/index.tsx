@@ -23,6 +23,7 @@ import { isLoggedIn, clearToken, api } from './api';
 import { initStepSync } from './stepSync';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { XPProvider } from './XPContext';
+import LevelUpCelebration from './LevelUpCelebration';
 
 const NO_NAV_PATHS = ['/privacy'];
 
@@ -97,6 +98,7 @@ function Root() {
       <XPProvider>
         <UpdateBanner />
         <AppRouter />
+        <LevelUpCelebration />
       </XPProvider>
     </BrowserRouter>
   );

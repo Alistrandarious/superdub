@@ -4295,6 +4295,167 @@ h1, h2, h3, h4, .sora {
 .lvl-ring-arc {
   filter: drop-shadow(0 0 4px rgba(255,200,50,0.35));
 }
+/* Animated ring themes — gentle shimmer on the arc */
+@keyframes lvl-arc-shimmer {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.78; }
+}
+.lvl-ring-arc.animated { animation: lvl-arc-shimmer 2.4s ease-in-out infinite; }
+
+/* ── Next-reward callout ─────────────────────────────────── */
+.next-reward-card {
+  display: flex; align-items: center; gap: 14px;
+  margin: 4px 0 18px;
+  padding: 14px 16px;
+  border-radius: var(--r-card);
+  background: linear-gradient(135deg, rgba(255,196,46,0.1), rgba(255,196,46,0.02));
+  border: 1px solid rgba(255,196,46,0.25);
+}
+.next-reward-icon { font-size: 1.8rem; flex-shrink: 0; }
+.next-reward-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.next-reward-eyebrow { font-family: 'Space Mono', monospace; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.08em; color: var(--gold); }
+.next-reward-label { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 0.95rem; color: #fff; }
+.next-reward-blurb { font-size: 0.74rem; color: rgba(255,255,255,0.5); }
+
+/* ── Ring-theme picker ───────────────────────────────────── */
+.rewards-sub { margin: -4px 0 12px; font-size: 0.8rem; color: rgba(255,255,255,0.45); }
+.ringtheme-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 12px;
+}
+.ringtheme-chip {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  background: none; border: none; padding: 0; cursor: pointer;
+}
+.ringtheme-chip.locked { cursor: not-allowed; }
+.ringtheme-swatch {
+  position: relative;
+  width: 46px; height: 46px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid transparent;
+  transition: transform 0.15s, box-shadow 0.2s;
+}
+@keyframes swatch-shimmer { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.25); } }
+.ringtheme-swatch.animated { animation: swatch-shimmer 2.2s ease-in-out infinite; }
+.ringtheme-chip:not(.locked):hover .ringtheme-swatch { transform: scale(1.08); }
+.ringtheme-chip.active .ringtheme-swatch { border-color: #fff; }
+.ringtheme-chip.locked .ringtheme-swatch { filter: grayscale(0.85) brightness(0.5); }
+.ringtheme-lock { font-size: 0.9rem; }
+.ringtheme-check { color: #fff; font-weight: 900; font-size: 1.1rem; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+.ringtheme-name {
+  font-family: 'Sora', sans-serif; font-size: 0.62rem; font-weight: 600;
+  color: rgba(255,255,255,0.55); letter-spacing: 0.02em;
+}
+.ringtheme-chip.active .ringtheme-name { color: #fff; }
+
+/* ── Level + reward ladder ───────────────────────────────── */
+.level-reward-list { display: flex; flex-direction: column; gap: 6px; }
+.level-reward-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--glass-border);
+}
+.level-reward-row.locked { opacity: 0.5; }
+.level-reward-row.current {
+  background: color-mix(in srgb, var(--gold) 10%, transparent);
+  border-color: rgba(255,196,46,0.4);
+}
+.lrr-lv {
+  flex-shrink: 0; width: 38px;
+  font-family: 'Space Mono', monospace; font-size: 0.72rem; font-weight: 700;
+  color: rgba(255,255,255,0.5);
+}
+.level-reward-row.current .lrr-lv { color: var(--gold); }
+.lrr-reward-icon { font-size: 1.3rem; flex-shrink: 0; width: 26px; text-align: center; }
+.lrr-info { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+.lrr-title { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 0.88rem; color: #fff; }
+.lrr-reward { font-size: 0.72rem; color: rgba(255,255,255,0.5); }
+.lrr-xp { flex-shrink: 0; font-family: 'Space Mono', monospace; font-size: 0.78rem; font-weight: 700; color: rgba(255,255,255,0.6); display: flex; align-items: baseline; gap: 3px; }
+.lrr-xp-unit { font-size: 0.55rem; opacity: 0.6; }
+
+/* ── Level-up celebration ────────────────────────────────── */
+.lvlup-overlay {
+  position: fixed; inset: 0; z-index: 4000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  background: rgba(5,6,10,0.82);
+  backdrop-filter: blur(6px);
+  animation: fadeIn 0.25s ease both;
+}
+.lvlup-overlay.closing { animation: fadeIn 0.3s ease reverse both; }
+.lvlup-card {
+  position: relative;
+  width: 100%; max-width: 340px;
+  padding: 32px 24px 24px;
+  border-radius: var(--r-xl);
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 20px 70px rgba(0,0,0,0.6);
+  text-align: center;
+  overflow: hidden;
+  animation: scaleIn 0.4s cubic-bezier(0.22,1,0.36,1) both;
+}
+.lvlup-rays {
+  position: absolute; top: -40%; left: 50%; transform: translateX(-50%);
+  width: 300px; height: 300px;
+  background: radial-gradient(circle, var(--ray, rgba(255,196,46,0.4)), transparent 65%);
+  pointer-events: none;
+  animation: lvlup-rays-spin 8s linear infinite;
+}
+@keyframes lvlup-rays-spin { to { transform: translateX(-50%) rotate(360deg); } }
+.lvlup-burst { position: absolute; top: 84px; left: 50%; width: 0; height: 0; pointer-events: none; }
+.lvlup-spark {
+  position: absolute; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--gold);
+  transform: rotate(calc(var(--i) * 25.7deg)) translateY(0);
+  animation: lvlup-spark-fly 0.9s ease-out both;
+  animation-delay: 0.1s;
+}
+@keyframes lvlup-spark-fly {
+  0% { opacity: 1; transform: rotate(calc(var(--i) * 25.7deg)) translateY(0) scale(1); }
+  100% { opacity: 0; transform: rotate(calc(var(--i) * 25.7deg)) translateY(-90px) scale(0.3); }
+}
+.lvlup-eyebrow {
+  position: relative; margin: 0 0 12px;
+  font-family: 'Space Mono', monospace; font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.22em; color: var(--gold);
+}
+.lvlup-num {
+  position: relative;
+  width: 92px; height: 92px; margin: 0 auto 14px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Sora', sans-serif; font-weight: 900; font-size: 2.6rem;
+  color: #0B0B11;
+}
+.lvlup-title {
+  position: relative; margin: 0 0 18px;
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.5rem; color: #fff;
+}
+.lvlup-reward {
+  position: relative;
+  display: flex; align-items: center; gap: 12px; text-align: left;
+  padding: 12px 14px; margin-bottom: 20px;
+  border-radius: var(--r-md);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--glass-border);
+}
+.lvlup-reward-icon { font-size: 1.9rem; flex-shrink: 0; }
+.lvlup-reward-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.lvlup-reward-label { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 0.92rem; color: #fff; }
+.lvlup-reward-blurb { font-size: 0.74rem; color: rgba(255,255,255,0.55); line-height: 1.3; }
+.lvlup-btn {
+  position: relative;
+  width: 100%; padding: 13px;
+  border: none; border-radius: var(--r-md);
+  background: var(--grad-ascension);
+  color: #1a1008; font-family: 'Sora', sans-serif; font-weight: 800; font-size: 0.95rem;
+  cursor: pointer;
+}
+.lvlup-btn:active { transform: scale(0.98); }
 .lvl-ring-center {
   position: absolute;
   inset: 0;

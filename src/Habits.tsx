@@ -7,6 +7,7 @@ import { api } from './api';
 import { BUILD_TAG } from './version';
 import WeeklyRecap from './WeeklyRecap';
 import CadenceCarousel from './CadenceCarousel';
+import { getRingTheme, getSelectedThemeId, type RingTheme } from './levels';
 
 export type Cadence = 'daily' | 'weekly' | 'monthly' | 'yearly';
 export const CADENCE_ORDER: Cadence[] = ['daily', 'weekly', 'monthly', 'yearly'];
@@ -312,8 +313,8 @@ function cycleState(current: HabitState): HabitState {
   return null;
 }
 
-// Big circular level ring (gold gradient progress)
-const LevelRing: React.FC<{ level: number; title: string; progress: number; onClick?: () => void }> = ({ level, title, progress, onClick }) => {
+// Big circular level ring — themeable gradient (cosmetic unlock from levels.ts)
+const LevelRing: React.FC<{ level: number; title: string; progress: number; theme: RingTheme; onClick?: () => void }> = ({ level, title, progress, theme, onClick }) => {
   const size = 168, stroke = 13, r = (size - stroke) / 2, circ = 2 * Math.PI * r;
   const pct = Math.max(0, Math.min(1, progress));
   const offset = circ * (1 - pct);
@@ -322,31 +323,47 @@ const LevelRing: React.FC<{ level: number; title: string; progress: number; onCl
       <svg width={size} height={size} className="lvl-ring-svg">
         <defs>
           <linearGradient id="lvlGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#FFE15A" />
-            <stop offset="100%" stopColor="#FFC42E" />
+            <stop offset="0%" stopColor={theme.from} />
+            <stop offset="100%" stopColor={theme.to} />
           </linearGradient>
         </defs>
         {/* track — solid grey, unfilled */}
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#33333D" strokeWidth={stroke} />
         {/* progress arc — sharp, straight ends, glow only on the line */}
         <circle
-          className="lvl-ring-arc"
+          className={`lvl-ring-arc${theme.animated ? ' animated' : ''}`}
           cx={size / 2} cy={size / 2} r={r} fill="none"
           stroke="url(#lvlGrad)" strokeWidth={stroke} strokeLinecap="butt"
           strokeDasharray={circ} strokeDashoffset={offset}
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          style={{ filter: `drop-shadow(0 0 8px ${theme.glow})` }}
         />
         {/* inner black disc — meets the inner edge of the grey track */}
         <circle cx={size / 2} cy={size / 2} r={r - stroke / 2} fill="#0B0B11" />
       </svg>
       <div className="lvl-ring-center">
         <span className="lvl-ring-eyebrow">LEVEL</span>
-        <span className="lvl-ring-num">{level}</span>
+        <span className="lvl-ring-num" style={{ color: theme.to }}>{level}</span>
         <span className="lvl-ring-title">{title}</span>
       </div>
     </button>
   );
 };
+
+// Small hook: the equipped ring theme, kept in sync across tabs/pages.
+function useRingTheme(level: number): RingTheme {
+  const [id, setId] = useState(() => getSelectedThemeId(level));
+  useEffect(() => {
+    const sync = () => setId(getSelectedThemeId(level));
+    window.addEventListener('superdub:ring-theme-changed', sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener('superdub:ring-theme-changed', sync);
+      window.removeEventListener('storage', sync);
+    };
+  }, [level]);
+  return getRingTheme(id);
+}
 
 // Mini month calendar for one habit — tappable past days for backfill
 const MINI_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -721,6 +738,7 @@ const Habits: React.FC = () => {
   const today = todayKey();
   const weekDays = getWeekDays();
   const { totalXP: totalXPAll, playerLevel } = useXP();
+  const ringTheme = useRingTheme(playerLevel.level);
 
   useEffect(() => {
     Promise.all([api.getHabits(), api.getTracker(), api.getGraveyard()]).then(([loadedHabits, trackerData, graveyardData]) => {
@@ -1135,7 +1153,7 @@ const Habits: React.FC = () => {
 
         {/* Level ring + XP */}
         <div className="hb-level">
-          <LevelRing level={playerLevel.level} title={playerLevel.title} progress={playerLevel.progress} onClick={() => navigateWithTransition(navigate, '/level')} />
+          <LevelRing level={playerLevel.level} title={playerLevel.title} progress={playerLevel.progress} theme={ringTheme} onClick={() => navigateWithTransition(navigate, '/level')} />
           <div className="hb-xp">
             <div className="hb-xp-scale">
               <span>{totalXPAll.toLocaleString()} XP</span>

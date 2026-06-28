@@ -5,6 +5,10 @@ import './App.css';
 import { api } from './api';
 import { useXP } from './XPContext';
 import { BUILD_TAG } from './version';
+import {
+  PLAYER_LEVELS, RING_THEMES, getRingTheme, getSelectedThemeId,
+  SELECTED_THEME_KEY, type RingTheme,
+} from './levels';
 
 function navigateWithTransition(navigate: any, to: string) {
   const doNav = () => navigate(to);
@@ -29,13 +33,6 @@ const ALL_DAYS = buildAllDays();
 
 const XP_GATES: [number, number][] = [
   [0, 10], [7, 15], [14, 20], [30, 25], [60, 30], [100, 35], [200, 40], [365, 50],
-];
-
-const LEVEL_GATES: [number, string][] = [
-  [0, 'Rookie'], [100, 'Beginner'], [300, 'Novice'], [700, 'Apprentice'],
-  [1500, 'Adept'], [3000, 'Journeyman'], [5000, 'Expert'], [8000, 'Elite'],
-  [12000, 'Champion'], [18000, 'Legend'], [28000, 'Grandmaster'],
-  [42000, 'Mythic'], [60000, 'Immortal'], [85000, 'Eternal'], [120000, 'Transcendent'],
 ];
 
 function todayKey(): string {
@@ -89,8 +86,8 @@ function computeHabitXP(
   return { totalXP, totalDays, streak, bestStreak };
 }
 
-// Big circular level ring (gold gradient), matching the Habits page
-const LevelRing: React.FC<{ level: number; title: string; progress: number; onClick?: () => void }> = ({ level, title, progress, onClick }) => {
+// Big circular level ring — themeable gradient (cosmetic unlock)
+const LevelRing: React.FC<{ level: number; title: string; progress: number; theme: RingTheme; onClick?: () => void }> = ({ level, title, progress, theme, onClick }) => {
   const size = 172, stroke = 13, r = (size - stroke) / 2, circ = 2 * Math.PI * r;
   const offset = circ * (1 - Math.max(0, Math.min(1, progress)));
   return (
@@ -98,17 +95,17 @@ const LevelRing: React.FC<{ level: number; title: string; progress: number; onCl
       <svg width={size} height={size} className="lvl-ring-svg">
         <defs>
           <linearGradient id="lvlGradLP" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#FFE15A" />
-            <stop offset="100%" stopColor="#FFC42E" />
+            <stop offset="0%" stopColor={theme.from} />
+            <stop offset="100%" stopColor={theme.to} />
           </linearGradient>
         </defs>
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#33333D" strokeWidth={stroke} />
-        <circle className="lvl-ring-arc" cx={size / 2} cy={size / 2} r={r} fill="none" stroke="url(#lvlGradLP)" strokeWidth={stroke} strokeLinecap="butt" strokeDasharray={circ} strokeDashoffset={offset} transform={`rotate(-90 ${size / 2} ${size / 2})`} />
+        <circle className={`lvl-ring-arc${theme.animated ? ' animated' : ''}`} cx={size / 2} cy={size / 2} r={r} fill="none" stroke="url(#lvlGradLP)" strokeWidth={stroke} strokeLinecap="butt" strokeDasharray={circ} strokeDashoffset={offset} transform={`rotate(-90 ${size / 2} ${size / 2})`} style={{ filter: `drop-shadow(0 0 8px ${theme.glow})` }} />
         <circle cx={size / 2} cy={size / 2} r={r - stroke / 2} fill="#0B0B11" />
       </svg>
       <div className="lvl-ring-center">
         <span className="lvl-ring-eyebrow">LEVEL</span>
-        <span className="lvl-ring-num">{level}</span>
+        <span className="lvl-ring-num" style={{ color: theme.to }}>{level}</span>
         <span className="lvl-ring-title">{title}</span>
       </div>
     </button>
@@ -239,6 +236,16 @@ const LevelPage: React.FC = () => {
 
   const sortedByXP = [...allStats].sort((a, b) => b.totalXP - a.totalXP);
 
+  // Equipped ring theme (cosmetic unlock)
+  const [themeId, setThemeId] = useState(() => getSelectedThemeId(playerLevel.level));
+  const theme = getRingTheme(themeId);
+  const equipTheme = (t: RingTheme) => {
+    if (t.unlockLevel > playerLevel.level) return; // locked
+    localStorage.setItem(SELECTED_THEME_KEY, t.id);
+    setThemeId(t.id);
+    window.dispatchEvent(new CustomEvent('superdub:ring-theme-changed'));
+  };
+
   return (
     <div className="app flush" style={{ '--theme': '#22C55E', '--theme-dim': '#22C55E66', '--theme-glow': '#22C55E14' } as React.CSSProperties}>
       {/* Top bar: brand + cog */}
@@ -260,7 +267,7 @@ const LevelPage: React.FC = () => {
       <div className="page-content level-page-content">
         {/* Level ring + XP */}
         <div className="hb-level">
-          <LevelRing level={playerLevel.level} title={playerLevel.title} progress={playerLevel.progress} onClick={() => navigateWithTransition(navigate, '/')} />
+          <LevelRing level={playerLevel.level} title={playerLevel.title} progress={playerLevel.progress} theme={theme} onClick={() => navigateWithTransition(navigate, '/')} />
           <div className="hb-xp">
             <div className="hb-xp-scale">
               <span>{totalXP.toLocaleString()} XP</span>
@@ -274,6 +281,45 @@ const LevelPage: React.FC = () => {
             ) : (
               <p className="hb-xp-to">Max level — you legend.</p>
             )}
+          </div>
+        </div>
+
+        {/* Next reward callout */}
+        {playerLevel.nextReward && (
+          <div className="next-reward-card">
+            <span className="next-reward-icon">{playerLevel.nextReward.icon}</span>
+            <div className="next-reward-text">
+              <span className="next-reward-eyebrow">NEXT REWARD · LV{playerLevel.level + 1}</span>
+              <span className="next-reward-label">{playerLevel.nextReward.label}</span>
+              <span className="next-reward-blurb">{playerLevel.nextReward.blurb}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Ring themes — equip an unlocked cosmetic */}
+        <div className="diet-section">
+          <h2 className="diet-heading">Ring Themes</h2>
+          <p className="rewards-sub">Equip a level-ring theme you’ve unlocked.</p>
+          <div className="ringtheme-grid">
+            {RING_THEMES.map(t => {
+              const locked = t.unlockLevel > playerLevel.level;
+              const active = t.id === themeId;
+              return (
+                <button
+                  key={t.id}
+                  className={`ringtheme-chip${active ? ' active' : ''}${locked ? ' locked' : ''}`}
+                  onClick={() => equipTheme(t)}
+                  disabled={locked}
+                  title={locked ? `Unlocks at level ${t.unlockLevel}` : t.name}
+                >
+                  <span className={`ringtheme-swatch${t.animated ? ' animated' : ''}`} style={{ background: `linear-gradient(135deg, ${t.from}, ${t.to})`, boxShadow: active ? `0 0 12px ${t.glow}` : undefined }}>
+                    {locked && <span className="ringtheme-lock">🔒</span>}
+                    {active && !locked && <span className="ringtheme-check">✓</span>}
+                  </span>
+                  <span className="ringtheme-name">{locked ? `LV${t.unlockLevel}` : t.name}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -310,24 +356,25 @@ const LevelPage: React.FC = () => {
           </div>
         )}
 
-        {/* Level table */}
+        {/* Level table — title + XP + the reward each grants */}
         <div className="diet-section" style={{ marginBottom: 100 }}>
-          <h2 className="diet-heading">All Levels</h2>
-          <div className="about-table-wrap">
-            <table className="about-table">
-              <thead>
-                <tr><th>Level</th><th>Title</th><th>XP needed</th></tr>
-              </thead>
-              <tbody>
-                {LEVEL_GATES.map(([xp, title], i) => (
-                  <tr key={i} className={playerLevel.level === i + 1 ? 'current-level-row' : ''}>
-                    <td>Lv.{i + 1}</td>
-                    <td>{title as string}</td>
-                    <td>{(xp as number).toLocaleString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <h2 className="diet-heading">All Levels &amp; Rewards</h2>
+          <div className="level-reward-list">
+            {PLAYER_LEVELS.map((lv, i) => {
+              const reached = playerLevel.level >= i + 1;
+              const current = playerLevel.level === i + 1;
+              return (
+                <div key={i} className={`level-reward-row${current ? ' current' : ''}${reached ? ' reached' : ' locked'}`}>
+                  <span className="lrr-lv">LV{i + 1}</span>
+                  <span className="lrr-reward-icon">{reached ? lv.reward.icon : '🔒'}</span>
+                  <div className="lrr-info">
+                    <span className="lrr-title">{lv.title}</span>
+                    <span className="lrr-reward">{lv.reward.label}</span>
+                  </div>
+                  <span className="lrr-xp">{lv.xp.toLocaleString()}<span className="lrr-xp-unit">XP</span></span>
+                </div>
+              );
+            })}
           </div>
         </div>
 

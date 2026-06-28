@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { api, isLoggedIn } from './api';
+import { computePlayerLevel, type PlayerLevel } from './levels';
+
+export type { PlayerLevel } from './levels';
 
 const INSTALL_XP = 100;
 const INSTALL_XP_KEY = 'superdub.installXP';
@@ -8,45 +11,6 @@ const XP_CACHE_KEY = 'superdub.xp.cache';
 const XP_GATES: [number, number][] = [
   [0, 10], [7, 15], [14, 20], [30, 25], [60, 30], [100, 35], [200, 40], [365, 50],
 ];
-
-const LEVEL_GATES: [number, string][] = [
-  [0,      'Rookie'],
-  [100,    'Beginner'],
-  [300,    'Novice'],
-  [700,    'Apprentice'],
-  [1500,   'Adept'],
-  [3000,   'Journeyman'],
-  [5000,   'Expert'],
-  [8000,   'Elite'],
-  [12000,  'Champion'],
-  [18000,  'Legend'],
-  [28000,  'Grandmaster'],
-  [42000,  'Mythic'],
-  [60000,  'Immortal'],
-  [85000,  'Eternal'],
-  [120000, 'Transcendent'],
-];
-
-export interface PlayerLevel {
-  level: number;
-  title: string;
-  progress: number;
-  xpForLevel: number;
-  xpForNext: number | null;
-  nextTitle: string | null;
-}
-
-function computePlayerLevel(totalXP: number): PlayerLevel {
-  let idx = 0;
-  for (let i = LEVEL_GATES.length - 1; i >= 0; i--) {
-    if (totalXP >= LEVEL_GATES[i][0]) { idx = i; break; }
-  }
-  const xpForLevel = LEVEL_GATES[idx][0];
-  const xpForNext  = idx < LEVEL_GATES.length - 1 ? LEVEL_GATES[idx + 1][0] : null;
-  const nextTitle  = idx < LEVEL_GATES.length - 1 ? LEVEL_GATES[idx + 1][1] : null;
-  const progress   = xpForNext ? (totalXP - xpForLevel) / (xpForNext - xpForLevel) : 1;
-  return { level: idx + 1, title: LEVEL_GATES[idx][1], progress, xpForLevel, xpForNext, nextTitle };
-}
 
 function computeXPFromRaw(
   habits: { name: string }[],
