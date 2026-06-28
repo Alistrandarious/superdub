@@ -5617,6 +5617,21 @@ h1, h2, h3, h4, .sora {
 .hcard-archive-icon.visible { display: inline-flex; }
 .hcard-archive-icon.visible:hover { color: rgba(255,69,58,0.7); background: rgba(255,69,58,0.08); }
 
+/* Permanent-delete icon in summary row — only present when expanded */
+.hcard-delete-icon {
+  display: none;
+  align-items: center; justify-content: center;
+  width: 26px; height: 26px;
+  padding: 0; border: none; border-radius: 8px;
+  background: transparent;
+  color: rgba(255,69,58,0.45);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.2s, background 0.2s;
+}
+.hcard-delete-icon.visible { display: inline-flex; }
+.hcard-delete-icon.visible:hover { color: #ff453a; background: rgba(255,69,58,0.1); }
+
 /* Level badge in collapsed summary — persistent, total-days driven */
 .hcard-level-badge {
   flex-shrink: 0;
@@ -6216,13 +6231,17 @@ h1, h2, h3, h4, .sora {
 .archived-entry:hover { color: #fff; background: var(--glass-bg-strong); border-color: var(--theme-dim); }
 .archived-entry-arrow { margin-left: auto; font-size: 1.1rem; opacity: 0.6; }
 
-/* Archived Habits page */
+/* Archived Habits page — standalone scroller (mirrors .habits-page-scroll) */
 .archived-scroll {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: 110px;
+  display: flex;
+  flex-direction: column;
+  padding: 4px 18px;
+  padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
 }
 .archived-scroll .graveyard-list { border-top: none; background: transparent; padding: 0; }
 .graveyard-card-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }

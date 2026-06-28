@@ -75,7 +75,7 @@ const ArchivedHabits: React.FC = () => {
         </div>
       )}
 
-      <div className="page-content archived-scroll">
+      <div className="archived-scroll">
         <div className="archived-head">
           <h1 className="archived-title">📦 Archived Habits</h1>
           <p className="archived-sub">Restore one to start it fresh from today, or delete it forever.</p>
