@@ -3173,6 +3173,19 @@ h1, h2, h3, h4, .sora {
   margin-top: 8px;
 }
 
+/* "or" divider + Google button */
+.auth-or {
+  display: flex; align-items: center; gap: 12px;
+  margin: 16px 0 4px;
+  color: rgba(255,255,255,0.35);
+  font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase;
+}
+.auth-or::before, .auth-or::after {
+  content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.12);
+}
+.google-auth-wrap { display: flex; justify-content: center; margin-top: 10px; }
+.google-auth-btn { color-scheme: light; min-height: 40px; }
+
 .auth-btn-primary {
   background: var(--grad-brand);
   color: #06121A;

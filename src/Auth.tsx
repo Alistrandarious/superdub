@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { api, setToken } from './api';
 import { OCCUPATIONS, ETHNICITIES, GENDER_IDENTITIES, COUNTRIES, RELATIONSHIP_STATUSES, RELIGIONS } from './demographics';
+import GoogleAuthButton from './GoogleAuthButton';
 import './App.css';
 
 interface AuthProps {
@@ -59,6 +60,9 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  // Google sign-up: when set, the account is created from a verified Google token
+  // instead of a password, and step 1 (email/password) is skipped.
+  const [googleToken, setGoogleToken] = useState<string | null>(null);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [dob, setDob] = useState('');
@@ -164,6 +168,30 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
     }
   };
 
+  // Google sign-in: existing users log straight in; new users drop into onboarding
+  // (email + name pre-filled, password step skipped) and finish with a Google token.
+  const handleGoogle = useCallback(async (idToken: string) => {
+    setError('');
+    setLoading(true);
+    try {
+      const res = await api.googleAuth(idToken);
+      if (res.token) { setToken(res.token); onAuth(); return; }
+      if (res.needsOnboarding) {
+        setGoogleToken(idToken);
+        setEmail(res.email || '');
+        const parts = (res.name || '').trim().split(/\s+/);
+        setFirstName(parts[0] || '');
+        setLastName(parts.slice(1).join(' '));
+        setMode('signup');
+        setStep(2);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Google sign-in failed.');
+    } finally {
+      setLoading(false);
+    }
+  }, [onAuth]);
+
   const nextStep = () => {
     setError('');
     if (step === 1) {
@@ -187,10 +215,12 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
     try {
       const name = [firstName.trim(), lastName.trim()].filter(Boolean).join(' ');
       const result = await api.signup({
-        email, password, name, dob, sex, heightCm, weightKg,
+        email, name, dob, sex, heightCm, weightKg,
         goalWeight, lossPerWeek, gainPerWeek, activityLevel, dietGoal, habits,
         jobType, gymFreq, walkFreq,
         occupation, ethnicity, genderIdentity, country, relationshipStatus, religion,
+        // Google accounts have no password; the server uses the verified token instead.
+        ...(googleToken ? { googleToken } : { password }),
       });
       setToken(result.token);
       // Persist cohort onboarding message so the dashboard can display it on first load
@@ -269,6 +299,8 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
             <div className="auth-landing-btns">
               <button className="auth-btn-primary" onClick={() => setMode('signup')}>Create account</button>
               <button className="auth-btn-ghost" onClick={() => setMode('login')}>Log in</button>
+              <GoogleAuthButton onCredential={handleGoogle} text="continue_with" />
+              {error && <p className="auth-error">{error}</p>}
             </div>
           </div>
         </div>
@@ -306,6 +338,8 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
                 {loading ? 'Logging in…' : 'Log in'}
               </button>
             </form>
+            <div className="auth-or"><span>or</span></div>
+            <GoogleAuthButton onCredential={handleGoogle} text="signin_with" />
             <p className="auth-switch">No account? <button className="auth-link" onClick={() => { setMode('signup'); clearError(); }}>Sign up</button></p>
             <p className="auth-switch"><button className="auth-link" onClick={() => { setResetEmail(loginEmail); setMode('forgot'); clearError(); }}>Forgot password?</button></p>
           </div>
@@ -429,6 +463,8 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
                     onKeyDown={e => e.key === 'Enter' && nextStep()} />
                 </div>
               </div>
+              <div className="auth-or"><span>or</span></div>
+              <GoogleAuthButton onCredential={handleGoogle} text="signup_with" />
             </>
           )}
 

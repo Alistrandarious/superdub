@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { OAuth2Client } from 'google-auth-library';
 import { pool } from '../db';
 import { requireAuth, AuthRequest } from '../middleware/auth';
 import { sendWelcomeEmail, sendPasswordResetEmail } from '../email';
@@ -11,6 +12,22 @@ const router = Router();
 
 const SALT_ROUNDS = 10;
 const DEFAULT_HABITS = ['Walking', 'Praying', 'Duolingo'];
+
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
+
+// Verify a Google ID token and return its trusted claims (or null if invalid).
+async function verifyGoogleToken(idToken: string): Promise<{ email: string; name: string; sub: string } | null> {
+  if (!GOOGLE_CLIENT_ID || !idToken) return null;
+  try {
+    const ticket = await googleClient.verifyIdToken({ idToken, audience: GOOGLE_CLIENT_ID });
+    const p = ticket.getPayload();
+    if (!p || !p.email || !p.email_verified) return null;
+    return { email: p.email.toLowerCase(), name: p.name || '', sub: p.sub };
+  } catch {
+    return null;
+  }
+}
 
 function makeToken(userId: number) {
   return jwt.sign({ userId }, process.env.JWT_SECRET!, { expiresIn: '90d' });
@@ -29,7 +46,7 @@ function ageFromDob(dob: string): string {
 // POST /api/auth/signup
 router.post('/signup', async (req: Request, res: Response) => {
   const {
-    email, password,
+    email, password, googleToken,
     name = '', dob = '', sex = 'male', heightCm = '', weightKg = '',
     goalWeight = '', lossPerWeek = '0.5', gainPerWeek = '0.25',
     activityLevel = '1.55', dietGoal = 'cut',
@@ -39,13 +56,28 @@ router.post('/signup', async (req: Request, res: Response) => {
     habits = DEFAULT_HABITS,
   } = req.body;
 
-  if (!email || !password) {
-    res.status(400).json({ error: 'Email and password are required' });
-    return;
-  }
-  if (password.length < 6) {
-    res.status(400).json({ error: 'Password must be at least 6 characters' });
-    return;
+  // Two ways to create an account: classic email+password, or a verified Google
+  // sign-in. For Google, the email comes from the verified token (not the body).
+  let signupEmail = (email || '').toLowerCase();
+  let googleSub: string | null = null;
+  let authProvider = 'password';
+  let passwordHash: string | null = null;
+
+  if (googleToken) {
+    const g = await verifyGoogleToken(googleToken);
+    if (!g) { res.status(401).json({ error: 'Google sign-in failed. Please try again.' }); return; }
+    signupEmail = g.email;
+    googleSub = g.sub;
+    authProvider = 'google';
+  } else {
+    if (!email || !password) {
+      res.status(400).json({ error: 'Email and password are required' });
+      return;
+    }
+    if (password.length < 6) {
+      res.status(400).json({ error: 'Password must be at least 6 characters' });
+      return;
+    }
   }
 
   const age = ageFromDob(dob);
@@ -55,16 +87,16 @@ router.post('/signup', async (req: Request, res: Response) => {
     client = await pool.connect();
     await client.query('BEGIN');
 
-    const existing = await client.query('SELECT id FROM users WHERE email = $1', [email.toLowerCase()]);
+    const existing = await client.query('SELECT id FROM users WHERE email = $1', [signupEmail]);
     if (existing.rows.length > 0) {
       res.status(409).json({ error: 'An account with that email already exists' });
       return;
     }
 
-    const hash = await bcrypt.hash(password, SALT_ROUNDS);
+    if (!googleToken) passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
     const { rows: [user] } = await client.query(
-      'INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id',
-      [email.toLowerCase(), hash]
+      'INSERT INTO users (email, password_hash, google_id, auth_provider) VALUES ($1, $2, $3, $4) RETURNING id',
+      [signupEmail, passwordHash, googleSub, authProvider]
     );
     const userId = user.id;
 
@@ -130,7 +162,7 @@ router.post('/signup', async (req: Request, res: Response) => {
     });
 
     // Fire-and-forget welcome email — don't block the signup response
-    sendWelcomeEmail(email.toLowerCase(), name).catch(err =>
+    sendWelcomeEmail(signupEmail, name).catch(err =>
       console.error('[email] Failed to send welcome email:', err)
     );
 
@@ -174,6 +206,40 @@ router.post('/login', async (req: Request, res: Response) => {
     res.json({ token: makeToken(rows[0].id), userId: rows[0].id });
   } catch (err) {
     console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /api/auth/google — verify a Google ID token, then either log the existing
+// user in, or signal the client to run onboarding for a brand-new account.
+router.post('/google', async (req: Request, res: Response) => {
+  const { idToken } = req.body as { idToken?: string };
+  if (!GOOGLE_CLIENT_ID) {
+    res.status(503).json({ error: 'Google sign-in is not configured.' });
+    return;
+  }
+  const g = await verifyGoogleToken(idToken || '');
+  if (!g) { res.status(401).json({ error: 'Google sign-in failed. Please try again.' }); return; }
+
+  try {
+    const { rows } = await pool.query('SELECT id FROM users WHERE email = $1', [g.email]);
+    if (rows.length > 0) {
+      const id = rows[0].id;
+      // Link the Google id on first social login + refresh provider/last login.
+      pool.query(
+        `UPDATE users SET google_id = COALESCE(google_id, $2),
+                          auth_provider = CASE WHEN password_hash IS NULL THEN 'google' ELSE auth_provider END,
+                          last_login_at = NOW()
+         WHERE id = $1`, [id, g.sub]
+      ).catch(() => {});
+      pool.query('INSERT INTO activity_events (user_id) VALUES ($1)', [id]).catch(() => {});
+      res.json({ token: makeToken(id), userId: id });
+      return;
+    }
+    // New user — tell the client to onboard, pre-filling what Google gave us.
+    res.json({ needsOnboarding: true, email: g.email, name: g.name });
+  } catch (err) {
+    console.error('[auth/google]', err);
     res.status(500).json({ error: 'Server error' });
   }
 });

@@ -67,6 +67,10 @@ const migrations = [
   `ALTER TABLE profile ADD COLUMN IF NOT EXISTS step_target INTEGER DEFAULT 10000`,
   `ALTER TABLE diet_settings ADD COLUMN IF NOT EXISTS goal TEXT DEFAULT 'cut'`,
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ`,
+  // Google / social sign-in
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id TEXT`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_provider TEXT DEFAULT 'password'`,
+  `ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL`,
   `ALTER TABLE habits ADD COLUMN IF NOT EXISTS archived BOOLEAN DEFAULT FALSE`,
   // Ensure unique constraints exist for ON CONFLICT to work
   `CREATE UNIQUE INDEX IF NOT EXISTS tracker_user_day_uniq ON tracker (user_id, day)`,

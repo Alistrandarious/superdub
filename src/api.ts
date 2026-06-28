@@ -51,6 +51,8 @@ export const api = {
   signup: (body: object) => request('/auth/signup', { method: 'POST', body: JSON.stringify(body) }),
   login: (body: object) => request('/auth/login', { method: 'POST', body: JSON.stringify(body) }),
   me: () => request('/auth/me'),
+  googleAuth: (idToken: string): Promise<{ token?: string; userId?: number; needsOnboarding?: boolean; email?: string; name?: string }> =>
+    request('/auth/google', { method: 'POST', body: JSON.stringify({ idToken }) }),
   forgotPassword: (email: string) =>
     request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
   resetPassword: (email: string, code: string, newPassword: string) =>
