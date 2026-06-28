@@ -325,7 +325,7 @@ const LevelRing: React.FC<{ level: number; title: string; progress: number; them
           stroke="url(#lvlGrad)" strokeWidth={stroke} strokeLinecap="butt"
           strokeDasharray={circ} strokeDashoffset={offset}
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
-          style={{ filter: `drop-shadow(0 0 8px ${theme.glow})` }}
+          style={{ filter: `drop-shadow(0 0 3px ${theme.glow})` }}
         />
         {/* inner black disc — meets the inner edge of the grey track */}
         <circle cx={size / 2} cy={size / 2} r={r - stroke / 2} fill="#0B0B11" />

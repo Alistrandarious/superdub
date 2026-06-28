@@ -93,7 +93,7 @@ const LevelRing: React.FC<{ level: number; title: string; progress: number; them
           </linearGradient>
         </defs>
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#33333D" strokeWidth={stroke} />
-        <circle className={`lvl-ring-arc${theme.animated ? ' animated' : ''}`} cx={size / 2} cy={size / 2} r={r} fill="none" stroke="url(#lvlGradLP)" strokeWidth={stroke} strokeLinecap="butt" strokeDasharray={circ} strokeDashoffset={offset} transform={`rotate(-90 ${size / 2} ${size / 2})`} style={{ filter: `drop-shadow(0 0 8px ${theme.glow})` }} />
+        <circle className={`lvl-ring-arc${theme.animated ? ' animated' : ''}`} cx={size / 2} cy={size / 2} r={r} fill="none" stroke="url(#lvlGradLP)" strokeWidth={stroke} strokeLinecap="butt" strokeDasharray={circ} strokeDashoffset={offset} transform={`rotate(-90 ${size / 2} ${size / 2})`} style={{ filter: `drop-shadow(0 0 3px ${theme.glow})` }} />
         <circle cx={size / 2} cy={size / 2} r={r - stroke / 2} fill="#0B0B11" />
       </svg>
       <div className="lvl-ring-center">

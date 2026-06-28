@@ -59,18 +59,18 @@ export interface RingTheme {
 }
 
 export const RING_THEMES: RingTheme[] = [
-  { id: 'gold',    name: 'Gold',        from: '#FFE15A', to: '#FFC42E', glow: 'rgba(255,196,46,0.55)',  unlockLevel: 1 },
-  { id: 'ocean',   name: 'Ocean',       from: '#5AD1FF', to: '#2E8BFF', glow: 'rgba(46,139,255,0.55)',  unlockLevel: 2 },
-  { id: 'coral',   name: 'Coral',       from: '#FF9A6C', to: '#FF5470', glow: 'rgba(255,84,112,0.55)',  unlockLevel: 3 },
-  { id: 'sunset',  name: 'Sunset',      from: '#FFB347', to: '#FF5E8A', glow: 'rgba(255,94,138,0.55)',  unlockLevel: 4 },
-  { id: 'forest',  name: 'Forest',      from: '#52EFA0', to: '#1FA971', glow: 'rgba(47,210,126,0.55)',  unlockLevel: 6 },
-  { id: 'gold-anim', name: 'Molten Gold', from: '#FFF0A0', to: '#FF9E2E', glow: 'rgba(255,158,46,0.7)', unlockLevel: 7, animated: true },
-  { id: 'aurora',  name: 'Aurora',      from: '#7CF8C0', to: '#A855F7', glow: 'rgba(168,85,247,0.55)',  unlockLevel: 8 },
-  { id: 'mono',    name: 'Platinum',    from: '#F4F4FA', to: '#A9A9C2', glow: 'rgba(220,220,235,0.55)', unlockLevel: 9 },
-  { id: 'galaxy',  name: 'Galaxy',      from: '#6C8BFF', to: '#A855F7', glow: 'rgba(124,108,255,0.6)',  unlockLevel: 10, animated: true },
-  { id: 'inferno', name: 'Inferno',     from: '#FFD23F', to: '#FF3D3D', glow: 'rgba(255,61,61,0.6)',    unlockLevel: 12, animated: true },
-  { id: 'eclipse', name: 'Eclipse',     from: '#B79CFF', to: '#3A2E6E', glow: 'rgba(183,156,255,0.55)', unlockLevel: 14 },
-  { id: 'prism',   name: 'Prism',       from: '#FF5E8A', to: '#2E8BFF', glow: 'rgba(255,255,255,0.6)',  unlockLevel: 15, animated: true },
+  { id: 'gold',    name: 'Gold',        from: '#FFE15A', to: '#FFC42E', glow: 'rgba(255,196,46,0.35)',  unlockLevel: 1 },
+  { id: 'ocean',   name: 'Ocean',       from: '#5AD1FF', to: '#2E8BFF', glow: 'rgba(46,139,255,0.35)',  unlockLevel: 2 },
+  { id: 'coral',   name: 'Coral',       from: '#FF9A6C', to: '#FF5470', glow: 'rgba(255,84,112,0.35)',  unlockLevel: 3 },
+  { id: 'sunset',  name: 'Sunset',      from: '#FFB347', to: '#FF5E8A', glow: 'rgba(255,94,138,0.35)',  unlockLevel: 4 },
+  { id: 'forest',  name: 'Forest',      from: '#52EFA0', to: '#1FA971', glow: 'rgba(47,210,126,0.35)',  unlockLevel: 6 },
+  { id: 'gold-anim', name: 'Molten Gold', from: '#FFF0A0', to: '#FF9E2E', glow: 'rgba(255,158,46,0.4)', unlockLevel: 7, animated: true },
+  { id: 'aurora',  name: 'Aurora',      from: '#7CF8C0', to: '#A855F7', glow: 'rgba(168,85,247,0.35)',  unlockLevel: 8 },
+  { id: 'mono',    name: 'Platinum',    from: '#F4F4FA', to: '#A9A9C2', glow: 'rgba(220,220,235,0.35)', unlockLevel: 9 },
+  { id: 'galaxy',  name: 'Galaxy',      from: '#6C8BFF', to: '#A855F7', glow: 'rgba(124,108,255,0.4)',  unlockLevel: 10, animated: true },
+  { id: 'inferno', name: 'Inferno',     from: '#FFD23F', to: '#FF3D3D', glow: 'rgba(255,61,61,0.4)',    unlockLevel: 12, animated: true },
+  { id: 'eclipse', name: 'Eclipse',     from: '#B79CFF', to: '#3A2E6E', glow: 'rgba(183,156,255,0.35)', unlockLevel: 14 },
+  { id: 'prism',   name: 'Prism',       from: '#FF5E8A', to: '#2E8BFF', glow: 'rgba(255,255,255,0.4)',  unlockLevel: 15, animated: true },
 ];
 
 export const DEFAULT_THEME_ID = 'gold';
