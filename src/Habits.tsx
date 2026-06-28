@@ -414,7 +414,8 @@ const HabitCard: React.FC<{
   onEditDay: (habit: string, dayKey: string, cur: HabitState) => void;
   onRequestRemove: (habit: string) => void;
   onRequestDelete: (habit: string) => void;
-}> = ({ habit, stats, weekDays, ht, today, cadence, onToggleDay, onEditDay, onRequestRemove, onRequestDelete }) => {
+  startDate?: string | null;
+}> = ({ habit, stats, weekDays, ht, today, cadence, onToggleDay, onEditDay, onRequestRemove, onRequestDelete, startDate }) => {
   const [histOpen, setHistOpen] = useState(false);
   const [monthOffset, setMonthOffset] = useState(0); // 0 = this month, -1 = last month …
   const nowD = new Date();
@@ -451,6 +452,20 @@ const HabitCard: React.FC<{
     }
     return null;
   })();
+
+  // Auto-fail: a past due day (on/after the habit's start, before today) that was
+  // never marked done counts as failed — derived, not persisted.
+  const startKey = startDateToKey(startDate ?? null);
+  const startIdx = startKey ? ALL_DAYS.indexOf(startKey) : 0;
+  const todayIdx = ALL_DAYS.indexOf(today);
+  const dayState = (key: string): HabitState => {
+    const raw = ht[key]?.[habit] ?? null;
+    if (raw === 'done') return 'done';
+    if (raw === 'failed') return 'failed';
+    const idx = ALL_DAYS.indexOf(key);
+    if (idx >= startIdx && idx < todayIdx) return 'failed'; // missed a due day
+    return null;
+  };
 
   return (
     <div
@@ -513,40 +528,49 @@ const HabitCard: React.FC<{
       <div className="hcard-body-wrap">
       <div className="hcard-body">
 
-      {/* Earned title */}
-      <div className="hcard-title-line" style={{ color: rank.color }}>
-        <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden><path d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l7.1-1.01z"/></svg>
-        <span>{rank.title}</span>
-      </div>
+      {/* Unified stat panel — earned title · level hero w/ progress · streak + XP */}
+      <div className="hsp">
+        <div className="hsp-title" style={{ color: rank.color }}>
+          <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" aria-hidden><path d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l7.1-1.01z"/></svg>
+          <span>{rank.title}</span>
+        </div>
 
-      {/* Stat tiles */}
-      <div className="hcard-stats">
-        <div className="hcard-stat">
-          <span className="hcard-stat-value">LV{stats.level}</span>
-          <span className="hcard-stat-label">level</span>
+        <div className="hsp-hero">
+          <div className="hsp-lv" style={{ backgroundImage: `linear-gradient(140deg, ${accent}, ${accent}99)` }}>
+            <span className="hsp-lv-tag">LVL</span>
+            <span className="hsp-lv-num">{stats.level}</span>
+          </div>
+          <div className="hsp-prog">
+            <div className="hsp-prog-top">
+              <span className="hsp-prog-xp">{stats.totalXP.toLocaleString()} XP</span>
+              <span className="hsp-prog-next">
+                {stats.maxed ? 'MAX' : `+${stats.nextRate} XP/day at LV${stats.level + 1}`}
+              </span>
+            </div>
+            <div className="hsp-bar"><div className="hsp-bar-fill" style={{ width: `${stats.levelProgress * 100}%` }} /></div>
+            <span className="hsp-prog-foot">
+              {stats.maxed ? `Earning +${stats.xpPerDay} XP/day 🏆` : `${stats.daysToNext} ${stats.daysToNext === 1 ? 'day' : 'days'} to next level`}
+            </span>
+          </div>
         </div>
-        <div className="hcard-stat">
-          <span className="hcard-stat-value">
-            {stats.streak > 0 ? stats.streak : daysSinceDone ?? 0}
-          </span>
-          <span className="hcard-stat-label">{stats.streak > 0 ? 'day streak' : 'days off'}</span>
-        </div>
-        <div className="hcard-stat">
-          <span className="hcard-stat-value">{stats.totalXP}</span>
-          <span className="hcard-stat-label">total xp</span>
-        </div>
-      </div>
 
-      {/* Progress toward next level */}
-      <div className="hcard-gate-progress">
-        <div className="hcard-exp-bar">
-          <div className="hcard-exp-fill" style={{ width: `${stats.levelProgress * 100}%` }} />
+        <div className="hsp-stats">
+          <div className={`hsp-stat ${stats.streak > 0 ? 'hot' : 'cold'}`}>
+            <span className="hsp-stat-ico">{stats.streak > 0 ? '🔥' : '💤'}</span>
+            <span className="hsp-stat-val">{stats.streak > 0 ? stats.streak : daysSinceDone ?? 0}</span>
+            <span className="hsp-stat-lbl">{stats.streak > 0 ? 'day streak' : 'days off'}</span>
+          </div>
+          <div className="hsp-stat">
+            <span className="hsp-stat-ico">📅</span>
+            <span className="hsp-stat-val">{stats.totalDays}</span>
+            <span className="hsp-stat-lbl">days done</span>
+          </div>
+          <div className="hsp-stat">
+            <span className="hsp-stat-ico">🏅</span>
+            <span className="hsp-stat-val">{stats.misses}</span>
+            <span className="hsp-stat-lbl">recent miss</span>
+          </div>
         </div>
-        <span className="hcard-gate-caption">
-          {stats.maxed
-            ? `Max level — earning +${stats.xpPerDay} XP/day 🏆`
-            : <>{stats.daysToNext} {stats.daysToNext === 1 ? 'day' : 'days'} to <strong>LV{stats.level + 1}</strong> · unlocks <strong style={{ color: accent }}>+{stats.nextRate} XP/day</strong></>}
-        </span>
       </div>
 
       {hasDanger && <p className="hcard-risk-chip danger">streak reset — start fresh today</p>}
@@ -555,13 +579,14 @@ const HabitCard: React.FC<{
       {isDaily ? (
         <div className="hcard-week">
           {weekDays.map(({ key, label, isFuture, isToday }) => {
-            const state = ht[key]?.[habit] ?? null;
+            const raw = ht[key]?.[habit] ?? null;
+            const state = dayState(key); // auto-fail past due days
             return (
               <div key={key} className={`hcard-day ${state === 'done' ? 'done' : ''} ${state === 'failed' ? 'failed' : ''} ${isFuture ? 'future' : ''} ${isToday ? 'is-today' : ''}`}>
                 <button
                   className="hcard-day-circle"
                   disabled={isFuture}
-                  onClick={() => !isFuture && onToggleDay(habit, key, cycleState(state))}
+                  onClick={() => !isFuture && onToggleDay(habit, key, cycleState(raw))}
                   aria-label={`${label}: ${state ?? 'blank'}`}
                 >
                   {state === 'done' && <span className="hcard-day-tick"><CheckSVG size={15} strokeWidth={2} /></span>}
@@ -962,6 +987,7 @@ const Habits: React.FC = () => {
             onEditDay={editPast}
             onRequestRemove={setPendingRemove}
             onRequestDelete={setPendingDelete}
+            startDate={startDates[habit]}
           />
         ))}
         <button className="hcard-add hcard-add--mini" onClick={() => { setNewHabitCadence(cad); setAddOpen(true); }} aria-label={`Add ${meta.label.toLowerCase()} habit`}>

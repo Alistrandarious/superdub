@@ -5635,14 +5635,15 @@ h1, h2, h3, h4, .sora {
 /* Level badge in collapsed summary — persistent, total-days driven */
 .hcard-level-badge {
   flex-shrink: 0;
-  font-family: 'Space Mono', monospace;
-  font-size: 0.62rem;
-  font-weight: 700;
+  font-family: 'Sora', sans-serif;
+  font-size: 0.6rem;
+  font-weight: 800;
   letter-spacing: 0.04em;
-  color: var(--theme);
-  background: color-mix(in srgb, var(--theme) 14%, transparent);
-  border: 1px solid color-mix(in srgb, var(--theme) 40%, transparent);
-  padding: 2px 7px;
+  color: #07120B;
+  background: linear-gradient(135deg, var(--theme), color-mix(in srgb, var(--theme) 65%, #000));
+  border: none;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 1px 4px color-mix(in srgb, var(--theme) 35%, transparent);
+  padding: 3px 8px;
   border-radius: var(--r-pill);
 }
 
@@ -5679,66 +5680,80 @@ h1, h2, h3, h4, .sora {
   font-size: 0.6rem;
 }
 
-/* Earned title line — the rank, styled like a badge the user holds */
-.hcard-title-line {
+/* ── Unified stat panel (.hsp) — one designed object, not 3 boxes ───────────── */
+.hsp {
+  position: relative;
   display: flex;
-  align-items: center;
-  gap: 6px;
-  font-family: 'Sora', sans-serif;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  flex-direction: column;
+  gap: 12px;
+  padding: 13px 14px;
+  border-radius: var(--r-lg);
+  background:
+    radial-gradient(120% 80% at 0% 0%, color-mix(in srgb, var(--theme) 12%, transparent), transparent 60%),
+    rgba(255,255,255,0.025);
+  border: 1px solid var(--glass-border);
+  overflow: hidden;
+}
+/* cadence accent edge */
+.hsp::before {
+  content: '';
+  position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: linear-gradient(var(--theme), color-mix(in srgb, var(--theme) 30%, transparent));
+}
+
+.hsp-title {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: 'Sora', sans-serif; font-size: 0.66rem; font-weight: 800;
+  letter-spacing: 0.12em; text-transform: uppercase;
   filter: drop-shadow(0 0 6px color-mix(in srgb, currentColor 35%, transparent));
 }
-.hcard-title-line svg { flex-shrink: 0; }
 
-/* Stat tiles — groups the gamification into one designed object */
-.hcard-stats {
-  display: flex;
-  gap: 7px;
+/* Level hero: gradient tile + progress */
+.hsp-hero { display: flex; align-items: center; gap: 13px; }
+.hsp-lv {
+  flex-shrink: 0;
+  width: 52px; height: 52px;
+  border-radius: 14px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: #07120B;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 4px 14px color-mix(in srgb, var(--theme) 35%, transparent);
 }
-.hcard-stat {
+.hsp-lv-tag { font-family: 'Space Mono', monospace; font-size: 0.5rem; font-weight: 700; letter-spacing: 0.1em; opacity: 0.8; }
+.hsp-lv-num { font-family: 'Sora', sans-serif; font-size: 1.7rem; font-weight: 900; line-height: 0.95; }
+
+.hsp-prog { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.hsp-prog-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.hsp-prog-xp { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1rem; color: #fff; }
+.hsp-prog-next { font-family: 'Sora', sans-serif; font-size: 0.6rem; font-weight: 600; color: var(--theme); white-space: nowrap; }
+.hsp-bar { height: 6px; border-radius: 99px; background: rgba(255,255,255,0.08); overflow: hidden; }
+.hsp-bar-fill {
+  height: 100%; border-radius: 99px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--theme) 55%, transparent), var(--theme));
+  box-shadow: 0 0 8px color-mix(in srgb, var(--theme) 45%, transparent);
+  transition: width 0.6s cubic-bezier(0.22,1,0.36,1);
+}
+.hsp-prog-foot { font-size: 0.6rem; color: rgba(255,255,255,0.4); letter-spacing: 0.02em; }
+
+/* Three inline stats with hairline dividers (one object, not separate cards) */
+.hsp-stats {
+  display: flex;
+  border-top: 1px solid var(--glass-border);
+  padding-top: 11px;
+}
+.hsp-stat {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  padding: 9px 4px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--r-md);
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  position: relative;
 }
-.hcard-stat-value {
-  font-family: 'Sora', sans-serif;
-  font-size: 1.1rem;
-  font-weight: 800;
-  line-height: 1;
-  color: #fff;
+.hsp-stat + .hsp-stat::before {
+  content: ''; position: absolute; left: 0; top: 10%; bottom: 10%;
+  width: 1px; background: var(--glass-border);
 }
-.hcard-stat:first-child .hcard-stat-value { color: var(--theme); }
-.hcard-stat-label {
-  font-family: 'Sora', sans-serif;
-  font-size: 0.55rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: rgba(255,255,255,0.35);
-}
-
-/* Gate progress — bar + responsive caption */
-.hcard-gate-progress {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-.hcard-gate-caption {
-  font-family: 'Sora', sans-serif;
-  font-size: 0.62rem;
-  font-weight: 500;
-  color: rgba(255,255,255,0.4);
-  letter-spacing: 0.02em;
-}
+.hsp-stat-ico { font-size: 0.95rem; line-height: 1; filter: saturate(1.1); }
+.hsp-stat.cold .hsp-stat-ico { opacity: 0.7; }
+.hsp-stat-val { font-family: 'Sora', sans-serif; font-size: 1.15rem; font-weight: 900; line-height: 1; color: #fff; }
+.hsp-stat.hot .hsp-stat-val { color: #FF8A3C; }
+.hsp-stat-lbl { font-family: 'Sora', sans-serif; font-size: 0.52rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(255,255,255,0.38); }
 
 .hcard-remove:hover {
   color: #ff453a;
