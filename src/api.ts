@@ -68,6 +68,7 @@ export const api = {
     request('/habits', { method: 'PUT', body: JSON.stringify({ habits }) }),
   archiveHabit: (name: string) => request(`/habits/${encodeURIComponent(name)}`, { method: 'DELETE' }),
   restoreHabit: (name: string) => request(`/habits/${encodeURIComponent(name)}/restore`, { method: 'POST' }),
+  deleteHabitPermanently: (name: string) => request(`/habits/${encodeURIComponent(name)}/permanent`, { method: 'DELETE' }),
   getGraveyard: (): Promise<{ name: string; startDate: string | null }[]> => request('/habits/graveyard'),
 
   // tracker

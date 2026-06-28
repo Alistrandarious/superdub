@@ -93,6 +93,36 @@ router.delete('/:name', requireAuth as any, async (req: AuthRequest, res: Respon
   }
 });
 
+// Permanently delete a habit + its tracker history. Guarded to ARCHIVED habits
+// only, so an active habit can never be hard-deleted by accident.
+router.delete('/:name/permanent', requireAuth as any, async (req: AuthRequest, res: Response) => {
+  const { name } = req.params;
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const del = await client.query(
+      'DELETE FROM habits WHERE user_id = $1 AND name = $2 AND archived = TRUE',
+      [req.userId, name]
+    );
+    if (del.rowCount === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Not found or not archived' });
+    }
+    // Only now (the habit was genuinely archived) remove its tracker history.
+    await client.query(
+      'DELETE FROM tracker_habits WHERE user_id = $1 AND habit_name = $2',
+      [req.userId, name]
+    );
+    await client.query('COMMIT');
+    res.json({ ok: true });
+  } catch {
+    await client.query('ROLLBACK').catch(() => {});
+    res.status(500).json({ error: 'Server error' });
+  } finally {
+    client.release();
+  }
+});
+
 router.post('/:name/restore', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
     const { name } = req.params;

@@ -6217,6 +6217,28 @@ h1, h2, h3, h4, .sora {
 .archived-entry-arrow { margin-left: auto; font-size: 1.1rem; opacity: 0.6; }
 
 /* Archived Habits page */
+.archived-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 110px;
+}
+.archived-scroll .graveyard-list { border-top: none; background: transparent; padding: 0; }
+.graveyard-card-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.graveyard-delete-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; flex-shrink: 0;
+  border-radius: var(--r-sm);
+  background: rgba(255,69,58,0.08);
+  border: 1px solid rgba(255,69,58,0.25);
+  color: rgba(255,69,58,0.8);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.graveyard-delete-btn:hover:not(:disabled) { background: rgba(255,69,58,0.18); color: #ff453a; border-color: rgba(255,69,58,0.5); }
+.graveyard-delete-btn:disabled { opacity: 0.4; cursor: default; }
+.confirm-ok--danger { background: #ff453a; border-color: #ff453a; color: #fff; }
 .archived-head { padding: 8px 4px 18px; }
 .archived-title { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.5rem; color: #fff; margin: 0 0 6px; }
 .archived-sub { font-size: 0.85rem; color: rgba(255,255,255,0.45); margin: 0; }

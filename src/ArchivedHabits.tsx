@@ -10,6 +10,8 @@ const ArchivedHabits: React.FC = () => {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
   const [restoring, setRestoring] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   const load = () => {
     setError(false);
@@ -24,7 +26,6 @@ const ArchivedHabits: React.FC = () => {
     try {
       await api.restoreHabit(name);
       window.dispatchEvent(new CustomEvent('superdub:tracker-updated'));
-      // brief "rising" animation, then remove from the list
       setTimeout(() => {
         setGraveyard(prev => prev.filter(h => h.name !== name));
         setRestoring(null);
@@ -32,6 +33,19 @@ const ArchivedHabits: React.FC = () => {
     } catch {
       setRestoring(null);
     }
+  };
+
+  const permaDelete = async (name: string) => {
+    setConfirmDelete(null);
+    setDeleting(name);
+    try {
+      await api.deleteHabitPermanently(name);
+      window.dispatchEvent(new CustomEvent('superdub:tracker-updated'));
+      setGraveyard(prev => prev.filter(h => h.name !== name));
+    } catch {
+      // leave it in the list so the user can retry
+    }
+    setDeleting(null);
   };
 
   return (
@@ -47,10 +61,24 @@ const ArchivedHabits: React.FC = () => {
         <div style={{ width: 38 }} />
       </div>
 
-      <div className="page-content">
+      {/* Permanent-delete confirmation */}
+      {confirmDelete && (
+        <div className="confirm-overlay" onClick={() => setConfirmDelete(null)}>
+          <div className="confirm-dialog" onClick={e => e.stopPropagation()}>
+            <p className="confirm-title">Delete "{confirmDelete}" forever?</p>
+            <p className="confirm-desc">This permanently erases the habit and all of its history. This can't be undone.</p>
+            <div className="confirm-actions">
+              <button className="confirm-cancel" onClick={() => setConfirmDelete(null)}>Cancel</button>
+              <button className="confirm-ok confirm-ok--danger" onClick={() => permaDelete(confirmDelete)}>Delete forever</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="page-content archived-scroll">
         <div className="archived-head">
           <h1 className="archived-title">📦 Archived Habits</h1>
-          <p className="archived-sub">Habits you've archived. Restore one and it starts fresh from today.</p>
+          <p className="archived-sub">Restore one to start it fresh from today, or delete it forever.</p>
         </div>
 
         {!loaded ? (
@@ -70,19 +98,35 @@ const ArchivedHabits: React.FC = () => {
             <button className="archived-back-btn" onClick={() => navigate('/')}>Back to habits</button>
           </div>
         ) : (
-          <div className="graveyard-list" style={{ marginBottom: 100 }}>
-            {graveyard.map(h => (
-              <div key={h.name} className={`graveyard-card ${restoring === h.name ? 'rising' : ''}`}>
-                <span className="graveyard-card-name">📁 {h.name}</span>
-                <button
-                  className="graveyard-restore-btn"
-                  onClick={() => restore(h.name)}
-                  disabled={restoring !== null}
-                >
-                  {restoring === h.name ? '✨ Restoring…' : 'Restore'}
-                </button>
-              </div>
-            ))}
+          <div className="graveyard-list">
+            {graveyard.map(h => {
+              const busy = restoring === h.name || deleting === h.name;
+              return (
+                <div key={h.name} className={`graveyard-card ${restoring === h.name ? 'rising' : ''}`}>
+                  <span className="graveyard-card-name">📁 {h.name}</span>
+                  <div className="graveyard-card-actions">
+                    <button
+                      className="graveyard-restore-btn"
+                      onClick={() => restore(h.name)}
+                      disabled={busy}
+                    >
+                      {restoring === h.name ? '✨ Restoring…' : 'Restore'}
+                    </button>
+                    <button
+                      className="graveyard-delete-btn"
+                      onClick={() => setConfirmDelete(h.name)}
+                      disabled={busy}
+                      aria-label={`Delete ${h.name} permanently`}
+                      title="Delete forever"
+                    >
+                      {deleting === h.name
+                        ? '…'
+                        : <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
