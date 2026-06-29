@@ -307,17 +307,17 @@ function cycleState(current: HabitState): HabitState {
 }
 
 // Small hook: the equipped ring theme, kept in sync across tabs/pages.
-function useRingTheme(level: number): RingTheme {
-  const [id, setId] = useState(() => getSelectedThemeId(level));
+function useRingTheme(): RingTheme {
+  const [id, setId] = useState(getSelectedThemeId);
   useEffect(() => {
-    const sync = () => setId(getSelectedThemeId(level));
+    const sync = () => setId(getSelectedThemeId());
     window.addEventListener('superdub:ring-theme-changed', sync);
     window.addEventListener('storage', sync);
     return () => {
       window.removeEventListener('superdub:ring-theme-changed', sync);
       window.removeEventListener('storage', sync);
     };
-  }, [level]);
+  }, []);
   return getRingTheme(id);
 }
 
@@ -724,7 +724,7 @@ const Habits: React.FC = () => {
   const today = todayKey();
   const weekDays = getWeekDays();
   const { totalXP: totalXPAll, playerLevel } = useXP();
-  const ringTheme = useRingTheme(playerLevel.level);
+  const ringTheme = useRingTheme();
   const [mascotSpecies, setMascotSpecies] = useState(getMascot);
   useEffect(() => {
     const sync = () => setMascotSpecies(getMascot());

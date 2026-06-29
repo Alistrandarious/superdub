@@ -7900,6 +7900,8 @@ h1, h2, h3, h4, .sora {
   padding: 8px 12px 4px;
 }
 .cog-menu-sep { height: 1px; background: rgba(255,255,255,0.08); margin: 4px 6px; }
+.cog-menu-item--danger { color: #ff6b6b; }
+.cog-menu-item--danger:hover { background: rgba(255,69,58,0.12); color: #ff453a; }
 .cog-menu--full .reminder-time-select {
   background: rgba(255,255,255,0.06); color: #ddd; border: 1px solid rgba(255,255,255,0.12);
   border-radius: 7px; padding: 3px 6px; font-size: 0.78rem;

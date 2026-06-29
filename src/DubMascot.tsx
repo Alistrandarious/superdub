@@ -1,4 +1,5 @@
 import React from 'react';
+import { getDubColor, DUB_COLORS } from './levels';
 
 export type MascotSpecies = 'dog' | 'cat';
 export const MASCOT_KEY = 'superdub.mascot';
@@ -9,17 +10,20 @@ export function getMascot(): MascotSpecies {
 // "Dub" — Superdub's coaching pet. A cute robo-companion: a Yorkie by default,
 // or a cat once unlocked at level 2. Pure SVG + CSS (idle bob, blink, ear twitch,
 // antenna glow, tail wag, a gentle pant). He doesn't yap — no constant mouth flap.
-const DubMascot: React.FC<{ size?: number; mood?: 'happy' | 'neutral' | 'concerned'; species?: MascotSpecies }> = ({ size = 120, mood = 'happy', species = 'dog' }) => {
+const DubMascot: React.FC<{ size?: number; mood?: 'happy' | 'neutral' | 'concerned'; species?: MascotSpecies; colorId?: string }> = ({ size = 120, mood = 'happy', species = 'dog', colorId }) => {
   const cat = species === 'cat';
+  // The equipped colour, or a specific one when previewing a swatch.
+  const c = (colorId && DUB_COLORS.find(x => x.id === colorId)) || getDubColor();
+  const bodyFrom = c.bodyFrom, bodyTo = c.bodyTo, accent = c.accent;
   return (
     <div className={`dub dub--${mood} dub--${species}`} style={{ width: size, height: size }} aria-hidden>
       <svg viewBox="0 0 120 120" width={size} height={size}>
         <defs>
           <linearGradient id="dubBody" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#9AA3BA" /><stop offset="100%" stopColor="#5A6276" />
+            <stop offset="0%" stopColor={bodyFrom} /><stop offset="100%" stopColor={bodyTo} />
           </linearGradient>
           <radialGradient id="dubFace" cx="50%" cy="38%" r="70%">
-            <stop offset="0%" stopColor="#C7CEDE" /><stop offset="100%" stopColor="#838BA0" />
+            <stop offset="0%" stopColor={bodyFrom} /><stop offset="100%" stopColor={bodyTo} />
           </radialGradient>
           <linearGradient id="dubTan" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#E0AC68" /><stop offset="100%" stopColor="#A9742F" />
@@ -39,7 +43,7 @@ const DubMascot: React.FC<{ size?: number; mood?: 'happy' | 'neutral' | 'concern
         {/* body */}
         <path className="dub-body" d="M28 114 q-2 -38 32 -38 q34 0 32 38 z" fill="url(#dubBody)" stroke="#3a3f4d" strokeWidth="2" />
         <rect x="49" y="90" width="22" height="20" rx="6" fill="#474d5e" />
-        <circle className="dub-chest-led" cx="60" cy="99" r="3.4" fill="#2FD27E" />
+        <circle className="dub-chest-led" cx="60" cy="99" r="3.4" fill={accent} />
 
         {/* head bobs gently */}
         <g className="dub-head">
@@ -60,7 +64,7 @@ const DubMascot: React.FC<{ size?: number; mood?: 'happy' | 'neutral' | 'concern
           {/* antenna */}
           <g className="dub-antenna">
             <line x1="60" y1="24" x2="60" y2="7" stroke="#9AA3B8" strokeWidth="2.5" strokeLinecap="round" />
-            <circle className="dub-antenna-tip" cx="60" cy="6" r="4" fill="#2FD27E" />
+            <circle className="dub-antenna-tip" cx="60" cy="6" r="4" fill={accent} />
           </g>
 
           {/* big round cuddly head */}

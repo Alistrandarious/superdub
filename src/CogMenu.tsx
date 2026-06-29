@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { enablePush, disablePush, pushIsEnabled, pushSupported, getReminderHour, setReminderHour } from './push';
+import { clearToken } from './api';
 import { BUILD_TAG } from './version';
 
 function readPlanBadge(): { active: boolean; calories: number | null; onTrack: boolean | null } | null {
@@ -23,20 +24,9 @@ const CogMenu: React.FC = () => {
   const [pushOn, setPushOn] = useState(pushIsEnabled);
   const [pushBusy, setPushBusy] = useState(false);
   const [reminderHour, setReminderHourState] = useState(getReminderHour);
-  const [habitsColor, setHabitsColor] = useState(() => localStorage.getItem('superdub.habitsColor') || '#FFB300');
-  const [navGlow, setNavGlow] = useState(() => localStorage.getItem('superdub.navGlow') || '#2FD27E');
   const planBadge = readPlanBadge();
 
-  const changeHabitsColor = (c: string) => {
-    setHabitsColor(c);
-    localStorage.setItem('superdub.habitsColor', c);
-    window.dispatchEvent(new CustomEvent('superdub:habits-color-changed'));
-  };
-  const changeNavGlow = (c: string) => {
-    setNavGlow(c);
-    localStorage.setItem('superdub.navGlow', c);
-    window.dispatchEvent(new CustomEvent('superdub:nav-glow-changed'));
-  };
+  const logout = () => { clearToken(); window.location.href = '/'; };
 
   const close = () => setOpen(false);
   const go = (path: string) => { close(); navigate(path); };
@@ -97,30 +87,8 @@ const CogMenu: React.FC = () => {
                 </span>
               )}
             </button>
-            <button className="cog-menu-item" onClick={() => go('/success-kit')}><span className="cog-mi-ico">📚</span> Success Kit</button>
-            <button className="cog-menu-item" onClick={() => go('/level')}><span className="cog-mi-ico">⭐</span> Level &amp; XP</button>
             <button className="cog-menu-item" onClick={() => go('/archived')}><span className="cog-mi-ico">📦</span> Archived Habits</button>
-            <button className="cog-menu-item" onClick={() => go('/profile')}><span className="cog-mi-ico">👤</span> Profile &amp; Settings</button>
-            <button className="cog-menu-item" onClick={() => go('/about')}><span className="cog-mi-ico">ℹ️</span> About Superdub</button>
-            <button className="cog-menu-item" onClick={() => go('/privacy')}><span className="cog-mi-ico">🔒</span> Privacy Policy</button>
-
-            <div className="cog-menu-sep" />
-            <div className="cog-menu-label">Personalise</div>
-            <button className="cog-menu-item" onClick={() => go('/level')}>
-              <span className="cog-mi-ico">🎨</span> Level ring theme
-            </button>
-            <label className="cog-menu-item" style={{ cursor: 'pointer' }}>
-              <span className="cog-mi-ico">🟡</span> Habits button colour
-              <span className="cog-color-swatch" style={{ background: habitsColor, marginLeft: 'auto' }}>
-                <input type="color" value={habitsColor} onChange={e => changeHabitsColor(e.target.value)} aria-label="Habits button colour" />
-              </span>
-            </label>
-            <label className="cog-menu-item" style={{ cursor: 'pointer' }}>
-              <span className="cog-mi-ico">✨</span> Menu glow colour
-              <span className="cog-color-swatch" style={{ background: navGlow, marginLeft: 'auto' }}>
-                <input type="color" value={navGlow} onChange={e => changeNavGlow(e.target.value)} aria-label="Menu glow colour" />
-              </span>
-            </label>
+            <button className="cog-menu-item" onClick={() => go('/level')}><span className="cog-mi-ico">🎨</span> Personalise</button>
 
             <div className="cog-menu-sep" />
             <div className="cog-menu-label">Settings</div>
@@ -144,6 +112,12 @@ const CogMenu: React.FC = () => {
                 </select>
               </div>
             )}
+
+            <div className="cog-menu-sep" />
+            <button className="cog-menu-item" onClick={() => go('/profile')}><span className="cog-mi-ico">👤</span> Profile &amp; Settings</button>
+            <button className="cog-menu-item" onClick={() => go('/about')}><span className="cog-mi-ico">ℹ️</span> About Superdub</button>
+            <button className="cog-menu-item" onClick={() => go('/privacy')}><span className="cog-mi-ico">🔒</span> Privacy Policy</button>
+            <button className="cog-menu-item cog-menu-item--danger" onClick={logout}><span className="cog-mi-ico">⏏️</span> Log out</button>
 
             <div className="cog-menu-version">superdub {BUILD_TAG}</div>
           </div>

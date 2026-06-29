@@ -12,6 +12,9 @@ import DubMascot, { getMascot, MASCOT_KEY, type MascotSpecies } from './DubMasco
 import {
   PLAYER_LEVELS, RING_THEMES, getRingTheme, getSelectedThemeId,
   SELECTED_THEME_KEY, type RingTheme, habitXPForDoneDays,
+  isUnlocked, unlockLabel, EARLY_ADOPTER_BEFORE, type UnlockCtx,
+  DUB_COLORS, DUB_COLOR_KEY, getDubColor,
+  HABIT_COLORS, GLOW_COLORS, HABITS_COLOR_KEY, NAV_GLOW_KEY, type AccentColor,
 } from './levels';
 
 const CAT_UNLOCK_LEVEL = 2;
@@ -211,10 +214,20 @@ const LevelPage: React.FC = () => {
   const sortedByXP = [...allStats].sort((a, b) => b.totalXP - a.totalXP);
 
   // Equipped ring theme (cosmetic unlock)
-  const [themeId, setThemeId] = useState(() => getSelectedThemeId(playerLevel.level));
+  // Unlock context — what the user has earned
+  const [earlyAdopter, setEarlyAdopter] = useState(false);
+  useEffect(() => {
+    api.getProfile().then((p: any) => {
+      if (p?.accountCreatedAt) setEarlyAdopter(new Date(p.accountCreatedAt) < new Date(EARLY_ADOPTER_BEFORE));
+    }).catch(() => {});
+  }, []);
+  const dayStreak = parseInt(localStorage.getItem('superdub.dayStreak') || '0', 10);
+  const ctx: UnlockCtx = { level: playerLevel.level, streak: dayStreak, earlyAdopter };
+
+  const [themeId, setThemeId] = useState(getSelectedThemeId);
   const theme = getRingTheme(themeId);
   const equipTheme = (t: RingTheme) => {
-    if (t.unlockLevel > playerLevel.level) return; // locked
+    if (!isUnlocked(t.unlock, ctx)) return;
     localStorage.setItem(SELECTED_THEME_KEY, t.id);
     setThemeId(t.id);
     window.dispatchEvent(new CustomEvent('superdub:ring-theme-changed'));
@@ -228,6 +241,29 @@ const LevelPage: React.FC = () => {
     setSpecies(s);
     localStorage.setItem(MASCOT_KEY, s);
     window.dispatchEvent(new CustomEvent('superdub:mascot-changed'));
+  };
+
+  // Dub colour
+  const [dubColorId, setDubColorId] = useState(() => getDubColor().id);
+  const pickDubColor = (id: string, locked: boolean) => {
+    if (locked) return;
+    localStorage.setItem(DUB_COLOR_KEY, id);
+    setDubColorId(id);
+    window.dispatchEvent(new CustomEvent('superdub:mascot-changed'));
+  };
+
+  // Habit-button colour + menu-glow colour (unlock-gated swatches)
+  const [habitsColor, setHabitsColor] = useState(() => localStorage.getItem(HABITS_COLOR_KEY) || '#FFB300');
+  const [navGlow, setNavGlow] = useState(() => localStorage.getItem(NAV_GLOW_KEY) || '#2FD27E');
+  const pickHabitColor = (c: AccentColor, locked: boolean) => {
+    if (locked) return;
+    localStorage.setItem(HABITS_COLOR_KEY, c.color); setHabitsColor(c.color);
+    window.dispatchEvent(new CustomEvent('superdub:habits-color-changed'));
+  };
+  const pickGlow = (c: AccentColor, locked: boolean) => {
+    if (locked) return;
+    localStorage.setItem(NAV_GLOW_KEY, c.color); setNavGlow(c.color);
+    window.dispatchEvent(new CustomEvent('superdub:nav-glow-changed'));
   };
 
   return (
@@ -282,7 +318,7 @@ const LevelPage: React.FC = () => {
           <p className="rewards-sub">Equip a level-ring theme you’ve unlocked.</p>
           <div className="ringtheme-grid">
             {RING_THEMES.map(t => {
-              const locked = t.unlockLevel > playerLevel.level;
+              const locked = !isUnlocked(t.unlock, ctx);
               const active = t.id === themeId;
               return (
                 <button
@@ -290,13 +326,76 @@ const LevelPage: React.FC = () => {
                   className={`ringtheme-chip${active ? ' active' : ''}${locked ? ' locked' : ''}`}
                   onClick={() => equipTheme(t)}
                   disabled={locked}
-                  title={locked ? `Unlocks at level ${t.unlockLevel}` : t.name}
+                  title={locked ? `Unlocks: ${unlockLabel(t.unlock)}` : t.name}
                 >
                   <span className={`ringtheme-swatch${t.animated ? ' animated' : ''}`} style={{ background: `linear-gradient(135deg, ${t.from}, ${t.to})`, boxShadow: active ? `0 0 12px ${t.glow}` : undefined }}>
                     {locked && <span className="ringtheme-lock">🔒</span>}
                     {active && !locked && <span className="ringtheme-check">✓</span>}
                   </span>
-                  <span className="ringtheme-name">{locked ? `LV${t.unlockLevel}` : t.name}</span>
+                  <span className="ringtheme-name">{locked ? unlockLabel(t.unlock) : t.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Dub colours */}
+        <div className="diet-section">
+          <h2 className="diet-heading">Dub's Colour</h2>
+          <p className="rewards-sub">Recolour your companion. Unlock more as you level up.</p>
+          <div className="ringtheme-grid">
+            {DUB_COLORS.map(dc => {
+              const locked = !isUnlocked(dc.unlock, ctx);
+              const active = dc.id === dubColorId;
+              return (
+                <button key={dc.id} className={`ringtheme-chip${active ? ' active' : ''}${locked ? ' locked' : ''}`} onClick={() => pickDubColor(dc.id, locked)} disabled={locked} title={locked ? `Unlocks: ${unlockLabel(dc.unlock)}` : dc.name}>
+                  <span className="ringtheme-swatch" style={{ background: `linear-gradient(135deg, ${dc.bodyFrom}, ${dc.bodyTo})`, boxShadow: active ? `0 0 12px ${dc.accent}66` : undefined }}>
+                    {locked && <span className="ringtheme-lock">🔒</span>}
+                    {active && !locked && <span className="ringtheme-check">✓</span>}
+                  </span>
+                  <span className="ringtheme-name">{locked ? unlockLabel(dc.unlock) : dc.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Habits button colour */}
+        <div className="diet-section">
+          <h2 className="diet-heading">Habits Button</h2>
+          <p className="rewards-sub">The colour of your centre Habits button.</p>
+          <div className="ringtheme-grid">
+            {HABIT_COLORS.map(c => {
+              const locked = !isUnlocked(c.unlock, ctx);
+              const active = habitsColor.toLowerCase() === c.color.toLowerCase();
+              return (
+                <button key={c.id} className={`ringtheme-chip${active ? ' active' : ''}${locked ? ' locked' : ''}`} onClick={() => pickHabitColor(c, locked)} disabled={locked} title={locked ? `Unlocks: ${unlockLabel(c.unlock)}` : c.name}>
+                  <span className="ringtheme-swatch" style={{ background: c.color, boxShadow: active ? `0 0 12px ${c.color}88` : undefined }}>
+                    {locked && <span className="ringtheme-lock">🔒</span>}
+                    {active && !locked && <span className="ringtheme-check">✓</span>}
+                  </span>
+                  <span className="ringtheme-name">{locked ? unlockLabel(c.unlock) : c.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Menu glow colour */}
+        <div className="diet-section">
+          <h2 className="diet-heading">Menu Glow</h2>
+          <p className="rewards-sub">The glow on the selected bottom-nav item.</p>
+          <div className="ringtheme-grid">
+            {GLOW_COLORS.map(c => {
+              const locked = !isUnlocked(c.unlock, ctx);
+              const active = navGlow.toLowerCase() === c.color.toLowerCase();
+              return (
+                <button key={c.id} className={`ringtheme-chip${active ? ' active' : ''}${locked ? ' locked' : ''}`} onClick={() => pickGlow(c, locked)} disabled={locked} title={locked ? `Unlocks: ${unlockLabel(c.unlock)}` : c.name}>
+                  <span className="ringtheme-swatch" style={{ background: c.color, boxShadow: active ? `0 0 12px ${c.color}88` : undefined }}>
+                    {locked && <span className="ringtheme-lock">🔒</span>}
+                    {active && !locked && <span className="ringtheme-check">✓</span>}
+                  </span>
+                  <span className="ringtheme-name">{locked ? unlockLabel(c.unlock) : c.name}</span>
                 </button>
               );
             })}
