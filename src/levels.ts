@@ -148,6 +148,25 @@ export const GLOW_COLORS: AccentColor[] = [
 export const HABITS_COLOR_KEY = 'superdub.habitsColor';
 export const NAV_GLOW_KEY = 'superdub.navGlow';
 
+// ── App backgrounds — unlockable, level-gated ───────────────────────────────
+// Kept dark so text stays readable; `grad` is the base layer the .app paints
+// under its per-page glow. `swatch` is what the picker shows.
+export interface Background { id: string; name: string; grad: string; swatch: string; unlock?: Unlock; }
+export const BACKGROUNDS: Background[] = [
+  { id: 'midnight', name: 'Midnight', grad: 'linear-gradient(160deg, #0E0E14 0%, #0E0E14 100%)', swatch: '#0E0E14' },
+  { id: 'dusk',     name: 'Dusk',     grad: 'linear-gradient(160deg, #0E0B16 0%, #16101F 100%)', swatch: '#16101F', unlock: { level: 3 } },
+  { id: 'ocean',    name: 'Deep Ocean', grad: 'linear-gradient(160deg, #080F18 0%, #0C1826 100%)', swatch: '#0C1826', unlock: { level: 5 } },
+  { id: 'forest',   name: 'Forest',   grad: 'linear-gradient(160deg, #08130D 0%, #0C1B13 100%)', swatch: '#0C1B13', unlock: { level: 7 } },
+  { id: 'ember',    name: 'Ember',    grad: 'linear-gradient(160deg, #150B0B 0%, #1C0F0E 100%)', swatch: '#1C0F0E', unlock: { level: 10 } },
+  { id: 'aurora',   name: 'Aurora',   grad: 'linear-gradient(160deg, #0A1018 0%, #140A1C 100%)', swatch: '#140A1C', unlock: { level: 13 } },
+  { id: 'freer',    name: 'Freer',    grad: 'linear-gradient(160deg, #07130F 0%, #160E18 100%)', swatch: '#0E1A1B', unlock: { special: 'earlyAdopter' } },
+];
+export const BACKGROUND_KEY = 'superdub.background';
+export function getBackground(): Background {
+  const id = (typeof localStorage !== 'undefined' && localStorage.getItem(BACKGROUND_KEY)) || 'midnight';
+  return BACKGROUNDS.find(b => b.id === id) ?? BACKGROUNDS[0];
+}
+
 // ── The level ladder — meaningful titles + a reward each ─────────────────────
 // 15 levels, themed around the journey of building habits (not generic RPG ranks).
 export const PLAYER_LEVELS: PlayerLevelDef[] = [

@@ -121,7 +121,7 @@ h1, h2, h3, h4, .sora {
     radial-gradient(900px 600px at 5% -5%, var(--theme-glow, rgba(0,255,65,0.1)), transparent 55%),
     radial-gradient(800px 600px at 105% 5%, var(--theme-glow, rgba(0,255,65,0.08)), transparent 50%),
     radial-gradient(700px 700px at 50% 110%, var(--theme-glow, rgba(0,255,65,0.07)), transparent 55%),
-    linear-gradient(160deg, #0E0E14 0%, #0E0E14 50%, #0E0E14 100%);
+    var(--app-bg-base, linear-gradient(160deg, #0E0E14 0%, #0E0E14 100%));
   background-attachment: fixed;
 }
 
@@ -5793,6 +5793,30 @@ h1, h2, h3, h4, .sora {
 .hb-dub-by-ring:hover { transform: scale(1.08) rotate(-3deg); border-color: rgba(47,210,126,0.6); }
 .hb-dub-by-ring:active { transform: scale(0.94); }
 @keyframes dub-peek-in { from { opacity: 0; transform: translateY(10px) scale(0.8); } to { opacity: 1; transform: none; } }
+
+/* Collapsible sections on the Level page */
+.lvl-collapse {
+  margin: 0 0 10px; border: 1px solid var(--glass-border);
+  border-radius: var(--r-card); overflow: hidden; background: rgba(255,255,255,0.015);
+}
+.lvl-collapse.open { border-color: rgba(255,255,255,0.14); }
+.lvl-collapse-head {
+  display: flex; align-items: center; width: 100%;
+  background: none; border: none; cursor: pointer; text-align: left;
+  padding: 15px 16px;
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1rem; color: #fff;
+}
+.lvl-collapse-title { flex: 1; }
+.lvl-collapse-chev { color: rgba(255,255,255,0.4); font-size: 0.8rem; transition: transform 0.25s; }
+.lvl-collapse-chev.open { transform: rotate(180deg); }
+.lvl-collapse-wrap { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.32s cubic-bezier(0.22,1,0.36,1); }
+.lvl-collapse.open .lvl-collapse-wrap { grid-template-rows: 1fr; }
+.lvl-collapse-body { overflow: hidden; min-height: 0; padding: 0 16px; }
+.lvl-collapse.open .lvl-collapse-body { padding-bottom: 14px; }
+/* tighten nested cosmetic sub-sections inside a collapsible */
+.lvl-collapse-body .diet-section { margin: 0 0 14px; }
+.lvl-collapse-body .diet-section:last-child { margin-bottom: 0; }
+.lvl-collapse-body .diet-heading { font-size: 0.82rem; color: rgba(255,255,255,0.7); }
 
 /* Companion picker (Level page cosmetics) */
 .companion-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }

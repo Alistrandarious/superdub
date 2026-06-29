@@ -15,6 +15,7 @@ import {
   isUnlocked, unlockLabel, EARLY_ADOPTER_BEFORE, type UnlockCtx,
   DUB_COLORS, DUB_COLOR_KEY, getDubColor,
   HABIT_COLORS, GLOW_COLORS, HABITS_COLOR_KEY, NAV_GLOW_KEY, type AccentColor,
+  BACKGROUNDS, BACKGROUND_KEY, getBackground, type Background,
 } from './levels';
 
 const CAT_UNLOCK_LEVEL = 2;
@@ -183,6 +184,23 @@ function computeBadges(
   ];
 }
 
+// Collapsible section wrapper for the Level page
+const Collapsible: React.FC<{ title: string; sub?: string; defaultOpen?: boolean; children: React.ReactNode }> = ({ title, sub, defaultOpen, children }) => {
+  const [o, setO] = useState(!!defaultOpen);
+  return (
+    <div className={`lvl-collapse${o ? ' open' : ''}`}>
+      <button className="lvl-collapse-head" onClick={() => setO(v => !v)}>
+        <span className="lvl-collapse-title">{title}</span>
+        <span className={`lvl-collapse-chev${o ? ' open' : ''}`}>▾</span>
+      </button>
+      <div className="lvl-collapse-wrap"><div className="lvl-collapse-body">
+        {sub && <p className="rewards-sub">{sub}</p>}
+        {children}
+      </div></div>
+    </div>
+  );
+};
+
 const LevelPage: React.FC = () => {
   const navigate = useNavigate();
   const [habits, setHabits] = useState<{ name: string; startDate: string | null }[]>([]);
@@ -266,6 +284,14 @@ const LevelPage: React.FC = () => {
     window.dispatchEvent(new CustomEvent('superdub:nav-glow-changed'));
   };
 
+  // App background
+  const [bgId, setBgId] = useState(() => getBackground().id);
+  const pickBg = (b: Background, locked: boolean) => {
+    if (locked) return;
+    localStorage.setItem(BACKGROUND_KEY, b.id); setBgId(b.id);
+    window.dispatchEvent(new CustomEvent('superdub:bg-changed'));
+  };
+
   return (
     <div className="app flush" style={{ '--theme': '#22C55E', '--theme-dim': '#22C55E66', '--theme-glow': '#22C55E14' } as React.CSSProperties}>
       {/* Top bar: brand + cog */}
@@ -312,6 +338,7 @@ const LevelPage: React.FC = () => {
           </div>
         )}
 
+        <Collapsible title="🎨 Cosmetics & Unlocks" defaultOpen>
         {/* Ring themes — equip an unlocked cosmetic */}
         <div className="diet-section">
           <h2 className="diet-heading">Ring Themes</h2>
@@ -425,9 +452,29 @@ const LevelPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Badges */}
+        {/* App background */}
         <div className="diet-section">
-          <h2 className="diet-heading">Badges</h2>
+          <h2 className="diet-heading">App Background</h2>
+          <p className="rewards-sub">Set the mood of the whole app. Unlock more as you level.</p>
+          <div className="ringtheme-grid">
+            {BACKGROUNDS.map(b => {
+              const locked = !isUnlocked(b.unlock, ctx);
+              const active = b.id === bgId;
+              return (
+                <button key={b.id} className={`ringtheme-chip${active ? ' active' : ''}${locked ? ' locked' : ''}`} onClick={() => pickBg(b, locked)} disabled={locked} title={locked ? `Unlocks: ${unlockLabel(b.unlock)}` : b.name}>
+                  <span className="ringtheme-swatch" style={{ background: b.grad, boxShadow: active ? '0 0 12px rgba(255,255,255,0.25)' : undefined, border: '1px solid rgba(255,255,255,0.12)' }}>
+                    {locked && <span className="ringtheme-lock">🔒</span>}
+                    {active && !locked && <span className="ringtheme-check">✓</span>}
+                  </span>
+                  <span className="ringtheme-name">{locked ? unlockLabel(b.unlock) : b.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        </Collapsible>
+
+        <Collapsible title="🏅 Badges">
           <div className="badges-grid">
             {badges.map(b => (
               <div key={b.id} className={`badge-card ${b.earned ? 'earned' : 'locked'}`}>
@@ -437,12 +484,10 @@ const LevelPage: React.FC = () => {
               </div>
             ))}
           </div>
-        </div>
+        </Collapsible>
 
-        {/* Per-habit XP breakdown */}
         {loaded && sortedByXP.length > 0 && (
-          <div className="diet-section">
-            <h2 className="diet-heading">Habit Stats</h2>
+          <Collapsible title="📊 Habit Stats">
             <div className="habit-stats-list">
               {sortedByXP.map((h, i) => (
                 <div key={h.name} className="habit-stat-row">
@@ -455,12 +500,11 @@ const LevelPage: React.FC = () => {
                 </div>
               ))}
             </div>
-          </div>
+          </Collapsible>
         )}
 
-        {/* Level table — title + XP + the reward each grants */}
-        <div className="diet-section" style={{ marginBottom: 100 }}>
-          <h2 className="diet-heading">All Levels &amp; Rewards</h2>
+        <div style={{ marginBottom: 100 }}>
+        <Collapsible title="⭐ All Levels & Rewards">
           <div className="level-reward-list">
             {PLAYER_LEVELS.map((lv, i) => {
               const reached = playerLevel.level >= i + 1;
@@ -478,6 +522,7 @@ const LevelPage: React.FC = () => {
               );
             })}
           </div>
+        </Collapsible>
         </div>
 
       </div>

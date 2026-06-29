@@ -27,6 +27,7 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { XPProvider } from './XPContext';
 import LevelUpCelebration from './LevelUpCelebration';
 import CoachReport from './CoachReport';
+import BackgroundApplier from './BackgroundApplier';
 
 const NO_NAV_PATHS = ['/privacy'];
 
@@ -101,6 +102,7 @@ function Root() {
   return (
     <BrowserRouter>
       <XPProvider>
+        <BackgroundApplier />
         <UpdateBanner />
         <AppRouter />
         <LevelUpCelebration />
