@@ -7,6 +7,7 @@ import { useXP } from './XPContext';
 import { BUILD_TAG } from './version';
 import CogMenu from './CogMenu';
 import StreakFlame from './StreakFlame';
+import LevelRing from './LevelRing';
 import {
   PLAYER_LEVELS, RING_THEMES, getRingTheme, getSelectedThemeId,
   SELECTED_THEME_KEY, type RingTheme, habitXPForDoneDays,
@@ -82,31 +83,6 @@ function computeHabitXP(
 }
 
 // Big circular level ring — themeable gradient (cosmetic unlock)
-const LevelRing: React.FC<{ level: number; title: string; progress: number; theme: RingTheme; onClick?: () => void }> = ({ level, title, progress, theme, onClick }) => {
-  const size = 172, stroke = 13, r = (size - stroke) / 2, circ = 2 * Math.PI * r;
-  const offset = circ * (1 - Math.max(0, Math.min(1, progress)));
-  return (
-    <button className="lvl-ring" style={{ width: size, height: size }} onClick={onClick} aria-label="Back to habits">
-      <svg width={size} height={size} className="lvl-ring-svg">
-        <defs>
-          <linearGradient id="lvlGradLP" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor={theme.from} />
-            <stop offset="100%" stopColor={theme.to} />
-          </linearGradient>
-        </defs>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#33333D" strokeWidth={stroke} />
-        <circle className={`lvl-ring-arc${theme.animated ? ' animated' : ''}`} cx={size / 2} cy={size / 2} r={r} fill="none" stroke="url(#lvlGradLP)" strokeWidth={stroke} strokeLinecap="butt" strokeDasharray={circ} strokeDashoffset={offset} transform={`rotate(-90 ${size / 2} ${size / 2})`} style={{ filter: `drop-shadow(0 0 3px ${theme.glow})` }} />
-        <circle cx={size / 2} cy={size / 2} r={r - stroke / 2} fill="#0B0B11" />
-      </svg>
-      <div className="lvl-ring-center">
-        <span className="lvl-ring-eyebrow">LEVEL</span>
-        <span className="lvl-ring-num" style={{ color: theme.to }}>{level}</span>
-        <span className="lvl-ring-title">{title}</span>
-      </div>
-    </button>
-  );
-};
-
 interface BadgeDef {
   id: string;
   name: string;
@@ -265,7 +241,7 @@ const LevelPage: React.FC = () => {
               <span>{playerLevel.xpForNext != null ? playerLevel.xpForNext.toLocaleString() : 'MAX'}</span>
             </div>
             <div className="hb-xp-bar">
-              <div className="hb-xp-fill" style={{ width: `${Math.max(2, playerLevel.progress * 100)}%` }} />
+              <div className="hb-xp-fill" style={{ width: `${Math.max(2, playerLevel.progress * 100)}%`, background: `linear-gradient(90deg, ${theme.from}, ${theme.to})`, boxShadow: `0 0 10px ${theme.glow}` }} />
             </div>
             {playerLevel.xpForNext != null ? (
               <p className="hb-xp-to">{(playerLevel.xpForNext - totalXP).toLocaleString()} XP to <span>{playerLevel.nextTitle}</span></p>

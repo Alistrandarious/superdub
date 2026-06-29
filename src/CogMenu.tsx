@@ -79,6 +79,7 @@ const CogMenu: React.FC = () => {
           <div className="cog-menu-overlay" onClick={close} />
           <div className="cog-menu cog-menu--full">
             <div className="cog-menu-label">Quick log</div>
+            <button className="cog-menu-item" onClick={() => fire('superdub:show-coach')}><span className="cog-mi-ico">🐶</span> Talk to Dub</button>
             <button className="cog-menu-item" onClick={addHabit}><span className="cog-mi-ico">＋</span> Add Habit</button>
             <button className="cog-menu-item" onClick={() => fire('superdub:show-checkin')}>
               <span className="cog-mi-ico"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2v6M18 2v6M3 10h18M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span> Log Weight

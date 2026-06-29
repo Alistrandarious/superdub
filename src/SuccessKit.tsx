@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './App.css';
 import SuperdubHeader from './SuperdubHeader';
-import CogMenu from './CogMenu';
 import { ARTICLES, type Article, type Block } from './articles';
 
 interface Resource {
@@ -105,7 +104,7 @@ const SuccessKit: React.FC = () => {
 
   return (
     <div className="app flush" style={{ '--theme': '#FFB928', '--theme-dim': '#FFB92866', '--theme-glow': '#FFB92814' } as React.CSSProperties}>
-      <SuperdubHeader><CogMenu /></SuperdubHeader>
+      <SuperdubHeader />
       {reading && <ArticleReader article={reading} onClose={() => setReading(null)} />}
 
       <div className="success-scroll">

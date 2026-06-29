@@ -29,7 +29,7 @@ const CoachReport: React.FC = () => {
     setTimeout(() => { setReport(null); setClosing(false); }, 300);
   }, []);
 
-  const generate = useCallback(async () => {
+  const generate = useCallback(async (manual = false) => {
     try {
       const [tracker, habits, plan] = await Promise.all([
         api.getTracker(),
@@ -44,15 +44,28 @@ const CoachReport: React.FC = () => {
         : null;
       const r = buildCoachReport(weights, habits as any, (tracker.habits ?? []) as any, ALL_DAYS, todayKey(), goal);
       if (r) setReport(r);
+      else if (manual) {
+        // Opened on demand with not enough data yet — Dub still says hello.
+        setReport({
+          emoji: '👋', headline: "Hey, I'm Dub",
+          lines: [{ icon: '📈', title: 'Keep logging', tone: 'neutral', body: "Weigh in and tick your habits for a few days and I'll start spotting trends, wins and what's tripping you up." }],
+          closing: 'I\'ll be here every time you weigh in. 🐶',
+        });
+      }
     } catch {
       // silent — coaching is a nicety, not critical
     }
   }, []);
 
   useEffect(() => {
-    const handler = () => { setTimeout(generate, 1100); }; // let the check-in modal close first
-    window.addEventListener('superdub:checkin-done', handler);
-    return () => window.removeEventListener('superdub:checkin-done', handler);
+    const onCheckin = () => { setTimeout(() => generate(false), 1100); }; // let the check-in modal close first
+    const onShow = () => generate(true);
+    window.addEventListener('superdub:checkin-done', onCheckin);
+    window.addEventListener('superdub:show-coach', onShow);
+    return () => {
+      window.removeEventListener('superdub:checkin-done', onCheckin);
+      window.removeEventListener('superdub:show-coach', onShow);
+    };
   }, [generate]);
 
   if (!report) return null;

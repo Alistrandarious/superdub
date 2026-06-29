@@ -9,6 +9,8 @@ import WeeklyRecap from './WeeklyRecap';
 import CadenceCarousel from './CadenceCarousel';
 import CogMenu from './CogMenu';
 import StreakFlame from './StreakFlame';
+import LevelRing from './LevelRing';
+import DubMascot from './DubMascot';
 import {
   getRingTheme, getSelectedThemeId, type RingTheme,
   HABIT_LEVEL_TIERS as LEVEL_TIERS, HABIT_LEVEL_RATES as LEVEL_RATES,
@@ -303,43 +305,6 @@ function cycleState(current: HabitState): HabitState {
   if (current === 'done') return 'failed';
   return null;
 }
-
-// Big circular level ring — themeable gradient (cosmetic unlock from levels.ts)
-const LevelRing: React.FC<{ level: number; title: string; progress: number; theme: RingTheme; onClick?: () => void }> = ({ level, title, progress, theme, onClick }) => {
-  const size = 168, stroke = 13, r = (size - stroke) / 2, circ = 2 * Math.PI * r;
-  const pct = Math.max(0, Math.min(1, progress));
-  const offset = circ * (1 - pct);
-  return (
-    <button className="lvl-ring" style={{ width: size, height: size }} onClick={onClick} aria-label={`Level ${level} — ${title}`}>
-      <svg width={size} height={size} className="lvl-ring-svg">
-        <defs>
-          <linearGradient id="lvlGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor={theme.from} />
-            <stop offset="100%" stopColor={theme.to} />
-          </linearGradient>
-        </defs>
-        {/* track — solid grey, unfilled */}
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#33333D" strokeWidth={stroke} />
-        {/* progress arc — sharp, straight ends, glow only on the line */}
-        <circle
-          className={`lvl-ring-arc${theme.animated ? ' animated' : ''}`}
-          cx={size / 2} cy={size / 2} r={r} fill="none"
-          stroke="url(#lvlGrad)" strokeWidth={stroke} strokeLinecap="butt"
-          strokeDasharray={circ} strokeDashoffset={offset}
-          transform={`rotate(-90 ${size / 2} ${size / 2})`}
-          style={{ filter: `drop-shadow(0 0 3px ${theme.glow})` }}
-        />
-        {/* inner black disc — meets the inner edge of the grey track */}
-        <circle cx={size / 2} cy={size / 2} r={r - stroke / 2} fill="#0B0B11" />
-      </svg>
-      <div className="lvl-ring-center">
-        <span className="lvl-ring-eyebrow">LEVEL</span>
-        <span className="lvl-ring-num" style={{ color: theme.to }}>{level}</span>
-        <span className="lvl-ring-title">{title}</span>
-      </div>
-    </button>
-  );
-};
 
 // Small hook: the equipped ring theme, kept in sync across tabs/pages.
 function useRingTheme(level: number): RingTheme {
@@ -1123,6 +1088,9 @@ const Habits: React.FC = () => {
             {weather && (
               <span className="hb-weather">{weatherEmoji(weather.code)} {weather.temp}°</span>
             )}
+            <button className="hb-dub-btn" onClick={() => window.dispatchEvent(new CustomEvent('superdub:show-coach'))} aria-label="Talk to Dub, your coach" title="Talk to Dub">
+              <DubMascot size={30} mood="happy" />
+            </button>
             <StreakFlame />
             <CogMenu />
           </div>
