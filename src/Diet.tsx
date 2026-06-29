@@ -3,9 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ComposedChart, Line, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import './App.css';
 import { api } from './api';
-import { BUILD_TAG } from './version';
-import CogMenu from './CogMenu';
-import StreakFlame from './StreakFlame';
+import SuperdubHeader from './SuperdubHeader';
 import AdaptiveWeightPlanCard from './AdaptiveWeightPlanCard';
 
 interface ProfileData {
@@ -999,16 +997,7 @@ const Diet: React.FC = () => {
       {/* ── Full scrollable content ── */}
       <div className="diet-content page-content">
 
-      <div className="hb-topbar">
-        <div className="hb-brand">
-          <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">{BUILD_TAG}</span>
-        </div>
-        <div className="hb-topbar-actions">
-          <StreakFlame />
-          <CogMenu />
-        </div>
-      </div>
+      <SuperdubHeader />
 
       {/* Plan summary hero */}
       <section className="plan-hero">

@@ -4,11 +4,9 @@ import { flushSync } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import './App.css';
 import { api } from './api';
-import { BUILD_TAG } from './version';
 import WeeklyRecap from './WeeklyRecap';
 import CadenceCarousel from './CadenceCarousel';
-import CogMenu from './CogMenu';
-import StreakFlame from './StreakFlame';
+import SuperdubHeader from './SuperdubHeader';
 import LevelRing from './LevelRing';
 import DubMascot, { getMascot } from './DubMascot';
 import {
@@ -1085,20 +1083,12 @@ const Habits: React.FC = () => {
       )}
 
       <div className="habits-page-scroll" onScroll={e => setScrolled((e.target as HTMLElement).scrollTop > 40)}>
-        {/* Top bar: brand + weather + cog */}
-        <div className="hb-topbar">
-          <div className="hb-brand">
-            <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-            <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">{BUILD_TAG}</span>
-          </div>
-          <div className="hb-topbar-actions">
-            {weather && (
-              <span className="hb-weather">{weatherEmoji(weather.code)} {weather.temp}°</span>
-            )}
-            <StreakFlame />
-            <CogMenu />
-          </div>
-        </div>
+        {/* Top bar: brand + weather + cog (shared header) */}
+        <SuperdubHeader>
+          {weather && (
+            <span className="hb-weather">{weatherEmoji(weather.code)} {weather.temp}°</span>
+          )}
+        </SuperdubHeader>
 
         {showInstall && (
           <div className={`pwa-banner${installClosing ? ' closing' : ''}`}>

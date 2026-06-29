@@ -4,9 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import './App.css';
 import { api } from './api';
 import { useXP } from './XPContext';
-import { BUILD_TAG } from './version';
-import CogMenu from './CogMenu';
-import StreakFlame from './StreakFlame';
+import SuperdubHeader from './SuperdubHeader';
 import LevelRing from './LevelRing';
 import DubMascot, { getMascot, MASCOT_KEY, type MascotSpecies } from './DubMascot';
 import {
@@ -294,17 +292,7 @@ const LevelPage: React.FC = () => {
 
   return (
     <div className="app flush" style={{ '--theme': '#22C55E', '--theme-dim': '#22C55E66', '--theme-glow': '#22C55E14' } as React.CSSProperties}>
-      {/* Top bar: brand + cog */}
-      <div className="hb-topbar">
-        <div className="hb-brand">
-          <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">{BUILD_TAG}</span>
-        </div>
-        <div className="hb-topbar-actions">
-          <StreakFlame />
-          <CogMenu />
-        </div>
-      </div>
+      <SuperdubHeader />
 
       <div className="page-content level-page-content">
         {/* Level ring + XP */}
