@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import './App.css';
 import SuperdubHeader from './SuperdubHeader';
 import { ARTICLES, type Article, type Block } from './articles';
-import { UPDATE_LOG } from './updates';
+import { UPDATE_LOG, type UpdateEntry } from './updates';
 
 function fmtUpdateDate(iso: string): string {
   return new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -102,16 +102,39 @@ function ArticleReader({ article, onClose }: { article: Article; onClose: () => 
   );
 }
 
+function UpdateReader({ update, onClose }: { update: UpdateEntry; onClose: () => void }) {
+  return (
+    <div className="reader-overlay" onClick={onClose}>
+      <div className="reader" onClick={e => e.stopPropagation()} style={{ '--accent': '#FFB928' } as React.CSSProperties}>
+        <button className="reader-close" onClick={onClose} aria-label="Close">✕</button>
+        <div className="reader-cover reader-cover--update">
+          <span className="reader-cover-emoji">{update.emoji}</span>
+        </div>
+        <div className="reader-body">
+          <h1 className="reader-title">{update.title}</h1>
+          <div className="reader-meta">Superdub update · {fmtUpdateDate(update.date)}</div>
+          <p className="reader-dek">{update.summary}</p>
+          <h2 className="reader-h">What changed</h2>
+          {update.points.map((p, i) => <li key={i} className="reader-li">{p}</li>)}
+          <div className="reader-end">Thanks for using Superdub 💚</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const SuccessKit: React.FC = () => {
   const navigate = useNavigate();
   const [reading, setReading] = useState<Article | null>(null);
-  const [openUpdate, setOpenUpdate] = useState<number | null>(0); // newest expanded by default
+  const [readingUpdate, setReadingUpdate] = useState<UpdateEntry | null>(null);
+  const [openSec, setOpenSec] = useState<number | null>(null); // book sections collapsed by default
   const open = (url?: string) => { if (url) window.open(url, '_blank', 'noopener,noreferrer'); };
 
   return (
     <div className="app flush" style={{ '--theme': '#FFB928', '--theme-dim': '#FFB92866', '--theme-glow': '#FFB92814' } as React.CSSProperties}>
       <SuperdubHeader />
       {reading && <ArticleReader article={reading} onClose={() => setReading(null)} />}
+      {readingUpdate && <UpdateReader update={readingUpdate} onClose={() => setReadingUpdate(null)} />}
 
       <div className="success-scroll">
         <div className="success-head">
@@ -119,34 +142,21 @@ const SuccessKit: React.FC = () => {
           <p className="success-sub">Original reads from Superdub, plus hand-picked books to help you build habits, stay disciplined and reach your goals.</p>
         </div>
 
-        {/* What's New — release timeline */}
+        {/* What's New — compact list, each opens its own page */}
         <section className="success-section">
-          <h2 className="success-section-title">✨ What's New in Superdub</h2>
-          <p className="success-section-blurb">Every major update, newest first. Tap one to see what changed.</p>
-          <div className="update-timeline">
-            {UPDATE_LOG.map((u, i) => {
-              const isOpen = openUpdate === i;
-              return (
-                <div key={i} className={`update-entry${isOpen ? ' open' : ''}`}>
-                  <button className="update-head" onClick={() => setOpenUpdate(isOpen ? null : i)}>
-                    <span className="update-emoji">{u.emoji}</span>
-                    <div className="update-head-text">
-                      <span className="update-title">{u.title}</span>
-                      <span className="update-date">{fmtUpdateDate(u.date)}</span>
-                    </div>
-                    <span className={`update-chev${isOpen ? ' open' : ''}`}>▾</span>
-                  </button>
-                  <div className="update-body-wrap">
-                    <div className="update-body">
-                      <p className="update-summary">{u.summary}</p>
-                      <ul className="update-points">
-                        {u.points.map((p, j) => <li key={j}>{p}</li>)}
-                      </ul>
-                    </div>
-                  </div>
+          <h2 className="success-section-title">✨ What's New</h2>
+          <p className="success-section-blurb">Major updates, newest first. Tap to read the notes.</p>
+          <div className="update-list">
+            {UPDATE_LOG.map((u, i) => (
+              <button key={i} className="update-row" onClick={() => setReadingUpdate(u)}>
+                <span className="update-row-emoji">{u.emoji}</span>
+                <div className="update-row-text">
+                  <span className="update-row-title">{u.title}</span>
+                  <span className="update-row-date">{fmtUpdateDate(u.date)}</span>
                 </div>
-              );
-            })}
+                <span className="update-row-chev">›</span>
+              </button>
+            ))}
           </div>
         </section>
 
@@ -169,25 +179,43 @@ const SuccessKit: React.FC = () => {
           </div>
         </section>
 
-        {SECTIONS.map(sec => (
-          <section key={sec.heading} className="success-section">
-            <h2 className="success-section-title">{sec.heading}</h2>
-            <p className="success-section-blurb">{sec.blurb}</p>
-            <div className="success-grid">
-              {sec.items.map(r => (
-                <button key={r.title} className={`success-card${r.url ? '' : ' no-link'}`} onClick={() => open(r.url)}>
-                  <div className="success-card-top">
-                    <span className="success-card-tag">{r.tag}</span>
-                    {r.url && <span className="success-card-link">↗</span>}
+        {/* Recommended reading — collapsible so the page stays short */}
+        <section className="success-section">
+          <h2 className="success-section-title">📖 Recommended reading</h2>
+          <p className="success-section-blurb">Curated books &amp; reads. Tap a shelf to browse.</p>
+          <div className="shelf-list">
+            {SECTIONS.map((sec, i) => {
+              const isOpen = openSec === i;
+              return (
+                <div key={sec.heading} className={`shelf${isOpen ? ' open' : ''}`}>
+                  <button className="shelf-head" onClick={() => setOpenSec(isOpen ? null : i)}>
+                    <span className="shelf-title">{sec.heading}</span>
+                    <span className="shelf-count">{sec.items.length}</span>
+                    <span className={`shelf-chev${isOpen ? ' open' : ''}`}>▾</span>
+                  </button>
+                  <div className="shelf-body-wrap">
+                    <div className="shelf-body">
+                      <p className="success-section-blurb" style={{ marginTop: 2 }}>{sec.blurb}</p>
+                      <div className="success-grid">
+                        {sec.items.map(r => (
+                          <button key={r.title} className={`success-card${r.url ? '' : ' no-link'}`} onClick={() => open(r.url)}>
+                            <div className="success-card-top">
+                              <span className="success-card-tag">{r.tag}</span>
+                              {r.url && <span className="success-card-link">↗</span>}
+                            </div>
+                            <div className="success-card-title">{r.title}</div>
+                            <div className="success-card-by">{r.by}</div>
+                            <div className="success-card-why">{r.why}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                  <div className="success-card-title">{r.title}</div>
-                  <div className="success-card-by">{r.by}</div>
-                  <div className="success-card-why">{r.why}</div>
-                </button>
-              ))}
-            </div>
-          </section>
-        ))}
+                </div>
+              );
+            })}
+          </div>
+        </section>
 
         <p className="success-foot">More coming soon. Got a recommendation? Tell us in <button className="success-foot-link" onClick={() => navigate('/about')}>About</button>.</p>
         <div style={{ height: 90 }} />
