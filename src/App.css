@@ -5775,19 +5775,43 @@ h1, h2, h3, h4, .sora {
 .dub--concerned .dub-antenna-tip { fill: #FFB928; filter: drop-shadow(0 0 4px #FFB928); }
 .dub--neutral .dub-tail { animation-duration: 0.7s; }
 
-/* Dub perched at the level ring's bottom-right */
+/* Dub sitting in his own circle, beside the ring (not overlapping it) */
 .hb-ring-wrap { position: relative; display: inline-flex; }
 .hb-dub-by-ring {
-  position: absolute; right: -6px; bottom: 2px;
-  width: 58px; height: 58px; padding: 0;
-  border: none; background: none; cursor: pointer;
-  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
-  transition: transform 0.15s;
+  position: absolute; right: -30px; bottom: 4px;
+  width: 56px; height: 56px; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 35%, rgba(47,210,126,0.18), rgba(14,14,20,0.92));
+  border: 1.5px solid rgba(47,210,126,0.35);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.45), 0 0 0 4px rgba(14,14,20,0.6);
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.2s;
   animation: dub-peek-in 0.5s cubic-bezier(0.22,1,0.36,1) both;
 }
-.hb-dub-by-ring:hover { transform: scale(1.08) rotate(-3deg); }
+.hb-dub-by-ring .dub { pointer-events: none; }
+.hb-dub-by-ring:hover { transform: scale(1.08) rotate(-3deg); border-color: rgba(47,210,126,0.6); }
 .hb-dub-by-ring:active { transform: scale(0.94); }
 @keyframes dub-peek-in { from { opacity: 0; transform: translateY(10px) scale(0.8); } to { opacity: 1; transform: none; } }
+
+/* Companion picker (Level page cosmetics) */
+.companion-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.companion-card {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 14px 10px; cursor: pointer;
+  background: rgba(255,255,255,0.03);
+  border: 1.5px solid var(--glass-border); border-radius: var(--r-card);
+  transition: border-color 0.2s, background 0.2s, transform 0.1s;
+}
+.companion-card:hover:not(.locked) { background: rgba(255,255,255,0.05); }
+.companion-card:active:not(.locked) { transform: scale(0.98); }
+.companion-card.active { border-color: rgba(47,210,126,0.5); background: rgba(47,210,126,0.1); }
+.companion-card.locked { opacity: 0.6; cursor: not-allowed; }
+.companion-pet { position: relative; line-height: 0; }
+.companion-pet .dub { filter: drop-shadow(0 3px 6px rgba(0,0,0,0.4)); }
+.companion-lock { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; background: rgba(14,14,20,0.55); border-radius: 50%; }
+.companion-name { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 0.82rem; color: #fff; }
+.companion-card.locked .companion-name { color: rgba(255,255,255,0.5); }
 
 /* Coach species switcher */
 .coach-species { display: flex; gap: 8px; margin-top: 12px; }

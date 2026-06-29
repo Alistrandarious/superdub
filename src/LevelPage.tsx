@@ -8,10 +8,13 @@ import { BUILD_TAG } from './version';
 import CogMenu from './CogMenu';
 import StreakFlame from './StreakFlame';
 import LevelRing from './LevelRing';
+import DubMascot, { getMascot, MASCOT_KEY, type MascotSpecies } from './DubMascot';
 import {
   PLAYER_LEVELS, RING_THEMES, getRingTheme, getSelectedThemeId,
   SELECTED_THEME_KEY, type RingTheme, habitXPForDoneDays,
 } from './levels';
+
+const CAT_UNLOCK_LEVEL = 2;
 
 function navigateWithTransition(navigate: any, to: string) {
   const doNav = () => navigate(to);
@@ -217,6 +220,16 @@ const LevelPage: React.FC = () => {
     window.dispatchEvent(new CustomEvent('superdub:ring-theme-changed'));
   };
 
+  // Dub's species — cat unlocks at level 2
+  const [species, setSpecies] = useState<MascotSpecies>(getMascot);
+  const catUnlocked = playerLevel.level >= CAT_UNLOCK_LEVEL;
+  const pickSpecies = (s: MascotSpecies) => {
+    if (s === 'cat' && !catUnlocked) return;
+    setSpecies(s);
+    localStorage.setItem(MASCOT_KEY, s);
+    window.dispatchEvent(new CustomEvent('superdub:mascot-changed'));
+  };
+
   return (
     <div className="app flush" style={{ '--theme': '#22C55E', '--theme-dim': '#22C55E66', '--theme-glow': '#22C55E14' } as React.CSSProperties}>
       {/* Top bar: brand + cog */}
@@ -287,6 +300,29 @@ const LevelPage: React.FC = () => {
                 </button>
               );
             })}
+          </div>
+        </div>
+
+        {/* Companion — switch Dub between dog and cat */}
+        <div className="diet-section">
+          <h2 className="diet-heading">Your Companion</h2>
+          <p className="rewards-sub">Choose what Dub is. The cat unlocks at level 2.</p>
+          <div className="companion-grid">
+            <button className={`companion-card${species === 'dog' ? ' active' : ''}`} onClick={() => pickSpecies('dog')}>
+              <span className="companion-pet"><DubMascot size={66} mood="happy" species="dog" /></span>
+              <span className="companion-name">Dub the dog{species === 'dog' ? ' ✓' : ''}</span>
+            </button>
+            <button
+              className={`companion-card${species === 'cat' ? ' active' : ''}${catUnlocked ? '' : ' locked'}`}
+              onClick={() => pickSpecies('cat')}
+              disabled={!catUnlocked}
+            >
+              <span className="companion-pet">
+                <DubMascot size={66} mood="happy" species="cat" />
+                {!catUnlocked && <span className="companion-lock">🔒</span>}
+              </span>
+              <span className="companion-name">{catUnlocked ? `Dub the cat${species === 'cat' ? ' ✓' : ''}` : 'Cat · LV2'}</span>
+            </button>
           </div>
         </div>
 

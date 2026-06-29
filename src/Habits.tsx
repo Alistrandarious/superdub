@@ -1152,7 +1152,7 @@ const Habits: React.FC = () => {
           <div className="hb-ring-wrap">
             <LevelRing level={playerLevel.level} title={playerLevel.title} progress={playerLevel.progress} theme={ringTheme} onClick={() => navigateWithTransition(navigate, '/level')} />
             <button className="hb-dub-by-ring" onClick={() => window.dispatchEvent(new CustomEvent('superdub:show-coach'))} aria-label="Talk to Dub" title="Talk to Dub">
-              <DubMascot size={58} mood="happy" species={mascotSpecies} />
+              <DubMascot size={46} mood="happy" species={mascotSpecies} />
             </button>
           </div>
           <div className="hb-xp">
