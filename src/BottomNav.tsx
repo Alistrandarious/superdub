@@ -1,9 +1,30 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+
+// Darken a hex colour for the gradient's lower stop.
+function darken(hex: string, amt = 0.78): string {
+  const m = hex.replace('#', '');
+  if (m.length !== 6) return hex;
+  const r = Math.round(parseInt(m.slice(0, 2), 16) * amt);
+  const g = Math.round(parseInt(m.slice(2, 4), 16) * amt);
+  const b = Math.round(parseInt(m.slice(4, 6), 16) * amt);
+  return `rgb(${r},${g},${b})`;
+}
 
 const BottomNav: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [habitsColor, setHabitsColor] = useState(() => localStorage.getItem('superdub.habitsColor') || '#FFB300');
+
+  useEffect(() => {
+    const sync = () => setHabitsColor(localStorage.getItem('superdub.habitsColor') || '#FFB300');
+    window.addEventListener('superdub:habits-color-changed', sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener('superdub:habits-color-changed', sync);
+      window.removeEventListener('storage', sync);
+    };
+  }, []);
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
@@ -51,7 +72,13 @@ const BottomNav: React.FC = () => {
         onClick={() => goTo('/')}
         aria-label="Habits"
       >
-        <span className="bottom-nav-center-btn">
+        <span
+          className="bottom-nav-center-btn"
+          style={{
+            background: `linear-gradient(135deg, ${habitsColor}, ${darken(habitsColor)})`,
+            boxShadow: `0 4px 16px ${habitsColor}73, 0 0 0 1px ${habitsColor}40`,
+          }}
+        >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
           </svg>

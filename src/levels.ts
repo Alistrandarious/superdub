@@ -59,6 +59,7 @@ export interface RingTheme {
 }
 
 export const RING_THEMES: RingTheme[] = [
+  { id: 'slate',   name: 'Slate',       from: '#9AA0AE', to: '#5B606E', glow: 'rgba(150,158,176,0.28)', unlockLevel: 1 },
   { id: 'gold',    name: 'Gold',        from: '#FFE15A', to: '#FFC42E', glow: 'rgba(255,196,46,0.35)',  unlockLevel: 1 },
   { id: 'ocean',   name: 'Ocean',       from: '#5AD1FF', to: '#2E8BFF', glow: 'rgba(46,139,255,0.35)',  unlockLevel: 2 },
   { id: 'coral',   name: 'Coral',       from: '#FF9A6C', to: '#FF5470', glow: 'rgba(255,84,112,0.35)',  unlockLevel: 3 },
@@ -73,7 +74,7 @@ export const RING_THEMES: RingTheme[] = [
   { id: 'prism',   name: 'Prism',       from: '#FF5E8A', to: '#2E8BFF', glow: 'rgba(255,255,255,0.4)',  unlockLevel: 15, animated: true },
 ];
 
-export const DEFAULT_THEME_ID = 'gold';
+export const DEFAULT_THEME_ID = 'slate';
 export const SELECTED_THEME_KEY = 'superdub.ringTheme';
 
 export function getRingTheme(id: string | null | undefined): RingTheme {

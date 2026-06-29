@@ -6,6 +6,7 @@ import { api } from './api';
 import { useXP } from './XPContext';
 import { BUILD_TAG } from './version';
 import CogMenu from './CogMenu';
+import StreakFlame from './StreakFlame';
 import {
   PLAYER_LEVELS, RING_THEMES, getRingTheme, getSelectedThemeId,
   SELECTED_THEME_KEY, type RingTheme, habitXPForDoneDays,
@@ -249,6 +250,7 @@ const LevelPage: React.FC = () => {
           <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">{BUILD_TAG}</span>
         </div>
         <div className="hb-topbar-actions">
+          <StreakFlame />
           <CogMenu />
         </div>
       </div>

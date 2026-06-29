@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './App.css';
 import SuperdubHeader from './SuperdubHeader';
 import CogMenu from './CogMenu';
+import { ARTICLES, type Article, type Block } from './articles';
 
 interface Resource {
   title: string;
@@ -72,19 +73,65 @@ const SECTIONS: Section[] = [
   },
 ];
 
+function ArticleReader({ article, onClose }: { article: Article; onClose: () => void }) {
+  return (
+    <div className="reader-overlay" onClick={onClose}>
+      <div className="reader" onClick={e => e.stopPropagation()} style={{ '--accent': article.accent } as React.CSSProperties}>
+        <button className="reader-close" onClick={onClose} aria-label="Close">✕</button>
+        <div className="reader-cover" style={{ background: `linear-gradient(135deg, ${article.accent}, ${article.accent}55)` }}>
+          <span className="reader-tag">{article.tag}</span>
+        </div>
+        <div className="reader-body">
+          <h1 className="reader-title">{article.title}</h1>
+          <div className="reader-meta">By <strong>{article.author}</strong> · {article.readMins} min read</div>
+          <p className="reader-dek">{article.dek}</p>
+          {article.body.map((b: Block, i: number) => {
+            if (b.t === 'h') return <h2 key={i} className="reader-h">{b.text}</h2>;
+            if (b.t === 'li') return <li key={i} className="reader-li">{b.text}</li>;
+            if (b.t === 'quote') return <blockquote key={i} className="reader-quote">{b.text}</blockquote>;
+            return <p key={i} className="reader-p">{b.text}</p>;
+          })}
+          <div className="reader-end">— {article.author}, for Superdub</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const SuccessKit: React.FC = () => {
   const navigate = useNavigate();
+  const [reading, setReading] = useState<Article | null>(null);
   const open = (url?: string) => { if (url) window.open(url, '_blank', 'noopener,noreferrer'); };
 
   return (
     <div className="app flush" style={{ '--theme': '#FFB928', '--theme-dim': '#FFB92866', '--theme-glow': '#FFB92814' } as React.CSSProperties}>
       <SuperdubHeader><CogMenu /></SuperdubHeader>
+      {reading && <ArticleReader article={reading} onClose={() => setReading(null)} />}
 
       <div className="success-scroll">
         <div className="success-head">
           <h1 className="success-title">📚 Success Kit</h1>
-          <p className="success-sub">Hand-picked books and reads to help you build habits, stay disciplined and reach your goals. Tap any card to open it.</p>
+          <p className="success-sub">Original reads from Superdub, plus hand-picked books to help you build habits, stay disciplined and reach your goals.</p>
         </div>
+
+        {/* Featured Superdub articles by Ali Shah */}
+        <section className="success-section">
+          <h2 className="success-section-title">✍️ Reads from Superdub</h2>
+          <p className="success-section-blurb">Original guides by Ali Shah — tap to read in the app.</p>
+          <div className="article-row">
+            {ARTICLES.map(a => (
+              <button key={a.id} className="article-card" onClick={() => setReading(a)}>
+                <div className="article-card-cover" style={{ background: `linear-gradient(135deg, ${a.accent}, ${a.accent}55)` }}>
+                  <span className="article-card-tag">{a.tag}</span>
+                </div>
+                <div className="article-card-body">
+                  <div className="article-card-title">{a.title}</div>
+                  <div className="article-card-meta">{a.author} · {a.readMins} min</div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
 
         {SECTIONS.map(sec => (
           <section key={sec.heading} className="success-section">

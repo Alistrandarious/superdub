@@ -2,7 +2,6 @@ import { Router, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import { OAuth2Client } from 'google-auth-library';
 import { pool } from '../db';
 import { requireAuth, AuthRequest } from '../middleware/auth';
 import { sendWelcomeEmail, sendPasswordResetEmail } from '../email';
@@ -14,13 +13,24 @@ const SALT_ROUNDS = 10;
 const DEFAULT_HABITS = ['Walking', 'Praying', 'Duolingo'];
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
-const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
+
+// Lazy-loaded so the (fairly heavy) google-auth-library stays off the server's
+// cold-start path — it's only required the first time someone uses Google sign-in.
+let googleClient: any = null;
+async function getGoogleClient() {
+  if (!googleClient) {
+    const { OAuth2Client } = await import('google-auth-library');
+    googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
+  }
+  return googleClient;
+}
 
 // Verify a Google ID token and return its trusted claims (or null if invalid).
 async function verifyGoogleToken(idToken: string): Promise<{ email: string; name: string; sub: string } | null> {
   if (!GOOGLE_CLIENT_ID || !idToken) return null;
   try {
-    const ticket = await googleClient.verifyIdToken({ idToken, audience: GOOGLE_CLIENT_ID });
+    const client = await getGoogleClient();
+    const ticket = await client.verifyIdToken({ idToken, audience: GOOGLE_CLIENT_ID });
     const p = ticket.getPayload();
     if (!p || !p.email || !p.email_verified) return null;
     return { email: p.email.toLowerCase(), name: p.name || '', sub: p.sub };

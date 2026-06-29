@@ -8,6 +8,7 @@ import { BUILD_TAG } from './version';
 import WeeklyRecap from './WeeklyRecap';
 import CadenceCarousel from './CadenceCarousel';
 import CogMenu from './CogMenu';
+import StreakFlame from './StreakFlame';
 import {
   getRingTheme, getSelectedThemeId, type RingTheme,
   HABIT_LEVEL_TIERS as LEVEL_TIERS, HABIT_LEVEL_RATES as LEVEL_RATES,
@@ -841,6 +842,16 @@ const Habits: React.FC = () => {
     return () => window.removeEventListener('superdub:open-add-habit', handler);
   }, []);
 
+  // Cache the check-in streak so the flame badge can show it on every page.
+  useEffect(() => {
+    if (!loaded) return;
+    const s = computeHabitStats(MANDATORY_HABIT, ht, today, startDates[MANDATORY_HABIT]).streak;
+    if (localStorage.getItem('superdub.dayStreak') !== String(s)) {
+      localStorage.setItem('superdub.dayStreak', String(s));
+      window.dispatchEvent(new CustomEvent('superdub:streak-updated'));
+    }
+  }, [loaded, ht, today, startDates]);
+
   // Fallback: check every 5 minutes if 6 hours have passed
   useEffect(() => {
     const id = setInterval(() => {
@@ -1112,6 +1123,7 @@ const Habits: React.FC = () => {
             {weather && (
               <span className="hb-weather">{weatherEmoji(weather.code)} {weather.temp}°</span>
             )}
+            <StreakFlame />
             <CogMenu />
           </div>
         </div>
@@ -1172,7 +1184,7 @@ const Habits: React.FC = () => {
               <span>{playerLevel.xpForNext != null ? playerLevel.xpForNext.toLocaleString() : 'MAX'}</span>
             </div>
             <div className="hb-xp-bar">
-              <div className="hb-xp-fill" style={{ width: `${Math.max(2, playerLevel.progress * 100)}%` }} />
+              <div className="hb-xp-fill" style={{ width: `${Math.max(2, playerLevel.progress * 100)}%`, background: `linear-gradient(90deg, ${ringTheme.from}, ${ringTheme.to})`, boxShadow: `0 0 10px ${ringTheme.glow}` }} />
             </div>
             {playerLevel.xpForNext != null ? (
               <p className="hb-xp-to">{(playerLevel.xpForNext - totalXPAll).toLocaleString()} XP to <span>{playerLevel.nextTitle}</span></p>
