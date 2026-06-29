@@ -3,6 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import './App.css';
 import SuperdubHeader from './SuperdubHeader';
 import { ARTICLES, type Article, type Block } from './articles';
+import { UPDATE_LOG } from './updates';
+
+function fmtUpdateDate(iso: string): string {
+  return new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
 
 interface Resource {
   title: string;
@@ -100,6 +105,7 @@ function ArticleReader({ article, onClose }: { article: Article; onClose: () => 
 const SuccessKit: React.FC = () => {
   const navigate = useNavigate();
   const [reading, setReading] = useState<Article | null>(null);
+  const [openUpdate, setOpenUpdate] = useState<number | null>(0); // newest expanded by default
   const open = (url?: string) => { if (url) window.open(url, '_blank', 'noopener,noreferrer'); };
 
   return (
@@ -112,6 +118,37 @@ const SuccessKit: React.FC = () => {
           <h1 className="success-title">📚 Success Kit</h1>
           <p className="success-sub">Original reads from Superdub, plus hand-picked books to help you build habits, stay disciplined and reach your goals.</p>
         </div>
+
+        {/* What's New — release timeline */}
+        <section className="success-section">
+          <h2 className="success-section-title">✨ What's New in Superdub</h2>
+          <p className="success-section-blurb">Every major update, newest first. Tap one to see what changed.</p>
+          <div className="update-timeline">
+            {UPDATE_LOG.map((u, i) => {
+              const isOpen = openUpdate === i;
+              return (
+                <div key={i} className={`update-entry${isOpen ? ' open' : ''}`}>
+                  <button className="update-head" onClick={() => setOpenUpdate(isOpen ? null : i)}>
+                    <span className="update-emoji">{u.emoji}</span>
+                    <div className="update-head-text">
+                      <span className="update-title">{u.title}</span>
+                      <span className="update-date">{fmtUpdateDate(u.date)}</span>
+                    </div>
+                    <span className={`update-chev${isOpen ? ' open' : ''}`}>▾</span>
+                  </button>
+                  <div className="update-body-wrap">
+                    <div className="update-body">
+                      <p className="update-summary">{u.summary}</p>
+                      <ul className="update-points">
+                        {u.points.map((p, j) => <li key={j}>{p}</li>)}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
 
         {/* Featured Superdub articles by Ali Shah */}
         <section className="success-section">

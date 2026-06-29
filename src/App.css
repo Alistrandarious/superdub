@@ -6491,6 +6491,54 @@ h1, h2, h3, h4, .sora {
 .success-card-title { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.02rem; color: #fff; line-height: 1.2; }
 .success-card-by { font-size: 0.75rem; color: rgba(255,255,255,0.45); margin: 1px 0 8px; }
 .success-card-why { font-size: 0.82rem; line-height: 1.5; color: rgba(255,255,255,0.68); }
+/* What's New — release timeline */
+.update-timeline {
+  display: flex; flex-direction: column; gap: 8px;
+  position: relative;
+  padding-left: 18px;
+}
+.update-timeline::before {
+  content: ''; position: absolute; left: 5px; top: 6px; bottom: 6px; width: 2px;
+  background: linear-gradient(var(--gold), transparent);
+  opacity: 0.4;
+}
+.update-entry {
+  position: relative;
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  border-radius: var(--r-md); overflow: hidden;
+}
+.update-entry::before {
+  content: ''; position: absolute; left: -16px; top: 18px;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--gold); box-shadow: 0 0 8px rgba(255,185,40,0.6);
+}
+.update-entry.open { border-color: rgba(255,185,40,0.3); }
+.update-head {
+  display: flex; align-items: center; gap: 11px; width: 100%;
+  background: none; border: none; cursor: pointer; text-align: left;
+  padding: 12px 13px;
+}
+.update-emoji { font-size: 1.3rem; flex-shrink: 0; }
+.update-head-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.update-title { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 0.92rem; color: #fff; }
+.update-date { font-family: 'Space Mono', monospace; font-size: 0.64rem; color: rgba(255,255,255,0.4); }
+.update-chev { color: rgba(255,255,255,0.35); font-size: 0.75rem; transition: transform 0.25s; flex-shrink: 0; }
+.update-chev.open { transform: rotate(180deg); }
+.update-body-wrap { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s cubic-bezier(0.22,1,0.36,1); }
+.update-entry.open .update-body-wrap { grid-template-rows: 1fr; }
+.update-body { overflow: hidden; min-height: 0; padding: 0 13px; }
+.update-entry.open .update-body { padding-bottom: 13px; }
+.update-summary { margin: 0 0 8px; font-size: 0.85rem; line-height: 1.45; color: rgba(255,255,255,0.7); }
+.update-points { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.update-points li {
+  position: relative; padding-left: 16px;
+  font-size: 0.82rem; line-height: 1.45; color: rgba(255,255,255,0.62);
+}
+.update-points li::before {
+  content: ''; position: absolute; left: 2px; top: 8px;
+  width: 5px; height: 5px; border-radius: 50%; background: var(--gold); opacity: 0.7;
+}
+
 /* Featured article cards — horizontal scroller */
 .article-row {
   display: grid;
