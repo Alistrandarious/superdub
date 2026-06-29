@@ -17,6 +17,7 @@ export interface CoachReport {
   headline: string;
   lines: CoachLine[];
   closing: string;
+  wantsWalk?: boolean;  // Dub is restless — nudge the user to get moving
 }
 
 const YEAR = 2026;
@@ -213,6 +214,17 @@ export function buildCoachReport(
       body: `${why}. ${tipFor(struggle.name)}` });
   }
 
+  // Walkies — Dub gets restless when momentum stalls (a real miss streak, or no
+  // live wins at all). He'd love to be taken out.
+  const stagnant = (struggle && struggle.misses >= 2) || (analyses.length > 0 && !analyses.some(a => a.streak >= 1));
+  if (stagnant) {
+    lines.push({ icon: '🦴', title: 'Dub wants a walk', tone: 'warn',
+      body: pick([
+        `Things have gone a bit quiet. Take me out — a short walk today is the easiest way to restart the momentum.`,
+        `I'm getting restless! Let's go for a walk and knock out one easy win today.`,
+      ], seed) });
+  }
+
   if (lines.length === 0) return null;
 
   // Headline + closing based on overall tone
@@ -223,5 +235,5 @@ export function buildCoachReport(
   else if (warns > goods) { headline = pick(HEADLINES_TOUGH, seed); emoji = '🌱'; }
   else { headline = pick(HEADLINES_MIXED, seed); emoji = '💡'; }
 
-  return { emoji, headline, lines, closing: pick(CLOSING, seed) };
+  return { emoji, headline, lines, closing: pick(CLOSING, seed), wantsWalk: stagnant };
 }

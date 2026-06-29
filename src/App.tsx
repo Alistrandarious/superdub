@@ -16,7 +16,8 @@ import {
 import './App.css';
 import { api } from './api';
 import { BUILD_TAG } from './version';
-import DubMascot from './DubMascot';
+import StreakFlame from './StreakFlame';
+import DubProgressSummary from './DubProgressSummary';
 import PatternsCard, { PatternDay } from './PatternsCard';
 import GoalSheet from './GoalSheet';
 
@@ -1132,6 +1133,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
         {/* Cog dropdown — top right */}
         <div className="hb-topbar-actions" ref={cogRef} style={{ position: 'relative' }}>
+          <StreakFlame />
           <button className="hb-cog" onClick={() => setMenuOpen(o => !o)} aria-label="Settings">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="19" height="19">
               <circle cx="12" cy="12" r="3" />
@@ -1168,6 +1170,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           )}
         </div>
       </div>
+
+      {/* Dub summarises your progress at the top */}
+      <DubProgressSummary />
 
       {habitsModalOpen && (
         <div className="modal-overlay" onClick={() => setHabitsModalOpen(false)}>
@@ -1908,18 +1913,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </div>
       </div>
 
-      {/* ── Coaching message — fronted by Dub ── */}
-      {coachingMsg?.message && (
-        <div className={`coaching-card coaching-card--dub${coachingMsg.churnRisk === 'HIGH' || coachingMsg.churnRisk === 'CRITICAL' ? ' coaching-empathy' : ''}`}>
-          <DubMascot size={64} mood={coachingMsg.churnRisk === 'HIGH' || coachingMsg.churnRisk === 'CRITICAL' ? 'concerned' : 'happy'} />
-          <div className="coaching-card-body">
-            <span className="coaching-eyebrow">
-              {coachingMsg.churnRisk === 'HIGH' || coachingMsg.churnRisk === 'CRITICAL' ? 'A note from Dub' : "Dub's insight"}
-            </span>
-            <p className="coaching-msg">{coachingMsg.message}</p>
-          </div>
-        </div>
-      )}
 
       {/* Weekly Recap moved to the Habits page (Sunday only, under the gold circles) */}
 

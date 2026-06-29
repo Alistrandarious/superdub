@@ -1,7 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { api } from './api';
+import { useXP } from './XPContext';
 import { buildCoachReport, type CoachReport as Report } from './coach';
-import DubMascot from './DubMascot';
+import DubMascot, { getMascot, MASCOT_KEY, type MascotSpecies } from './DubMascot';
+
+const CAT_UNLOCK_LEVEL = 2;
 
 const YEAR = 2026;
 function buildAllDays(): string[] {
@@ -21,8 +24,18 @@ function todayKey() {
 // Dub's post-weigh-in coaching report. Listens for the weigh-in event, pulls the
 // user's own data, runs the on-device coach, and presents it fronted by the mascot.
 const CoachReport: React.FC = () => {
+  const { playerLevel } = useXP();
   const [report, setReport] = useState<Report | null>(null);
   const [closing, setClosing] = useState(false);
+  const [species, setSpecies] = useState<MascotSpecies>(getMascot);
+  const catUnlocked = playerLevel.level >= CAT_UNLOCK_LEVEL;
+
+  const pickSpecies = (s: MascotSpecies) => {
+    if (s === 'cat' && !catUnlocked) return;
+    setSpecies(s);
+    localStorage.setItem(MASCOT_KEY, s);
+    window.dispatchEvent(new CustomEvent('superdub:mascot-changed'));
+  };
 
   const dismiss = useCallback(() => {
     setClosing(true);
@@ -71,6 +84,10 @@ const CoachReport: React.FC = () => {
   if (!report) return null;
   const mood = report.lines.some(l => l.tone === 'warn') ? 'concerned'
     : report.lines.some(l => l.tone === 'good') ? 'happy' : 'neutral';
+  const btnLabel = report.wantsWalk ? 'Take Dub out 🦴'
+    : mood === 'happy' ? 'Keep it rolling 🐾'
+    : mood === 'concerned' ? "We've got this 🐾"
+    : 'On it 🐾';
 
   return (
     <div className={`coach-overlay${closing ? ' closing' : ''}`} onClick={dismiss}>
@@ -78,7 +95,7 @@ const CoachReport: React.FC = () => {
         <button className="coach-close" onClick={dismiss} aria-label="Close">✕</button>
 
         <div className="coach-hero">
-          <DubMascot size={104} mood={mood as any} talking />
+          <DubMascot size={104} mood={mood as any} species={species} />
           <div className="coach-hero-text">
             <span className="coach-eyebrow">DUB · YOUR COACH</span>
             <h2 className="coach-headline">{report.emoji} {report.headline}</h2>
@@ -98,7 +115,20 @@ const CoachReport: React.FC = () => {
         </div>
 
         <p className="coach-closing">{report.closing}</p>
-        <button className="coach-btn" onClick={dismiss}>Let's go 🚀</button>
+        <button className="coach-btn" onClick={dismiss}>{btnLabel}</button>
+
+        {/* Choose Dub's species — cat unlocks at level 2 */}
+        <div className="coach-species">
+          <button className={`coach-species-opt${species === 'dog' ? ' active' : ''}`} onClick={() => pickSpecies('dog')}>🐶 Dub the dog</button>
+          <button
+            className={`coach-species-opt${species === 'cat' ? ' active' : ''}${catUnlocked ? '' : ' locked'}`}
+            onClick={() => pickSpecies('cat')}
+            disabled={!catUnlocked}
+            title={catUnlocked ? 'Switch to cat' : 'Unlocks at level 2'}
+          >
+            {catUnlocked ? '🐱 Dub the cat' : '🔒 Cat · LV2'}
+          </button>
+        </div>
       </div>
     </div>
   );

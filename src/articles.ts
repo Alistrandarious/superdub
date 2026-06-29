@@ -18,6 +18,27 @@ export interface Article {
 
 export const ARTICLES: Article[] = [
   {
+    id: 'meet-dub',
+    title: 'Meet Dub, Your Coach',
+    author: 'Ali Shah',
+    readMins: 2,
+    tag: 'Superdub',
+    accent: '#2FD27E',
+    dek: 'The little robo-pup who keeps you honest, cheers your wins, and asks for a walk.',
+    body: [
+      { t: 'p', text: 'Say hello to Dub — the small robotic Yorkie living inside Superdub. Dub isn\'t a gimmick; he\'s how your data talks back to you in plain, kind English.' },
+      { t: 'h', text: 'What Dub does' },
+      { t: 'p', text: 'Every time you weigh in, Dub reads your numbers — your weight trend, your habit streaks, what you\'ve been skipping — and gives you one short, honest read. A win to protect, something slipping, and a tiny next step. No shame, no spreadsheets. Just a nudge from someone (something?) on your side.' },
+      { t: 'p', text: 'You\'ll also find Dub sitting by your level ring on the home screen, and at the top of your Progress page rating how things are trending. Tap him any time you want a read — you don\'t have to wait for a weigh-in.' },
+      { t: 'h', text: 'Dub likes walks' },
+      { t: 'p', text: 'Here\'s the thing about Dub: when you go quiet — a few missed days, momentum stalling — he gets restless and asks you to take him for a walk. It\'s his way of saying "let\'s not overthink this, just move today." One short walk is often all it takes to restart a streak.' },
+      { t: 'quote', text: 'You don\'t have to be motivated. You just have to take the dog out.' },
+      { t: 'h', text: 'He grows with you' },
+      { t: 'p', text: 'Dub changes with your mood and your progress — happy and panting when you\'re winning, a little concerned when you\'ve drifted. And if dogs aren\'t your thing, reach level 2 and you can switch Dub to a cat. More to unlock as you climb.' },
+      { t: 'p', text: 'Weigh in, tick your habits, and let Dub do the rest. He\'s not going anywhere. 🐶' },
+    ],
+  },
+  {
     id: 'build-habits',
     title: 'How to Build Habits That Actually Stick',
     author: 'Ali Shah',

@@ -5765,15 +5765,70 @@ h1, h2, h3, h4, .sora {
 .dub-tail { transform-origin: 92px 78px; animation: dub-tail 0.5s ease-in-out infinite; }
 @keyframes dub-led { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
 .dub-chest-led { animation: dub-led 2s ease-in-out infinite; }
+/* gentle happy pant (dog tongue) — replaces the old constant mouth-flap */
+@keyframes dub-pant { 0%,100% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(1.5px) scaleY(1.25); } }
+.dub-tongue { transform-origin: 60px 67px; animation: dub-pant 1.4s ease-in-out infinite; }
 /* moods */
 .dub--happy .dub-tail { animation-duration: 0.32s; }
 .dub--concerned .dub-tail { animation-duration: 1.1s; }
-.dub--concerned .dub-mouth { d: path('M54 68 q6 -4 12 0'); }
+.dub--concerned .dub-tongue { animation: none; }
 .dub--concerned .dub-antenna-tip { fill: #FFB928; filter: drop-shadow(0 0 4px #FFB928); }
 .dub--neutral .dub-tail { animation-duration: 0.7s; }
-/* talking */
-@keyframes dub-talk { 0%,100% { transform: scaleY(1); } 50% { transform: scaleY(1.6) translateY(1px); } }
-.dub--talking .dub-mouth { transform-origin: 60px 66px; animation: dub-talk 0.28s ease-in-out infinite; }
+
+/* Dub perched at the level ring's bottom-right */
+.hb-ring-wrap { position: relative; display: inline-flex; }
+.hb-dub-by-ring {
+  position: absolute; right: -6px; bottom: 2px;
+  width: 58px; height: 58px; padding: 0;
+  border: none; background: none; cursor: pointer;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
+  transition: transform 0.15s;
+  animation: dub-peek-in 0.5s cubic-bezier(0.22,1,0.36,1) both;
+}
+.hb-dub-by-ring:hover { transform: scale(1.08) rotate(-3deg); }
+.hb-dub-by-ring:active { transform: scale(0.94); }
+@keyframes dub-peek-in { from { opacity: 0; transform: translateY(10px) scale(0.8); } to { opacity: 1; transform: none; } }
+
+/* Coach species switcher */
+.coach-species { display: flex; gap: 8px; margin-top: 12px; }
+.coach-species-opt {
+  flex: 1; padding: 9px 8px; border-radius: var(--r-md);
+  background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border);
+  color: rgba(255,255,255,0.7); font-family: 'Sora', sans-serif; font-size: 0.78rem; font-weight: 700;
+  cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.coach-species-opt.active { background: rgba(47,210,126,0.14); border-color: rgba(47,210,126,0.5); color: #fff; }
+.coach-species-opt.locked { opacity: 0.55; cursor: not-allowed; }
+
+/* ── Dub progress summary (top of Progress) ───────────────── */
+.dub-summary {
+  display: flex; align-items: center; gap: 12px;
+  width: calc(100% - 32px); margin: 4px 16px 14px;
+  padding: 12px 14px; text-align: left;
+  border-radius: var(--r-card);
+  background:
+    radial-gradient(130% 100% at 0% 0%, rgba(47,210,126,0.12), transparent 60%),
+    var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-left: 3px solid #2FD27E;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.2s, transform 0.1s;
+}
+.dub-summary:hover { border-color: rgba(47,210,126,0.4); box-shadow: 0 0 24px -10px rgba(47,210,126,0.5); }
+.dub-summary:active { transform: scale(0.995); }
+.dub-summary-pet { flex-shrink: 0; line-height: 0; }
+.dub-summary-text { flex: 1; min-width: 0; }
+.dub-summary-top { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+.dub-summary-name { font-family: 'Space Mono', monospace; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.14em; color: #2FD27E; }
+.dub-summary-rate {
+  font-family: 'Sora', sans-serif; font-size: 0.58rem; font-weight: 800; letter-spacing: 0.04em;
+  text-transform: uppercase; padding: 2px 7px; border-radius: var(--r-pill);
+}
+.dub-summary-rate--good { color: #2FD27E; background: rgba(47,210,126,0.14); }
+.dub-summary-rate--warn { color: #FFB928; background: rgba(255,185,40,0.14); }
+.dub-summary-rate--neutral { color: #8AA0C0; background: rgba(138,160,192,0.14); }
+.dub-summary-msg { margin: 0; font-size: 0.84rem; line-height: 1.4; color: rgba(255,255,255,0.78); }
+.dub-summary-chev { flex-shrink: 0; color: rgba(255,255,255,0.3); font-size: 1.3rem; }
 
 /* ── Dub coaching insight card (Progress) ─────────────────── */
 .coaching-card--dub {
@@ -6439,20 +6494,11 @@ h1, h2, h3, h4, .sora {
 /* Featured article cards — horizontal scroller */
 .article-row {
   display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 84%;
+  grid-template-columns: 1fr 1fr;
   gap: 12px;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  padding: 2px 0 8px;
-  scroll-padding-left: 0;
+  padding: 2px 0 4px;
 }
-.article-row::-webkit-scrollbar { display: none; }
-/* trailing spacer so the last card can scroll fully into view with breathing room */
-.article-row::after { content: ''; width: 2px; }
 .article-card {
-  scroll-snap-align: start;
   text-align: left; padding: 0; overflow: hidden;
   background: var(--glass-bg); border: 1px solid var(--glass-border);
   border-radius: var(--r-card); cursor: pointer;

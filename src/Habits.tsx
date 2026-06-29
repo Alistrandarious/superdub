@@ -10,7 +10,7 @@ import CadenceCarousel from './CadenceCarousel';
 import CogMenu from './CogMenu';
 import StreakFlame from './StreakFlame';
 import LevelRing from './LevelRing';
-import DubMascot from './DubMascot';
+import DubMascot, { getMascot } from './DubMascot';
 import {
   getRingTheme, getSelectedThemeId, type RingTheme,
   HABIT_LEVEL_TIERS as LEVEL_TIERS, HABIT_LEVEL_RATES as LEVEL_RATES,
@@ -725,6 +725,13 @@ const Habits: React.FC = () => {
   const weekDays = getWeekDays();
   const { totalXP: totalXPAll, playerLevel } = useXP();
   const ringTheme = useRingTheme(playerLevel.level);
+  const [mascotSpecies, setMascotSpecies] = useState(getMascot);
+  useEffect(() => {
+    const sync = () => setMascotSpecies(getMascot());
+    window.addEventListener('superdub:mascot-changed', sync);
+    window.addEventListener('storage', sync);
+    return () => { window.removeEventListener('superdub:mascot-changed', sync); window.removeEventListener('storage', sync); };
+  }, []);
 
   useEffect(() => {
     Promise.all([api.getHabits(), api.getTracker()]).then(([loadedHabits, trackerData]) => {
@@ -1088,9 +1095,6 @@ const Habits: React.FC = () => {
             {weather && (
               <span className="hb-weather">{weatherEmoji(weather.code)} {weather.temp}°</span>
             )}
-            <button className="hb-dub-btn" onClick={() => window.dispatchEvent(new CustomEvent('superdub:show-coach'))} aria-label="Talk to Dub, your coach" title="Talk to Dub">
-              <DubMascot size={30} mood="happy" />
-            </button>
             <StreakFlame />
             <CogMenu />
           </div>
@@ -1145,7 +1149,12 @@ const Habits: React.FC = () => {
 
         {/* Level ring + XP */}
         <div className="hb-level">
-          <LevelRing level={playerLevel.level} title={playerLevel.title} progress={playerLevel.progress} theme={ringTheme} onClick={() => navigateWithTransition(navigate, '/level')} />
+          <div className="hb-ring-wrap">
+            <LevelRing level={playerLevel.level} title={playerLevel.title} progress={playerLevel.progress} theme={ringTheme} onClick={() => navigateWithTransition(navigate, '/level')} />
+            <button className="hb-dub-by-ring" onClick={() => window.dispatchEvent(new CustomEvent('superdub:show-coach'))} aria-label="Talk to Dub" title="Talk to Dub">
+              <DubMascot size={58} mood="happy" species={mascotSpecies} />
+            </button>
+          </div>
           <div className="hb-xp">
             <div className="hb-xp-scale">
               <span>{totalXPAll.toLocaleString()} XP</span>
