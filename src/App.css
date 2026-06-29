@@ -5848,6 +5848,24 @@ h1, h2, h3, h4, .sora {
 .coach-species-opt.active { background: rgba(47,210,126,0.14); border-color: rgba(47,210,126,0.5); color: #fff; }
 .coach-species-opt.locked { opacity: 0.55; cursor: not-allowed; }
 
+/* Progress tools row — the page's quick actions, on-page (not buried in a cog) */
+.progress-tools {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+  margin: 0 16px 16px;
+}
+.progress-tool {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 11px 4px; cursor: pointer;
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  border-radius: var(--r-md);
+  color: rgba(255,255,255,0.6);
+  font-family: 'Sora', sans-serif; font-size: 0.64rem; font-weight: 600;
+  transition: border-color 0.15s, color 0.15s, transform 0.1s, background 0.15s;
+}
+.progress-tool:hover { color: #fff; border-color: var(--theme-dim); background: var(--glass-bg-strong); }
+.progress-tool:active { transform: scale(0.96); }
+.progress-tool-ico { color: var(--theme, #2FD27E); display: flex; }
+
 /* ── Dub progress summary (top of Progress) ───────────────── */
 .dub-summary {
   display: flex; align-items: center; gap: 12px;
