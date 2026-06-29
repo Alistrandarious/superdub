@@ -15,13 +15,19 @@ const BottomNav: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [habitsColor, setHabitsColor] = useState(() => localStorage.getItem('superdub.habitsColor') || '#FFB300');
+  const [navGlow, setNavGlow] = useState(() => localStorage.getItem('superdub.navGlow') || '#2FD27E');
 
   useEffect(() => {
-    const sync = () => setHabitsColor(localStorage.getItem('superdub.habitsColor') || '#FFB300');
+    const sync = () => {
+      setHabitsColor(localStorage.getItem('superdub.habitsColor') || '#FFB300');
+      setNavGlow(localStorage.getItem('superdub.navGlow') || '#2FD27E');
+    };
     window.addEventListener('superdub:habits-color-changed', sync);
+    window.addEventListener('superdub:nav-glow-changed', sync);
     window.addEventListener('storage', sync);
     return () => {
       window.removeEventListener('superdub:habits-color-changed', sync);
+      window.removeEventListener('superdub:nav-glow-changed', sync);
       window.removeEventListener('storage', sync);
     };
   }, []);
@@ -33,7 +39,7 @@ const BottomNav: React.FC = () => {
   const goTo = (path: string) => navigate(path);
 
   return (
-    <nav className="bottom-nav">
+    <nav className="bottom-nav" style={{ ['--nav-glow' as any]: navGlow }}>
       {/* Progress */}
       <button
         className={`bottom-nav-item${isActive('/dashboard') ? ' active' : ''}`}

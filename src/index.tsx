@@ -26,6 +26,7 @@ import { initStepSync } from './stepSync';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { XPProvider } from './XPContext';
 import LevelUpCelebration from './LevelUpCelebration';
+import CoachReport from './CoachReport';
 
 const NO_NAV_PATHS = ['/privacy'];
 
@@ -103,6 +104,7 @@ function Root() {
         <UpdateBanner />
         <AppRouter />
         <LevelUpCelebration />
+        <CoachReport />
       </XPProvider>
     </BrowserRouter>
   );

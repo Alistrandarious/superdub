@@ -5726,6 +5726,90 @@ h1, h2, h3, h4, .sora {
 /* Version moved into the cog menu — hide the inline header tag */
 .hb-build-tag { display: none !important; }
 
+/* ── Dub mascot (robotic Yorkie) ──────────────────────────── */
+.dub { display: inline-block; line-height: 0; }
+.dub svg { overflow: visible; }
+@keyframes dub-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2.5px); } }
+.dub-head { animation: dub-bob 2.6s ease-in-out infinite; transform-origin: 60px 60px; }
+.dub-body { transform-origin: 60px 100px; }
+@keyframes dub-blink { 0%,92%,100% { transform: scaleY(1); } 96% { transform: scaleY(0.1); } }
+.dub-eyes { animation: dub-blink 4.2s ease-in-out infinite; transform-origin: 60px 46px; }
+@keyframes dub-ear-l { 0%,88%,100% { transform: rotate(0deg); } 94% { transform: rotate(-9deg); } }
+@keyframes dub-ear-r { 0%,84%,100% { transform: rotate(0deg); } 90% { transform: rotate(9deg); } }
+.dub-ear--l { transform-origin: 44px 36px; animation: dub-ear-l 5s ease-in-out infinite; }
+.dub-ear--r { transform-origin: 76px 36px; animation: dub-ear-r 5.6s ease-in-out infinite; }
+@keyframes dub-antenna { 0%,100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+.dub-antenna { transform-origin: 60px 22px; animation: dub-antenna 3.4s ease-in-out infinite; }
+@keyframes dub-tip { 0%,100% { opacity: 0.6; r: 4; } 50% { opacity: 1; } }
+.dub-antenna-tip { animation: dub-tip 1.8s ease-in-out infinite; filter: drop-shadow(0 0 4px #2FD27E); }
+@keyframes dub-tail { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(14deg); } }
+.dub-tail { transform-origin: 92px 78px; animation: dub-tail 0.5s ease-in-out infinite; }
+@keyframes dub-led { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+.dub-chest-led { animation: dub-led 2s ease-in-out infinite; }
+/* moods */
+.dub--happy .dub-tail { animation-duration: 0.32s; }
+.dub--concerned .dub-tail { animation-duration: 1.1s; }
+.dub--concerned .dub-mouth { d: path('M54 68 q6 -4 12 0'); }
+.dub--concerned .dub-antenna-tip { fill: #FFB928; filter: drop-shadow(0 0 4px #FFB928); }
+.dub--neutral .dub-tail { animation-duration: 0.7s; }
+/* talking */
+@keyframes dub-talk { 0%,100% { transform: scaleY(1); } 50% { transform: scaleY(1.6) translateY(1px); } }
+.dub--talking .dub-mouth { transform-origin: 60px 66px; animation: dub-talk 0.28s ease-in-out infinite; }
+
+/* ── Dub coaching insight card (Progress) ─────────────────── */
+.coaching-card--dub {
+  display: flex; align-items: center; gap: 12px;
+}
+.coaching-card--dub .dub { flex-shrink: 0; }
+.coaching-card-body { min-width: 0; }
+
+/* ── Dub post-weigh-in coach overlay ──────────────────────── */
+.coach-overlay {
+  position: fixed; inset: 0; z-index: 3500;
+  background: rgba(5,6,10,0.8); backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center; padding: 22px;
+  animation: fadeIn 0.25s ease both;
+}
+.coach-overlay.closing { animation: fadeIn 0.3s ease reverse both; }
+.coach-card {
+  position: relative; width: 100%; max-width: 380px; max-height: 90vh; overflow-y: auto;
+  background: var(--glass-bg-strong); border: 1px solid var(--glass-border);
+  border-radius: var(--r-xl); padding: 22px 20px 20px;
+  box-shadow: 0 24px 70px rgba(0,0,0,0.6);
+  animation: scaleIn 0.38s cubic-bezier(0.22,1,0.36,1) both;
+}
+.coach-close {
+  position: absolute; top: 12px; right: 12px;
+  width: 30px; height: 30px; border-radius: 50%;
+  background: rgba(255,255,255,0.06); border: none; color: rgba(255,255,255,0.6);
+  font-size: 0.85rem; cursor: pointer;
+}
+.coach-hero { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.coach-hero-text { min-width: 0; }
+.coach-eyebrow { font-family: 'Space Mono', monospace; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.12em; color: #2FD27E; }
+.coach-headline { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.25rem; color: #fff; margin: 3px 0 0; line-height: 1.2; }
+.coach-lines { display: flex; flex-direction: column; gap: 8px; }
+.coach-line {
+  display: flex; gap: 11px; align-items: flex-start;
+  padding: 11px 13px; border-radius: var(--r-md);
+  background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border);
+  border-left: 3px solid rgba(255,255,255,0.15);
+}
+.coach-line--good { border-left-color: #2FD27E; }
+.coach-line--warn { border-left-color: #FFB928; }
+.coach-line--neutral { border-left-color: #6C8BFF; }
+.coach-line-ico { font-size: 1.2rem; flex-shrink: 0; line-height: 1.2; }
+.coach-line-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.coach-line-title { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 0.9rem; color: #fff; }
+.coach-line-body { font-size: 0.82rem; line-height: 1.5; color: rgba(255,255,255,0.7); }
+.coach-closing { text-align: center; font-size: 0.85rem; color: rgba(255,255,255,0.6); margin: 16px 0 14px; font-style: italic; }
+.coach-btn {
+  width: 100%; padding: 13px; border: none; border-radius: var(--r-md);
+  background: var(--grad-health); color: #07120B;
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 0.95rem; cursor: pointer;
+}
+.coach-btn:active { transform: scale(0.98); }
+
 /* ── Unified stat panel (.hsp) — one designed object, not 3 boxes ───────────── */
 .hsp {
   position: relative;
@@ -6138,15 +6222,15 @@ h1, h2, h3, h4, .sora {
 }
 
 .bottom-nav-item.active {
-  /* Icon (stroke uses currentColor) = brand green, the gradient's start */
-  color: #2FD27E;
+  /* Icon colour + glow follow the user's chosen menu-glow colour */
+  color: var(--nav-glow, #2FD27E);
+}
+.bottom-nav-item.active .bottom-nav-icon {
+  filter: drop-shadow(0 0 7px var(--nav-glow, #2FD27E));
 }
 .bottom-nav-item.active .bottom-nav-label {
-  /* Label = Superdub green→blue gradient */
-  background: var(--sd-gradient);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--nav-glow, #2FD27E);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--nav-glow, #2FD27E) 55%, transparent);
 }
 
 .bottom-nav-item:hover {
@@ -6154,7 +6238,7 @@ h1, h2, h3, h4, .sora {
 }
 
 .bottom-nav-item.active:hover {
-  color: #2FD27E;
+  color: var(--nav-glow, #2FD27E);
 }
 
 .bottom-nav-icon {

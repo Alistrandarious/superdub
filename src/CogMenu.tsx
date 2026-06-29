@@ -24,12 +24,18 @@ const CogMenu: React.FC = () => {
   const [pushBusy, setPushBusy] = useState(false);
   const [reminderHour, setReminderHourState] = useState(getReminderHour);
   const [habitsColor, setHabitsColor] = useState(() => localStorage.getItem('superdub.habitsColor') || '#FFB300');
+  const [navGlow, setNavGlow] = useState(() => localStorage.getItem('superdub.navGlow') || '#2FD27E');
   const planBadge = readPlanBadge();
 
   const changeHabitsColor = (c: string) => {
     setHabitsColor(c);
     localStorage.setItem('superdub.habitsColor', c);
     window.dispatchEvent(new CustomEvent('superdub:habits-color-changed'));
+  };
+  const changeNavGlow = (c: string) => {
+    setNavGlow(c);
+    localStorage.setItem('superdub.navGlow', c);
+    window.dispatchEvent(new CustomEvent('superdub:nav-glow-changed'));
   };
 
   const close = () => setOpen(false);
@@ -106,6 +112,12 @@ const CogMenu: React.FC = () => {
               <span className="cog-mi-ico">🟡</span> Habits button colour
               <span className="cog-color-swatch" style={{ background: habitsColor, marginLeft: 'auto' }}>
                 <input type="color" value={habitsColor} onChange={e => changeHabitsColor(e.target.value)} aria-label="Habits button colour" />
+              </span>
+            </label>
+            <label className="cog-menu-item" style={{ cursor: 'pointer' }}>
+              <span className="cog-mi-ico">✨</span> Menu glow colour
+              <span className="cog-color-swatch" style={{ background: navGlow, marginLeft: 'auto' }}>
+                <input type="color" value={navGlow} onChange={e => changeNavGlow(e.target.value)} aria-label="Menu glow colour" />
               </span>
             </label>
 

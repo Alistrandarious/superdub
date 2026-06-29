@@ -16,6 +16,7 @@ import {
 import './App.css';
 import { api } from './api';
 import { BUILD_TAG } from './version';
+import DubMascot from './DubMascot';
 import PatternsCard, { PatternDay } from './PatternsCard';
 import GoalSheet from './GoalSheet';
 
@@ -1761,7 +1762,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               </ResponsiveContainer>
               </DraggableChart>
             ) : (
-              <p className="walk-empty" style={{ margin: '16px 0' }}>Log your weight and steps for a few days and we'll estimate your probable daily calorie intake here.</p>
+              <p className="walk-empty" style={{ margin: '16px 0' }}>
+                {!(bmr > 0)
+                  ? <>Add your <strong>height, age and current weight</strong> in your profile to unlock this — the estimate needs them to calculate your maintenance calories.</>
+                  : <>Log your weight for a few days (steps help too) and we'll estimate your probable daily calorie intake here.</>}
+              </p>
             )}
             <p className="calorie-chart-note">Back-calculated from energy balance (weight trend + steps + activity), assuming ~7,700 kcal/kg. An estimate — not a substitute for food logging.</p>
           </div>
@@ -1903,15 +1908,16 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </div>
       </div>
 
-      {/* ── Coaching message ── */}
-      {coachingMsg && (
-        <div className={`coaching-card${coachingMsg.churnRisk === 'HIGH' || coachingMsg.churnRisk === 'CRITICAL' ? ' coaching-empathy' : ''}`}>
-          <span className="coaching-eyebrow">
-            {coachingMsg.churnRisk === 'HIGH' || coachingMsg.churnRisk === 'CRITICAL'
-              ? 'A note for today'
-              : 'Today\'s insight'}
-          </span>
-          <p className="coaching-msg">{coachingMsg.message}</p>
+      {/* ── Coaching message — fronted by Dub ── */}
+      {coachingMsg?.message && (
+        <div className={`coaching-card coaching-card--dub${coachingMsg.churnRisk === 'HIGH' || coachingMsg.churnRisk === 'CRITICAL' ? ' coaching-empathy' : ''}`}>
+          <DubMascot size={64} mood={coachingMsg.churnRisk === 'HIGH' || coachingMsg.churnRisk === 'CRITICAL' ? 'concerned' : 'happy'} />
+          <div className="coaching-card-body">
+            <span className="coaching-eyebrow">
+              {coachingMsg.churnRisk === 'HIGH' || coachingMsg.churnRisk === 'CRITICAL' ? 'A note from Dub' : "Dub's insight"}
+            </span>
+            <p className="coaching-msg">{coachingMsg.message}</p>
+          </div>
         </div>
       )}
 
