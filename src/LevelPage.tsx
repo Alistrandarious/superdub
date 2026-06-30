@@ -326,7 +326,9 @@ const LevelPage: React.FC = () => {
           </div>
         )}
 
-        <Collapsible title="🎨 Cosmetics & Unlocks" defaultOpen>
+        <div className="diet-section" style={{ marginTop: 4 }}>
+          <h2 className="diet-heading" style={{ fontSize: '0.7rem', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>🎨 Cosmetics &amp; Unlocks</h2>
+        </div>
         {/* Ring themes — equip an unlocked cosmetic */}
         <div className="diet-section">
           <h2 className="diet-heading">Ring Themes</h2>
@@ -460,8 +462,6 @@ const LevelPage: React.FC = () => {
             })}
           </div>
         </div>
-        </Collapsible>
-
         <Collapsible title="🏅 Badges">
           <div className="badges-grid">
             {badges.map(b => (

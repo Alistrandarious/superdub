@@ -242,6 +242,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const [nutritionOpen, setNutritionOpen] = useState(false);
   const [trackerModalOpen, setTrackerModalOpen] = useState(false);
   const [trackerTab, setTrackerTab] = useState<'habits' | 'nutrition'>('habits');
+  const [honestyPending, setHonestyPending] = useState<(() => void) | null>(null);
 
   const [, setName] = useState('');
   const [habits, setHabits] = useState<string[]>([]);
@@ -580,11 +581,10 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
     let from: Date, to: Date, label: string;
     if (chartRange === 'week') {
-      // Monday-anchored 7-day week.
-      const base = new Date(today); base.setDate(today.getDate() - off * 7);
-      const dow = (base.getDay() + 6) % 7; // Mon = 0
-      from = new Date(base); from.setDate(base.getDate() - dow);
-      to = new Date(from); to.setDate(from.getDate() + 6);
+      // Rolling trailing 7-day window ending today — never pads in blank future
+      // days the way a fixed Mon–Sun calendar week would mid-week.
+      to = new Date(today); to.setDate(today.getDate() - off * 7);
+      from = new Date(to); from.setDate(to.getDate() - 6);
       label = `${dShort(from)} – ${dShort(to)}`;
     } else {
       // all / ahead views show the full history to today (projection added later).
@@ -1002,16 +1002,32 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
   const { totalXP } = useXP();
 
+  // Editing a past day is gated by a one-time honesty declaration — same flag the
+  // Habits page uses, so it's accepted once per device, not re-prompted per page.
+  const guardPastEdit = (day: string, run: () => void) => {
+    if (day === todayKey || localStorage.getItem('superdub.honesty') === '1') { run(); return; }
+    setHonestyPending(() => run);
+  };
+  const confirmHonesty = () => {
+    localStorage.setItem('superdub.honesty', '1');
+    honestyPending?.();
+    setHonestyPending(null);
+  };
+
   const handleWeight = (day: string, value: string) => {
     if (value !== '' && !/^\d*\.?\d*$/.test(value)) return;
-    setTracker(prev => ({ ...prev, [day]: { ...prev[day], weight: value } }));
-    scheduleTrackerSave(day);
+    guardPastEdit(day, () => {
+      setTracker(prev => ({ ...prev, [day]: { ...prev[day], weight: value } }));
+      scheduleTrackerSave(day);
+    });
   };
 
   const handleMacro = (day: string, field: 'calories' | 'protein' | 'carbs' | 'fats' | 'steps', value: string) => {
     if (value !== '' && !/^\d*$/.test(value)) return;
-    setTracker(prev => ({ ...prev, [day]: { ...prev[day], [field]: value } }));
-    scheduleTrackerSave(day);
+    guardPastEdit(day, () => {
+      setTracker(prev => ({ ...prev, [day]: { ...prev[day], [field]: value } }));
+      scheduleTrackerSave(day);
+    });
   };
 
   const getDayTargets = (dayIndex: number) => {
@@ -1042,12 +1058,14 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   };
 
   const handleCheck = (day: string, habit: string) => {
-    const newDone = !(tracker[day]?.habits[habit]);
-    setTracker(prev => ({
-      ...prev,
-      [day]: { ...prev[day], habits: { ...prev[day].habits, [habit]: newDone } }
-    }));
-    api.toggleTrackerHabit(day, habit, newDone ? 'done' : null).catch(() => {});
+    guardPastEdit(day, () => {
+      const newDone = !(tracker[day]?.habits[habit]);
+      setTracker(prev => ({
+        ...prev,
+        [day]: { ...prev[day], habits: { ...prev[day].habits, [habit]: newDone } }
+      }));
+      api.toggleTrackerHabit(day, habit, newDone ? 'done' : null).catch(() => {});
+    });
   };
 
   const addHabit = () => {
@@ -2066,6 +2084,22 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       </section>
       </div>
       </div>
+      )}
+
+      {/* Honesty declaration — shown once per device before backfilling past tracker days */}
+      {honestyPending && (
+        <div className="honesty-overlay" onClick={() => setHonestyPending(null)}>
+          <div className="honesty-modal" onClick={e => e.stopPropagation()}>
+            <div className="honesty-icon">🤝</div>
+            <h3 className="honesty-title">Quick honesty check</h3>
+            <p className="honesty-text">
+              You're editing a past day. Only log what you <strong>genuinely did</strong> —
+              your streaks, XP and trends are only worth something if they're real. No one's watching but you.
+            </p>
+            <button className="honesty-confirm" onClick={confirmHonesty}>I'll be honest — let me edit</button>
+            <button className="honesty-cancel" onClick={() => setHonestyPending(null)}>Cancel</button>
+          </div>
+        </div>
       )}
       <div style={{ height: 100 }} />
       </div>{/* /dashboard-scroll */}

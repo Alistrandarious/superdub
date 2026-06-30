@@ -961,8 +961,6 @@ const Diet: React.FC = () => {
   const goalIcon = goalLabel.split(' ')[0];
   const goalText = goalLabel.split(' ').slice(1).join(' ');
   const displayWeight = todayWeight ?? kg;
-  const weightDiff = displayWeight > 0 && goalWeight > 0 ? Math.abs(displayWeight - goalWeight) : null;
-  const weeksLeft = weightDiff && lossPerWeek > 0 ? Math.ceil(weightDiff / lossPerWeek) : null;
 
   // ── Two progress tracks for the hero: time elapsed (flame) vs weight done (accent) ──
   const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
@@ -973,7 +971,13 @@ const Diet: React.FC = () => {
     return e ? parseFloat(e.weight) : null;
   })();
   const startW = firstLoggedW ?? planGoal?.startWeight ?? null;
+  // Single source of truth: the active Plan's target weight when a plan exists,
+  // otherwise fall back to the simple Profile goal weight. Previously the gauge mixed
+  // both values (target weight for the % calc, profile goal weight for the label),
+  // which could show two different numbers for "the goal".
   const targetW = planGoal?.targetWeight ?? (goalWeight > 0 ? goalWeight : null);
+  const weightDiff = displayWeight > 0 && targetW != null ? Math.abs(displayWeight - targetW) : null;
+  const weeksLeft = weightDiff && lossPerWeek > 0 ? Math.ceil(weightDiff / lossPerWeek) : null;
   const startMs = planGoal?.startDate ? new Date(planGoal.startDate).getTime() : null;
   const targetMs = planGoal?.targetDate ? new Date(planGoal.targetDate).getTime() : null;
   const weightPct = (startW != null && targetW != null && startW !== targetW && displayWeight > 0)
@@ -1008,7 +1012,7 @@ const Diet: React.FC = () => {
             <span className="plan-goal-pill-icon">{goalIcon}</span>{goalText}
           </span>
           {weeksLeft && <span className="plan-hero-eta">~{weeksLeft}w to goal</span>}
-          <button className="plan-hero-edit" onClick={() => navigate('/profile')}>Edit →</button>
+          <button className="plan-hero-edit" onClick={() => navigate(planGoal ? '/plan' : '/profile')}>Edit →</button>
         </div>
 
         {/* ── Weight journey arc gauge: start → goal, big current number at centre ── */}
@@ -1041,7 +1045,7 @@ const Diet: React.FC = () => {
               <span className="plan-gauge-end-lbl">Start</span>
             </div>
             <div className="plan-gauge-end right">
-              <span className="plan-gauge-end-val" style={{ color: accent }}>{goalWeight > 0 ? goalWeight.toFixed(1) : '—'}</span>
+              <span className="plan-gauge-end-val" style={{ color: accent }}>{targetW != null ? targetW.toFixed(1) : '—'}</span>
               <span className="plan-gauge-end-lbl">Goal</span>
             </div>
           </div>
@@ -1069,7 +1073,7 @@ const Diet: React.FC = () => {
         <WeightSparkline
           allTrackerDays={allTrackerDays}
           currentWeight={todayWeight ?? kg}
-          goalWeight={goalWeight}
+          goalWeight={targetW ?? goalWeight}
           lossPerWeek={lossPerWeek}
         />
 

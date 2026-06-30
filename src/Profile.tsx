@@ -147,9 +147,13 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
   const [avatarSeed, setAvatarSeed] = useState<string | null>(null);
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
 
-  // Unit preferences
-  const [heightUnit, setHeightUnit] = useState<'cm' | 'ftin'>('cm');
-  const [weightUnit, setWeightUnit] = useState<'kg' | 'lbs' | 'st'>('kg');
+  // Unit preferences — persisted in localStorage (no server column)
+  const [heightUnit, setHeightUnit] = useState<'cm' | 'ftin'>(
+    () => (localStorage.getItem('superdub.heightUnit') as 'cm' | 'ftin') || 'cm'
+  );
+  const [weightUnit, setWeightUnit] = useState<'kg' | 'lbs' | 'st'>(
+    () => (localStorage.getItem('superdub.weightUnit') as 'kg' | 'lbs' | 'st') || 'kg'
+  );
   const [heightFt, setHeightFt] = useState('5');
   const [heightIn, setHeightIn] = useState('9');
   // Goal weight drafts for non-kg modes
@@ -213,10 +217,9 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
       if (pa.accountCreatedAt) setAccountCreatedAt(pa.accountCreatedAt);
       if (pa.lastLoginAt) setLastLoginAt(pa.lastLoginAt);
       if (pa.lastActiveAt) setLastActiveAt(pa.lastActiveAt);
-      // Unit prefs
-      if (pa.heightUnit) setHeightUnit(pa.heightUnit as 'cm' | 'ftin');
-      if (pa.weightUnit) setWeightUnit(pa.weightUnit as 'kg' | 'lbs' | 'st');
-      if (pa.heightUnit === 'ftin' && p.heightCm) {
+      // Init ft/in display if user already has that unit pref in localStorage
+      const storedHeightUnit = localStorage.getItem('superdub.heightUnit');
+      if (storedHeightUnit === 'ftin' && p.heightCm) {
         const { ft, inch } = cmToFtIn(parseFloat(p.heightCm));
         setHeightFt(String(ft)); setHeightIn(String(inch));
       }
@@ -360,17 +363,17 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
 
   const changeHeightUnit = (unit: 'cm' | 'ftin') => {
     setHeightUnit(unit);
+    localStorage.setItem('superdub.heightUnit', unit);
     if (unit === 'ftin') {
       const cm = parseFloat(profile.heightCm) || 175;
       const { ft, inch } = cmToFtIn(cm);
       setHeightFt(String(ft)); setHeightIn(String(inch));
     }
-    api.updateProfile({ ...profileRef.current, name: nameRef.current, heightUnit: unit }).catch(() => {});
   };
 
   const changeWeightUnit = (unit: 'kg' | 'lbs' | 'st') => {
     setWeightUnit(unit);
-    api.updateProfile({ ...profileRef.current, name: nameRef.current, weightUnit: unit }).catch(() => {});
+    localStorage.setItem('superdub.weightUnit', unit);
   };
 
   const saveGoalWeightKg = (kg: number) => {
@@ -473,7 +476,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
             <span className="profile-avatar-edit-badge">✎</span>
           </button>
           <div className="profile-identity-info">
-            <input id="profile-name-field" className="profile-name-input" type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Your name" maxLength={40} />
+            <input id="profile-name-field" className="profile-name-input" type="text" value={name} onChange={e => setName(e.target.value)} onBlur={() => scheduleProfileSave()} onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} placeholder="Your name" maxLength={40} />
             <label htmlFor="profile-name-field" className="profile-name-hint">Tap to edit</label>
           </div>
         </div>
