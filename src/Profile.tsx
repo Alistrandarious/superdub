@@ -13,7 +13,6 @@ interface ProfileData {
   sex: 'male' | 'female' | 'other';
   activity: string;
   steps: string;
-  vestKg: string;
 }
 
 function ageFromDob(dob: string): number {
@@ -29,7 +28,7 @@ function ageFromDob(dob: string): number {
 interface MacroSet { calories: number; protein: number; carbs: number; fats: number; }
 
 const DEFAULT_PROFILE: ProfileData = {
-  dob: '', heightCm: '', weightKg: '', sex: 'male', activity: '1.55', steps: '', vestKg: '',
+  dob: '', heightCm: '', weightKg: '', sex: 'male', activity: '1.55', steps: '',
 };
 const DEFAULT_TARGET: MacroSet = { calories: 2003, protein: 150, carbs: 200, fats: 67 };
 const DEFAULT_HABITS = ['Walking', 'Praying', 'Duolingo'];
@@ -192,7 +191,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
       setLocks({ calories: !!s.calorieLock, protein: !!s.lockProtein, carbs: !!s.lockCarbs, fats: !!s.lockFats });
       const p = profileData as ProfileData & { name: string };
       setName(p.name ?? '');
-      setProfile({ dob: p.dob ?? '', heightCm: p.heightCm ?? '', weightKg: p.weightKg ?? '', sex: p.sex ?? 'male', activity: p.activity ?? '1.55', steps: p.steps ?? '', vestKg: p.vestKg ?? '' });
+      setProfile({ dob: p.dob ?? '', heightCm: p.heightCm ?? '', weightKg: p.weightKg ?? '', sex: p.sex ?? 'male', activity: p.activity ?? '1.55', steps: p.steps ?? '' });
       const pa = p as any;
       if (pa.jobType) setJobType(pa.jobType);
       if (pa.gymFreq) setGymFreq(pa.gymFreq);
@@ -619,13 +618,6 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
             </div>
           </div>
 
-          <div className="bio-field">
-            <label className="bio-label">Vest weight</label>
-            <div className="bio-input-unit" style={{ maxWidth: 120 }}>
-              <input type="text" inputMode="decimal" value={profile.vestKg} onChange={e => updateProfile('vestKg', e.target.value)} placeholder="0" />
-              <span className="bio-unit">kg</span>
-            </div>
-          </div>
         </div>
 
         {/* ── Activity ── */}

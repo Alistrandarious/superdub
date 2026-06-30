@@ -13,7 +13,6 @@ interface ProfileData {
   sex: 'male' | 'female';
   activity: string;
   steps: string;
-  vestKg: string;
 }
 
 interface WeeklyActivity {
@@ -32,7 +31,7 @@ interface MacroSet {
 }
 
 const DEFAULT_PROFILE: ProfileData = {
-  dob: '', heightCm: '', weightKg: '', sex: 'male', activity: '1.55', steps: '', vestKg: '',
+  dob: '', heightCm: '', weightKg: '', sex: 'male', activity: '1.55', steps: '',
 };
 const DEFAULT_TARGET: MacroSet = { calories: 2003, protein: 150, carbs: 200, fats: 67 };
 const STRIDE_M = 0.762;
@@ -866,7 +865,6 @@ const Diet: React.FC = () => {
         sex: p.sex ?? 'male',
         activity: p.activity ?? '1.55',
         steps: p.steps ?? '',
-        vestKg: p.vestKg ?? '',
       });
 
       const pa = profileData as any;
@@ -929,7 +927,6 @@ const Diet: React.FC = () => {
   const age = ageFromDob(profile.dob) || 0;
   const activity = parseFloat(profile.activity) || 1.55;
   const steps = parseFloat(profile.steps) || 0;
-  const vestKg = parseFloat(profile.vestKg) || 0;
 
   const bmr = kg > 0 && cm > 0 && age > 0
     ? profile.sex === 'male'
@@ -938,7 +935,7 @@ const Diet: React.FC = () => {
     : 0;
   const tdee = bmr > 0 ? Math.round(bmr * activity) : 0;
   const walkKm = steps * STRIDE_M / 1000;
-  const walkBurn = steps > 0 && kg > 0 ? Math.round(walkKm * (kg + vestKg) * 0.5) : 0;
+  const walkBurn = steps > 0 && kg > 0 ? Math.round(walkKm * kg * 0.5) : 0;
   const maintenance = tdee + walkBurn;
 
   const handleSmartApply = (newTarget: MacroSet) => {

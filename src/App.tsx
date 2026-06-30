@@ -391,13 +391,27 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       });
       setTracker(merged);
 
-      setCurrentWeight(ws.currentWeight ?? '');
+      // Biometrics now live on the Profile page (profile table). Older accounts
+      // may still have them in the legacy weight-settings store, so prefer that
+      // when present and fall back to Profile — otherwise bmr stays 0 and the
+      // Estimated Intake chart shows nothing even though the data exists.
+      const ageFromDob = (dob?: string): string => {
+        if (!dob) return '';
+        const born = new Date(dob);
+        if (isNaN(born.getTime())) return '';
+        const t = new Date();
+        let a = t.getFullYear() - born.getFullYear();
+        const m = t.getMonth() - born.getMonth();
+        if (m < 0 || (m === 0 && t.getDate() < born.getDate())) a--;
+        return a > 0 ? String(a) : '';
+      };
+      setCurrentWeight(ws.currentWeight || profile.weightKg || '');
       setGoalWeight(ws.goalWeight ?? '');
       setLossPerWeek(ws.lossPerWeek ?? '');
       setTimeDays(ws.timeDays ?? '');
-      setHeight(ws.height ?? '');
-      setAge(ws.age ?? '');
-      setActivityLevel(ws.activityLevel ?? '1.4');
+      setHeight(ws.height || profile.heightCm || '');
+      setAge(ws.age || ageFromDob(profile.dob) || '');
+      setActivityLevel(ws.activityLevel || profile.activity || '1.4');
     });
   }, []);
 
