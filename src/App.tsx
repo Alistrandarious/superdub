@@ -485,6 +485,13 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     return () => window.removeEventListener('superdub:tracker-updated', handler);
   }, []);
 
+  // Open tracker modal from cog menu (on any page)
+  useEffect(() => {
+    const handler = () => setTrackerModalOpen(true);
+    window.addEventListener('superdub:open-tracker', handler);
+    return () => window.removeEventListener('superdub:open-tracker', handler);
+  }, []);
+
   // Keep a ref to latest tracker for debounced saves
   const trackerRef = useRef(tracker);
   useEffect(() => { trackerRef.current = tracker; }, [tracker]);
@@ -1147,26 +1154,15 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </div>
       </div>
 
-      {/* Dub summarises your progress at the top */}
-      <DubProgressSummary />
-
-      {/* Progress tools — quick access to the page's modals */}
-      <div className="progress-tools">
-        <button className="progress-tool" onClick={() => setGoalSheetOpen(true)}>
-          <span className="progress-tool-ico"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>
-          Weight Goal
+      {/* Two quiet quick-log pills — weight and mood only */}
+      <div className="progress-quicklog">
+        <button className="progress-ql-pill" onClick={() => window.dispatchEvent(new CustomEvent('superdub:show-checkin'))}>
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2v6M18 2v6M3 10h18M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          Log weight
         </button>
-        <button className="progress-tool" onClick={() => setWeightPlanOpen(true)}>
-          <span className="progress-tool-ico"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg></span>
-          Calculator
-        </button>
-        <button className="progress-tool" onClick={() => window.dispatchEvent(new CustomEvent('superdub:show-energy-checkin'))}>
-          <span className="progress-tool-ico"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></span>
-          How I Feel
-        </button>
-        <button className="progress-tool" onClick={() => setTrackerModalOpen(true)}>
-          <span className="progress-tool-ico"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
-          Tracker
+        <button className="progress-ql-pill" onClick={() => window.dispatchEvent(new CustomEvent('superdub:show-energy-checkin'))}>
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+          Mood
         </button>
       </div>
 
@@ -1570,6 +1566,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </div>
         </div>{/* /chart-section-inner */}
       </section>
+
+      {/* Dub's read on your progress — lives in the flow, not pinned to the top */}
+      <DubProgressSummary />
 
       {/* ── Habits Chart — completion bars, split out from the weight chart ── */}
       {habits.length > 0 && (

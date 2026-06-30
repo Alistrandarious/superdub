@@ -4333,6 +4333,17 @@ h1, h2, h3, h4, .sora {
 }
 .lvl-ring-arc.animated { animation: lvl-arc-shimmer 2.4s ease-in-out infinite; }
 
+/* Liquid fill — gentle wave oscillation for animated themes */
+@keyframes lvl-liquid-wave {
+  0%   { transform: translateX(0); }
+  50%  { transform: translateX(-6px); }
+  100% { transform: translateX(0); }
+}
+.lvl-liquid-fill {
+  animation: lvl-liquid-wave 3.2s ease-in-out infinite;
+  transform-origin: center;
+}
+
 /* ── Next-reward callout ─────────────────────────────────── */
 .next-reward-card {
   display: flex; align-items: center; gap: 14px;
@@ -4523,6 +4534,12 @@ h1, h2, h3, h4, .sora {
 .hb-xp {
   width: 100%;
   max-width: 380px;
+}
+/* Level page already has 20px page padding — cancel hb-level's inner padding
+   so the XP bar is the same width as on the Habits page */
+.level-page-content .hb-level {
+  padding-left: 0;
+  padding-right: 0;
 }
 .hb-xp-scale {
   display: flex;
@@ -5848,7 +5865,24 @@ h1, h2, h3, h4, .sora {
 .coach-species-opt.active { background: rgba(47,210,126,0.14); border-color: rgba(47,210,126,0.5); color: #fff; }
 .coach-species-opt.locked { opacity: 0.55; cursor: not-allowed; }
 
-/* Progress tools row — the page's quick actions, on-page (not buried in a cog) */
+/* ── Progress quick-log pills (Log weight + Mood) ─────────── */
+.progress-quicklog {
+  display: flex; gap: 10px; padding: 0 16px 16px;
+}
+.progress-ql-pill {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 11px 12px;
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  border-radius: 50px; cursor: pointer;
+  color: rgba(255,255,255,0.75);
+  font-family: 'Sora', sans-serif; font-size: 0.78rem; font-weight: 600;
+  transition: border-color 0.15s, color 0.15s, background 0.15s, transform 0.1s;
+}
+.progress-ql-pill svg { color: var(--theme, #2FD27E); flex-shrink: 0; }
+.progress-ql-pill:hover { color: #fff; border-color: var(--theme-dim); background: var(--glass-bg-strong); }
+.progress-ql-pill:active { transform: scale(0.96); }
+
+/* Progress tools row (legacy, kept for reference) */
 .progress-tools {
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
   margin: 0 16px 16px;
@@ -6669,6 +6703,143 @@ h1, h2, h3, h4, .sora {
 
 .success-foot { text-align: center; font-size: 0.78rem; color: rgba(255,255,255,0.4); margin: 28px 0 0; }
 .success-foot-link { background: none; border: none; color: var(--gold); font: inherit; cursor: pointer; padding: 0; text-decoration: underline; }
+
+/* ── Success Kit v2 — varied editorial layout ── */
+.sk-section { margin-top: 24px; }
+.sk-label {
+  font-family: 'Space Mono', monospace; font-size: 0.6rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(255,255,255,0.35); margin-bottom: 10px;
+}
+
+/* Hero article — big featured card */
+.sk-hero-card {
+  display: block; width: 100%; text-align: left; padding: 0;
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  border-radius: var(--r-card); overflow: hidden; cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.2s, border-color 0.2s;
+}
+.sk-hero-card:hover { border-color: rgba(255,255,255,0.22); box-shadow: 0 12px 40px -14px rgba(0,0,0,0.7); }
+.sk-hero-card:active { transform: scale(0.99); }
+.sk-hero-cover {
+  height: 140px; display: flex; align-items: flex-end; justify-content: space-between;
+  padding: 14px 16px;
+}
+.sk-hero-tag {
+  font-family: 'Space Mono', monospace; font-size: 0.58rem; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  background: rgba(0,0,0,0.5); color: #fff; padding: 3px 9px; border-radius: var(--r-pill);
+}
+.sk-hero-read {
+  font-family: 'Space Mono', monospace; font-size: 0.58rem;
+  color: rgba(255,255,255,0.7); background: rgba(0,0,0,0.4);
+  padding: 3px 9px; border-radius: var(--r-pill);
+}
+.sk-hero-body { padding: 14px 16px 18px; }
+.sk-hero-title {
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.15rem;
+  color: #fff; line-height: 1.25; margin-bottom: 6px;
+}
+.sk-hero-dek { font-size: 0.85rem; line-height: 1.5; color: rgba(255,255,255,0.58); margin-bottom: 10px; }
+.sk-hero-author { font-size: 0.75rem; color: var(--gold); }
+
+/* 2-col article grid — for remaining articles */
+.sk-article-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px; margin-top: 10px;
+}
+.sk-article-card {
+  display: flex; flex-direction: column; text-align: left; padding: 0;
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  border-radius: var(--r-card); overflow: hidden; cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.2s, border-color 0.2s;
+}
+.sk-article-card:hover { border-color: rgba(255,255,255,0.18); box-shadow: 0 8px 24px -10px rgba(0,0,0,0.6); }
+.sk-article-card:active { transform: scale(0.99); }
+.sk-article-cover { height: 80px; display: flex; align-items: flex-end; padding: 9px; }
+.sk-article-tag {
+  font-family: 'Space Mono', monospace; font-size: 0.52rem; font-weight: 700;
+  letter-spacing: 0.05em; text-transform: uppercase;
+  background: rgba(0,0,0,0.45); color: #fff; padding: 2px 7px; border-radius: var(--r-pill);
+}
+.sk-article-body { padding: 10px 11px 13px; flex: 1; }
+.sk-article-title {
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 0.82rem;
+  color: #fff; line-height: 1.25;
+}
+.sk-article-meta { font-size: 0.67rem; color: rgba(255,255,255,0.38); margin-top: 5px; }
+
+/* Horizontal scroller — shared by updates + book rows */
+.sk-hscroll {
+  display: flex; gap: 10px; overflow-x: auto; overflow-y: visible;
+  padding: 2px 0 10px; scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.sk-hscroll::-webkit-scrollbar { display: none; }
+
+/* Update chips — horizontal scroll */
+.sk-update-chip {
+  flex: 0 0 200px; scroll-snap-align: start;
+  display: flex; align-items: flex-start; gap: 10px;
+  text-align: left; padding: 12px 13px;
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  border-radius: var(--r-md); cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.sk-update-chip:hover { border-color: rgba(255,185,40,0.4); background: var(--glass-bg-strong); }
+.sk-update-chip:active { transform: scale(0.98); }
+.sk-update-emoji { font-size: 1.4rem; flex-shrink: 0; line-height: 1; }
+.sk-update-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.sk-update-title {
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 0.8rem;
+  color: #fff; line-height: 1.2;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.sk-update-date { font-family: 'Space Mono', monospace; font-size: 0.58rem; color: rgba(255,255,255,0.38); }
+
+/* Book shelves — label + horizontal scroll per category */
+.sk-shelf { margin-bottom: 20px; }
+.sk-shelf:last-child { margin-bottom: 0; }
+.sk-shelf-head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+.sk-shelf-emoji { font-size: 1.2rem; line-height: 1; margin-top: 1px; flex-shrink: 0; }
+.sk-shelf-info { display: flex; flex-direction: column; gap: 1px; }
+.sk-shelf-title {
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 0.9rem; color: #fff;
+}
+.sk-shelf-blurb { font-size: 0.73rem; color: rgba(255,255,255,0.38); line-height: 1.35; }
+
+/* Book cards — snap items in horizontal scroll */
+.sk-book-card {
+  flex: 0 0 210px; scroll-snap-align: start;
+  display: flex; flex-direction: column; text-align: left; padding: 14px;
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  border-left: 3px solid var(--card-accent, #FFB928);
+  border-radius: var(--r-card); cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.2s, transform 0.1s;
+}
+.sk-book-card:hover { box-shadow: 0 6px 24px -8px rgba(0,0,0,0.6); border-color: color-mix(in srgb, var(--card-accent, #FFB928) 50%, transparent); }
+.sk-book-card:active { transform: scale(0.98); }
+.sk-book-tag {
+  display: inline-block; align-self: flex-start;
+  font-family: 'Space Mono', monospace; font-size: 0.55rem; font-weight: 700;
+  letter-spacing: 0.05em; text-transform: uppercase;
+  padding: 2px 8px; border-radius: var(--r-pill); margin-bottom: 8px;
+}
+.sk-book-title {
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 0.9rem;
+  color: #fff; line-height: 1.2; margin-bottom: 3px;
+}
+.sk-book-by { font-size: 0.7rem; color: rgba(255,255,255,0.4); margin-bottom: 8px; }
+.sk-book-why {
+  font-size: 0.78rem; line-height: 1.5; color: rgba(255,255,255,0.65);
+  flex: 1;
+  display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+}
+.sk-book-link {
+  display: block; margin-top: 10px; font-size: 0.7rem;
+  color: var(--card-accent, #FFB928); font-family: 'Space Mono', monospace;
+}
 
 /* Archived Habits page — standalone scroller (mirrors .habits-page-scroll) */
 .archived-scroll {
@@ -7856,6 +8027,19 @@ h1, h2, h3, h4, .sora {
 .pbg-bar-wrap { flex: 1; height: 8px; background: rgba(255,255,255,0.07); border-radius: 4px; overflow: hidden; }
 .pbg-bar-fill { height: 100%; border-radius: 4px; background: var(--theme, #2E8BFF); transition: width 0.4s ease; }
 .pbg-hint { font-size: 0.72rem; color: #555; text-align: center; margin-top: 4px; }
+
+/* Link button replacing goal-weight input — redirects to Weight Plan */
+.profile-plan-link {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; text-align: left; padding: 12px 14px; margin-bottom: 10px;
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  border-radius: var(--r-md); cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.profile-plan-link:hover { border-color: rgba(46,139,255,0.4); background: var(--glass-bg-strong); }
+.profile-plan-link-text { display: flex; flex-direction: column; gap: 2px; }
+.profile-plan-link-label { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 0.88rem; color: #fff; }
+.profile-plan-link-sub { font-size: 0.74rem; color: rgba(46,139,255,0.85); }
 
 /* ── Step Performance (Diet Targets Tab) ── */
 .step-perf-card {

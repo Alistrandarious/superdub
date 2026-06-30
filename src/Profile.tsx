@@ -705,53 +705,13 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
         <div className="diet-section">
           <h2 className="diet-heading">Plan</h2>
 
-          {/* Goal weight */}
-          <div className="pbg-row">
-            <div className="pbg-col">
-              <span className="pbg-label">Current</span>
-              <span className="pbg-val">{fmtWeight(currentKg, weightUnit)}</span>
-            </div>
-            <div className="pbg-arrow">→</div>
-            <div className="pbg-col">
-              <span className="pbg-label">Goal ({weightUnit === 'st' ? 'st + lb' : weightUnit})</span>
-              {weightUnit === 'st' ? (
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <div className="bio-input-unit" style={{ flex: 1 }}>
-                    <input className="pbg-goal-input" type="text" inputMode="numeric" value={goalWeightSt} placeholder="12"
-                      onChange={e => setGoalWeightSt(e.target.value)}
-                      onBlur={() => saveGoalWeightKg(stLbToKg(parseInt(goalWeightSt) || 0, parseFloat(goalWeightStLb) || 0))}
-                      onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
-                    <span className="bio-unit">st</span>
-                  </div>
-                  <div className="bio-input-unit" style={{ flex: 1 }}>
-                    <input className="pbg-goal-input" type="text" inputMode="decimal" value={goalWeightStLb} placeholder="0"
-                      onChange={e => setGoalWeightStLb(e.target.value)}
-                      onBlur={() => saveGoalWeightKg(stLbToKg(parseInt(goalWeightSt) || 0, parseFloat(goalWeightStLb) || 0))}
-                      onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
-                    <span className="bio-unit">lb</span>
-                  </div>
-                </div>
-              ) : (
-                <input className="pbg-goal-input" type="text" inputMode="decimal"
-                  value={weightUnit === 'lbs' ? goalWeightLbs : goalWeight}
-                  placeholder={weightUnit === 'lbs' ? 'e.g. 154' : 'e.g. 70'}
-                  onChange={e => { if (weightUnit === 'lbs') setGoalWeightLbs(e.target.value); else setGoalWeight(e.target.value); }}
-                  onBlur={() => { const kg = weightUnit === 'lbs' ? lbsToKg(parseFloat(goalWeightLbs)) : parseFloat(goalWeight); saveGoalWeightKg(kg); }}
-                  onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-                />
-              )}
-            </div>
-          </div>
-          {currentKg > 0 && goalKg > 0 && (
-            <div className="pbg-bar-wrap">
-              <div className="pbg-bar">
-                <div className="pbg-fill" style={{ width: `${Math.max(0, Math.min(100, isGain ? (currentKg / goalKg) * 100 : ((currentKg - goalKg) / currentKg) * 100))}%` }} />
-              </div>
-              <span className="pbg-diff">
-                {currentKg > goalKg ? `${fmtWeight(currentKg - goalKg, weightUnit)} to lose` : currentKg < goalKg ? `${fmtWeight(goalKg - currentKg, weightUnit)} to gain` : 'At goal!'}
-              </span>
-            </div>
-          )}
+          {/* Goal weight lives in the Weight Plan, not here */}
+          <button className="profile-plan-link" onClick={() => navigate('/plan')}>
+            <span className="profile-plan-link-text">
+              <span className="profile-plan-link-label">Weight goal</span>
+              <span className="profile-plan-link-sub">Set in your Weight Plan →</span>
+            </span>
+          </button>
 
           {/* Rate */}
           <div className="bio-loss-row" style={{ marginTop: 16 }}>
