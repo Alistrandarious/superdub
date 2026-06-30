@@ -78,6 +78,11 @@ const PlanPage: React.FC = () => {
   const [targetDate, setTargetDate] = useState('');
   const [abandoned, setAbandoned] = useState(false);
 
+  // Start-date correction
+  const [editingStartDate, setEditingStartDate] = useState(false);
+  const [startDateDraft, setStartDateDraft] = useState('');
+  const [startDateSaving, setStartDateSaving] = useState(false);
+
   const loadAll = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -209,6 +214,20 @@ const PlanPage: React.FC = () => {
     }
   };
 
+  const handleSaveStartDate = async () => {
+    if (!startDateDraft) return;
+    setStartDateSaving(true);
+    try {
+      await api.patchPlanStartDate(startDateDraft);
+      setActiveGoal(g => g ? { ...g, startDate: startDateDraft } : g);
+      setEditingStartDate(false);
+    } catch (err: any) {
+      setError(err?.message ?? 'Could not update start date');
+    } finally {
+      setStartDateSaving(false);
+    }
+  };
+
   const minDate = formatDate(addWeeks(new Date(), 1));
   const onTrack = cycle?.onTrack ?? null;
 
@@ -247,6 +266,29 @@ const PlanPage: React.FC = () => {
                 </span>
                 <span className="plan-status-weights">{activeGoal.startWeight} → {activeGoal.targetWeight} kg</span>
                 <span className="plan-status-date">by {new Date(activeGoal.targetDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+              </div>
+
+              <div className="plan-start-date-row">
+                <span className="plan-start-date-label">Plan started</span>
+                {editingStartDate ? (
+                  <span className="plan-start-date-edit">
+                    <input
+                      type="date"
+                      className="plan-start-date-input"
+                      value={startDateDraft}
+                      max={new Date().toISOString().slice(0, 10)}
+                      onChange={e => setStartDateDraft(e.target.value)}
+                    />
+                    <button className="plan-start-date-save" onClick={handleSaveStartDate} disabled={startDateSaving}>
+                      {startDateSaving ? '…' : 'Save'}
+                    </button>
+                    <button className="plan-start-date-cancel" onClick={() => setEditingStartDate(false)}>✕</button>
+                  </span>
+                ) : (
+                  <span className="plan-start-date-value" onClick={() => { setStartDateDraft(activeGoal.startDate.slice(0, 10)); setEditingStartDate(true); }}>
+                    {new Date(activeGoal.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} ✎
+                  </span>
+                )}
               </div>
 
               {cycle && cycle.actualSlope != null && (

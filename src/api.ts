@@ -128,6 +128,8 @@ export const api = {
   createPlanGoal: (targetWeight: number, targetDate: string) =>
     request('/plan/goal', { method: 'POST', body: JSON.stringify({ targetWeight, targetDate }) }),
   abandonPlanGoal: () => request('/plan/goal', { method: 'DELETE' }),
+  patchPlanStartDate: (startDate: string) =>
+    request('/plan/goal/start-date', { method: 'PATCH', body: JSON.stringify({ startDate }) }),
   runPlanCycle: () => request('/plan/cycle', { method: 'POST' }),
   resolvePlanReached: (action: 'maintain' | 'dismiss') =>
     request('/plan/resolve-reached', { method: 'POST', body: JSON.stringify({ action }) }),

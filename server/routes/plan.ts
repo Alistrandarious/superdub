@@ -488,6 +488,30 @@ router.post('/cycle', requireAuth as any, async (req: AuthRequest, res: Response
   }
 });
 
+// ── PATCH /api/plan/goal/start-date ─────────────────────────────────────────
+// Lets the user correct the start date of their active plan without abandoning it.
+router.patch('/goal/start-date', requireAuth as any, async (req: AuthRequest, res: Response) => {
+  try {
+    const { startDate } = req.body as { startDate: string };
+    if (!startDate || !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
+      return res.status(400).json({ error: 'startDate must be YYYY-MM-DD' });
+    }
+    const dt = new Date(startDate);
+    if (isNaN(dt.getTime()) || dt > new Date()) {
+      return res.status(400).json({ error: 'startDate must be today or in the past' });
+    }
+    const { rowCount } = await pool.query(
+      `UPDATE weight_goals SET start_date = $2 WHERE user_id = $1 AND status = 'active'`,
+      [req.userId, startDate]
+    );
+    if (!rowCount) return res.status(404).json({ error: 'No active goal found' });
+    res.json({ ok: true });
+  } catch (err: any) {
+    console.error('[plan/goal PATCH start-date]', err?.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // ── POST /api/plan/resolve-reached ───────────────────────────────────────────
 // Handle the user's choice from the "you hit your goal!" celebration.
 //   action 'maintain' → complete the goal + switch diet settings to maintenance

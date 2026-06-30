@@ -11372,6 +11372,36 @@ h3, h4,
   line-height: 1.5;
 }
 
+.plan-start-date-row {
+  display: flex; align-items: center; gap: 8px; margin-top: 8px;
+  font-family: 'Sora', sans-serif; font-size: 0.75rem;
+}
+.plan-start-date-label { color: rgba(255,255,255,0.45); flex-shrink: 0; }
+.plan-start-date-value {
+  color: rgba(255,255,255,0.7); cursor: pointer;
+  border-bottom: 1px dashed rgba(255,255,255,0.25);
+  transition: color 0.15s, border-color 0.15s;
+}
+.plan-start-date-value:hover { color: #fff; border-color: rgba(255,255,255,0.6); }
+.plan-start-date-edit { display: flex; align-items: center; gap: 6px; flex: 1; }
+.plan-start-date-input {
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 6px; color: #fff; font-family: 'Sora', sans-serif; font-size: 0.75rem;
+  padding: 3px 7px; flex: 1; min-width: 0;
+  color-scheme: dark;
+}
+.plan-start-date-save {
+  background: var(--theme, #2FD27E); border: none; border-radius: 6px;
+  color: #000; font-family: 'Sora', sans-serif; font-size: 0.75rem; font-weight: 700;
+  padding: 4px 10px; cursor: pointer; white-space: nowrap;
+}
+.plan-start-date-save:disabled { opacity: 0.5; cursor: not-allowed; }
+.plan-start-date-cancel {
+  background: none; border: none; color: rgba(255,255,255,0.4);
+  font-size: 0.85rem; cursor: pointer; padding: 2px 4px; line-height: 1;
+}
+.plan-start-date-cancel:hover { color: #fff; }
+
 .plan-status-flagged {
   margin-top: 8px;
   font-size: 0.65rem;
