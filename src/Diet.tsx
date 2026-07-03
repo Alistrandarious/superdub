@@ -142,8 +142,8 @@ const PlanSummaryCard: React.FC<{
   const weeksToGoal = diff && lossPerWeek > 0 ? Math.ceil(diff / lossPerWeek) : null;
   const isBulk = goal === 'bulk';
 
-  const macroCalories = target.protein * 4 + target.carbs * 4 + target.fats * 9;
-  const deficit = maintenance > 0 ? macroCalories - maintenance : 0;
+  const targetKcal = target.calories;
+  const deficit = maintenance > 0 ? targetKcal - maintenance : 0;
 
   const trainingParts: string[] = [];
   if (gymSessionsPerWeek > 0) trainingParts.push(`${gymSessionsPerWeek}× gym (${gymIntensity})`);
@@ -243,7 +243,7 @@ const PlanSummaryCard: React.FC<{
       }}>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
           <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#dde', lineHeight: 1 }}>
-            {macroCalories.toLocaleString()}
+            {targetKcal.toLocaleString()}
           </span>
           <span style={{ fontSize: '0.6rem', color: '#555', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             target kcal
@@ -274,24 +274,6 @@ const PlanSummaryCard: React.FC<{
             </div>
           </>
         )}
-      </div>
-
-      {/* Macro chips */}
-      <div style={{ display: 'flex', gap: 8, padding: '14px 20px 18px' }}>
-        {[
-          { val: target.protein, lbl: 'Protein', color: '#ff6ec7' },
-          { val: target.carbs,   lbl: 'Carbs',   color: '#2E8BFF' },
-          { val: target.fats,    lbl: 'Fats',     color: '#ffd60a' },
-        ].map(m => (
-          <div key={m.lbl} style={{
-            flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-            background: 'rgba(255,255,255,0.03)', border: `1px solid ${m.color}28`,
-            borderRadius: 10, padding: '10px 8px', gap: 3,
-          }}>
-            <span style={{ fontSize: '1rem', fontWeight: 800, color: m.color, lineHeight: 1 }}>{m.val}g</span>
-            <span style={{ fontSize: '0.58rem', color: '#555', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{m.lbl}</span>
-          </div>
-        ))}
       </div>
 
       {/* Training footer */}
@@ -409,10 +391,10 @@ const WeightSparkline: React.FC<{
       else { insightLevel = 'behind'; insightMsg = `Minimal weight change. To bulk, you need a consistent calorie surplus every day.`; }
     } else {
       const l = -weeklyRate;
-      if (l >= lossPerWeek + 0.15) { insightLevel = 'great'; insightMsg = `Losing ${l.toFixed(2)} kg/week — ahead of your ${lossPerWeek} kg target. Keep hitting protein to protect muscle.`; }
+      if (l >= lossPerWeek + 0.15) { insightLevel = 'great'; insightMsg = `Losing ${l.toFixed(2)} kg/week — ahead of your ${lossPerWeek} kg target. Keep meals protein-forward to protect muscle.`; }
       else if (l >= lossPerWeek - 0.1) { insightLevel = 'good'; insightMsg = `Right on track — ${l.toFixed(2)} kg/week matches your ${lossPerWeek} kg target. Keep the routine going.`; }
       else if (l >= 0.05) { insightLevel = 'behind'; const gap = Math.round((lossPerWeek - l) * 7700 / 7); insightMsg = `Losing ${l.toFixed(2)} kg/week vs your ${lossPerWeek} kg target. Tighten up ~${gap} kcal/day to close the gap.`; }
-      else { insightLevel = 'behind'; insightMsg = `Minimal change recently. Focus on hitting your calorie and protein targets this week.`; }
+      else { insightLevel = 'behind'; insightMsg = `Minimal change recently. Focus on hitting your calorie target this week.`; }
     }
   }
 
@@ -513,17 +495,15 @@ const WeightSparkline: React.FC<{
   );
 };
 
-// ── SmartAdjustCard ───────────────────────────────────────────────────────────
+// ── SmartAdjustCard — calories only; macros are gone ─────────────────────────
 const SmartAdjustCard: React.FC<{
   goal: 'cut' | 'maintain' | 'bulk';
   lossPerWeek: number;
   allTrackerDays: any[];
-  macroCalories: number;
+  targetCalories: number;
   target: MacroSet;
-  currentWeight: number;
-  locks: { protein: boolean; carbs: boolean; fats: boolean };
   onApply: (newTarget: MacroSet) => void;
-}> = ({ goal, lossPerWeek, allTrackerDays, macroCalories, target, currentWeight, locks, onApply }) => {
+}> = ({ goal, lossPerWeek, allTrackerDays, targetCalories, target, onApply }) => {
   const [applied, setApplied] = useState(false);
 
   const now = new Date();
@@ -550,18 +530,13 @@ const SmartAdjustCard: React.FC<{
 
   const calorieAdj = Math.round(-deviation * 7700 / 7);
   const cappedAdj = Math.max(-500, Math.min(500, calorieAdj));
-  const newCalories = Math.max(1200, Math.min(5000, macroCalories + cappedAdj));
+  const newCalories = Math.max(1200, Math.min(5000, targetCalories + cappedAdj));
 
-  if (newCalories === macroCalories) return null;
+  if (newCalories === targetCalories) return null;
 
-  const buildTarget = (): MacroSet => {
-    const kg = currentWeight || 75;
-    const p = locks.protein ? target.protein : Math.round(kg * (goal === 'cut' ? 2.0 : goal === 'bulk' ? 1.8 : 1.7));
-    const f = locks.fats ? target.fats : Math.round(kg * (goal === 'cut' ? 0.8 : goal === 'bulk' ? 1.1 : 0.9));
-    const carbCals = Math.max(0, newCalories - p * 4 - f * 9);
-    const c = locks.carbs ? target.carbs : Math.round(carbCals / 4);
-    return { calories: p * 4 + c * 4 + f * 9, protein: p, carbs: c, fats: f };
-  };
+  // Calories-only: keep the stored macro fields untouched (legacy data), just
+  // move the calorie target.
+  const buildTarget = (): MacroSet => ({ ...target, calories: newCalories });
 
   const isBehind = goal === 'cut'
     ? actualWeeklyKg > targetWeeklyKg   // cutting but not losing fast enough
@@ -622,17 +597,9 @@ const SmartAdjustCard: React.FC<{
           <span className="sa-rec-lbl">New daily target</span>
           <span className="sa-rec-val">
             {newCalories.toLocaleString()} kcal
-            <span className="sa-rec-was"> (was {macroCalories.toLocaleString()})</span>
+            <span className="sa-rec-was"> (was {targetCalories.toLocaleString()})</span>
           </span>
         </div>
-        {(locks.protein || locks.carbs || locks.fats) && (
-          <div className="sa-locked-note">
-            Locked macros will be preserved
-            {locks.protein && ' · Protein'}
-            {locks.carbs && ' · Carbs'}
-            {locks.fats && ' · Fats'}
-          </div>
-        )}
       </div>
 
       <button className={`sa-apply-btn${applied ? ' sa-applied' : ''}`} onClick={handleApply} disabled={applied}>
@@ -797,7 +764,6 @@ const Diet: React.FC = () => {
   const [profile, setProfile] = useState<ProfileData>(DEFAULT_PROFILE);
   const [target, setTarget] = useState<MacroSet>(DEFAULT_TARGET);
   const [goal, setGoal] = useState<'cut' | 'maintain' | 'bulk'>('cut');
-  const [locks, setLocks] = useState({ protein: false, carbs: false, fats: false });
   const [stepTarget, setStepTarget] = useState(10000);
   const [yesterdaySteps, setYesterdaySteps] = useState<number | null>(null);
   const [allTrackerDays, setAllTrackerDays] = useState<any[]>([]);
@@ -876,7 +842,6 @@ const Diet: React.FC = () => {
       setTarget(targetData as MacroSet);
       const s = settingsData as any;
       setGoal((s.goal as 'cut' | 'maintain' | 'bulk') ?? 'cut');
-      setLocks({ protein: !!s.lockProtein, carbs: !!s.lockCarbs, fats: !!s.lockFats });
     }).catch(() => {});
 
     // Reveal only after the main data AND every card's data has settled.
@@ -900,8 +865,6 @@ const Diet: React.FC = () => {
     window.addEventListener('superdub:tracker-updated', handler);
     return () => window.removeEventListener('superdub:tracker-updated', handler);
   }, []);
-
-  const macroCalories = target.protein * 4 + target.carbs * 4 + target.fats * 9;
 
   // Today's logged weight (if available)
   const today = new Date();
@@ -1076,7 +1039,7 @@ const Diet: React.FC = () => {
         <ActivityTargetsCard
           currentWeight={todayWeight ?? kg}
           maintenance={maintenance}
-          macroCalories={macroCalories}
+          macroCalories={target.calories}
           lossPerWeek={lossPerWeek}
           goal={goal}
           stepTarget={stepTarget}
@@ -1104,9 +1067,7 @@ const Diet: React.FC = () => {
             ))}
             <div className="plan-meal-total">
               <span className="plan-meal-total-lbl">Total</span>
-              <span className="plan-meal-total-val">
-                {latestPlan.totals?.calories} kcal · P {latestPlan.totals?.protein}g · C {latestPlan.totals?.carbs}g · F {latestPlan.totals?.fat}g
-              </span>
+              <span className="plan-meal-total-val">{latestPlan.totals?.calories} kcal</span>
             </div>
           </div>
         )}
@@ -1115,10 +1076,8 @@ const Diet: React.FC = () => {
           goal={goal}
           lossPerWeek={lossPerWeek}
           allTrackerDays={allTrackerDays}
-          macroCalories={macroCalories}
+          targetCalories={target.calories}
           target={target}
-          currentWeight={todayWeight ?? kg}
-          locks={locks}
           onApply={handleSmartApply}
         />
       </div>

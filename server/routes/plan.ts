@@ -14,8 +14,9 @@ async function getRecentMetrics(userId: number) {
   // Avg logged calories over the last 14 days (null if nothing logged)
   const cal = await pool.query(
     `SELECT AVG(calories::NUMERIC) AS avg FROM tracker
-     WHERE user_id = $1 AND calories IS NOT NULL AND calories != '' AND calories::NUMERIC > 0
-       AND TO_DATE('2026-'||lpad(split_part(day,'/',2),2,'0')||'-'||lpad(split_part(day,'/',1),2,'0'),'YYYY-MM-DD') >= CURRENT_DATE - INTERVAL '14 days'`,
+     WHERE user_id = $1 AND year = EXTRACT(YEAR FROM CURRENT_DATE)::int
+       AND calories IS NOT NULL AND calories != '' AND calories::NUMERIC > 0
+       AND TO_DATE(year::text||'-'||lpad(split_part(day,'/',2),2,'0')||'-'||lpad(split_part(day,'/',1),2,'0'),'YYYY-MM-DD') >= CURRENT_DATE - INTERVAL '14 days'`,
     [userId]
   ).catch(() => ({ rows: [{ avg: null }] }));
 
@@ -26,8 +27,9 @@ async function getRecentMetrics(userId: number) {
        AVG(CASE WHEN d <  CURRENT_DATE - INTERVAL '7 days' AND d >= CURRENT_DATE - INTERVAL '14 days' THEN s END) AS sprev
      FROM (
        SELECT steps::NUMERIC AS s,
-              TO_DATE('2026-'||lpad(split_part(day,'/',2),2,'0')||'-'||lpad(split_part(day,'/',1),2,'0'),'YYYY-MM-DD') AS d
-       FROM tracker WHERE user_id = $1 AND steps IS NOT NULL AND steps != '' AND steps::NUMERIC > 0
+              TO_DATE(year::text||'-'||lpad(split_part(day,'/',2),2,'0')||'-'||lpad(split_part(day,'/',1),2,'0'),'YYYY-MM-DD') AS d
+       FROM tracker WHERE user_id = $1 AND year = EXTRACT(YEAR FROM CURRENT_DATE)::int
+         AND steps IS NOT NULL AND steps != '' AND steps::NUMERIC > 0
      ) t`,
     [userId]
   ).catch(() => ({ rows: [{ s7: null, sprev: null }] }));
@@ -42,8 +44,9 @@ async function getRecentMetrics(userId: number) {
   // Logging rate: distinct weigh-in days in the last 14 days / 14
   const lg = await pool.query(
     `SELECT COUNT(DISTINCT day) AS n FROM tracker
-     WHERE user_id = $1 AND weight IS NOT NULL AND weight != '' AND weight::NUMERIC > 0
-       AND TO_DATE('2026-'||lpad(split_part(day,'/',2),2,'0')||'-'||lpad(split_part(day,'/',1),2,'0'),'YYYY-MM-DD') >= CURRENT_DATE - INTERVAL '14 days'`,
+     WHERE user_id = $1 AND year = EXTRACT(YEAR FROM CURRENT_DATE)::int
+       AND weight IS NOT NULL AND weight != '' AND weight::NUMERIC > 0
+       AND TO_DATE(year::text||'-'||lpad(split_part(day,'/',2),2,'0')||'-'||lpad(split_part(day,'/',1),2,'0'),'YYYY-MM-DD') >= CURRENT_DATE - INTERVAL '14 days'`,
     [userId]
   ).catch(() => ({ rows: [{ n: 0 }] }));
 
@@ -64,7 +67,8 @@ function slopeOfLast(emaPoints: EMAPoint[], n: number): number | null {
 
 const router = Router();
 
-const YEAR = 2026; // tracker days are stored as DD/MM within a single year
+// Tracker days are DD/MM scoped by a year column — always the current year.
+const YEAR = new Date().getFullYear();
 
 function ddmmToDate(ddmm: string): Date | null {
   const m = ddmm.match(/^(\d{2})\/(\d{2})$/);
@@ -78,7 +82,7 @@ async function getWeightPoints(userId: number): Promise<WeightPoint[]> {
   const { rows } = await pool.query(
     `SELECT day, weight::NUMERIC AS w
      FROM tracker
-     WHERE user_id = $1
+     WHERE user_id = $1 AND year = $2::int
        AND weight IS NOT NULL AND weight != '' AND weight::NUMERIC > 0
      ORDER BY
        TO_DATE(

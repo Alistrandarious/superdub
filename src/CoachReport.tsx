@@ -3,7 +3,7 @@ import { api } from './api';
 import { buildCoachReport, type CoachReport as Report } from './coach';
 import DubMascot, { getMascot, type MascotSpecies } from './DubMascot';
 
-const YEAR = 2026;
+const YEAR = new Date().getFullYear();
 function buildAllDays(): string[] {
   const d: string[] = [];
   for (let m = 0; m < 12; m++) {

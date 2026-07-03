@@ -10,6 +10,20 @@ export interface UpdateEntry {
 
 export const UPDATE_LOG: UpdateEntry[] = [
   {
+    date: '2026-07-03',
+    emoji: '📐',
+    title: 'Honest maths & the Liquid ring',
+    summary: 'A full audit of every calculation in the app, a new page that shows you the formulas, and a liquid ring theme that moves when you do.',
+    points: [
+      'Dub now quotes your real weekly change — first and last weigh-in of the week, both numbers shown, so you can check him against the chart.',
+      'New "The Maths" page in the cog menu: every formula written out with worked examples, straight from the code.',
+      'One unified step-burn formula everywhere (three pages used to disagree), sex-aware calorie maths, and the safe-zone corridor no longer skips its first day.',
+      'Editing your Weight Plan no longer resets your start date — your corridor progress is safe.',
+      'New Liquid ring theme at level 5: a water fill that rises with your XP and sloshes when you tilt your phone.',
+      'Macros are gone — Superdub is calories-first now. Simpler logging, same results.',
+    ],
+  },
+  {
     date: '2026-06-29',
     emoji: '🐶',
     title: 'Meet Dub, your coach',

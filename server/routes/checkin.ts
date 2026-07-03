@@ -211,8 +211,9 @@ router.get('/coaching', requireAuth as any, async (req: AuthRequest, res: Respon
       // Latest weight from tracker for kgToGoal
       const { rows: wtRows } = await pool.query(
         `SELECT weight::NUMERIC AS w FROM tracker
-         WHERE user_id = $1 AND weight IS NOT NULL AND weight != '' AND weight::NUMERIC > 0
-         ORDER BY TO_DATE('2026-' || lpad(split_part(day,'/',2),2,'0') || '-' || lpad(split_part(day,'/',1),2,'0'), 'YYYY-MM-DD') DESC
+         WHERE user_id = $1 AND year = EXTRACT(YEAR FROM CURRENT_DATE)::int
+           AND weight IS NOT NULL AND weight != '' AND weight::NUMERIC > 0
+         ORDER BY TO_DATE(year::text || '-' || lpad(split_part(day,'/',2),2,'0') || '-' || lpad(split_part(day,'/',1),2,'0'), 'YYYY-MM-DD') DESC
          LIMIT 1`,
         [req.userId]
       );

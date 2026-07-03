@@ -88,7 +88,7 @@ const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
 
 /* ── helpers ─────────────────────────────────────────────── */
 
-const YEAR = 2026;
+const YEAR = new Date().getFullYear();
 
 function buildAllDays(): string[] {
   const d: string[] = [];
@@ -184,7 +184,8 @@ function computeHabitStats(
   habit: string,
   ht: HabitTracker,
   today: string,
-  startDate?: string | null
+  startDate?: string | null,
+  carryDays: number = 0, // done-days from previous calendar years (server aggregate)
 ): HabitStats {
   const todayIdx = ALL_DAYS.indexOf(today);
   if (todayIdx < 0) {
@@ -203,7 +204,8 @@ function computeHabitStats(
     startIdx = firstDone >= 0 ? firstDone : todayIdx;
   }
 
-  let totalDays = 0;
+  // Seed with prior-year done days so levels and XP survive the Jan 1 rollover
+  let totalDays = carryDays;
 
   for (let i = startIdx; i <= todayIdx; i++) {
     if (ht[ALL_DAYS[i]]?.[habit] === 'done') totalDays++;
@@ -663,6 +665,7 @@ const Habits: React.FC = () => {
     api.updateHabits(names.map(n => ({ name: n, cadence: map[n] ?? 'daily' }))).catch(() => {});
   }, []);
   const [startDates, setStartDates] = useState<Record<string, string | null>>({});
+  const [xpCarry, setXpCarry] = useState<Record<string, number>>({});
   const [ht, setHt] = useState<HabitTracker>({});
   const [weather, setWeather] = useState<WeatherState | null>(null);
   const [scrolled, setScrolled] = useState(false);
@@ -754,6 +757,7 @@ const Habits: React.FC = () => {
 
       setHabits(names);
       setStartDates(dates);
+      setXpCarry((trackerData as any).xpCarry ?? {});
 
       const tod = todayKey();
       const map: HabitTracker = {};
@@ -815,7 +819,7 @@ const Habits: React.FC = () => {
   // Cache the check-in streak so the flame badge can show it on every page.
   useEffect(() => {
     if (!loaded) return;
-    const s = computeHabitStats(MANDATORY_HABIT, ht, today, startDates[MANDATORY_HABIT]).streak;
+    const s = computeHabitStats(MANDATORY_HABIT, ht, today, startDates[MANDATORY_HABIT], xpCarry[MANDATORY_HABIT] ?? 0).streak;
     if (localStorage.getItem('superdub.dayStreak') !== String(s)) {
       localStorage.setItem('superdub.dayStreak', String(s));
       window.dispatchEvent(new CustomEvent('superdub:streak-updated'));
@@ -966,7 +970,7 @@ const Habits: React.FC = () => {
           <HabitCard
             key={habit}
             habit={habit}
-            stats={computeHabitStats(habit, ht, today, startDates[habit])}
+            stats={computeHabitStats(habit, ht, today, startDates[habit], xpCarry[habit] ?? 0)}
             weekDays={weekDays}
             ht={ht}
             today={today}
@@ -987,7 +991,7 @@ const Habits: React.FC = () => {
     return { key: cad, label: meta.label, color: meta.color, icon: meta.icon, content };
   });
 
-  const mandatoryStats = computeHabitStats(MANDATORY_HABIT, ht, today, startDates[MANDATORY_HABIT]);
+  const mandatoryStats = computeHabitStats(MANDATORY_HABIT, ht, today, startDates[MANDATORY_HABIT], xpCarry[MANDATORY_HABIT] ?? 0);
 
   return (
     <div className="app flush" style={{ '--theme': '#22C55E', '--theme-dim': '#22C55E66', '--theme-glow': '#22C55E0D' } as React.CSSProperties}>

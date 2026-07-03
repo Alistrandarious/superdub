@@ -101,7 +101,7 @@ function getYearDays(year: number): string[] {
   return days;
 }
 
-const YEAR = 2026;
+const YEAR = new Date().getFullYear();
 const ALL_DAYS = getYearDays(YEAR);
 
 // Chart ranges — historical (week/all) + forward-projection horizons.

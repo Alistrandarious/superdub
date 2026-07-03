@@ -222,18 +222,6 @@ function DetailSheet({
             <span className="mp-detail-macro-val">{macros.calories}</span>
             <span className="mp-detail-macro-label">kcal</span>
           </div>
-          <div className="mp-detail-macro">
-            <span className="mp-detail-macro-val">{macros.protein}g</span>
-            <span className="mp-detail-macro-label">protein</span>
-          </div>
-          <div className="mp-detail-macro">
-            <span className="mp-detail-macro-val">{macros.carbs}g</span>
-            <span className="mp-detail-macro-label">carbs</span>
-          </div>
-          <div className="mp-detail-macro">
-            <span className="mp-detail-macro-val">{macros.fat}g</span>
-            <span className="mp-detail-macro-label">fat</span>
-          </div>
         </div>
 
         {recipe && !isShake && (
@@ -548,7 +536,7 @@ const MealPlans: React.FC = () => {
 
               {dietTarget && (
                 <div className="mp-target-summary">
-                  Targeting {dietTarget.calories} kcal &middot; P {dietTarget.protein}g &middot; C {dietTarget.carbs}g &middot; F {dietTarget.fats}g
+                  Targeting {dietTarget.calories} kcal per day
                 </div>
               )}
 
@@ -562,11 +550,8 @@ const MealPlans: React.FC = () => {
               <>
                 {avgTotals && (
                   <div className="mp-totals-card">
-                    <div className="mp-totals-title">Avg daily totals vs targets</div>
+                    <div className="mp-totals-title">Avg daily calories vs target</div>
                     <MacroPill label="Calories" value={avgTotals.calories} unit=" kcal" target={plan.targets.calories} color="#2E8BFF" />
-                    <MacroPill label="Protein"  value={avgTotals.protein}               target={plan.targets.protein}  color="#FFB928" />
-                    <MacroPill label="Carbs"    value={avgTotals.carbs}                 target={plan.targets.carbs}    color="#FF4D8D" />
-                    <MacroPill label="Fat"      value={avgTotals.fat}                   target={plan.targets.fat}      color="#FFD233" />
                   </div>
                 )}
 

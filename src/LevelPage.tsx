@@ -25,7 +25,7 @@ function navigateWithTransition(navigate: any, to: string) {
   else doNav();
 }
 
-const YEAR = 2026;
+const YEAR = new Date().getFullYear();
 
 function buildAllDays(): string[] {
   const d: string[] = [];

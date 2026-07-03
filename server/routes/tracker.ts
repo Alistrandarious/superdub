@@ -12,11 +12,24 @@ function dayToDDMM(day: string): string {
   return day.slice(0, 5);
 }
 
+// Day keys are DD/MM — ambiguous across years — so every row carries a year
+// tag and all reads/writes are scoped to the current calendar year.
+const trackerYear = () => new Date().getFullYear();
+
 router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
-    const [daysRes, habitsRes] = await Promise.all([
-      pool.query('SELECT day, weight, calories, protein, carbs, fats, steps FROM tracker WHERE user_id = $1', [req.userId]),
-      pool.query('SELECT day, habit_name, done, state FROM tracker_habits WHERE user_id = $1', [req.userId]),
+    const year = trackerYear();
+    const [daysRes, habitsRes, carryRes] = await Promise.all([
+      pool.query('SELECT day, weight, calories, protein, carbs, fats, steps FROM tracker WHERE user_id = $1 AND year = $2', [req.userId, year]),
+      pool.query('SELECT day, habit_name, done, state FROM tracker_habits WHERE user_id = $1 AND year = $2', [req.userId, year]),
+      // Lifetime XP must survive the year rollover: aggregate done-days per
+      // habit from PRIOR years so the frontend can add them to this year's.
+      pool.query(
+        `SELECT habit_name, COUNT(*)::int AS n FROM tracker_habits
+         WHERE user_id = $1 AND year < $2 AND (state = 'done' OR done = TRUE)
+         GROUP BY habit_name`,
+        [req.userId, year]
+      ),
     ]);
     const days = daysRes.rows.map((r: any) => ({ ...r, day: dayToDDMM(String(r.day)) }));
     const habits = habitsRes.rows.map((r: any) => ({
@@ -24,7 +37,9 @@ router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
       habit_name: r.habit_name,
       state: (r.state as string | null) ?? (r.done ? 'done' : null),
     }));
-    res.json({ days, habits });
+    const xpCarry: Record<string, number> = {};
+    for (const r of carryRes.rows) xpCarry[r.habit_name] = Number(r.n);
+    res.json({ days, habits, xpCarry, year });
   } catch (err: any) {
     console.error('[tracker GET]', err?.message);
     res.status(500).json({ error: 'Server error' });
@@ -45,6 +60,7 @@ router.patch('/', requireAuth as any, async (req: AuthRequest, res: Response) =>
 
     // UPDATE-then-INSERT: avoids ON CONFLICT which requires a unique constraint.
     // Single user writes are sequential so the race window is irrelevant.
+    const year = trackerYear();
     const upd = await pool.query(
       `UPDATE tracker SET
          weight   = CASE WHEN $3::text IS NOT NULL THEN $3  ELSE weight   END,
@@ -53,14 +69,14 @@ router.patch('/', requireAuth as any, async (req: AuthRequest, res: Response) =>
          carbs    = CASE WHEN $6::text IS NOT NULL THEN $6  ELSE carbs    END,
          fats     = CASE WHEN $7::text IS NOT NULL THEN $7  ELSE fats     END,
          steps    = CASE WHEN $8::text IS NOT NULL THEN $8  ELSE steps    END
-       WHERE user_id = $1 AND day = $2`,
-      [req.userId, day, w, c, p, ca, f, s]
+       WHERE user_id = $1 AND day = $2 AND year = $9`,
+      [req.userId, day, w, c, p, ca, f, s, year]
     );
     if ((upd.rowCount ?? 0) === 0) {
       await pool.query(
-        `INSERT INTO tracker (user_id, day, weight, calories, protein, carbs, fats, steps)
-         VALUES ($1, $2, COALESCE($3,''), COALESCE($4,''), COALESCE($5,''), COALESCE($6,''), COALESCE($7,''), COALESCE($8,''))`,
-        [req.userId, day, w, c, p, ca, f, s]
+        `INSERT INTO tracker (user_id, day, year, weight, calories, protein, carbs, fats, steps)
+         VALUES ($1, $2, $9, COALESCE($3,''), COALESCE($4,''), COALESCE($5,''), COALESCE($6,''), COALESCE($7,''), COALESCE($8,''))`,
+        [req.userId, day, w, c, p, ca, f, s, year]
       );
     }
     res.json({ ok: true });
@@ -78,16 +94,17 @@ router.patch('/habit', requireAuth as any, async (req: AuthRequest, res: Respons
     const validState = state === 'done' || state === 'failed' ? state : null;
     const done = validState === 'done';
 
+    const year = trackerYear();
     const upd = await pool.query(
       `UPDATE tracker_habits SET done = $4, state = $5
-       WHERE user_id = $1 AND day = $2 AND habit_name = $3`,
-      [req.userId, day, habitName, done, validState]
+       WHERE user_id = $1 AND day = $2 AND habit_name = $3 AND year = $6`,
+      [req.userId, day, habitName, done, validState, year]
     );
     if ((upd.rowCount ?? 0) === 0) {
       await pool.query(
-        `INSERT INTO tracker_habits (user_id, day, habit_name, done, state)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [req.userId, day, habitName, done, validState]
+        `INSERT INTO tracker_habits (user_id, day, year, habit_name, done, state)
+         VALUES ($1, $2, $6, $3, $4, $5)`,
+        [req.userId, day, habitName, done, validState, year]
       );
     }
     res.json({ ok: true });

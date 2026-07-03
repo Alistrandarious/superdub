@@ -173,6 +173,11 @@ const migrations = [
      AND h.start_date > u.created_at::DATE
      AND h.start_date <= u.created_at::DATE + INTERVAL '3 days'`,
   `ALTER TABLE profile ADD COLUMN IF NOT EXISTS avatar_seed TEXT`,
+  // ── Year columns: day is DD/MM text, ambiguous across calendar years. Every
+  // row is tagged with its year (existing data is all 2026) and all reads and
+  // writes are year-scoped, so Jan 1 rollover can't collide with old rows.
+  `ALTER TABLE tracker ADD COLUMN IF NOT EXISTS year INTEGER NOT NULL DEFAULT 2026`,
+  `ALTER TABLE tracker_habits ADD COLUMN IF NOT EXISTS year INTEGER NOT NULL DEFAULT 2026`,
   // ── Plan engine tables ──────────────────────────────────────────────────────
   // One active weight goal per user; history kept with status != 'active'.
   `CREATE TABLE IF NOT EXISTS weight_goals (
@@ -289,8 +294,9 @@ async function runReminders() {
       // Skip if they've already weighed in today (local)
       const ddmm = `${String(local.getUTCDate()).padStart(2, '0')}/${String(local.getUTCMonth() + 1).padStart(2, '0')}`;
       const w = await pool.query(
-        `SELECT 1 FROM tracker WHERE user_id = $1 AND day = $2 AND weight IS NOT NULL AND weight != '' AND weight::NUMERIC > 0 LIMIT 1`,
-        [r.user_id, ddmm]
+        `SELECT 1 FROM tracker WHERE user_id = $1 AND day = $2 AND year = $3
+           AND weight IS NOT NULL AND weight != '' AND weight::NUMERIC > 0 LIMIT 1`,
+        [r.user_id, ddmm, local.getUTCFullYear()]
       ).catch(() => ({ rows: [] as any[] }));
 
       if (w.rows.length === 0) {

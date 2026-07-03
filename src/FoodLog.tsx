@@ -30,15 +30,17 @@ interface ChatMsg {
 
 interface MacroTarget { protein: number; carbs: number; fats: number; calories: number; }
 
-function macroBar(label: string, logged: number, target: number, color: string) {
+// Calories-only progress bar — macros are gone from the app.
+function kcalBar(logged: number, target: number) {
   const pct = target > 0 ? Math.min(100, (logged / target) * 100) : 0;
+  const over = target > 0 && logged > target;
   return (
-    <div className="fl-macro-row" key={label}>
-      <span className="fl-macro-label">{label}</span>
+    <div className="fl-macro-row">
+      <span className="fl-macro-label">Calories</span>
       <div className="fl-macro-bar-wrap">
-        <div className="fl-macro-bar-fill" style={{ width: `${pct}%`, background: color }} />
+        <div className="fl-macro-bar-fill" style={{ width: `${pct}%`, background: over ? '#FF5470' : '#2FD27E' }} />
       </div>
-      <span className="fl-macro-val">{Math.round(logged)}<span className="fl-macro-target">/{target}g</span></span>
+      <span className="fl-macro-val">{Math.round(logged)}<span className="fl-macro-target">/{target} kcal</span></span>
     </div>
   );
 }
@@ -132,7 +134,7 @@ const FoodLog: React.FC = () => {
       setMessages(prev => [...prev, {
         from: 'superdub',
         text: items.length > 0
-          ? `Found ${items.length} item${items.length !== 1 ? 's' : ''} — ${Math.round(tot.kcal)} kcal · P${Math.round(tot.p)}g · C${Math.round(tot.c)}g · F${Math.round(tot.f)}g. Save this?`
+          ? `Found ${items.length} item${items.length !== 1 ? 's' : ''} — ${Math.round(tot.kcal)} kcal. Save this?`
           : "I couldn't identify any foods from that. Can you try again with more detail?",
         items: items.length > 0 ? items : undefined,
       }]);
@@ -225,9 +227,7 @@ const FoodLog: React.FC = () => {
               <span className="fl-progress-title">Today</span>
               <span className="fl-progress-kcal">{Math.round(totals.kcal)} / {target.calories} kcal</span>
             </div>
-            {macroBar('Protein', totals.p, target.protein, '#ff6ec7')}
-            {macroBar('Carbs', totals.c, target.carbs, '#2E8BFF')}
-            {macroBar('Fat', totals.f, target.fats, '#ffd60a')}
+            {kcalBar(totals.kcal, target.calories)}
           </div>
         )}
 
@@ -238,7 +238,7 @@ const FoodLog: React.FC = () => {
               <div key={log.id} className="fl-log-card">
                 <div className="fl-log-head" onClick={() => setExpandedLog(expandedLog === log.id ? null : log.id)}>
                   <span className="fl-log-time">{formatTime(log.created_at)}</span>
-                  <span className="fl-log-summary">{log.totals.kcal} kcal · P{log.totals.p}g · C{log.totals.c}g · F{log.totals.f}g</span>
+                  <span className="fl-log-summary">{log.totals.kcal} kcal</span>
                   <button className="food-remove" onClick={e => { e.stopPropagation(); deleteLog(log.id); }}>✕</button>
                 </div>
                 {expandedLog === log.id && (
@@ -246,7 +246,7 @@ const FoodLog: React.FC = () => {
                     {log.items.map((item, i) => (
                       <li key={i} className="fl-log-item">
                         <span className="fl-log-item-name">{item.qty}{item.unit === 'unit' ? '' : item.unit} {item.name}</span>
-                        <span className="fl-log-item-macros">P{Math.round(item.p)}·C{Math.round(item.c)}·F{Math.round(item.f)} · {Math.round(item.kcal)} kcal</span>
+                        <span className="fl-log-item-macros">{Math.round(item.kcal)} kcal</span>
                       </li>
                     ))}
                   </ul>
@@ -267,7 +267,6 @@ const FoodLog: React.FC = () => {
                     {msg.items.map((item, j) => (
                       <li key={j} className="fl-item-row">
                         <span className="fl-item-name">{item.qty}{item.unit === 'unit' ? '' : item.unit} {item.name}</span>
-                        <span className="fl-item-macros">P{Math.round(item.p)}·C{Math.round(item.c)}·F{Math.round(item.f)}</span>
                         <span className="fl-item-kcal">{Math.round(item.kcal)} kcal</span>
                       </li>
                     ))}

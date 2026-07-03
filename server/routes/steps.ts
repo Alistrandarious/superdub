@@ -57,14 +57,15 @@ async function recomputeActive(userId: number, day: string) {
 
   // Mirror the winning value into tracker.steps (UPDATE-then-INSERT, no ON CONFLICT).
   const s = String(winner.steps);
+  const year = new Date().getFullYear();
   const upd = await pool.query(
-    `UPDATE tracker SET steps = $3 WHERE user_id = $1 AND day = $2`,
-    [userId, day, s]
+    `UPDATE tracker SET steps = $3 WHERE user_id = $1 AND day = $2 AND year = $4`,
+    [userId, day, s, year]
   );
   if ((upd.rowCount ?? 0) === 0) {
     await pool.query(
-      `INSERT INTO tracker (user_id, day, steps) VALUES ($1, $2, $3)`,
-      [userId, day, s]
+      `INSERT INTO tracker (user_id, day, year, steps) VALUES ($1, $2, $4, $3)`,
+      [userId, day, s, year]
     );
   }
 }

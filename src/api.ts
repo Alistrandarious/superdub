@@ -74,7 +74,7 @@ export const api = {
   getGraveyard: (): Promise<{ name: string; startDate: string | null }[]> => request('/habits/graveyard'),
 
   // tracker
-  getTracker: (): Promise<{ days: any[]; habits: any[] }> => request('/tracker'),
+  getTracker: (): Promise<{ days: any[]; habits: any[]; xpCarry?: Record<string, number>; year?: number }> => request('/tracker'),
   updateTrackerDay: (day: string, data: object) =>
     request('/tracker', { method: 'PATCH', body: JSON.stringify({ day, ...data }) }),
   toggleTrackerHabit: (day: string, habitName: string, state: 'done' | 'failed' | null) =>

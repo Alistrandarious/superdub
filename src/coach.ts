@@ -20,7 +20,7 @@ export interface CoachReport {
   wantsWalk?: boolean;  // Dub is restless — nudge the user to get moving
 }
 
-const YEAR = 2026;
+const YEAR = new Date().getFullYear();
 const MANDATORY_HABIT = 'Logging into Superdub';
 
 function ddmmToEpochDay(ddmm: string): number {

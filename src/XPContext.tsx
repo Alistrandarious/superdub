@@ -12,13 +12,18 @@ function computeXPFromRaw(
   habits: { name: string }[],
   trackerHabits: { day: string; habit_name: string; state: string }[],
   installBonus: boolean,
+  xpCarry: Record<string, number> = {},
 ): number {
   const habitNames = habits.map(h => h.name);
   const known = new Set(habitNames);
   // XP is per-habit and level-based: it only depends on each habit's TOTAL
   // completed-day count (paid at the level rate). Count dones per habit, then
   // sum each habit's level-based XP — this matches the habit cards exactly.
+  // xpCarry seeds prior-year done counts so lifetime XP survives Jan 1.
   const doneCount: Record<string, number> = {};
+  for (const name of habitNames) {
+    if (xpCarry[name]) doneCount[name] = xpCarry[name];
+  }
   for (const row of trackerHabits) {
     if (row.state === 'done' && known.has(row.habit_name)) {
       doneCount[row.habit_name] = (doneCount[row.habit_name] ?? 0) + 1;
@@ -54,7 +59,7 @@ export function XPProvider({ children }: { children: React.ReactNode }) {
         api.getHabits(),
         api.getTracker(),
       ]);
-      const xp = computeXPFromRaw(habitsData, trackerData.habits ?? [], installBonus);
+      const xp = computeXPFromRaw(habitsData, trackerData.habits ?? [], installBonus, trackerData.xpCarry ?? {});
       setTotalXP(xp);
       localStorage.setItem(XP_CACHE_KEY, String(xp));
     } catch {
