@@ -6,7 +6,7 @@ import { ARTICLES, type Article, type Block } from './articles';
 import { UPDATE_LOG, type UpdateEntry } from './updates';
 
 function fmtUpdateDate(iso: string): string {
-  return new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  return new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
 
 interface Resource {
@@ -18,15 +18,15 @@ interface Resource {
 }
 interface Section {
   heading: string;
+  emoji: string;
   blurb: string;
   items: Resource[];
 }
 
-// Curated, evergreen recommendations. Links point at stable author/publisher
-// homepages so they don't rot. Opens in a new tab.
 const SECTIONS: Section[] = [
   {
-    heading: '📕 Start here — the essential books',
+    heading: 'Start here',
+    emoji: '📕',
     blurb: 'If you read one thing about building habits, make it one of these.',
     items: [
       { title: 'Atomic Habits', by: 'James Clear', tag: 'Habits', url: 'https://jamesclear.com/atomic-habits',
@@ -40,7 +40,8 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    heading: '🎯 Focus, discipline & motivation',
+    heading: 'Focus & discipline',
+    emoji: '🎯',
     blurb: 'For the days when showing up is hard.',
     items: [
       { title: 'Deep Work', by: 'Cal Newport', tag: 'Focus', url: 'https://calnewport.com/books/deep-work/',
@@ -52,7 +53,8 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    heading: '🥗 Weight, health & the body',
+    heading: 'Weight & the body',
+    emoji: '🥗',
     blurb: 'Sustainable change beats crash diets every time.',
     items: [
       { title: 'Why We Sleep', by: 'Matthew Walker', tag: 'Sleep', url: 'https://www.sleepdiplomat.com/',
@@ -64,10 +66,11 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    heading: '✍️ Free reads & ideas',
+    heading: 'Free reads',
+    emoji: '✍️',
     blurb: 'Bite-sized wisdom you can finish today.',
     items: [
-      { title: 'James Clear — 3-2-1 & article archive', by: 'jamesclear.com', tag: 'Articles', url: 'https://jamesclear.com/articles',
+      { title: 'James Clear — article archive', by: 'jamesclear.com', tag: 'Articles', url: 'https://jamesclear.com/articles',
         why: 'Hundreds of free, sharp essays on habits and improvement. The weekly 3-2-1 newsletter is gold.' },
       { title: 'Farnam Street', by: 'Shane Parrish', tag: 'Mental models', url: 'https://fs.blog/',
         why: 'Learn the thinking tools behind good decisions. "Mastering the best of what others have figured out."' },
@@ -76,6 +79,14 @@ const SECTIONS: Section[] = [
     ],
   },
 ];
+
+// Tag accent colours for book cards
+const TAG_COLORS: Record<string, string> = {
+  Habits: '#2FD27E', Behaviour: '#5AD1FF', Science: '#A855F7', Growth: '#FFB928',
+  Focus: '#2E8BFF', Resistance: '#FF5E8A', Stoicism: '#FFD23F',
+  Sleep: '#7CF8C0', Longevity: '#52EFA0', Metabolism: '#2FE0C4',
+  Articles: '#FFB928', 'Mental models': '#A855F7', Reflection: '#FF9A6C',
+};
 
 function ArticleReader({ article, onClose }: { article: Article; onClose: () => void }) {
   return (
@@ -112,7 +123,7 @@ function UpdateReader({ update, onClose }: { update: UpdateEntry; onClose: () =>
         </div>
         <div className="reader-body">
           <h1 className="reader-title">{update.title}</h1>
-          <div className="reader-meta">Superdub update · {fmtUpdateDate(update.date)}</div>
+          <div className="reader-meta">Superdub update · {new Date(update.date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
           <p className="reader-dek">{update.summary}</p>
           <h2 className="reader-h">What changed</h2>
           {update.points.map((p, i) => <li key={i} className="reader-li">{p}</li>)}
@@ -127,8 +138,11 @@ const SuccessKit: React.FC = () => {
   const navigate = useNavigate();
   const [reading, setReading] = useState<Article | null>(null);
   const [readingUpdate, setReadingUpdate] = useState<UpdateEntry | null>(null);
-  const [openSec, setOpenSec] = useState<number | null>(null); // book sections collapsed by default
+  const [showPrevUpdates, setShowPrevUpdates] = useState(false);
   const open = (url?: string) => { if (url) window.open(url, '_blank', 'noopener,noreferrer'); };
+
+  const [featuredArticle, ...restArticles] = ARTICLES;
+  const [latestUpdate, ...prevUpdates] = UPDATE_LOG;
 
   return (
     <div className="app flush" style={{ '--theme': '#FFB928', '--theme-dim': '#FFB92866', '--theme-glow': '#FFB92814' } as React.CSSProperties}>
@@ -137,84 +151,118 @@ const SuccessKit: React.FC = () => {
       {readingUpdate && <UpdateReader update={readingUpdate} onClose={() => setReadingUpdate(null)} />}
 
       <div className="success-scroll">
+
+        {/* Hero header */}
         <div className="success-head">
           <h1 className="success-title">📚 Success Kit</h1>
-          <p className="success-sub">Original reads from Superdub, plus hand-picked books to help you build habits, stay disciplined and reach your goals.</p>
+          <p className="success-sub">Original reads, curated books, and updates — everything to help you stay the course.</p>
         </div>
 
-        {/* What's New — compact list, each opens its own page */}
-        <section className="success-section">
-          <h2 className="success-section-title">✨ What's New</h2>
-          <p className="success-section-blurb">Major updates, newest first. Tap to read the notes.</p>
-          <div className="update-list">
-            {UPDATE_LOG.map((u, i) => (
-              <button key={i} className="update-row" onClick={() => setReadingUpdate(u)}>
-                <span className="update-row-emoji">{u.emoji}</span>
-                <div className="update-row-text">
-                  <span className="update-row-title">{u.title}</span>
-                  <span className="update-row-date">{fmtUpdateDate(u.date)}</span>
+        {/* ── Featured article — big hero card ── */}
+        {featuredArticle && (
+          <section className="sk-section">
+            <div className="sk-label">✍️ From Superdub</div>
+            <button className="sk-hero-card" onClick={() => setReading(featuredArticle)}
+              style={{ '--card-accent': featuredArticle.accent } as React.CSSProperties}>
+              <div className="sk-hero-cover" style={{ background: `linear-gradient(135deg, ${featuredArticle.accent}dd, ${featuredArticle.accent}44)` }}>
+                <span className="sk-hero-tag">{featuredArticle.tag}</span>
+                <span className="sk-hero-read">{featuredArticle.readMins} min read</span>
+              </div>
+              <div className="sk-hero-body">
+                <div className="sk-hero-title">{featuredArticle.title}</div>
+                <div className="sk-hero-dek">{featuredArticle.dek}</div>
+                <div className="sk-hero-author">By {featuredArticle.author} ↗</div>
+              </div>
+            </button>
+          </section>
+        )}
+
+        {/* ── Rest of articles — 2-col grid ── */}
+        {restArticles.length > 0 && (
+          <div className="sk-article-grid">
+            {restArticles.map(a => (
+              <button key={a.id} className="sk-article-card" onClick={() => setReading(a)}
+                style={{ '--card-accent': a.accent } as React.CSSProperties}>
+                <div className="sk-article-cover" style={{ background: `linear-gradient(135deg, ${a.accent}cc, ${a.accent}33)` }}>
+                  <span className="sk-article-tag">{a.tag}</span>
                 </div>
-                <span className="update-row-chev">›</span>
+                <div className="sk-article-body">
+                  <div className="sk-article-title">{a.title}</div>
+                  <div className="sk-article-meta">{a.readMins} min</div>
+                </div>
               </button>
             ))}
           </div>
-        </section>
+        )}
 
-        {/* Featured Superdub articles by Ali Shah */}
-        <section className="success-section">
-          <h2 className="success-section-title">✍️ Reads from Superdub</h2>
-          <p className="success-section-blurb">Original guides by Ali Shah — tap to read in the app.</p>
-          <div className="article-row">
-            {ARTICLES.map(a => (
-              <button key={a.id} className="article-card" onClick={() => setReading(a)}>
-                <div className="article-card-cover" style={{ background: `linear-gradient(135deg, ${a.accent}, ${a.accent}55)` }}>
-                  <span className="article-card-tag">{a.tag}</span>
+        {/* ── What's New — latest update featured, previous ones tucked below ── */}
+        {latestUpdate && (
+          <section className="sk-section">
+            <div className="sk-label">✨ What's New</div>
+            <button className="sk-update-hero" onClick={() => setReadingUpdate(latestUpdate)}>
+              <div className="sk-update-hero-top">
+                <span className="sk-update-hero-emoji">{latestUpdate.emoji}</span>
+                <div className="sk-update-hero-headings">
+                  <span className="sk-update-hero-badge">Latest · {fmtUpdateDate(latestUpdate.date)}</span>
+                  <span className="sk-update-hero-title">{latestUpdate.title}</span>
                 </div>
-                <div className="article-card-body">
-                  <div className="article-card-title">{a.title}</div>
-                  <div className="article-card-meta">{a.author} · {a.readMins} min</div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </section>
+              </div>
+              <p className="sk-update-hero-summary">{latestUpdate.summary}</p>
+              <span className="sk-update-hero-more">Read the full update →</span>
+            </button>
 
-        {/* Recommended reading — collapsible so the page stays short */}
-        <section className="success-section">
-          <h2 className="success-section-title">📖 Recommended reading</h2>
-          <p className="success-section-blurb">Curated books &amp; reads. Tap a shelf to browse.</p>
-          <div className="shelf-list">
-            {SECTIONS.map((sec, i) => {
-              const isOpen = openSec === i;
-              return (
-                <div key={sec.heading} className={`shelf${isOpen ? ' open' : ''}`}>
-                  <button className="shelf-head" onClick={() => setOpenSec(isOpen ? null : i)}>
-                    <span className="shelf-title">{sec.heading}</span>
-                    <span className="shelf-count">{sec.items.length}</span>
-                    <span className={`shelf-chev${isOpen ? ' open' : ''}`}>▾</span>
-                  </button>
-                  <div className="shelf-body-wrap">
-                    <div className="shelf-body">
-                      <p className="success-section-blurb" style={{ marginTop: 2 }}>{sec.blurb}</p>
-                      <div className="success-grid">
-                        {sec.items.map(r => (
-                          <button key={r.title} className={`success-card${r.url ? '' : ' no-link'}`} onClick={() => open(r.url)}>
-                            <div className="success-card-top">
-                              <span className="success-card-tag">{r.tag}</span>
-                              {r.url && <span className="success-card-link">↗</span>}
-                            </div>
-                            <div className="success-card-title">{r.title}</div>
-                            <div className="success-card-by">{r.by}</div>
-                            <div className="success-card-why">{r.why}</div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+            {prevUpdates.length > 0 && (
+              <>
+                <button className="sk-prev-toggle" onClick={() => setShowPrevUpdates(s => !s)}>
+                  <span>Previous updates</span>
+                  <span className="sk-prev-count">{prevUpdates.length}</span>
+                  <span className={`sk-prev-chev${showPrevUpdates ? ' open' : ''}`}>▾</span>
+                </button>
+                {showPrevUpdates && (
+                  <div className="sk-prev-list">
+                    {prevUpdates.map((u, i) => (
+                      <button key={i} className="sk-prev-row" onClick={() => setReadingUpdate(u)}>
+                        <span className="sk-prev-emoji">{u.emoji}</span>
+                        <span className="sk-prev-title">{u.title}</span>
+                        <span className="sk-prev-date">{fmtUpdateDate(u.date)}</span>
+                      </button>
+                    ))}
                   </div>
+                )}
+              </>
+            )}
+          </section>
+        )}
+
+        {/* ── Book shelves — one horizontal scroll row per category ── */}
+        <section className="sk-section">
+          <div className="sk-label">📖 Recommended reading</div>
+          {SECTIONS.map(sec => (
+            <div key={sec.heading} className="sk-shelf">
+              <div className="sk-shelf-head">
+                <span className="sk-shelf-emoji">{sec.emoji}</span>
+                <div className="sk-shelf-info">
+                  <span className="sk-shelf-title">{sec.heading}</span>
+                  <span className="sk-shelf-blurb">{sec.blurb}</span>
                 </div>
-              );
-            })}
-          </div>
+              </div>
+              <div className="sk-hscroll">
+                {sec.items.map(r => {
+                  const accent = TAG_COLORS[r.tag] ?? '#FFB928';
+                  return (
+                    <button key={r.title} className="sk-book-card" onClick={() => open(r.url)}
+                      style={{ '--card-accent': accent } as React.CSSProperties}>
+                      <span className="sk-book-tag" style={{ background: `${accent}22`, color: accent }}>{r.tag}</span>
+                      <div className="sk-book-title">{r.title}</div>
+                      <div className="sk-book-by">{r.by}</div>
+                      <div className="sk-book-why">{r.why}</div>
+                      {r.url && <span className="sk-book-link">Open ↗</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </section>
 
         <p className="success-foot">More coming soon. Got a recommendation? Tell us in <button className="success-foot-link" onClick={() => navigate('/about')}>About</button>.</p>

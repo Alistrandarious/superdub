@@ -326,13 +326,7 @@ const LevelPage: React.FC = () => {
           </div>
         )}
 
-        <div className="diet-section" style={{ marginTop: 4 }}>
-          <h2 className="diet-heading" style={{ fontSize: '0.7rem', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>🎨 Cosmetics &amp; Unlocks</h2>
-        </div>
-        {/* Ring themes — equip an unlocked cosmetic */}
-        <div className="diet-section">
-          <h2 className="diet-heading">Ring Themes</h2>
-          <p className="rewards-sub">Equip a level-ring theme you’ve unlocked.</p>
+        <Collapsible title="💍 Ring Themes" sub="Equip a level-ring theme you've unlocked." defaultOpen>
           <div className="ringtheme-grid">
             {RING_THEMES.map(t => {
               const locked = !isUnlocked(t.unlock, ctx);
@@ -354,12 +348,9 @@ const LevelPage: React.FC = () => {
               );
             })}
           </div>
-        </div>
+        </Collapsible>
 
-        {/* Dub colours */}
-        <div className="diet-section">
-          <h2 className="diet-heading">Dub's Colour</h2>
-          <p className="rewards-sub">Recolour your companion. Unlock more as you level up.</p>
+        <Collapsible title="🐾 Dub's Colour" sub="Recolour your companion. Unlock more as you level up.">
           <div className="ringtheme-grid">
             {DUB_COLORS.map(dc => {
               const locked = !isUnlocked(dc.unlock, ctx);
@@ -375,12 +366,9 @@ const LevelPage: React.FC = () => {
               );
             })}
           </div>
-        </div>
+        </Collapsible>
 
-        {/* Habits button colour */}
-        <div className="diet-section">
-          <h2 className="diet-heading">Habits Button</h2>
-          <p className="rewards-sub">The colour of your centre Habits button.</p>
+        <Collapsible title="🎨 Habits Button" sub="The colour of your centre Habits button.">
           <div className="ringtheme-grid">
             {HABIT_COLORS.map(c => {
               const locked = !isUnlocked(c.unlock, ctx);
@@ -396,12 +384,9 @@ const LevelPage: React.FC = () => {
               );
             })}
           </div>
-        </div>
+        </Collapsible>
 
-        {/* Menu glow colour */}
-        <div className="diet-section">
-          <h2 className="diet-heading">Menu Glow</h2>
-          <p className="rewards-sub">The glow on the selected bottom-nav item.</p>
+        <Collapsible title="✨ Menu Glow" sub="The glow on the selected bottom-nav item.">
           <div className="ringtheme-grid">
             {GLOW_COLORS.map(c => {
               const locked = !isUnlocked(c.unlock, ctx);
@@ -417,12 +402,9 @@ const LevelPage: React.FC = () => {
               );
             })}
           </div>
-        </div>
+        </Collapsible>
 
-        {/* Companion — switch Dub between dog and cat */}
-        <div className="diet-section">
-          <h2 className="diet-heading">Your Companion</h2>
-          <p className="rewards-sub">Choose what Dub is. The cat unlocks at level 2.</p>
+        <Collapsible title="🐶 Your Companion" sub="Choose what Dub is. The cat unlocks at level 2.">
           <div className="companion-grid">
             <button className={`companion-card${species === 'dog' ? ' active' : ''}`} onClick={() => pickSpecies('dog')}>
               <span className="companion-pet"><DubMascot size={66} mood="happy" species="dog" /></span>
@@ -440,12 +422,9 @@ const LevelPage: React.FC = () => {
               <span className="companion-name">{catUnlocked ? `Dub the cat${species === 'cat' ? ' ✓' : ''}` : 'Cat · LV2'}</span>
             </button>
           </div>
-        </div>
+        </Collapsible>
 
-        {/* App background */}
-        <div className="diet-section">
-          <h2 className="diet-heading">App Background</h2>
-          <p className="rewards-sub">Set the mood of the whole app. Unlock more as you level.</p>
+        <Collapsible title="🌌 App Background" sub="Set the mood of the whole app. Unlock more as you level.">
           <div className="ringtheme-grid">
             {BACKGROUNDS.map(b => {
               const locked = !isUnlocked(b.unlock, ctx);
@@ -461,7 +440,8 @@ const LevelPage: React.FC = () => {
               );
             })}
           </div>
-        </div>
+        </Collapsible>
+
         <Collapsible title="🏅 Badges">
           <div className="badges-grid">
             {badges.map(b => (
