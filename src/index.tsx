@@ -7,7 +7,6 @@ import Tasks from './Tasks';
 import Profile from './Profile';
 import Habits from './Habits';
 import About from './About';
-import MacroAnalysis from './MacroAnalysis';
 import PrivacyPolicy from './PrivacyPolicy';
 import LevelPage from './LevelPage';
 import ArchivedHabits from './ArchivedHabits';
@@ -82,7 +81,6 @@ function AppRouter() {
         <Route path="/tasks" element={<Tasks />} />
         <Route path="/profile" element={<Profile onLogout={handleLogout} />} />
         <Route path="/about" element={<About />} />
-        <Route path="/diet/macro" element={<MacroAnalysis />} />
         <Route path="/level" element={<LevelPage />} />
         <Route path="/archived" element={<ArchivedHabits />} />
         <Route path="/success-kit" element={<SuccessKit />} />

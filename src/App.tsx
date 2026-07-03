@@ -574,10 +574,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const tdee = Math.round(bmr * al);
   const dailyDeficit = activeLoss > 0 ? Math.round((activeLoss * 7700) / 7) : 0;
   const targetCalories = tdee > 0 ? Math.max(tdee - dailyDeficit, 1200) : 0;
-  const targetProtein = startWeight > 0 ? Math.round(startWeight * 2.0) : 0;
-  const targetFats = startWeight > 0 ? Math.round(startWeight * 0.8) : 0;
-  const targetCarbCals = targetCalories - (targetProtein * 4) - (targetFats * 9);
-  const targetCarbs = targetCalories > 0 ? Math.max(Math.round(targetCarbCals / 4), 50) : 0;
 
   // Account creation date — fallback to 30 days ago if not loaded yet
   const accountCreatedDate = useMemo(() => {
@@ -1356,9 +1352,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             {targetCalories > 0 && (
               <div className="macro-targets">
                 <span>Daily Target: <strong>{targetCalories} kcal</strong></span>
-                <span>P: <strong>{targetProtein}g</strong></span>
-                <span>C: <strong>{targetCarbs}g</strong></span>
-                <span>F: <strong>{targetFats}g</strong></span>
               </div>
             )}
           </div>
@@ -2006,60 +1999,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               </div>
             );
           })}
-          <div className="tracker-label">Protein (g)</div>
-          {visibleDays.map((day, i) => {
-            const t = getDayTargets(i);
-            const val = parseInt(tracker[day]?.protein ?? '') || 0;
-            const over = t && val > t.protein;
-            return (
-              <div key={`pro-${day}`} className={`tracker-cell ${over ? 'cell-over' : ''}`}>
-                <input
-                  className="macro-input"
-                  type="text"
-                  inputMode="numeric"
-                  value={tracker[day]?.protein ?? ''}
-                  onChange={e => handleMacro(day, 'protein', e.target.value)}
-                  placeholder={t ? String(t.protein) : '—'}
-                />
-              </div>
-            );
-          })}
-          <div className="tracker-label">Carbs (g)</div>
-          {visibleDays.map((day, i) => {
-            const t = getDayTargets(i);
-            const val = parseInt(tracker[day]?.carbs ?? '') || 0;
-            const over = t && val > t.carbs;
-            return (
-              <div key={`carb-${day}`} className={`tracker-cell ${over ? 'cell-over' : ''}`}>
-                <input
-                  className="macro-input"
-                  type="text"
-                  inputMode="numeric"
-                  value={tracker[day]?.carbs ?? ''}
-                  onChange={e => handleMacro(day, 'carbs', e.target.value)}
-                  placeholder={t ? String(t.carbs) : '—'}
-                />
-              </div>
-            );
-          })}
-          <div className="tracker-label">Fats (g)</div>
-          {visibleDays.map((day, i) => {
-            const t = getDayTargets(i);
-            const val = parseInt(tracker[day]?.fats ?? '') || 0;
-            const over = t && val > t.fats;
-            return (
-              <div key={`fat-${day}`} className={`tracker-cell ${over ? 'cell-over' : ''}`}>
-                <input
-                  className="macro-input"
-                  type="text"
-                  inputMode="numeric"
-                  value={tracker[day]?.fats ?? ''}
-                  onChange={e => handleMacro(day, 'fats', e.target.value)}
-                  placeholder={t ? String(t.fats) : '—'}
-                />
-              </div>
-            );
-          })}          <div className="tracker-label">Steps</div>
+          <div className="tracker-label">Steps</div>
           {visibleDays.map((day) => {
             const val = parseInt(tracker[day]?.steps ?? '') || 0;
             const under = val > 0 && val < effectiveStepTarget;
