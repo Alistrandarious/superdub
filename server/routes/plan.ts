@@ -262,9 +262,20 @@ router.post('/goal', requireAuth as any, async (req: AuthRequest, res: Response)
       return res.status(400).json({ error: 'Log at least one weigh-in before setting a goal' });
     }
     const latestPt = pts[pts.length - 1];
-    const startWeight = latestPt.weight;
 
-    const bio = await getBiometrics(req.userId!, startWeight);
+    // Editing an existing plan must NOT restart the journey: keep the original
+    // start anchor (date + weight) so the safe-zone corridor and progress %
+    // survive target tweaks. Only a genuinely new plan starts today.
+    const existing = await getActiveGoal(req.userId!);
+    const startWeight = existing ? Number(existing.start_weight) : latestPt.weight;
+    const startDate: string = existing
+      ? new Date(existing.start_date).toISOString().slice(0, 10)
+      : new Date().toISOString().slice(0, 10);
+
+    // Pace + calorie math always runs from TODAY's weight — only the stored
+    // anchor (start_date/start_weight) is inherited on edits.
+    const currentWeight = latestPt.weight;
+    const bio = await getBiometrics(req.userId!, currentWeight);
     if (!bio) {
       return res.status(400).json({
         error: 'Complete your profile (height, age, sex) before setting a goal',
@@ -274,9 +285,9 @@ router.post('/goal', requireAuth as any, async (req: AuthRequest, res: Response)
     const weeksToGoal = (targetDt.getTime() - Date.now()) / (7 * 86400000);
     if (weeksToGoal <= 0) return res.status(400).json({ error: 'Target date must be in the future' });
 
-    const ratePctBw = Math.abs(targetWeight - startWeight) / startWeight / weeksToGoal;
+    const ratePctBw = Math.abs(targetWeight - currentWeight) / currentWeight / weeksToGoal;
     const goalType: 'lose' | 'gain' | 'maintain' =
-      targetWeight < startWeight ? 'lose' : targetWeight > startWeight ? 'gain' : 'maintain';
+      targetWeight < currentWeight ? 'lose' : targetWeight > currentWeight ? 'gain' : 'maintain';
 
     // Abandon any existing active goal
     await pool.query(
@@ -284,13 +295,13 @@ router.post('/goal', requireAuth as any, async (req: AuthRequest, res: Response)
       [req.userId]
     );
 
-    // Create goal
+    // Create goal — start anchor inherited from the replaced goal when editing
     const goalRes = await pool.query(
       `INSERT INTO weight_goals
          (user_id, goal_type, start_weight, start_date, target_weight, target_date, rate_pct_bw)
-       VALUES ($1, $2, $3, CURRENT_DATE, $4, $5, $6)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING id`,
-      [req.userId, goalType, startWeight, targetWeight, targetDate, ratePctBw]
+      [req.userId, goalType, startWeight, startDate, targetWeight, targetDate, ratePctBw]
     );
     const goalId: string = goalRes.rows[0].id;
 
@@ -318,13 +329,16 @@ router.post('/goal', requireAuth as any, async (req: AuthRequest, res: Response)
         }
       }
     } catch { /* fall back to formula */ }
-    const dailyEquiv = Math.round(ratePctBw * startWeight * 7700 / 7);
+    const dailyEquiv = Math.round(ratePctBw * currentWeight * 7700 / 7);
     const direction = goalType === 'gain' ? 1 : -1;
     const initialCalories = Math.max(tdee + direction * dailyEquiv, bmr);
 
-    const rateKgPerWk = +(ratePctBw * startWeight).toFixed(2);
-    const reason = `Goal created — ${goalType} ${Math.abs(startWeight - targetWeight).toFixed(1)} kg`
-      + ` by ${targetDate} (${rateKgPerWk} kg/wk, ${tdeeSource} TDEE ${tdee} kcal)`;
+    const rateKgPerWk = +(ratePctBw * currentWeight).toFixed(2);
+    const reason = existing
+      ? `Goal updated — ${goalType} ${Math.abs(currentWeight - targetWeight).toFixed(1)} kg`
+        + ` by ${targetDate} (${rateKgPerWk} kg/wk, ${tdeeSource} TDEE ${tdee} kcal; start kept ${startDate})`
+      : `Goal created — ${goalType} ${Math.abs(currentWeight - targetWeight).toFixed(1)} kg`
+        + ` by ${targetDate} (${rateKgPerWk} kg/wk, ${tdeeSource} TDEE ${tdee} kcal)`;
 
     await pool.query(
       `INSERT INTO weight_plan_targets (user_id, goal_id, prescribed_calories, reason)
