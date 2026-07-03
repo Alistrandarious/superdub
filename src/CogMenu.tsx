@@ -89,6 +89,7 @@ const CogMenu: React.FC = () => {
             </button>
             <button className="cog-menu-item" onClick={() => { close(); window.dispatchEvent(new CustomEvent('superdub:open-tracker')); }}><span className="cog-mi-ico">📋</span> Tracker</button>
             <button className="cog-menu-item" onClick={() => go('/archived')}><span className="cog-mi-ico">📦</span> Archived Habits</button>
+            <button className="cog-menu-item" onClick={() => go('/maths')}><span className="cog-mi-ico">📐</span> The Maths</button>
             <button className="cog-menu-item" onClick={() => go('/level')}><span className="cog-mi-ico">🎨</span> Personalise</button>
 
             <div className="cog-menu-sep" />

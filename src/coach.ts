@@ -56,21 +56,35 @@ function weightLine(weights: WeighIn[], goal: Goal | null, seed: number): CoachL
     return { icon: '⚖️', title: 'Building your trend', tone: 'neutral',
       body: 'A few more weigh-ins and I can show you exactly which way things are heading. Keep logging daily.' };
   }
-  const window = clean.slice(-14);
-  const slopePerDay = regressionSlope(window);
-  const ratePerWeek = slopePerDay * 7;
+
+  // ── This week's ACTUAL movement: first vs last weigh-in inside the trailing
+  // 7 days. No regression, no extrapolation — the two numbers you can verify
+  // on the chart yourself. (seed is today's epoch day.)
+  const win7 = clean.filter(p => p.x >= seed - 6 && p.x <= seed);
+  const first = win7[0];
+  const last = win7[win7.length - 1];
+  const weekSpan = win7.length >= 2 ? last.x - first.x : 0;
+  const hasWeek = weekSpan >= 3; // need points spread across the week to call it a week
+  const weekDelta = hasWeek ? last.y - first.y : null; // signed kg over this week
+
+  // Fallback when the week is too sparse: 14-day regression, labelled as trend.
+  const regPerWeek = regressionSlope(clean.slice(-14)) * 7;
+
+  const rate = weekDelta != null ? weekDelta : regPerWeek;
   const latest = clean[clean.length - 1].y;
   const goalType = goal?.goalType ?? (goal?.targetWeight != null ? (goal.targetWeight < latest ? 'lose' : 'gain') : undefined);
 
-  const absWk = Math.abs(ratePerWeek);
-  const plateau = absWk < 0.05;
-  const losing = ratePerWeek < 0;
+  const absWk = Math.abs(rate);
+  const plateau = absWk < 0.1;
+  const losing = rate < 0;
+  const weekWord = hasWeek ? 'this week' : 'lately';
+  const detail = hasWeek ? ` (${first.y.toFixed(1)} → ${last.y.toFixed(1)} kg since ${fmtDate(first.x)})` : '';
 
-  // No goal — just describe the trend kindly.
+  // No goal — just describe the movement kindly.
   if (!goal || goal.targetWeight == null || !goalType || goalType === 'maintain') {
-    if (plateau) return { icon: '⚖️', title: 'Holding steady', tone: 'neutral', body: `You're stable around ${latest.toFixed(1)} kg. Consistency is its own win.` };
+    if (plateau) return { icon: '⚖️', title: 'Holding steady', tone: 'neutral', body: `You're stable around ${latest.toFixed(1)} kg${detail}. Consistency is its own win.` };
     return { icon: losing ? '📉' : '📈', title: losing ? 'Trending down' : 'Trending up', tone: 'neutral',
-      body: `About ${absWk.toFixed(1)} kg/week ${losing ? 'down' : 'up'} lately — now at ${latest.toFixed(1)} kg.` };
+      body: `${absWk.toFixed(1)} kg ${losing ? 'down' : 'up'} ${weekWord}${detail} — now at ${latest.toFixed(1)} kg.` };
   }
 
   const target = goal.targetWeight;
@@ -83,26 +97,34 @@ function weightLine(weights: WeighIn[], goal: Goal | null, seed: number): CoachL
   if (plateau) {
     return { icon: '🪨', title: 'A small plateau', tone: 'warn',
       body: pick([
-        `The scale's been flat this week — totally normal. Trust the process; ${remaining.toFixed(1)} kg to go.`,
-        `Plateaus happen to everyone. Tighten one thing today and the trend usually resumes within a week.`,
+        `The scale's been flat ${weekWord}${detail} — totally normal. Trust the process; ${remaining.toFixed(1)} kg to go.`,
+        `Plateaus happen to everyone${detail}. Tighten one thing today and the trend usually resumes within a week.`,
       ], seed) };
   }
   if (goingRightWay) {
-    const weeksToGoal = remaining / absWk;
-    const eta = ddmmToEpochDay(weights[weights.length - 1].day) + Math.round(weeksToGoal * 7);
-    return { icon: '📉', title: `${absWk.toFixed(1)} kg/week — on track`, tone: 'good',
-      body: `At this pace you'll hit ${target.toFixed(1)} kg around ${fmtDate(eta)}. ${remaining.toFixed(1)} kg to go — keep it steady.` };
+    // ETA from this week's honest pace, normalised to a full 7 days.
+    const perWeek = hasWeek ? Math.abs(weekDelta!) / weekSpan * 7 : absWk;
+    const weeksToGoal = perWeek > 0 ? remaining / perWeek : Infinity;
+    const etaStr = isFinite(weeksToGoal) && weeksToGoal < 104
+      ? ` At this pace you'll hit ${target.toFixed(1)} kg around ${fmtDate(seed + Math.round(weeksToGoal * 7))}.`
+      : '';
+    return { icon: '📉', title: `${absWk.toFixed(1)} kg ${losing ? 'down' : 'up'} ${weekWord} — on track`, tone: 'good',
+      body: `${hasWeek ? `${first.y.toFixed(1)} → ${last.y.toFixed(1)} kg since ${fmtDate(first.x)}.` : ''}${etaStr} ${remaining.toFixed(1)} kg to go — keep it steady.` };
   }
   // Moving the wrong way
   return { icon: '🧭', title: 'Drifting off course', tone: 'warn',
     body: pick([
-      `The trend's nudging the wrong way this week. One solid day resets the momentum — you've got this.`,
-      `Slightly off target lately. No drama — focus on today's basics and the line will turn.`,
+      `${absWk.toFixed(1)} kg the wrong way ${weekWord}${detail}. One solid day resets the momentum — you've got this.`,
+      `Slightly off target ${weekWord}${detail}. No drama — focus on today's basics and the line will turn.`,
     ], seed) };
 }
 
 /* ── Habit adherence ──────────────────────────────────────────────────────── */
-interface HabitAnalysis { name: string; adherence: number; streak: number; misses: number; doneDays: number; elapsed: number; }
+interface HabitAnalysis {
+  name: string; adherence: number; streak: number; misses: number; doneDays: number; elapsed: number;
+  done7: number;      // ticks in the trailing 7 days (incl. today)
+  donePrev7: number;  // ticks in the 7 days before that
+}
 
 function analyseHabit(name: string, startDate: string | null, map: Record<string, Record<string, string | null>>, allDays: string[], todayIdx: number): HabitAnalysis {
   let startIdx = 0;
@@ -119,6 +141,14 @@ function analyseHabit(name: string, startDate: string | null, map: Record<string
     if (map[allDays[i]]?.[name] === 'done') doneDays++;
   }
   const elapsed = Math.max(1, todayIdx - startIdx + 1);
+  // week-over-week volume, for the "most improved" win
+  let done7 = 0, donePrev7 = 0;
+  for (let i = Math.max(startIdx, todayIdx - 6); i <= todayIdx; i++) {
+    if (map[allDays[i]]?.[name] === 'done') done7++;
+  }
+  for (let i = Math.max(startIdx, todayIdx - 13); i <= todayIdx - 7; i++) {
+    if (i >= 0 && map[allDays[i]]?.[name] === 'done') donePrev7++;
+  }
   // current streak (counting today if done, else from yesterday)
   let streak = 0;
   const todayDone = map[allDays[todayIdx]]?.[name] === 'done';
@@ -129,7 +159,7 @@ function analyseHabit(name: string, startDate: string | null, map: Record<string
   for (let i = todayIdx - 1; i >= startIdx && i >= todayIdx - 7; i--) {
     if (map[allDays[i]]?.[name] !== 'done') misses++; else break;
   }
-  return { name, adherence: doneDays / elapsed, streak, misses, doneDays, elapsed };
+  return { name, adherence: doneDays / elapsed, streak, misses, doneDays, elapsed, done7, donePrev7 };
 }
 
 const TIPS: { match: RegExp; tip: string }[] = [
@@ -189,22 +219,38 @@ export function buildCoachReport(
   const wl = weightLine(weights, goal, seed);
   if (wl) lines.push(wl);
 
-  // 2) A win — longest live streak, else best adherence
+  // 2) A win — build every kind of win available today, then rotate by day so
+  //    it isn't stuck on the same streak headline for weeks.
+  const wins: CoachLine[] = [];
   const byStreak = [...analyses].sort((a, b) => b.streak - a.streak);
-  const win = byStreak[0];
-  if (win && win.streak >= 2) {
-    lines.push({ icon: '🔥', title: `${win.streak}-day ${win.name} streak`, tone: 'good',
-      body: pick([`That streak is hard-earned — protect it today.`, `${win.name} is becoming who you are. Keep the chain alive.`], seed) });
-  } else {
-    const byAdh = [...analyses].sort((a, b) => b.adherence - a.adherence);
-    if (byAdh[0] && byAdh[0].adherence >= 0.6) {
-      lines.push({ icon: '✅', title: `Strong on ${byAdh[0].name}`, tone: 'good',
-        body: `You're hitting it ${Math.round(byAdh[0].adherence * 100)}% of days. That's real consistency.` });
-    }
+  const streakWin = byStreak[0];
+  if (streakWin && streakWin.streak >= 2) {
+    wins.push({ icon: '🔥', title: `${streakWin.streak}-day ${streakWin.name} streak`, tone: 'good',
+      body: pick([`That streak is hard-earned — protect it today.`, `${streakWin.name} is becoming who you are. Keep the chain alive.`], seed) });
   }
+  const improved = [...analyses]
+    .filter(a => a.done7 - a.donePrev7 >= 2 && a.elapsed >= 10)
+    .sort((a, b) => (b.done7 - b.donePrev7) - (a.done7 - a.donePrev7))[0];
+  if (improved) {
+    wins.push({ icon: '📈', title: `${improved.name} is levelling up`, tone: 'good',
+      body: `${improved.done7} day${improved.done7 === 1 ? '' : 's'} this week vs ${improved.donePrev7} last week. That's real momentum building.` });
+  }
+  const possibleTicks = analyses.reduce((s, a) => s + Math.min(7, a.elapsed), 0);
+  const weekTicks = analyses.reduce((s, a) => s + a.done7, 0);
+  if (possibleTicks >= 7 && weekTicks / possibleTicks >= 0.6) {
+    wins.push({ icon: '🧱', title: `${weekTicks} of ${possibleTicks} habit ticks this week`, tone: 'good',
+      body: `${Math.round((weekTicks / possibleTicks) * 100)}% of everything you set out to do. Brick by brick.` });
+  }
+  const byAdh = [...analyses].sort((a, b) => b.adherence - a.adherence)[0];
+  if (byAdh && byAdh.adherence >= 0.6 && !wins.some(w => w.title.includes(byAdh.name))) {
+    wins.push({ icon: '✅', title: `Strong on ${byAdh.name}`, tone: 'good',
+      body: `You're hitting it ${Math.round(byAdh.adherence * 100)}% of days since you started. That's real consistency.` });
+  }
+  const win = wins.length > 0 ? wins[seed % wins.length] : null;
+  if (win) lines.push(win);
 
-  // 3) A struggle — most recent misses, else lowest adherence (not the win)
-  const candidates = analyses.filter(a => a.name !== win?.name);
+  // 3) A struggle — most recent misses, else lowest adherence (not today's win)
+  const candidates = analyses.filter(a => !win || !win.title.includes(a.name));
   const struggle = candidates
     .filter(a => a.misses >= 2 || a.adherence < 0.5)
     .sort((a, b) => (b.misses - a.misses) || (a.adherence - b.adherence))[0];
@@ -214,10 +260,22 @@ export function buildCoachReport(
       body: `${why}. ${tipFor(struggle.name)}` });
   }
 
-  // Walkies — Dub gets restless when momentum stalls (a real miss streak, or no
-  // live wins at all). He'd love to be taken out.
-  const stagnant = (struggle && struggle.misses >= 2) || (analyses.length > 0 && !analyses.some(a => a.streak >= 1));
-  if (stagnant) {
+  // Walkies — only when momentum has GENUINELY stalled (no live streak on any
+  // habit), and at most once every 3 days. One struggling habit is the
+  // struggle line's job, not a reason to nag for walks every day.
+  const globalStall = analyses.length > 0 && !analyses.some(a => a.streak >= 1);
+  let wantsWalk = false;
+  if (globalStall) {
+    try {
+      const K = 'superdub.dub.walkNudgeDay';
+      const lastShown = parseInt(localStorage.getItem(K) ?? '0', 10) || 0;
+      if (seed === lastShown || seed - lastShown >= 3) {
+        wantsWalk = true;
+        localStorage.setItem(K, String(seed));
+      }
+    } catch { wantsWalk = true; }
+  }
+  if (wantsWalk) {
     lines.push({ icon: '🦴', title: 'Dub wants a walk', tone: 'warn',
       body: pick([
         `Things have gone a bit quiet. Take me out — a short walk today is the easiest way to restart the momentum.`,
@@ -235,5 +293,5 @@ export function buildCoachReport(
   else if (warns > goods) { headline = pick(HEADLINES_TOUGH, seed); emoji = '🌱'; }
   else { headline = pick(HEADLINES_MIXED, seed); emoji = '💡'; }
 
-  return { emoji, headline, lines, closing: pick(CLOSING, seed), wantsWalk: stagnant };
+  return { emoji, headline, lines, closing: pick(CLOSING, seed), wantsWalk };
 }

@@ -16,6 +16,7 @@ import {
 import './App.css';
 import { api } from './api';
 import { BUILD_TAG } from './version';
+import { kcalPerStep as kcalPerStepFor, stepsToKm } from './energy';
 import StreakFlame from './StreakFlame';
 import DubProgressSummary from './DubProgressSummary';
 import CogMenu from './CogMenu';
@@ -339,6 +340,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const [lossPerWeek, setLossPerWeek] = useState('');
   const [height, setHeight] = useState('');
   const [age, setAge] = useState('');
+  const [sex, setSex] = useState<'male' | 'female' | 'other'>('male');
   const [activityLevel, setActivityLevel] = useState('1.4');
   const [stepTarget, setStepTarget] = useState(10000);
 
@@ -411,6 +413,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       setTimeDays(ws.timeDays ?? '');
       setHeight(ws.height || profile.heightCm || '');
       setAge(ws.age || ageFromDob(profile.dob) || '');
+      setSex(profile.sex === 'female' ? 'female' : profile.sex === 'other' ? 'other' : 'male');
       setActivityLevel(ws.activityLevel || profile.activity || '1.4');
     });
   }, []);
@@ -570,7 +573,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const ht = parseFloat(height) || 0;
   const ag = parseFloat(age) || 0;
   const al = parseFloat(activityLevel) || 1.4;
-  const bmr = startWeight > 0 && ht > 0 && ag > 0 ? (10 * startWeight) + (6.25 * ht) - (5 * ag) + 5 : 0;
+  // Mifflin–St Jeor, sex-aware: +5 male / −161 female ('other' uses male constant)
+  const sexConst = sex === 'female' ? -161 : 5;
+  const bmr = startWeight > 0 && ht > 0 && ag > 0 ? (10 * startWeight) + (6.25 * ht) - (5 * ag) + sexConst : 0;
   const tdee = Math.round(bmr * al);
   const dailyDeficit = activeLoss > 0 ? Math.round((activeLoss * 7700) / 7) : 0;
   const targetCalories = tdee > 0 ? Math.max(tdee - dailyDeficit, 1200) : 0;
@@ -718,8 +723,18 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
   // Diagonal safe-zone corridor: ±1.5 kg around the ideal linear path from plan start → target
   const zoneActive = !!(planGoal?.startDate && planGoal?.targetDate && planGoal?.startWeight != null && planGoal?.targetWeight != null);
-  const zoneStartMs = zoneActive ? new Date(planGoal!.startDate).getTime() : 0;
-  const zoneEndMs   = zoneActive ? new Date(planGoal!.targetDate).getTime() : 0;
+  // Parse the plan dates to LOCAL midnight. The server sends UTC ISO strings;
+  // new Date('2026-06-20T00:00:00.000Z') is 01:00 in BST, which is LATER than
+  // the chart's local-midnight timestamps — so the corridor's first day (and
+  // any DST-boundary day) fell outside the window and left a gap.
+  const localDayMs = (d: string | Date): number => {
+    const s = d instanceof Date ? d.toISOString() : String(d);
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!m) return new Date(s).getTime();
+    return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).getTime();
+  };
+  const zoneStartMs = zoneActive ? localDayMs(planGoal!.startDate) : 0;
+  const zoneEndMs   = zoneActive ? localDayMs(planGoal!.targetDate) : 0;
   const zoneStartW  = zoneActive ? planGoal!.startWeight  : 0;
   const zoneEndW    = zoneActive ? planGoal!.targetWeight : 0;
   const ZONE_HALF   = 1.5;
@@ -932,7 +947,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   //                         + weight-trend stored energy (7700 kcal/kg)
   // Uses a 7-day EMA slope so the estimate is smooth, not spiky day-to-day.
   const KCAL_PER_KG = 7700;
-  const kcalPerStep = 0.0005 * (startWeight > 0 ? startWeight : 75);
+  const kcalPerStep = kcalPerStepFor(startWeight);
   const calorieChartData = (() => {
     if (!(bmr > 0)) return [] as { day: string; intake: number | null; target: number }[];
     const EMA_A = 0.25;
@@ -952,7 +967,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       const emaJ = rows[j].ema;
       const slopePerDay = (span > 0 && r.ema != null && emaJ != null) ? (r.ema - emaJ) / span : 0;
       const wForBmr = r.ema ?? startWeight;
-      const dayBmr = (10 * wForBmr) + (6.25 * ht) - (5 * ag) + 5;
+      const dayBmr = (10 * wForBmr) + (6.25 * ht) - (5 * ag) + sexConst;
       const maintenance = dayBmr * al;
       const stepDev = walkAvg > 0 ? (r.steps - walkAvg) * kcalPerStep : 0;
       const trendCals = slopePerDay * KCAL_PER_KG;
@@ -969,7 +984,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const periodStepTotal = monthDays.reduce((sum, day) => {
     return sum + (parseInt(tracker[day]?.steps ?? '') || 0);
   }, 0);
-  const periodStepKm = +(periodStepTotal * 0.00075).toFixed(1);
+  const periodStepKm = +stepsToKm(periodStepTotal).toFixed(1);
 
   // Current habit streak — consecutive non-future days with ≥1 habit done (from heatmap cells)
   const habitStreak = (() => {
@@ -1059,7 +1074,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       if (w > 0) { dayWeight = w; break; }
     }
 
-    const dayBmr = (10 * dayWeight) + (6.25 * htVal) - (5 * agVal) + 5;
+    const dayBmr = (10 * dayWeight) + (6.25 * htVal) - (5 * agVal) + sexConst;
     const dayTdee = Math.round(dayBmr * alVal);
     const daysRemaining = daysToGoal ? Math.max(daysToGoal, 7) : 90;
     const weightToLose = Math.max(dayWeight - goal, 0);

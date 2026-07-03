@@ -8,6 +8,7 @@ import Profile from './Profile';
 import Habits from './Habits';
 import About from './About';
 import PrivacyPolicy from './PrivacyPolicy';
+import MathsPage from './MathsPage';
 import LevelPage from './LevelPage';
 import ArchivedHabits from './ArchivedHabits';
 import SuccessKit from './SuccessKit';
@@ -81,6 +82,7 @@ function AppRouter() {
         <Route path="/tasks" element={<Tasks />} />
         <Route path="/profile" element={<Profile onLogout={handleLogout} />} />
         <Route path="/about" element={<About />} />
+        <Route path="/maths" element={<MathsPage />} />
         <Route path="/level" element={<LevelPage />} />
         <Route path="/archived" element={<ArchivedHabits />} />
         <Route path="/success-kit" element={<SuccessKit />} />

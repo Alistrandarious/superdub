@@ -1,5 +1,6 @@
 import React, { useRef, useCallback, useState, useEffect, useMemo } from 'react';
 import { api } from './api';
+import { stepsToKm } from './energy';
 
 const XP_GATES: [number, number][] = [
   [0, 10], [7, 15], [14, 20], [30, 25], [60, 30], [100, 35], [200, 40], [365, 50],
@@ -123,7 +124,7 @@ const WeeklyRecap: React.FC = () => {
   });
 
   const consistency = weekPossible > 0 ? Math.round((weekDone / weekPossible) * 100) : 0;
-  const stepKm = +(weekSteps * 0.00075).toFixed(1);
+  const stepKm = +stepsToKm(weekSteps).toFixed(1);
   const weightChange =
     weights.length >= 2 ? +(weights[weights.length - 1] - weights[0]).toFixed(1) : null;
 

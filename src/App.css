@@ -6778,6 +6778,30 @@ h1, h2, h3, h4, .sora {
 }
 .sk-hscroll::-webkit-scrollbar { display: none; }
 
+/* ── The Maths page ─────────────────────────────────────────── */
+.maths-where {
+  margin: 0 0 10px; font-family: 'Space Mono', monospace; font-size: 0.62rem;
+  letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.35);
+}
+.maths-formula {
+  display: flex; flex-direction: column; gap: 6px;
+  margin: 0 0 12px; padding: 12px 14px;
+  background: rgba(90,209,255,0.06); border: 1px solid rgba(90,209,255,0.18);
+  border-radius: var(--r-md);
+  overflow-x: auto;
+}
+.maths-formula code {
+  font-family: 'Space Mono', monospace; font-size: 0.72rem; line-height: 1.5;
+  color: #8FE3FF; white-space: pre;
+}
+.maths-example {
+  margin: 10px 0 0; padding: 9px 12px;
+  background: rgba(47,210,126,0.07); border-left: 3px solid rgba(47,210,126,0.5);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  font-size: 0.74rem; line-height: 1.55; color: rgba(255,255,255,0.6);
+  font-family: 'Sora', sans-serif;
+}
+
 /* What's New — featured latest update */
 .sk-update-hero {
   display: block; width: 100%; text-align: left; cursor: pointer;

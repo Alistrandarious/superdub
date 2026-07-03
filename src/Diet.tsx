@@ -5,6 +5,7 @@ import './App.css';
 import { api } from './api';
 import SuperdubHeader from './SuperdubHeader';
 import AdaptiveWeightPlanCard from './AdaptiveWeightPlanCard';
+import { kcalPerStep } from './energy';
 
 interface ProfileData {
   dob: string;
@@ -34,7 +35,6 @@ const DEFAULT_PROFILE: ProfileData = {
   dob: '', heightCm: '', weightKg: '', sex: 'male', activity: '1.55', steps: '',
 };
 const DEFAULT_TARGET: MacroSet = { calories: 2003, protein: 150, carbs: 200, fats: 67 };
-const STRIDE_M = 0.762;
 const GYM_MET: Record<string, number> = { light: 4, moderate: 6, hard: 8 };
 
 function ageFromDob(dob: string): number {
@@ -674,8 +674,7 @@ const ActivityTargetsCard: React.FC<{
   }, 0);
 
   const totalTrainingBurnPerDay = gymBurnPerDay + activityBurnPerDay;
-  const kcalPerStep = currentWeight > 0 ? 0.04 * (currentWeight / 70) : 0.04;
-  const stepTargetKcal = Math.round(stepTarget * kcalPerStep);
+  const stepTargetKcal = Math.round(stepTarget * kcalPerStep(currentWeight));
 
   const goalDeficit = goal === 'cut' && lossPerWeek > 0
     ? Math.round(lossPerWeek * 7700 / 7)
@@ -934,8 +933,7 @@ const Diet: React.FC = () => {
       : 10 * kg + 6.25 * cm - 5 * age - 161
     : 0;
   const tdee = bmr > 0 ? Math.round(bmr * activity) : 0;
-  const walkKm = steps * STRIDE_M / 1000;
-  const walkBurn = steps > 0 && kg > 0 ? Math.round(walkKm * kg * 0.5) : 0;
+  const walkBurn = steps > 0 && kg > 0 ? Math.round(steps * kcalPerStep(kg)) : 0;
   const maintenance = tdee + walkBurn;
 
   const handleSmartApply = (newTarget: MacroSet) => {

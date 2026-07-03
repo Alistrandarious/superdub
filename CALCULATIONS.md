@@ -1,5 +1,10 @@
 # Superdub — How the maths works
 
+> **Superseded:** the live, always-current version of this document is the
+> in-app **"The Maths"** page (cog menu → The Maths, route `/maths`,
+> `src/MathsPage.tsx`). This file is kept for history and may be stale —
+> notably, macro targets have since been removed from the app.
+
 A plain reference for every number the app shows, so you can check it.
 Worked examples use a sample profile: **88.5 kg, on Fat Loss, 1 kg/wk target,
 maintenance ≈ 2,378 kcal, calorie target ≈ 1,347 kcal**.
