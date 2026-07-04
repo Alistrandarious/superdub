@@ -5811,6 +5811,27 @@ h1, h2, h3, h4, .sora {
 .hb-dub-by-ring:active { transform: scale(0.94); }
 @keyframes dub-peek-in { from { opacity: 0; transform: translateY(10px) scale(0.8); } to { opacity: 1; transform: none; } }
 
+/* Fill style picker (classic arc vs liquid) — sits above the theme grid */
+.fill-style-row { display: flex; gap: 10px; margin: 2px 0 16px; }
+.fill-style-chip {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 12px 10px; cursor: pointer;
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  border-radius: var(--r-md);
+  color: rgba(255,255,255,0.75);
+  font-family: 'Sora', sans-serif; font-size: 0.8rem; font-weight: 700;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.fill-style-chip .fill-style-ico { font-size: 1.15rem; line-height: 1; }
+.fill-style-chip .fill-style-sub {
+  font-size: 0.6rem; font-weight: 600; color: rgba(255,255,255,0.35);
+}
+.fill-style-chip.active {
+  border-color: #5AD1FF; background: rgba(90,209,255,0.08); color: #fff;
+  box-shadow: 0 0 12px rgba(90,209,255,0.15);
+}
+.fill-style-chip.locked { opacity: 0.5; cursor: not-allowed; }
+
 /* Collapsible sections on the Level page */
 .lvl-collapse {
   margin: 0 0 10px; border: 1px solid var(--glass-border);

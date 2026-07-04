@@ -1,7 +1,8 @@
 import React, { useId, useRef, useEffect, useState, useCallback } from 'react';
-import type { RingTheme } from './levels';
+import { getRingFill, type RingTheme } from './levels';
 
-// Animated themes get a liquid fill inside the circle instead of just the arc track.
+// The liquid fill is a separate cosmetic from the colour theme: any theme can
+// run 'classic' (arc only) or 'liquid' (water fill that rises with XP).
 // All themes react to device tilt (gyroscope) or mouse hover with a perspective
 // tilt + a shifting glare highlight — like holding a coin under a light.
 
@@ -22,6 +23,14 @@ const LevelRing: React.FC<{
   const clampedP = Math.max(0, Math.min(1, progress));
   const offset = circ * (1 - clampedP);
   const gid = useId().replace(/:/g, '_');
+
+  // ── Fill style (classic arc vs liquid) — device-level preference ─
+  const [fill, setFill] = useState(getRingFill);
+  useEffect(() => {
+    const sync = () => setFill(getRingFill());
+    window.addEventListener('superdub:ring-fill-changed', sync);
+    return () => window.removeEventListener('superdub:ring-fill-changed', sync);
+  }, []);
 
   // ── Tilt state (-1..1) ──────────────────────────────────────────
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
@@ -75,8 +84,8 @@ const LevelRing: React.FC<{
   const glareX = cx + tilt.y * size * 0.28;
   const glareY = cy + tilt.x * size * 0.22;
 
-  // Liquid fill: used only for animated themes
-  const useLiquid = theme.animated;
+  // Liquid fill: the user's fill-style pick — works with any colour theme
+  const useLiquid = fill === 'liquid';
   const innerR = r - stroke / 2 - 1;
   // Liquid level: rises from bottom of inner circle
   const liquidTopY = cy + innerR - clampedP * innerR * 2;

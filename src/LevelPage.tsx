@@ -10,6 +10,7 @@ import DubMascot, { getMascot, MASCOT_KEY, type MascotSpecies } from './DubMasco
 import {
   PLAYER_LEVELS, RING_THEMES, getRingTheme, getSelectedThemeId,
   SELECTED_THEME_KEY, type RingTheme, habitXPForDoneDays,
+  getRingFill, setRingFill, LIQUID_FILL_UNLOCK, type RingFill,
   isUnlocked, unlockLabel, EARLY_ADOPTER_BEFORE, type UnlockCtx,
   DUB_COLORS, DUB_COLOR_KEY, getDubColor,
   HABIT_COLORS, GLOW_COLORS, HABITS_COLOR_KEY, NAV_GLOW_KEY, type AccentColor,
@@ -249,6 +250,15 @@ const LevelPage: React.FC = () => {
     window.dispatchEvent(new CustomEvent('superdub:ring-theme-changed'));
   };
 
+  // Fill style — classic arc vs liquid (level-5 unlock), independent of colour
+  const [ringFill, setRingFillState] = useState<RingFill>(getRingFill);
+  const liquidUnlocked = isUnlocked(LIQUID_FILL_UNLOCK, ctx);
+  const pickFill = (f: RingFill) => {
+    if (f === 'liquid' && !liquidUnlocked) return;
+    setRingFill(f);
+    setRingFillState(f);
+  };
+
   // Dub's species — cat unlocks at level 2
   const [species, setSpecies] = useState<MascotSpecies>(getMascot);
   const catUnlocked = playerLevel.level >= CAT_UNLOCK_LEVEL;
@@ -326,7 +336,25 @@ const LevelPage: React.FC = () => {
           </div>
         )}
 
-        <Collapsible title="💍 Ring Themes" sub="Equip a level-ring theme you've unlocked." defaultOpen>
+        <Collapsible title="💍 Ring Themes" sub="Pick a colour, then a fill style — they combine." defaultOpen>
+          {/* Fill style: classic arc vs liquid (works with any colour) */}
+          <div className="fill-style-row">
+            <button
+              className={`fill-style-chip${ringFill === 'classic' ? ' active' : ''}`}
+              onClick={() => pickFill('classic')}
+            >
+              <span className="fill-style-ico">◠</span> Classic arc
+            </button>
+            <button
+              className={`fill-style-chip${ringFill === 'liquid' ? ' active' : ''}${!liquidUnlocked ? ' locked' : ''}`}
+              onClick={() => pickFill('liquid')}
+              disabled={!liquidUnlocked}
+              title={liquidUnlocked ? 'Liquid fill' : `Unlocks: ${unlockLabel(LIQUID_FILL_UNLOCK)}`}
+            >
+              <span className="fill-style-ico">💧</span> Liquid{!liquidUnlocked && ' 🔒'}
+              <span className="fill-style-sub">{liquidUnlocked ? 'rises with XP · reacts to tilt' : unlockLabel(LIQUID_FILL_UNLOCK)}</span>
+            </button>
+          </div>
           <div className="ringtheme-grid">
             {RING_THEMES.map(t => {
               const locked = !isUnlocked(t.unlock, ctx);
