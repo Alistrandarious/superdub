@@ -182,37 +182,31 @@ function computeBadges(
   ];
 }
 
-// Studio tiles — the customisation grid on the Level page
-// A studio tile: a compact card in the 2-col grid showing the section's icon,
-// name and the CURRENT pick; tapping expands it to full width in place.
-const Tile: React.FC<{
-  icon: string;
-  label: string;
-  preview?: React.ReactNode;
-  sub?: string;
-  open: boolean;
-  onToggle: () => void;
-  children: React.ReactNode;
-}> = ({ icon, label, preview, sub, open, onToggle, children }) => (
-  <div className={`studio-tile${open ? ' open' : ''}`}>
-    <button className="studio-tile-head" onClick={onToggle}>
-      <span className="studio-tile-ico">{icon}</span>
-      <span className="studio-tile-label">{label}</span>
-      {preview && <span className="studio-tile-preview">{preview}</span>}
-      <span className={`studio-tile-chev${open ? ' open' : ''}`}>▾</span>
-    </button>
-    {open && (
-      <div className="studio-tile-body">
-        {sub && <p className="rewards-sub">{sub}</p>}
-        {children}
-      </div>
-    )}
-  </div>
+// ── Small stroke glyphs (style guide: no emoji in UI chrome) ────────────────
+const LockIc: React.FC<{ size?: number }> = ({ size = 11 }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-label="Locked">
+    <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </svg>
+);
+// Liquid fill style — droplet
+const DropIc: React.FC<{ size?: number }> = ({ size = 10 }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-label="Liquid fill">
+    <path d="M12 2.7s6 7.6 6 11.8a6 6 0 0 1-12 0C6 10.3 12 2.7 12 2.7z" />
+  </svg>
+);
+// Classic arc style — open ring segment
+const ArcIc: React.FC<{ size?: number }> = ({ size = 10 }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-label="Arc">
+    <path d="M4.5 15.5a8 8 0 0 1 15 0" />
+  </svg>
 );
 
-// Little colour swatch used in tile previews — shows the equipped choice at a glance.
-const Dot: React.FC<{ bg: string; glow?: string }> = ({ bg, glow }) => (
-  <span className="studio-dot" style={{ background: bg, boxShadow: glow ? `0 0 8px ${glow}` : undefined }} />
+// Section header: mono eyebrow + hairline, per the swatches type spec
+const Eyebrow: React.FC<{ children: React.ReactNode; sub?: string }> = ({ children, sub }) => (
+  <div className="asc-eyebrow-row">
+    <span className="asc-eyebrow">{children}</span>
+    {sub && <span className="asc-eyebrow-sub">{sub}</span>}
+  </div>
 );
 
 const LevelPage: React.FC = () => {
@@ -307,14 +301,21 @@ const LevelPage: React.FC = () => {
     window.dispatchEvent(new CustomEvent('superdub:bg-changed'));
   };
 
-  // Studio grid — one tile open at a time keeps the grid tidy
-  const [openTile, setOpenTile] = useState<string | null>(null);
-  const toggleTile = (id: string) => setOpenTile(cur => (cur === id ? null : id));
-  const bg = getBackground();
   const earnedBadges = badges.filter(b => b.earned).length;
 
+  // Reward glyph for the ladder: theme rewards show their actual gradient
+  // swatch; milestones & flair get the violet rank diamond (guide: violet =
+  // rare rank accent). No emoji.
+  const rewardMark = (r: (typeof PLAYER_LEVELS)[number]['reward']) => {
+    if (r.kind === 'theme' && r.themeId) {
+      const t = RING_THEMES.find(x => x.id === r.themeId);
+      if (t) return <span className="asc-swatch" style={{ background: `linear-gradient(135deg, ${t.from}, ${t.to})` }} />;
+    }
+    return <span className="asc-diamond" />;
+  };
+
   return (
-    <div className="app flush" style={{ '--theme': '#22C55E', '--theme-dim': '#22C55E66', '--theme-glow': '#22C55E14' } as React.CSSProperties}>
+    <div className="app flush" style={{ '--theme': '#FFB928', '--theme-dim': '#FFB92866', '--theme-glow': '#FFB92814' } as React.CSSProperties}>
       <SuperdubHeader />
 
       <div className="page-content level-page-content">
@@ -340,29 +341,22 @@ const LevelPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Next reward callout */}
+        {/* Next unlock — swatch of the actual reward, mono eyebrow, no emoji */}
         {playerLevel.nextReward && (
           <div className="next-reward-card">
-            <span className="next-reward-icon">{playerLevel.nextReward.icon}</span>
+            <span className="next-reward-mark">{rewardMark(playerLevel.nextReward)}</span>
             <div className="next-reward-text">
-              <span className="next-reward-eyebrow">NEXT REWARD · LV{playerLevel.level + 1}</span>
+              <span className="next-reward-eyebrow">NEXT UNLOCK · LV{playerLevel.level + 1}</span>
               <span className="next-reward-label">{playerLevel.nextReward.label}</span>
               <span className="next-reward-blurb">{playerLevel.nextReward.blurb}</span>
             </div>
           </div>
         )}
 
-        <div className="studio-head">
-          <span className="studio-head-title">Customise</span>
-          <span className="studio-head-sub">Tap a card · your current picks are shown</span>
-        </div>
-
-        <div className="studio-grid">
-
-        <Tile icon="💍" label="Ring" sub="Each ring is an arc ◠ or a liquid 💧 — earn more as you level."
-          preview={<><Dot bg={`linear-gradient(135deg, ${theme.from}, ${theme.to})`} glow={theme.glow} /><span className="studio-pv-text">{theme.name} {theme.fill === 'liquid' ? '💧' : '◠'}</span></>}
-          open={openTile === 'ring'} onToggle={() => toggleTile('ring')}>
-          <div className="ringtheme-grid">
+        {/* ── Customise — mono eyebrows + horizontal shelves ── */}
+        <section className="asc-section">
+          <Eyebrow sub="arc or liquid — marked on each">RING</Eyebrow>
+          <div className="asc-shelf">
             {RING_THEMES.map(t => {
               const locked = !isUnlocked(t.unlock, ctx);
               const active = t.id === themeId;
@@ -376,81 +370,19 @@ const LevelPage: React.FC = () => {
                   title={`${t.name} — ${isLiquid ? 'liquid fill' : 'arc'}${locked ? ` · unlocks: ${unlockLabel(t.unlock)}` : ''}`}
                 >
                   <span className={`ringtheme-swatch${t.animated ? ' animated' : ''}`} style={{ background: `linear-gradient(135deg, ${t.from}, ${t.to})`, boxShadow: active ? `0 0 12px ${t.glow}` : undefined }}>
-                    {locked && <span className="ringtheme-lock">🔒</span>}
+                    {locked && <span className="ringtheme-lock"><LockIc /></span>}
                     {active && !locked && <span className="ringtheme-check">✓</span>}
-                    {/* Style badge — visible on locked chips too, so you can see what you're earning */}
-                    <span className={`ringtheme-fillbadge${isLiquid ? ' liquid' : ''}`}>{isLiquid ? '💧' : '◠'}</span>
+                    <span className={`ringtheme-fillbadge${isLiquid ? ' liquid' : ''}`}>{isLiquid ? <DropIc /> : <ArcIc />}</span>
                   </span>
-                  <span className="ringtheme-name">{locked ? `${unlockLabel(t.unlock)} ${isLiquid ? '💧' : '◠'}` : t.name}</span>
+                  <span className="ringtheme-name">{locked ? unlockLabel(t.unlock) : t.name}</span>
                 </button>
               );
             })}
           </div>
-        </Tile>
+        </section>
 
-        <Tile icon="🐾" label="Dub's Colour" sub="Recolour your companion. Unlock more as you level up."
-          preview={(() => { const dc = DUB_COLORS.find(d => d.id === dubColorId) ?? DUB_COLORS[0]; return <><Dot bg={`linear-gradient(135deg, ${dc.bodyFrom}, ${dc.bodyTo})`} /><span className="studio-pv-text">{dc.name}</span></>; })()}
-          open={openTile === 'dubcolor'} onToggle={() => toggleTile('dubcolor')}>
-          <div className="ringtheme-grid">
-            {DUB_COLORS.map(dc => {
-              const locked = !isUnlocked(dc.unlock, ctx);
-              const active = dc.id === dubColorId;
-              return (
-                <button key={dc.id} className={`ringtheme-chip${active ? ' active' : ''}${locked ? ' locked' : ''}`} onClick={() => pickDubColor(dc.id, locked)} disabled={locked} title={locked ? `Unlocks: ${unlockLabel(dc.unlock)}` : dc.name}>
-                  <span className="ringtheme-swatch" style={{ background: `linear-gradient(135deg, ${dc.bodyFrom}, ${dc.bodyTo})`, boxShadow: active ? `0 0 12px ${dc.accent}66` : undefined }}>
-                    {locked && <span className="ringtheme-lock">🔒</span>}
-                    {active && !locked && <span className="ringtheme-check">✓</span>}
-                  </span>
-                  <span className="ringtheme-name">{locked ? unlockLabel(dc.unlock) : dc.name}</span>
-                </button>
-              );
-            })}
-          </div>
-        </Tile>
-
-        <Tile icon="🎨" label="Habits Button" sub="The colour of your centre Habits button."
-          preview={<Dot bg={habitsColor} glow={`${habitsColor}66`} />}
-          open={openTile === 'habitsbtn'} onToggle={() => toggleTile('habitsbtn')}>
-          <div className="ringtheme-grid">
-            {HABIT_COLORS.map(c => {
-              const locked = !isUnlocked(c.unlock, ctx);
-              const active = habitsColor.toLowerCase() === c.color.toLowerCase();
-              return (
-                <button key={c.id} className={`ringtheme-chip${active ? ' active' : ''}${locked ? ' locked' : ''}`} onClick={() => pickHabitColor(c, locked)} disabled={locked} title={locked ? `Unlocks: ${unlockLabel(c.unlock)}` : c.name}>
-                  <span className="ringtheme-swatch" style={{ background: c.color, boxShadow: active ? `0 0 12px ${c.color}88` : undefined }}>
-                    {locked && <span className="ringtheme-lock">🔒</span>}
-                    {active && !locked && <span className="ringtheme-check">✓</span>}
-                  </span>
-                  <span className="ringtheme-name">{locked ? unlockLabel(c.unlock) : c.name}</span>
-                </button>
-              );
-            })}
-          </div>
-        </Tile>
-
-        <Tile icon="✨" label="Menu Glow" sub="The glow on the selected bottom-nav item."
-          preview={<Dot bg={navGlow} glow={`${navGlow}66`} />}
-          open={openTile === 'glow'} onToggle={() => toggleTile('glow')}>
-          <div className="ringtheme-grid">
-            {GLOW_COLORS.map(c => {
-              const locked = !isUnlocked(c.unlock, ctx);
-              const active = navGlow.toLowerCase() === c.color.toLowerCase();
-              return (
-                <button key={c.id} className={`ringtheme-chip${active ? ' active' : ''}${locked ? ' locked' : ''}`} onClick={() => pickGlow(c, locked)} disabled={locked} title={locked ? `Unlocks: ${unlockLabel(c.unlock)}` : c.name}>
-                  <span className="ringtheme-swatch" style={{ background: c.color, boxShadow: active ? `0 0 12px ${c.color}88` : undefined }}>
-                    {locked && <span className="ringtheme-lock">🔒</span>}
-                    {active && !locked && <span className="ringtheme-check">✓</span>}
-                  </span>
-                  <span className="ringtheme-name">{locked ? unlockLabel(c.unlock) : c.name}</span>
-                </button>
-              );
-            })}
-          </div>
-        </Tile>
-
-        <Tile icon="🐶" label="Companion" sub="Choose what Dub is. The cat unlocks at level 2."
-          preview={<span className="studio-pv-text">{species === 'cat' ? 'Cat' : 'Dog'}</span>}
-          open={openTile === 'companion'} onToggle={() => toggleTile('companion')}>
+        <section className="asc-section">
+          <Eyebrow sub="who walks with you">COMPANION</Eyebrow>
           <div className="companion-grid">
             <button className={`companion-card${species === 'dog' ? ' active' : ''}`} onClick={() => pickSpecies('dog')}>
               <span className="companion-pet"><DubMascot size={66} mood="happy" species="dog" /></span>
@@ -463,24 +395,72 @@ const LevelPage: React.FC = () => {
             >
               <span className="companion-pet">
                 <DubMascot size={66} mood="happy" species="cat" />
-                {!catUnlocked && <span className="companion-lock">🔒</span>}
+                {!catUnlocked && <span className="companion-lock"><LockIc size={14} /></span>}
               </span>
               <span className="companion-name">{catUnlocked ? `Dub the cat${species === 'cat' ? ' ✓' : ''}` : 'Cat · LV2'}</span>
             </button>
           </div>
-        </Tile>
+          <div className="asc-shelf" style={{ marginTop: 10 }}>
+            {DUB_COLORS.map(dc => {
+              const locked = !isUnlocked(dc.unlock, ctx);
+              const active = dc.id === dubColorId;
+              return (
+                <button key={dc.id} className={`ringtheme-chip${active ? ' active' : ''}${locked ? ' locked' : ''}`} onClick={() => pickDubColor(dc.id, locked)} disabled={locked} title={locked ? `Unlocks: ${unlockLabel(dc.unlock)}` : dc.name}>
+                  <span className="ringtheme-swatch" style={{ background: `linear-gradient(135deg, ${dc.bodyFrom}, ${dc.bodyTo})`, boxShadow: active ? `0 0 12px ${dc.accent}66` : undefined }}>
+                    {locked && <span className="ringtheme-lock"><LockIc /></span>}
+                    {active && !locked && <span className="ringtheme-check">✓</span>}
+                  </span>
+                  <span className="ringtheme-name">{locked ? unlockLabel(dc.unlock) : dc.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
 
-        <Tile icon="🌌" label="Background" sub="Set the mood of the whole app. Unlock more as you level."
-          preview={<><Dot bg={bg.grad} /><span className="studio-pv-text">{bg.name}</span></>}
-          open={openTile === 'bg'} onToggle={() => toggleTile('bg')}>
-          <div className="ringtheme-grid">
+        <section className="asc-section">
+          <Eyebrow sub="habits button · nav glow">ACCENTS</Eyebrow>
+          <div className="asc-shelf">
+            {HABIT_COLORS.map(c => {
+              const locked = !isUnlocked(c.unlock, ctx);
+              const active = habitsColor.toLowerCase() === c.color.toLowerCase();
+              return (
+                <button key={c.id} className={`ringtheme-chip${active ? ' active' : ''}${locked ? ' locked' : ''}`} onClick={() => pickHabitColor(c, locked)} disabled={locked} title={locked ? `Unlocks: ${unlockLabel(c.unlock)}` : `Habits button · ${c.name}`}>
+                  <span className="ringtheme-swatch" style={{ background: c.color, boxShadow: active ? `0 0 12px ${c.color}88` : undefined }}>
+                    {locked && <span className="ringtheme-lock"><LockIc /></span>}
+                    {active && !locked && <span className="ringtheme-check">✓</span>}
+                  </span>
+                  <span className="ringtheme-name">{locked ? unlockLabel(c.unlock) : c.name}</span>
+                </button>
+              );
+            })}
+          </div>
+          <div className="asc-shelf" style={{ marginTop: 10 }}>
+            {GLOW_COLORS.map(c => {
+              const locked = !isUnlocked(c.unlock, ctx);
+              const active = navGlow.toLowerCase() === c.color.toLowerCase();
+              return (
+                <button key={c.id} className={`ringtheme-chip${active ? ' active' : ''}${locked ? ' locked' : ''}`} onClick={() => pickGlow(c, locked)} disabled={locked} title={locked ? `Unlocks: ${unlockLabel(c.unlock)}` : `Menu glow · ${c.name}`}>
+                  <span className="ringtheme-swatch" style={{ background: c.color, boxShadow: active ? `0 0 12px ${c.color}88` : undefined }}>
+                    {locked && <span className="ringtheme-lock"><LockIc /></span>}
+                    {active && !locked && <span className="ringtheme-check">✓</span>}
+                  </span>
+                  <span className="ringtheme-name">{locked ? unlockLabel(c.unlock) : c.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="asc-section">
+          <Eyebrow sub="the whole app's mood">BACKGROUND</Eyebrow>
+          <div className="asc-shelf">
             {BACKGROUNDS.map(b => {
               const locked = !isUnlocked(b.unlock, ctx);
               const active = b.id === bgId;
               return (
                 <button key={b.id} className={`ringtheme-chip${active ? ' active' : ''}${locked ? ' locked' : ''}`} onClick={() => pickBg(b, locked)} disabled={locked} title={locked ? `Unlocks: ${unlockLabel(b.unlock)}` : b.name}>
                   <span className="ringtheme-swatch" style={{ background: b.grad, boxShadow: active ? '0 0 12px rgba(255,255,255,0.25)' : undefined, border: '1px solid rgba(255,255,255,0.12)' }}>
-                    {locked && <span className="ringtheme-lock">🔒</span>}
+                    {locked && <span className="ringtheme-lock"><LockIc /></span>}
                     {active && !locked && <span className="ringtheme-check">✓</span>}
                   </span>
                   <span className="ringtheme-name">{locked ? unlockLabel(b.unlock) : b.name}</span>
@@ -488,26 +468,48 @@ const LevelPage: React.FC = () => {
               );
             })}
           </div>
-        </Tile>
+        </section>
 
-        <Tile icon="🏅" label="Badges"
-          preview={<span className="studio-pv-text">{earnedBadges}/{badges.length}</span>}
-          open={openTile === 'badges'} onToggle={() => toggleTile('badges')}>
+        {/* ── The Ladder — every level as a stop on a gold spine ── */}
+        <section className="asc-section">
+          <Eyebrow sub={`you're LV${playerLevel.level} of ${PLAYER_LEVELS.length}`}>THE LADDER</Eyebrow>
+          <div className="asc-ladder">
+            {PLAYER_LEVELS.map((lv, i) => {
+              const reached = playerLevel.level >= i + 1;
+              const current = playerLevel.level === i + 1;
+              return (
+                <div key={i} className={`asc-ladder-row${current ? ' current' : ''}${reached ? ' reached' : ' locked'}`}>
+                  <span className="asc-ladder-node" />
+                  <span className="asc-ladder-lv">LV{i + 1}</span>
+                  <div className="asc-ladder-info">
+                    <span className="asc-ladder-title">{lv.title}</span>
+                    <span className="asc-ladder-reward">{lv.reward.label}</span>
+                  </div>
+                  <span className="asc-ladder-mark">{reached || current ? rewardMark(lv.reward) : <LockIc />}</span>
+                  <span className="asc-ladder-xp">{lv.xp.toLocaleString()}</span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* ── Badges — medals, not emoji ── */}
+        <section className="asc-section">
+          <Eyebrow sub={`${earnedBadges} of ${badges.length} earned`}>BADGES</Eyebrow>
           <div className="badges-grid">
             {badges.map(b => (
               <div key={b.id} className={`badge-card ${b.earned ? 'earned' : 'locked'}`}>
-                <div className="badge-icon">{b.earned ? b.icon : '🔒'}</div>
+                <div className={`badge-medal${b.earned ? ' earned' : ''}`}>{b.earned ? '✓' : <LockIc />}</div>
                 <div className="badge-name">{b.name}</div>
                 <div className="badge-desc">{b.desc}</div>
               </div>
             ))}
           </div>
-        </Tile>
+        </section>
 
         {loaded && sortedByXP.length > 0 && (
-          <Tile icon="📊" label="Habit Stats"
-            preview={<span className="studio-pv-text">{sortedByXP[0].name.length > 12 ? sortedByXP[0].name.slice(0, 11) + '…' : sortedByXP[0].name}</span>}
-            open={openTile === 'stats'} onToggle={() => toggleTile('stats')}>
+          <section className="asc-section" style={{ marginBottom: 100 }}>
+            <Eyebrow sub="ranked by XP">HABIT RECORD</Eyebrow>
             <div className="habit-stats-list">
               {sortedByXP.map((h, i) => (
                 <div key={h.name} className="habit-stat-row">
@@ -520,32 +522,8 @@ const LevelPage: React.FC = () => {
                 </div>
               ))}
             </div>
-          </Tile>
+          </section>
         )}
-
-        <Tile icon="⭐" label="Levels & Rewards"
-          preview={<span className="studio-pv-text">LV{playerLevel.level}/{PLAYER_LEVELS.length}</span>}
-          open={openTile === 'levels'} onToggle={() => toggleTile('levels')}>
-          <div className="level-reward-list">
-            {PLAYER_LEVELS.map((lv, i) => {
-              const reached = playerLevel.level >= i + 1;
-              const current = playerLevel.level === i + 1;
-              return (
-                <div key={i} className={`level-reward-row${current ? ' current' : ''}${reached ? ' reached' : ' locked'}`}>
-                  <span className="lrr-lv">LV{i + 1}</span>
-                  <span className="lrr-reward-icon">{reached ? lv.reward.icon : '🔒'}</span>
-                  <div className="lrr-info">
-                    <span className="lrr-title">{lv.title}</span>
-                    <span className="lrr-reward">{lv.reward.label}</span>
-                  </div>
-                  <span className="lrr-xp">{lv.xp.toLocaleString()}<span className="lrr-xp-unit">XP</span></span>
-                </div>
-              );
-            })}
-          </div>
-        </Tile>
-
-        </div>{/* /studio-grid */}
 
       </div>
     </div>

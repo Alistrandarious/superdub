@@ -188,7 +188,7 @@ const MathsPage: React.FC = () => {
 
         {SECTIONS.map(s => (
           <div key={s.title} className="diet-section" style={{ marginBottom: 16 }}>
-            <h2 className="diet-heading">{s.emoji} {s.title}</h2>
+            <h2 className="diet-heading">{s.title}</h2>
             <p className="maths-where">{s.where}</p>
             <div className="maths-formula">
               {s.formula.map((f, i) => <code key={i}>{f}</code>)}

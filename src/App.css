@@ -4383,7 +4383,7 @@ h1, h2, h3, h4, .sora {
 .ringtheme-chip:not(.locked):hover .ringtheme-swatch { transform: scale(1.08); }
 .ringtheme-chip.active .ringtheme-swatch { border-color: #fff; }
 .ringtheme-chip.locked .ringtheme-swatch { filter: grayscale(0.85) brightness(0.5); }
-.ringtheme-lock { font-size: 0.9rem; }
+.ringtheme-lock { display: flex; color: rgba(255,255,255,0.8); }
 .ringtheme-check { color: #fff; font-weight: 900; font-size: 1.1rem; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
 .ringtheme-name {
   font-family: 'Sora', sans-serif; font-size: 0.62rem; font-weight: 600;
@@ -5842,85 +5842,125 @@ h1, h2, h3, h4, .sora {
   font-family: 'Space Mono', monospace; font-size: 0.68rem; color: rgba(255,255,255,0.45);
 }
 
-/* ── Level page: studio grid ────────────────────────────────── */
-.studio-head {
-  display: flex; align-items: baseline; gap: 10px; margin: 6px 2px -8px;
+/* ── Level page: THE ASCENSION ──────────────────────────────────
+   Style-guide identity: gold = ascension, violet = rare rank accent,
+   Space Mono eyebrows, no emoji chrome. */
+.asc-section { margin: 20px 0 0; }
+.asc-eyebrow-row {
+  display: flex; align-items: baseline; gap: 10px;
+  padding-bottom: 8px; margin-bottom: 12px;
+  border-bottom: 1px solid var(--glass-border);
 }
-.studio-head-title {
-  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.05rem; color: #fff;
+.asc-eyebrow {
+  font-family: var(--font-data); font-weight: 700; font-size: 0.66rem;
+  letter-spacing: 0.16em; color: #FFB928;
 }
-.studio-head-sub {
-  font-family: 'Sora', sans-serif; font-size: 0.64rem; font-weight: 600;
-  color: rgba(255,255,255,0.32);
-}
-.studio-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 11px;
-}
-.studio-tile {
-  border: 1px solid var(--glass-border);
-  border-radius: 18px;
-  background: linear-gradient(165deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.015) 100%);
-  overflow: hidden;
-  transition: border-color 0.18s, box-shadow 0.18s;
-}
-.studio-tile:active { border-color: rgba(255,255,255,0.18); }
-.studio-tile.open {
-  grid-column: 1 / -1;
-  border-color: rgba(255,255,255,0.16);
-  box-shadow: 0 8px 28px rgba(0,0,0,0.35);
-}
-.studio-tile-head {
-  position: relative;
-  display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
-  width: 100%; padding: 15px 15px 13px;
-  background: none; border: none; cursor: pointer; text-align: left;
-}
-.studio-tile-ico {
-  font-size: 1.45rem; line-height: 1;
-  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
-}
-.studio-tile-label {
-  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 0.86rem; color: #fff;
-}
-.studio-tile-preview {
-  display: flex; align-items: center; gap: 6px; min-height: 16px;
-}
-.studio-dot {
-  width: 14px; height: 14px; border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.2); flex-shrink: 0;
-}
-.studio-pv-text {
-  font-family: 'Sora', sans-serif; font-size: 0.66rem; font-weight: 600;
-  color: rgba(255,255,255,0.42);
-}
-.studio-tile-chev {
-  position: absolute; top: 14px; right: 14px;
-  color: rgba(255,255,255,0.3); font-size: 0.78rem;
-  transition: transform 0.25s;
-}
-.studio-tile-chev.open { transform: rotate(180deg); }
-/* Open tile: header goes horizontal so the body gets the space */
-.studio-tile.open .studio-tile-head { flex-direction: row; align-items: center; gap: 10px; padding-bottom: 11px; }
-.studio-tile.open .studio-tile-preview { margin-left: auto; padding-right: 26px; }
-.studio-tile-body {
-  padding: 2px 15px 16px;
-  animation: studio-body-in 0.22s ease both;
-}
-@keyframes studio-body-in {
-  from { opacity: 0; transform: translateY(-4px); }
-  to   { opacity: 1; transform: none; }
+.asc-eyebrow-sub {
+  font-family: var(--font-data); font-size: 0.6rem;
+  color: rgba(255,255,255,0.3); letter-spacing: 0.02em;
 }
 
-/* Ring style badge — every theme chip shows whether it's an arc ◠ or a
-   liquid 💧, including locked ones, so the ladder is visible up front. */
+/* Horizontal cosmetic shelves — swatches scroll, page stays short */
+.asc-shelf {
+  display: flex; gap: 10px; overflow-x: auto; overflow-y: hidden;
+  padding: 2px 2px 6px;
+  scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.asc-shelf::-webkit-scrollbar { display: none; }
+.asc-shelf .ringtheme-chip { flex: 0 0 auto; width: 62px; }
+
+/* Reward marks: real theme swatch, or the violet rank diamond */
+.asc-swatch {
+  display: inline-block; width: 16px; height: 16px; border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.25); flex-shrink: 0;
+}
+.asc-diamond {
+  display: inline-block; width: 11px; height: 11px; border-radius: 2.5px;
+  transform: rotate(45deg);
+  background: linear-gradient(135deg, #8B5CF6, #6D3FD8);
+  box-shadow: 0 0 8px rgba(139,92,246,0.45);
+  flex-shrink: 0;
+}
+
+/* The ladder — a gold spine with a node per level */
+.asc-ladder { position: relative; padding-left: 20px; }
+.asc-ladder::before {
+  content: ''; position: absolute; left: 4px; top: 10px; bottom: 10px;
+  width: 2px; border-radius: 2px;
+  background: linear-gradient(180deg, #FFB928 0%, rgba(255,185,40,0.1) 100%);
+}
+.asc-ladder-row {
+  position: relative; display: flex; align-items: center; gap: 10px;
+  padding: 9px 2px;
+}
+.asc-ladder-node {
+  position: absolute; left: -19.5px; top: 50%; transform: translateY(-50%);
+  width: 9px; height: 9px; border-radius: 50%;
+  background: #0E0E14; border: 2px solid rgba(255,255,255,0.18);
+}
+.asc-ladder-row.reached .asc-ladder-node {
+  background: #FFB928; border-color: #FFB928; box-shadow: 0 0 8px rgba(255,185,40,0.5);
+}
+.asc-ladder-row.current .asc-ladder-node {
+  animation: asc-node-pulse 2s ease-in-out infinite;
+}
+@keyframes asc-node-pulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(255,185,40,0.45); }
+  50%       { box-shadow: 0 0 14px rgba(255,185,40,0.9); }
+}
+.asc-ladder-lv {
+  font-family: var(--font-data); font-weight: 700; font-size: 0.62rem;
+  color: rgba(255,255,255,0.35); width: 36px; flex-shrink: 0;
+}
+.asc-ladder-info { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.asc-ladder-title {
+  font-family: var(--font-ui); font-weight: 600; font-size: 0.8rem; color: #EAF2EE;
+}
+.asc-ladder-reward {
+  font-family: var(--font-ui); font-size: 0.63rem; color: rgba(255,255,255,0.38);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.asc-ladder-mark { margin-left: auto; display: flex; align-items: center; color: rgba(255,255,255,0.28); flex-shrink: 0; }
+.asc-ladder-xp {
+  font-family: var(--font-data); font-size: 0.6rem; color: rgba(255,255,255,0.3);
+  width: 54px; text-align: right; flex-shrink: 0;
+}
+.asc-ladder-row.locked .asc-ladder-title,
+.asc-ladder-row.locked .asc-ladder-reward { opacity: 0.5; }
+.asc-ladder-row.current .asc-ladder-lv,
+.asc-ladder-row.current .asc-ladder-title { color: #FFD233; }
+
+/* Badge medals — geometric, gold when earned */
+.badge-medal {
+  display: flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border-radius: 50%; margin: 0 auto 8px;
+  border: 1.5px solid var(--glass-border);
+  color: rgba(255,255,255,0.3);
+  font-size: 0.95rem; font-weight: 800;
+}
+.badge-medal.earned {
+  background: linear-gradient(135deg, #FFB020, #FFE08A);
+  border-color: transparent; color: #1A1206;
+  box-shadow: 0 0 12px rgba(255,185,40,0.35);
+}
+
+/* Next-unlock mark (replaces the emoji icon) */
+.next-reward-mark {
+  display: flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border-radius: 12px; flex-shrink: 0;
+  background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border);
+}
+
+/* Ring style badge — SVG glyph marks every chip as arc or liquid,
+   locked ones included, so the whole ladder is visible up front. */
 .ringtheme-fillbadge {
   position: absolute; right: -4px; bottom: -4px;
   display: flex; align-items: center; justify-content: center;
   width: 17px; height: 17px; border-radius: 50%;
   background: #14141C; border: 1px solid rgba(255,255,255,0.18);
-  font-size: 0.5rem; line-height: 1; color: rgba(255,255,255,0.65);
+  color: rgba(255,255,255,0.6);
 }
-.ringtheme-fillbadge.liquid { font-size: 0.56rem; border-color: rgba(90,209,255,0.45); }
+.ringtheme-fillbadge.liquid { color: #5AD1FF; border-color: rgba(90,209,255,0.45); }
 
 /* Collapsible sections on the Level page */
 .lvl-collapse {

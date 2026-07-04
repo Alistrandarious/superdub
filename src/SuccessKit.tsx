@@ -161,7 +161,7 @@ const SuccessKit: React.FC = () => {
         {/* ── Featured article — big hero card ── */}
         {featuredArticle && (
           <section className="sk-section">
-            <div className="sk-label">✍️ From Superdub</div>
+            <div className="sk-label">FROM SUPERDUB</div>
             <button className="sk-hero-card" onClick={() => setReading(featuredArticle)}
               style={{ '--card-accent': featuredArticle.accent } as React.CSSProperties}>
               <div className="sk-hero-cover" style={{ background: `linear-gradient(135deg, ${featuredArticle.accent}dd, ${featuredArticle.accent}44)` }}>
@@ -198,10 +198,9 @@ const SuccessKit: React.FC = () => {
         {/* ── What's New — latest update featured, previous ones tucked below ── */}
         {latestUpdate && (
           <section className="sk-section">
-            <div className="sk-label">✨ What's New</div>
+            <div className="sk-label">WHAT'S NEW</div>
             <button className="sk-update-hero" onClick={() => setReadingUpdate(latestUpdate)}>
               <div className="sk-update-hero-top">
-                <span className="sk-update-hero-emoji">{latestUpdate.emoji}</span>
                 <div className="sk-update-hero-headings">
                   <span className="sk-update-hero-badge">Latest · {fmtUpdateDate(latestUpdate.date)}</span>
                   <span className="sk-update-hero-title">{latestUpdate.title}</span>
@@ -222,7 +221,6 @@ const SuccessKit: React.FC = () => {
                   <div className="sk-prev-list">
                     {prevUpdates.map((u, i) => (
                       <button key={i} className="sk-prev-row" onClick={() => setReadingUpdate(u)}>
-                        <span className="sk-prev-emoji">{u.emoji}</span>
                         <span className="sk-prev-title">{u.title}</span>
                         <span className="sk-prev-date">{fmtUpdateDate(u.date)}</span>
                       </button>
@@ -236,11 +234,10 @@ const SuccessKit: React.FC = () => {
 
         {/* ── Book shelves — one horizontal scroll row per category ── */}
         <section className="sk-section">
-          <div className="sk-label">📖 Recommended reading</div>
+          <div className="sk-label">RECOMMENDED READING</div>
           {SECTIONS.map(sec => (
             <div key={sec.heading} className="sk-shelf">
               <div className="sk-shelf-head">
-                <span className="sk-shelf-emoji">{sec.emoji}</span>
                 <div className="sk-shelf-info">
                   <span className="sk-shelf-title">{sec.heading}</span>
                   <span className="sk-shelf-blurb">{sec.blurb}</span>
