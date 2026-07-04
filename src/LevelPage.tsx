@@ -316,9 +316,9 @@ const LevelPage: React.FC = () => {
 
   return (
     <div className="app flush" style={{ '--theme': '#FFB928', '--theme-dim': '#FFB92866', '--theme-glow': '#FFB92814' } as React.CSSProperties}>
-      <SuperdubHeader />
-
       <div className="page-content level-page-content">
+        {/* Header scrolls with the page — nothing on this page needs to stay pinned */}
+        <SuperdubHeader />
         {/* Hero stage — the ring floats on a theme-coloured bloom */}
         <div className="lvl-hero" style={{ '--hero-glow': theme.glow, '--hero-from': theme.from, '--hero-to': theme.to } as React.CSSProperties}>
           <div className="lvl-hero-bloom" />

@@ -7238,6 +7238,9 @@ h1, h2, h3, h4, .sora {
   gap: 20px;
   padding: 4px 20px 100px;
 }
+/* The nested-topbar rule pulls the header up by the page's 16px top padding;
+   this page only has 4px, so cancel that and let the header sit naturally. */
+.level-page-content > .hb-topbar { margin-top: 0; flex-shrink: 0; }
 /* Children must keep their natural height — the scroll container handles
    overflow. Without this, flex-shrink crushes overflow:hidden children (the
    collapsible cosmetics sections) to their 2px borders once the page content

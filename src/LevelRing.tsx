@@ -82,15 +82,23 @@ const LevelRing: React.FC<{
   // Liquid level: rises from bottom of inner circle
   const liquidTopY = cy + innerR - clampedP * innerR * 2;
 
-  // Wave path at liquid surface (sine wave spanning the inner circle width)
+  // Wave at the liquid surface: smooth quadratic curves (no straight-segment
+  // facets), extended past the clip on both sides so the CSS slosh animation
+  // (translateX ±6px) never drags a hard edge into view.
   const waveAmp = clampedP > 0.02 && clampedP < 0.98 ? 3.5 : 0;
-  const wavePts = Array.from({ length: 24 }, (_, i) => {
-    const t = i / 23;
-    const px = (cx - innerR) + t * innerR * 2;
-    const py = liquidTopY + Math.sin(t * Math.PI * 3) * waveAmp;
-    return `${i === 0 ? 'M' : 'L'}${px.toFixed(2)},${py.toFixed(2)}`;
-  }).join(' ');
-  const liquidPath = `${wavePts} L${cx + innerR},${cy + innerR} L${cx - innerR},${cy + innerR} Z`;
+  const WAVE_EXT = 14;
+  const wx0 = cx - innerR - WAVE_EXT;
+  const wx1 = cx + innerR + WAVE_EXT;
+  const waveSegs = 6; // alternating crests/troughs — 3 full periods
+  let waveD = `M${wx0.toFixed(2)},${liquidTopY.toFixed(2)}`;
+  for (let s = 0; s < waveSegs; s++) {
+    const xm = wx0 + ((wx1 - wx0) * (s + 0.5)) / waveSegs;
+    const xe = wx0 + ((wx1 - wx0) * (s + 1)) / waveSegs;
+    const dir = s % 2 === 0 ? 1 : -1;
+    waveD += ` Q${xm.toFixed(2)},${(liquidTopY + dir * waveAmp * 2).toFixed(2)} ${xe.toFixed(2)},${liquidTopY.toFixed(2)}`;
+  }
+  const bottomY = cy + innerR + 2;
+  const liquidPath = `${waveD} L${wx1.toFixed(2)},${bottomY.toFixed(2)} L${wx0.toFixed(2)},${bottomY.toFixed(2)} Z`;
 
   const tiltTransform = `perspective(320px) rotateY(${tilt.y * TILT_MAX_DEG}deg) rotateX(${-tilt.x * TILT_MAX_DEG * 0.85}deg)`;
 
@@ -138,7 +146,7 @@ const LevelRing: React.FC<{
         {/* 2. Liquid fill (animated themes only) */}
         {useLiquid && clampedP > 0 && (
           <g clipPath={`url(#${gid}clip)`}>
-            <path d={liquidPath} fill={`url(#${gid}liq)`} className="lvl-liquid-fill" />
+            <path d={liquidPath} fill={`url(#${gid}liq)`} className="lvl-liquid-fill" shapeRendering="geometricPrecision" />
           </g>
         )}
 

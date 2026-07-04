@@ -1465,7 +1465,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               />
             ))}
             <XAxis dataKey="day" stroke="rgba(255,255,255,0.1)" tick={chartXTick} interval={displayInterval} tickLine={false} height={36} padding={{ left: 10 }} />
-            <YAxis yAxisId="right" orientation="right" stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} allowDecimals={false} tickCount={5} allowDataOverflow={true} domain={(() => {
+            <YAxis yAxisId="right" orientation="left" stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} allowDecimals={false} tickCount={5} allowDataOverflow={true} domain={(() => {
               const weights = chartData.map(d => d.weight).filter(Boolean) as number[];
               const emas    = chartData.map((d: any) => d.ema).filter(Boolean) as number[];
               const projs   = chartData.map((d: any) => d.projection).filter(Boolean) as number[];
