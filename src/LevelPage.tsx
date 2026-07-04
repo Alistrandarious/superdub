@@ -10,7 +10,6 @@ import DubMascot, { getMascot, MASCOT_KEY, type MascotSpecies } from './DubMasco
 import {
   PLAYER_LEVELS, RING_THEMES, getRingTheme, getSelectedThemeId,
   SELECTED_THEME_KEY, type RingTheme, habitXPForDoneDays,
-  getRingFill, setRingFill, LIQUID_FILL_UNLOCK, type RingFill,
   isUnlocked, unlockLabel, EARLY_ADOPTER_BEFORE, type UnlockCtx,
   DUB_COLORS, DUB_COLOR_KEY, getDubColor,
   HABIT_COLORS, GLOW_COLORS, HABITS_COLOR_KEY, NAV_GLOW_KEY, type AccentColor,
@@ -266,14 +265,6 @@ const LevelPage: React.FC = () => {
     window.dispatchEvent(new CustomEvent('superdub:ring-theme-changed'));
   };
 
-  // Fill style — classic arc vs liquid (level-5 unlock), independent of colour
-  const [ringFill, setRingFillState] = useState<RingFill>(getRingFill);
-  const liquidUnlocked = isUnlocked(LIQUID_FILL_UNLOCK, ctx);
-  const pickFill = (f: RingFill) => {
-    if (f === 'liquid' && !liquidUnlocked) return;
-    setRingFill(f);
-    setRingFillState(f);
-  };
 
   // Dub's species — cat unlocks at level 2
   const [species, setSpecies] = useState<MascotSpecies>(getMascot);
@@ -368,44 +359,29 @@ const LevelPage: React.FC = () => {
 
         <div className="studio-grid">
 
-        <Tile icon="💍" label="Ring" sub="Pick a colour, then a fill style — they combine."
-          preview={<><Dot bg={`linear-gradient(135deg, ${theme.from}, ${theme.to})`} glow={theme.glow} /><span className="studio-pv-text">{theme.name}{ringFill === 'liquid' ? ' · 💧' : ''}</span></>}
+        <Tile icon="💍" label="Ring" sub="Each ring is an arc ◠ or a liquid 💧 — earn more as you level."
+          preview={<><Dot bg={`linear-gradient(135deg, ${theme.from}, ${theme.to})`} glow={theme.glow} /><span className="studio-pv-text">{theme.name} {theme.fill === 'liquid' ? '💧' : '◠'}</span></>}
           open={openTile === 'ring'} onToggle={() => toggleTile('ring')}>
-          {/* Fill style: classic arc vs liquid (works with any colour) */}
-          <div className="fill-style-row">
-            <button
-              className={`fill-style-chip${ringFill === 'classic' ? ' active' : ''}`}
-              onClick={() => pickFill('classic')}
-            >
-              <span className="fill-style-ico">◠</span> Classic arc
-            </button>
-            <button
-              className={`fill-style-chip${ringFill === 'liquid' ? ' active' : ''}${!liquidUnlocked ? ' locked' : ''}`}
-              onClick={() => pickFill('liquid')}
-              disabled={!liquidUnlocked}
-              title={liquidUnlocked ? 'Liquid fill' : `Unlocks: ${unlockLabel(LIQUID_FILL_UNLOCK)}`}
-            >
-              <span className="fill-style-ico">💧</span> Liquid{!liquidUnlocked && ' 🔒'}
-              <span className="fill-style-sub">{liquidUnlocked ? 'rises with XP · reacts to tilt' : unlockLabel(LIQUID_FILL_UNLOCK)}</span>
-            </button>
-          </div>
           <div className="ringtheme-grid">
             {RING_THEMES.map(t => {
               const locked = !isUnlocked(t.unlock, ctx);
               const active = t.id === themeId;
+              const isLiquid = t.fill === 'liquid';
               return (
                 <button
                   key={t.id}
                   className={`ringtheme-chip${active ? ' active' : ''}${locked ? ' locked' : ''}`}
                   onClick={() => equipTheme(t)}
                   disabled={locked}
-                  title={locked ? `Unlocks: ${unlockLabel(t.unlock)}` : t.name}
+                  title={`${t.name} — ${isLiquid ? 'liquid fill' : 'arc'}${locked ? ` · unlocks: ${unlockLabel(t.unlock)}` : ''}`}
                 >
                   <span className={`ringtheme-swatch${t.animated ? ' animated' : ''}`} style={{ background: `linear-gradient(135deg, ${t.from}, ${t.to})`, boxShadow: active ? `0 0 12px ${t.glow}` : undefined }}>
                     {locked && <span className="ringtheme-lock">🔒</span>}
                     {active && !locked && <span className="ringtheme-check">✓</span>}
+                    {/* Style badge — visible on locked chips too, so you can see what you're earning */}
+                    <span className={`ringtheme-fillbadge${isLiquid ? ' liquid' : ''}`}>{isLiquid ? '💧' : '◠'}</span>
                   </span>
-                  <span className="ringtheme-name">{locked ? unlockLabel(t.unlock) : t.name}</span>
+                  <span className="ringtheme-name">{locked ? `${unlockLabel(t.unlock)} ${isLiquid ? '💧' : '◠'}` : t.name}</span>
                 </button>
               );
             })}

@@ -77,23 +77,27 @@ export interface RingTheme {
   to: string;         // gradient end
   glow: string;       // glow colour
   unlock?: Unlock;    // how it's earned (undefined = default, always on)
-  animated?: boolean; // animated shimmer
+  animated?: boolean; // animated shimmer on the arc
+  fill?: 'liquid';    // liquid themes render a water fill inside the ring
+                      // (rises with XP, reacts to tilt); default is the arc
 }
 
 export const RING_THEMES: RingTheme[] = [
   { id: 'slate',   name: 'Slate',       from: '#9AA0AE', to: '#5B606E', glow: 'rgba(150,158,176,0.28)' },
   { id: 'gold',    name: 'Gold',        from: '#FFE15A', to: '#FFC42E', glow: 'rgba(255,196,46,0.35)',  unlock: { streak: 7 } },
-  { id: 'freer',   name: 'Freer',       from: '#2FE0C4', to: '#FF6FB5', glow: 'rgba(120,220,210,0.45)', unlock: { special: 'earlyAdopter' }, animated: true },
+  { id: 'freer',   name: 'Freer',       from: '#2FE0C4', to: '#FF6FB5', glow: 'rgba(120,220,210,0.45)', unlock: { special: 'earlyAdopter' }, animated: true, fill: 'liquid' },
   { id: 'ocean',   name: 'Ocean',       from: '#5AD1FF', to: '#2E8BFF', glow: 'rgba(46,139,255,0.35)',  unlock: { level: 2 } },
   { id: 'coral',   name: 'Coral',       from: '#FF9A6C', to: '#FF5470', glow: 'rgba(255,84,112,0.35)',  unlock: { level: 3 } },
   { id: 'sunset',  name: 'Sunset',      from: '#FFB347', to: '#FF5E8A', glow: 'rgba(255,94,138,0.35)',  unlock: { level: 4 } },
+  { id: 'liquid',  name: 'Liquid',      from: '#5AD1FF', to: '#1565D8', glow: 'rgba(90,169,255,0.42)',  unlock: { level: 5 },  animated: true, fill: 'liquid' },
   { id: 'forest',  name: 'Forest',      from: '#52EFA0', to: '#1FA971', glow: 'rgba(47,210,126,0.35)',  unlock: { level: 6 } },
+  { id: 'lava',    name: 'Lava Lamp',   from: '#FF9A3D', to: '#D81E5B', glow: 'rgba(255,110,60,0.42)',  unlock: { level: 7 },  animated: true, fill: 'liquid' },
   { id: 'aurora',  name: 'Aurora',      from: '#7CF8C0', to: '#A855F7', glow: 'rgba(168,85,247,0.35)',  unlock: { level: 8 } },
   { id: 'mono',    name: 'Platinum',    from: '#F4F4FA', to: '#A9A9C2', glow: 'rgba(220,220,235,0.35)', unlock: { level: 9 } },
-  { id: 'galaxy',  name: 'Galaxy',      from: '#6C8BFF', to: '#A855F7', glow: 'rgba(124,108,255,0.4)',  unlock: { level: 10 }, animated: true },
-  { id: 'inferno', name: 'Inferno',     from: '#FFD23F', to: '#FF3D3D', glow: 'rgba(255,61,61,0.4)',    unlock: { level: 12 }, animated: true },
+  { id: 'galaxy',  name: 'Galaxy',      from: '#6C8BFF', to: '#A855F7', glow: 'rgba(124,108,255,0.4)',  unlock: { level: 10 }, animated: true, fill: 'liquid' },
+  { id: 'inferno', name: 'Inferno',     from: '#FFD23F', to: '#FF3D3D', glow: 'rgba(255,61,61,0.4)',    unlock: { level: 12 }, animated: true, fill: 'liquid' },
   { id: 'eclipse', name: 'Eclipse',     from: '#B79CFF', to: '#3A2E6E', glow: 'rgba(183,156,255,0.35)', unlock: { level: 14 } },
-  { id: 'prism',   name: 'Prism',       from: '#FF5E8A', to: '#2E8BFF', glow: 'rgba(255,255,255,0.4)',  unlock: { level: 15 }, animated: true },
+  { id: 'prism',   name: 'Prism',       from: '#FF5E8A', to: '#2E8BFF', glow: 'rgba(255,255,255,0.4)',  unlock: { level: 15 }, animated: true, fill: 'liquid' },
 ];
 
 export const DEFAULT_THEME_ID = 'slate';
@@ -108,29 +112,15 @@ export function getSelectedThemeId(): string {
   return (typeof localStorage !== 'undefined' && localStorage.getItem(SELECTED_THEME_KEY)) || DEFAULT_THEME_ID;
 }
 
-// ── Ring fill style — orthogonal to the colour theme ────────────────────────
-// 'classic' = progress arc only. 'liquid' = a water fill inside the ring that
-// rises with XP and reacts to device tilt. Works with ANY colour theme.
-export type RingFill = 'classic' | 'liquid';
-export const RING_FILL_KEY = 'superdub.ringFill';
-export const LIQUID_FILL_UNLOCK: Unlock = { level: 5 };
-
-// Migration: v2.297 briefly shipped Liquid as a colour theme. If it's equipped,
-// convert to Ocean colours + liquid fill so nobody loses their look.
+// Migration: v2.299 briefly made liquid a global fill toggle
+// (superdub.ringFill). Fill is a per-theme property again — if the toggle was
+// on, equip the Liquid theme so the look carries over, then drop the key.
 try {
-  if (typeof localStorage !== 'undefined' && localStorage.getItem(SELECTED_THEME_KEY) === 'liquid') {
-    localStorage.setItem(SELECTED_THEME_KEY, 'ocean');
-    localStorage.setItem(RING_FILL_KEY, 'liquid');
+  if (typeof localStorage !== 'undefined' && localStorage.getItem('superdub.ringFill') === 'liquid') {
+    localStorage.setItem(SELECTED_THEME_KEY, 'liquid');
+    localStorage.removeItem('superdub.ringFill');
   }
 } catch { /* storage unavailable */ }
-
-export function getRingFill(): RingFill {
-  return (typeof localStorage !== 'undefined' && localStorage.getItem(RING_FILL_KEY)) === 'liquid' ? 'liquid' : 'classic';
-}
-export function setRingFill(fill: RingFill): void {
-  localStorage.setItem(RING_FILL_KEY, fill);
-  window.dispatchEvent(new CustomEvent('superdub:ring-fill-changed'));
-}
 
 // ── Dub colours — recolour the mascot ───────────────────────────────────────
 export interface DubColor { id: string; name: string; bodyFrom: string; bodyTo: string; accent: string; unlock?: Unlock; }
@@ -198,7 +188,7 @@ export const PLAYER_LEVELS: PlayerLevelDef[] = [
   { xp: 100,    title: 'Getting Going', reward: { icon: '🌊', kind: 'theme', themeId: 'ocean', label: 'Ocean ring theme', blurb: 'Unlocks the Ocean level-ring theme.' } },
   { xp: 300,    title: 'Finding Rhythm',reward: { icon: '🪸', kind: 'theme', themeId: 'coral', label: 'Coral ring theme', blurb: 'Unlocks the Coral level-ring theme.' } },
   { xp: 700,    title: 'In the Groove', reward: { icon: '🌅', kind: 'theme', themeId: 'sunset', label: 'Sunset ring theme', blurb: 'Unlocks the Sunset level-ring theme.' } },
-  { xp: 1500,   title: 'Consistent',    reward: { icon: '💧', kind: 'flair', flairId: 'liquid-fill', label: 'Liquid fill (animated)', blurb: 'Your ring becomes a vessel — a water fill that rises with your XP and sloshes when you tilt your phone. Works with every ring colour.' } },
+  { xp: 1500,   title: 'Consistent',    reward: { icon: '💧', kind: 'theme', themeId: 'liquid', label: 'Liquid ring (water fill)', blurb: 'Your first liquid ring — the water rises with your XP and sloshes when you tilt your phone.' } },
   { xp: 3000,   title: 'Committed',     reward: { icon: '🌲', kind: 'theme', themeId: 'forest', label: 'Forest ring theme', blurb: 'Unlocks the Forest level-ring theme.' } },
   { xp: 5000,   title: 'Disciplined',   reward: { icon: '✨', kind: 'flair', flairId: 'gold-wordmark', label: 'Gold wordmark', blurb: 'Your superdub logo turns gold, app-wide.' } },
   { xp: 8000,   title: 'Locked In',     reward: { icon: '🌌', kind: 'theme', themeId: 'aurora', label: 'Aurora ring theme', blurb: 'Unlocks the Aurora level-ring theme.' } },
