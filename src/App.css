@@ -5811,6 +5811,106 @@ h1, h2, h3, h4, .sora {
 .hb-dub-by-ring:active { transform: scale(0.94); }
 @keyframes dub-peek-in { from { opacity: 0; transform: translateY(10px) scale(0.8); } to { opacity: 1; transform: none; } }
 
+/* ── Level page: hero stage ─────────────────────────────────── */
+.lvl-hero {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 18px 0 6px;
+}
+.lvl-hero-bloom {
+  position: absolute; top: -30px; left: 50%; transform: translateX(-50%);
+  width: 340px; height: 340px; border-radius: 50%;
+  background: radial-gradient(circle, var(--hero-glow, rgba(150,158,176,0.28)) 0%, transparent 62%);
+  opacity: 0.8; pointer-events: none;
+  animation: lvl-bloom-breathe 5s ease-in-out infinite;
+}
+@keyframes lvl-bloom-breathe {
+  0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.8; }
+  50%       { transform: translateX(-50%) scale(1.08); opacity: 1; }
+}
+.lvl-hero-ring {
+  position: relative; z-index: 1;
+  animation: lvl-hero-float 4.5s ease-in-out infinite;
+}
+@keyframes lvl-hero-float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-6px); }
+}
+.lvl-hero-xp { width: 100%; max-width: 340px; margin-top: 16px; position: relative; z-index: 1; }
+.lvl-hero-scale {
+  display: flex; justify-content: space-between; margin-top: 7px;
+  font-family: 'Space Mono', monospace; font-size: 0.68rem; color: rgba(255,255,255,0.45);
+}
+
+/* ── Level page: studio grid ────────────────────────────────── */
+.studio-head {
+  display: flex; align-items: baseline; gap: 10px; margin: 6px 2px -8px;
+}
+.studio-head-title {
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.05rem; color: #fff;
+}
+.studio-head-sub {
+  font-family: 'Sora', sans-serif; font-size: 0.64rem; font-weight: 600;
+  color: rgba(255,255,255,0.32);
+}
+.studio-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 11px;
+}
+.studio-tile {
+  border: 1px solid var(--glass-border);
+  border-radius: 18px;
+  background: linear-gradient(165deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.015) 100%);
+  overflow: hidden;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.studio-tile:active { border-color: rgba(255,255,255,0.18); }
+.studio-tile.open {
+  grid-column: 1 / -1;
+  border-color: rgba(255,255,255,0.16);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+}
+.studio-tile-head {
+  position: relative;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+  width: 100%; padding: 15px 15px 13px;
+  background: none; border: none; cursor: pointer; text-align: left;
+}
+.studio-tile-ico {
+  font-size: 1.45rem; line-height: 1;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
+}
+.studio-tile-label {
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 0.86rem; color: #fff;
+}
+.studio-tile-preview {
+  display: flex; align-items: center; gap: 6px; min-height: 16px;
+}
+.studio-dot {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.2); flex-shrink: 0;
+}
+.studio-pv-text {
+  font-family: 'Sora', sans-serif; font-size: 0.66rem; font-weight: 600;
+  color: rgba(255,255,255,0.42);
+}
+.studio-tile-chev {
+  position: absolute; top: 14px; right: 14px;
+  color: rgba(255,255,255,0.3); font-size: 0.78rem;
+  transition: transform 0.25s;
+}
+.studio-tile-chev.open { transform: rotate(180deg); }
+/* Open tile: header goes horizontal so the body gets the space */
+.studio-tile.open .studio-tile-head { flex-direction: row; align-items: center; gap: 10px; padding-bottom: 11px; }
+.studio-tile.open .studio-tile-preview { margin-left: auto; padding-right: 26px; }
+.studio-tile-body {
+  padding: 2px 15px 16px;
+  animation: studio-body-in 0.22s ease both;
+}
+@keyframes studio-body-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+
 /* Fill style picker (classic arc vs liquid) — sits above the theme grid */
 .fill-style-row { display: flex; gap: 10px; margin: 2px 0 16px; }
 .fill-style-chip {

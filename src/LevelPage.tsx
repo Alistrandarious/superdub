@@ -183,22 +183,38 @@ function computeBadges(
   ];
 }
 
-// Collapsible section wrapper for the Level page
-const Collapsible: React.FC<{ title: string; sub?: string; defaultOpen?: boolean; children: React.ReactNode }> = ({ title, sub, defaultOpen, children }) => {
-  const [o, setO] = useState(!!defaultOpen);
-  return (
-    <div className={`lvl-collapse${o ? ' open' : ''}`}>
-      <button className="lvl-collapse-head" onClick={() => setO(v => !v)}>
-        <span className="lvl-collapse-title">{title}</span>
-        <span className={`lvl-collapse-chev${o ? ' open' : ''}`}>▾</span>
-      </button>
-      <div className="lvl-collapse-wrap"><div className="lvl-collapse-body">
+// Studio tiles — the customisation grid on the Level page
+// A studio tile: a compact card in the 2-col grid showing the section's icon,
+// name and the CURRENT pick; tapping expands it to full width in place.
+const Tile: React.FC<{
+  icon: string;
+  label: string;
+  preview?: React.ReactNode;
+  sub?: string;
+  open: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}> = ({ icon, label, preview, sub, open, onToggle, children }) => (
+  <div className={`studio-tile${open ? ' open' : ''}`}>
+    <button className="studio-tile-head" onClick={onToggle}>
+      <span className="studio-tile-ico">{icon}</span>
+      <span className="studio-tile-label">{label}</span>
+      {preview && <span className="studio-tile-preview">{preview}</span>}
+      <span className={`studio-tile-chev${open ? ' open' : ''}`}>▾</span>
+    </button>
+    {open && (
+      <div className="studio-tile-body">
         {sub && <p className="rewards-sub">{sub}</p>}
         {children}
-      </div></div>
-    </div>
-  );
-};
+      </div>
+    )}
+  </div>
+);
+
+// Little colour swatch used in tile previews — shows the equipped choice at a glance.
+const Dot: React.FC<{ bg: string; glow?: string }> = ({ bg, glow }) => (
+  <span className="studio-dot" style={{ background: bg, boxShadow: glow ? `0 0 8px ${glow}` : undefined }} />
+);
 
 const LevelPage: React.FC = () => {
   const navigate = useNavigate();
@@ -300,21 +316,30 @@ const LevelPage: React.FC = () => {
     window.dispatchEvent(new CustomEvent('superdub:bg-changed'));
   };
 
+  // Studio grid — one tile open at a time keeps the grid tidy
+  const [openTile, setOpenTile] = useState<string | null>(null);
+  const toggleTile = (id: string) => setOpenTile(cur => (cur === id ? null : id));
+  const bg = getBackground();
+  const earnedBadges = badges.filter(b => b.earned).length;
+
   return (
     <div className="app flush" style={{ '--theme': '#22C55E', '--theme-dim': '#22C55E66', '--theme-glow': '#22C55E14' } as React.CSSProperties}>
       <SuperdubHeader />
 
       <div className="page-content level-page-content">
-        {/* Level ring + XP */}
-        <div className="hb-level">
-          <LevelRing level={playerLevel.level} title={playerLevel.title} progress={playerLevel.progress} theme={theme} onClick={() => navigateWithTransition(navigate, '/')} />
-          <div className="hb-xp">
-            <div className="hb-xp-scale">
-              <span>{totalXP.toLocaleString()} XP</span>
-              <span>{playerLevel.xpForNext != null ? playerLevel.xpForNext.toLocaleString() : 'MAX'}</span>
-            </div>
+        {/* Hero stage — the ring floats on a theme-coloured bloom */}
+        <div className="lvl-hero" style={{ '--hero-glow': theme.glow, '--hero-from': theme.from, '--hero-to': theme.to } as React.CSSProperties}>
+          <div className="lvl-hero-bloom" />
+          <div className="lvl-hero-ring">
+            <LevelRing level={playerLevel.level} title={playerLevel.title} progress={playerLevel.progress} theme={theme} size={190} onClick={() => navigateWithTransition(navigate, '/')} />
+          </div>
+          <div className="lvl-hero-xp">
             <div className="hb-xp-bar">
               <div className="hb-xp-fill" style={{ width: `${Math.max(2, playerLevel.progress * 100)}%`, background: `linear-gradient(90deg, ${theme.from}, ${theme.to})`, boxShadow: `0 0 10px ${theme.glow}` }} />
+            </div>
+            <div className="lvl-hero-scale">
+              <span>{totalXP.toLocaleString()} XP</span>
+              <span>{playerLevel.xpForNext != null ? playerLevel.xpForNext.toLocaleString() : 'MAX'}</span>
             </div>
             {playerLevel.xpForNext != null ? (
               <p className="hb-xp-to">{(playerLevel.xpForNext - totalXP).toLocaleString()} XP to <span>{playerLevel.nextTitle}</span></p>
@@ -336,7 +361,16 @@ const LevelPage: React.FC = () => {
           </div>
         )}
 
-        <Collapsible title="💍 Ring Themes" sub="Pick a colour, then a fill style — they combine." defaultOpen>
+        <div className="studio-head">
+          <span className="studio-head-title">Customise</span>
+          <span className="studio-head-sub">Tap a card · your current picks are shown</span>
+        </div>
+
+        <div className="studio-grid">
+
+        <Tile icon="💍" label="Ring" sub="Pick a colour, then a fill style — they combine."
+          preview={<><Dot bg={`linear-gradient(135deg, ${theme.from}, ${theme.to})`} glow={theme.glow} /><span className="studio-pv-text">{theme.name}{ringFill === 'liquid' ? ' · 💧' : ''}</span></>}
+          open={openTile === 'ring'} onToggle={() => toggleTile('ring')}>
           {/* Fill style: classic arc vs liquid (works with any colour) */}
           <div className="fill-style-row">
             <button
@@ -376,9 +410,11 @@ const LevelPage: React.FC = () => {
               );
             })}
           </div>
-        </Collapsible>
+        </Tile>
 
-        <Collapsible title="🐾 Dub's Colour" sub="Recolour your companion. Unlock more as you level up.">
+        <Tile icon="🐾" label="Dub's Colour" sub="Recolour your companion. Unlock more as you level up."
+          preview={(() => { const dc = DUB_COLORS.find(d => d.id === dubColorId) ?? DUB_COLORS[0]; return <><Dot bg={`linear-gradient(135deg, ${dc.bodyFrom}, ${dc.bodyTo})`} /><span className="studio-pv-text">{dc.name}</span></>; })()}
+          open={openTile === 'dubcolor'} onToggle={() => toggleTile('dubcolor')}>
           <div className="ringtheme-grid">
             {DUB_COLORS.map(dc => {
               const locked = !isUnlocked(dc.unlock, ctx);
@@ -394,9 +430,11 @@ const LevelPage: React.FC = () => {
               );
             })}
           </div>
-        </Collapsible>
+        </Tile>
 
-        <Collapsible title="🎨 Habits Button" sub="The colour of your centre Habits button.">
+        <Tile icon="🎨" label="Habits Button" sub="The colour of your centre Habits button."
+          preview={<Dot bg={habitsColor} glow={`${habitsColor}66`} />}
+          open={openTile === 'habitsbtn'} onToggle={() => toggleTile('habitsbtn')}>
           <div className="ringtheme-grid">
             {HABIT_COLORS.map(c => {
               const locked = !isUnlocked(c.unlock, ctx);
@@ -412,9 +450,11 @@ const LevelPage: React.FC = () => {
               );
             })}
           </div>
-        </Collapsible>
+        </Tile>
 
-        <Collapsible title="✨ Menu Glow" sub="The glow on the selected bottom-nav item.">
+        <Tile icon="✨" label="Menu Glow" sub="The glow on the selected bottom-nav item."
+          preview={<Dot bg={navGlow} glow={`${navGlow}66`} />}
+          open={openTile === 'glow'} onToggle={() => toggleTile('glow')}>
           <div className="ringtheme-grid">
             {GLOW_COLORS.map(c => {
               const locked = !isUnlocked(c.unlock, ctx);
@@ -430,9 +470,11 @@ const LevelPage: React.FC = () => {
               );
             })}
           </div>
-        </Collapsible>
+        </Tile>
 
-        <Collapsible title="🐶 Your Companion" sub="Choose what Dub is. The cat unlocks at level 2.">
+        <Tile icon="🐶" label="Companion" sub="Choose what Dub is. The cat unlocks at level 2."
+          preview={<span className="studio-pv-text">{species === 'cat' ? 'Cat' : 'Dog'}</span>}
+          open={openTile === 'companion'} onToggle={() => toggleTile('companion')}>
           <div className="companion-grid">
             <button className={`companion-card${species === 'dog' ? ' active' : ''}`} onClick={() => pickSpecies('dog')}>
               <span className="companion-pet"><DubMascot size={66} mood="happy" species="dog" /></span>
@@ -450,9 +492,11 @@ const LevelPage: React.FC = () => {
               <span className="companion-name">{catUnlocked ? `Dub the cat${species === 'cat' ? ' ✓' : ''}` : 'Cat · LV2'}</span>
             </button>
           </div>
-        </Collapsible>
+        </Tile>
 
-        <Collapsible title="🌌 App Background" sub="Set the mood of the whole app. Unlock more as you level.">
+        <Tile icon="🌌" label="Background" sub="Set the mood of the whole app. Unlock more as you level."
+          preview={<><Dot bg={bg.grad} /><span className="studio-pv-text">{bg.name}</span></>}
+          open={openTile === 'bg'} onToggle={() => toggleTile('bg')}>
           <div className="ringtheme-grid">
             {BACKGROUNDS.map(b => {
               const locked = !isUnlocked(b.unlock, ctx);
@@ -468,9 +512,11 @@ const LevelPage: React.FC = () => {
               );
             })}
           </div>
-        </Collapsible>
+        </Tile>
 
-        <Collapsible title="🏅 Badges">
+        <Tile icon="🏅" label="Badges"
+          preview={<span className="studio-pv-text">{earnedBadges}/{badges.length}</span>}
+          open={openTile === 'badges'} onToggle={() => toggleTile('badges')}>
           <div className="badges-grid">
             {badges.map(b => (
               <div key={b.id} className={`badge-card ${b.earned ? 'earned' : 'locked'}`}>
@@ -480,10 +526,12 @@ const LevelPage: React.FC = () => {
               </div>
             ))}
           </div>
-        </Collapsible>
+        </Tile>
 
         {loaded && sortedByXP.length > 0 && (
-          <Collapsible title="📊 Habit Stats">
+          <Tile icon="📊" label="Habit Stats"
+            preview={<span className="studio-pv-text">{sortedByXP[0].name.length > 12 ? sortedByXP[0].name.slice(0, 11) + '…' : sortedByXP[0].name}</span>}
+            open={openTile === 'stats'} onToggle={() => toggleTile('stats')}>
             <div className="habit-stats-list">
               {sortedByXP.map((h, i) => (
                 <div key={h.name} className="habit-stat-row">
@@ -496,11 +544,12 @@ const LevelPage: React.FC = () => {
                 </div>
               ))}
             </div>
-          </Collapsible>
+          </Tile>
         )}
 
-        <div style={{ marginBottom: 100 }}>
-        <Collapsible title="⭐ All Levels & Rewards">
+        <Tile icon="⭐" label="Levels & Rewards"
+          preview={<span className="studio-pv-text">LV{playerLevel.level}/{PLAYER_LEVELS.length}</span>}
+          open={openTile === 'levels'} onToggle={() => toggleTile('levels')}>
           <div className="level-reward-list">
             {PLAYER_LEVELS.map((lv, i) => {
               const reached = playerLevel.level >= i + 1;
@@ -518,8 +567,9 @@ const LevelPage: React.FC = () => {
               );
             })}
           </div>
-        </Collapsible>
-        </div>
+        </Tile>
+
+        </div>{/* /studio-grid */}
 
       </div>
     </div>
