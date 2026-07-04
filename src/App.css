@@ -7087,6 +7087,13 @@ h1, h2, h3, h4, .sora {
   gap: 20px;
   padding: 4px 20px 100px;
 }
+/* Children must keep their natural height — the scroll container handles
+   overflow. Without this, flex-shrink crushes overflow:hidden children (the
+   collapsible cosmetics sections) to their 2px borders once the page content
+   is taller than the screen. Same guard as .diet-content > *. */
+.level-page-content > * {
+  flex-shrink: 0;
+}
 
 .level-hero-card {
   display: flex;
