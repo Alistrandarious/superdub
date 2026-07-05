@@ -3,8 +3,9 @@ import './App.css';
 import { api } from './api';
 import GoalsPanel from './GoalsPanel';
 import SuperdubHeader from './SuperdubHeader';
+import { HEALTH, GROWTH, VIOLET } from './theme';
 
-const GOAL_ACCENT = '#A855F7';
+const GOAL_ACCENT = VIOLET; // rare rank accent per the swatches guide
 
 const TargetIcon: React.FC<{ size?: number }> = ({ size = 16 }) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
@@ -20,8 +21,8 @@ interface Task {
 }
 
 // Brand-family accents — green = To-Do (health/done), blue = Shopping (growth).
-const TODO_ACCENT = '#2FD27E';
-const SHOP_ACCENT = '#2E8BFF';
+const TODO_ACCENT = HEALTH;
+const SHOP_ACCENT = GROWTH;
 
 const CheckIcon: React.FC<{ size?: number }> = ({ size = 16 }) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>

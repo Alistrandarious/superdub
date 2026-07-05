@@ -3,6 +3,7 @@ import { api, setToken } from './api';
 import { OCCUPATIONS, ETHNICITIES, GENDER_IDENTITIES, COUNTRIES, RELATIONSHIP_STATUSES, RELIGIONS } from './demographics';
 import GoogleAuthButton from './GoogleAuthButton';
 import './App.css';
+import { GROWTH } from './theme';
 
 interface AuthProps {
   onAuth: () => void;
@@ -39,7 +40,7 @@ export function computeActivity(job: string, gym: string, walk: string): number 
   return Math.min(1.9, parseFloat((1.2 + (JOB_FACTOR[job] ?? 0) + (GYM_FACTOR[gym] ?? 0) + (WALK_FACTOR[walk] ?? 0)).toFixed(4)));
 }
 
-const THEME = '#2E8BFF';
+const THEME = GROWTH;
 
 export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
   const [mode, setMode] = useState<Mode>('landing');

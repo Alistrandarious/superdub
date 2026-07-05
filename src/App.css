@@ -4355,7 +4355,7 @@ h1, h2, h3, h4, .sora {
 }
 .next-reward-icon { font-size: 1.8rem; flex-shrink: 0; }
 .next-reward-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.next-reward-eyebrow { font-family: 'Space Mono', monospace; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.08em; color: var(--gold); }
+.next-reward-eyebrow { font-family: var(--font-data); font-size: 0.62rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); }
 .next-reward-label { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 0.95rem; color: #fff; }
 .next-reward-blurb { font-size: 0.74rem; color: rgba(255,255,255,0.5); }
 
@@ -4704,7 +4704,7 @@ h1, h2, h3, h4, .sora {
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.2em;
-  color: #22C55E;
+  color: #2FD27E;
 }
 .hb-featured-cta {
   font-family: 'Sora', sans-serif;
@@ -4880,8 +4880,8 @@ h1, h2, h3, h4, .sora {
 }
 .hrow-check:active { transform: scale(0.9); }
 .hrow.done .hrow-check {
-  background: #22C55E;
-  border-color: #22C55E;
+  background: #2FD27E;
+  border-color: #2FD27E;
 }
 .hrow.failed .hrow-check {
   border-color: #2FD27E;
@@ -5047,7 +5047,7 @@ h1, h2, h3, h4, .sora {
 .hb-feat-add:active { transform: scale(0.95); }
 .hb-feat-add.added {
   background: rgba(34,197,94,0.18);
-  color: #22C55E;
+  color: #2FD27E;
   cursor: default;
 }
 
@@ -5852,8 +5852,8 @@ h1, h2, h3, h4, .sora {
   border-bottom: 1px solid var(--glass-border);
 }
 .asc-eyebrow {
-  font-family: var(--font-data); font-weight: 700; font-size: 0.66rem;
-  letter-spacing: 0.16em; color: #FFB928;
+  font-family: var(--font-data); font-weight: 700; font-size: 0.62rem;
+  letter-spacing: 0.14em; text-transform: uppercase; color: #FFB928;
 }
 .asc-eyebrow-sub {
   font-family: var(--font-data); font-size: 0.6rem;
@@ -5960,7 +5960,7 @@ h1, h2, h3, h4, .sora {
   background: #14141C; border: 1px solid rgba(255,255,255,0.18);
   color: rgba(255,255,255,0.6);
 }
-.ringtheme-fillbadge.liquid { color: #5AD1FF; border-color: rgba(90,209,255,0.45); }
+.ringtheme-fillbadge.liquid { color: #46C2FF; border-color: rgba(70,194,255,0.45); }
 
 /* Collapsible sections on the Level page */
 .lvl-collapse {
@@ -6408,7 +6408,7 @@ h1, h2, h3, h4, .sora {
   box-shadow: 0 0 0 2px rgba(255,69,58,0.22);
 }
 .hcard-day.is-today.done .hcard-day-circle {
-  border-color: #22C55E;
+  border-color: #2FD27E;
   box-shadow: 0 0 0 2px rgba(34,197,94,0.22);
 }
 
@@ -6858,8 +6858,8 @@ h1, h2, h3, h4, .sora {
 /* ── Success Kit v2 — varied editorial layout ── */
 .sk-section { margin-top: 24px; }
 .sk-label {
-  font-family: 'Space Mono', monospace; font-size: 0.6rem; font-weight: 700;
-  letter-spacing: 0.1em; text-transform: uppercase;
+  font-family: var(--font-data); font-size: 0.62rem; font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase;
   color: rgba(255,255,255,0.35); margin-bottom: 10px;
 }
 
@@ -6931,19 +6931,19 @@ h1, h2, h3, h4, .sora {
 
 /* ── The Maths page ─────────────────────────────────────────── */
 .maths-where {
-  margin: 0 0 10px; font-family: 'Space Mono', monospace; font-size: 0.62rem;
-  letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.35);
+  margin: 0 0 10px; font-family: var(--font-data); font-weight: 700; font-size: 0.62rem;
+  letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.35);
 }
 .maths-formula {
   display: flex; flex-direction: column; gap: 6px;
   margin: 0 0 12px; padding: 12px 14px;
-  background: rgba(90,209,255,0.06); border: 1px solid rgba(90,209,255,0.18);
+  background: rgba(70,194,255,0.06); border: 1px solid rgba(70,194,255,0.18);
   border-radius: var(--r-md);
   overflow-x: auto;
 }
 .maths-formula code {
   font-family: 'Space Mono', monospace; font-size: 0.72rem; line-height: 1.5;
-  color: #8FE3FF; white-space: pre;
+  color: #46C2FF; white-space: pre;
 }
 .maths-example {
   margin: 10px 0 0; padding: 9px 12px;
@@ -8349,8 +8349,8 @@ h1, h2, h3, h4, .sora {
   width: 20px; flex-shrink: 0; font-size: 0.95rem; opacity: 0.9;
 }
 .cog-menu-label {
-  font-family: 'Sora', sans-serif; font-size: 0.58rem; font-weight: 700;
-  letter-spacing: 0.1em; text-transform: uppercase;
+  font-family: var(--font-data); font-size: 0.62rem; font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase;
   color: rgba(255,255,255,0.35);
   padding: 8px 12px 4px;
 }

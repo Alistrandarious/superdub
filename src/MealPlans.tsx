@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import './App.css';
 import { api } from './api';
+import { pageTheme, GROWTH } from './theme';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -67,11 +68,7 @@ const DIET_FILTERS = [
   { key: 'paleo',       label: 'Paleo' },
 ];
 
-const THEME = {
-  '--theme': '#2E8BFF',
-  '--theme-dim': '#2E8BFF66',
-  '--theme-glow': '#2E8BFF33',
-} as React.CSSProperties;
+const THEME = pageTheme(GROWTH, '33');
 
 // ─── IngredientPanel ──────────────────────────────────────────────────────────
 

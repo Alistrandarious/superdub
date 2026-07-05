@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './App.css';
 import { api } from './api';
+import { pageTheme, HEALTH } from './theme';
 
 interface FoodItem {
   name: string;
@@ -184,7 +185,7 @@ const FoodLog: React.FC = () => {
   };
 
   return (
-    <div className="app flush" style={{ '--theme': '#2FD27E', '--theme-dim': '#2FD27E66', '--theme-glow': '#2FD27E22' } as React.CSSProperties}>
+    <div className="app flush" style={pageTheme(HEALTH, '22')}>
       <div className="fl-page page-content">
         <div className="page-intro-row">
           <Link to="/diet" className="page-back"><span className="page-back-arrow">‹</span> Diet</Link>

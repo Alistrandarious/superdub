@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import './App.css';
 import SuperdubHeader from './SuperdubHeader';
 import { STRIDE_M, KCAL_PER_KG_KM, KCAL_PER_KG, kcalPerStep } from './energy';
+import { pageTheme, GROWTH_BRIGHT } from './theme';
 
 // ── The Maths — every number the app shows, written out so you can
 // cross-reference it against what you see. This page documents what the code
@@ -173,7 +174,7 @@ const SECTIONS: MathSection[] = [
 const MathsPage: React.FC = () => {
   const navigate = useNavigate();
   return (
-    <div className="app flush" style={{ '--theme': '#5AD1FF', '--theme-dim': '#5AD1FF66', '--theme-glow': '#5AD1FF14' } as React.CSSProperties}>
+    <div className="app flush" style={pageTheme(GROWTH_BRIGHT)}>
       <SuperdubHeader />
       <div className="page-content" style={{ maxWidth: 680, margin: '0 auto', overflowY: 'auto', flex: 1, paddingBottom: 90 }}>
         <div className="page-intro-row">

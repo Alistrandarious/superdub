@@ -6,6 +6,7 @@ import { api } from './api';
 import SuperdubHeader from './SuperdubHeader';
 import AdaptiveWeightPlanCard from './AdaptiveWeightPlanCard';
 import { kcalPerStep } from './energy';
+import { pageTheme, GROWTH, HEALTH } from './theme';
 
 interface ProfileData {
   dob: string;
@@ -129,10 +130,10 @@ const PlanSummaryCard: React.FC<{
   onEdit: () => void;
 }> = ({ currentWeight, todayWeight, goalWeight, lossPerWeek, goal, target, maintenance,
         gymSessionsPerWeek, gymIntensity, weeklyActivities, onEdit }) => {
-  const GOAL_META: Record<string, { icon: string; label: string; color: string }> = {
-    cut:      { icon: '🔥', label: 'Fat Loss',  color: '#2FD27E' },
-    maintain: { icon: '⚖️', label: 'Maintain',  color: '#2FD27E' },
-    bulk:     { icon: '💪', label: 'Muscle Gain', color: '#2E8BFF' },
+  const GOAL_META: Record<string, { label: string; color: string }> = {
+    cut:      { label: 'Fat Loss',    color: HEALTH },
+    maintain: { label: 'Maintain',    color: HEALTH },
+    bulk:     { label: 'Muscle Gain', color: GROWTH },
   };
   const meta = GOAL_META[goal] ?? GOAL_META.cut;
   const accent = meta.color;
@@ -168,7 +169,7 @@ const PlanSummaryCard: React.FC<{
           background: accent + '18', border: `1px solid ${accent}44`,
           borderRadius: 20, padding: '4px 12px', letterSpacing: '0.04em',
         }}>
-          {meta.icon} {meta.label}
+          {meta.label}
         </span>
         {weeksToGoal && (
           <span style={{ fontSize: '0.72rem', color: '#666', flex: 1 }}>
@@ -906,18 +907,16 @@ const Diet: React.FC = () => {
 
   if (!loaded) {
     return (
-      <div className="app flush" style={{ '--theme': '#2E8BFF', '--theme-dim': '#2E8BFF66', '--theme-glow': '#2E8BFF33' } as React.CSSProperties}>
+      <div className="app flush" style={pageTheme(GROWTH, '33')}>
         <div className="sd-loader-wrap"><div className="sd-loader"><img className="sd-loader-logo" src="/superdub-logo.png" alt="" /></div></div>
       </div>
     );
   }
 
-  const GOAL_COLORS: Record<string, string> = { cut: '#2FD27E', maintain: '#2FD27E', bulk: '#2E8BFF' };
-  const GOAL_LABELS: Record<string, string> = { cut: '🔥 Fat Loss', maintain: '⚖️ Maintain', bulk: '💪 Muscle Gain' };
-  const accent = GOAL_COLORS[goal] ?? '#2FD27E';
-  const goalLabel = GOAL_LABELS[goal] ?? '🔥 Fat Loss';
-  const goalIcon = goalLabel.split(' ')[0];
-  const goalText = goalLabel.split(' ').slice(1).join(' ');
+  const GOAL_COLORS: Record<string, string> = { cut: HEALTH, maintain: HEALTH, bulk: GROWTH };
+  const GOAL_LABELS: Record<string, string> = { cut: 'Fat Loss', maintain: 'Maintain', bulk: 'Muscle Gain' };
+  const accent = GOAL_COLORS[goal] ?? HEALTH;
+  const goalText = GOAL_LABELS[goal] ?? 'Fat Loss';
   const displayWeight = todayWeight ?? kg;
 
   // ── Two progress tracks for the hero: time elapsed (flame) vs weight done (accent) ──
@@ -955,7 +954,7 @@ const Diet: React.FC = () => {
   const gaugeProg = `M ${GA.cx - GA.r} ${GA.cy} A ${GA.r} ${GA.r} 0 0 1 ${gp.x.toFixed(1)} ${gp.y.toFixed(1)}`;
 
   return (
-    <div className="app flush" style={{ '--theme': '#2E8BFF', '--theme-dim': '#2E8BFF66', '--theme-glow': '#2E8BFF33' } as React.CSSProperties}>
+    <div className="app flush" style={pageTheme(GROWTH, '33')}>
       {/* ── Full scrollable content ── */}
       <div className="diet-content page-content">
 
@@ -967,7 +966,7 @@ const Diet: React.FC = () => {
 
         <div className="plan-hero-head">
           <span className="plan-goal-pill" style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)`, boxShadow: `0 4px 16px ${accent}40` }}>
-            <span className="plan-goal-pill-icon">{goalIcon}</span>{goalText}
+            {goalText}
           </span>
           {weeksLeft && <span className="plan-hero-eta">~{weeksLeft}w to goal</span>}
           <button className="plan-hero-edit" onClick={() => navigate(planGoal ? '/plan' : '/profile')}>Edit →</button>

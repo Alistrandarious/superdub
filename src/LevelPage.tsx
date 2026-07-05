@@ -7,6 +7,7 @@ import { useXP } from './XPContext';
 import SuperdubHeader from './SuperdubHeader';
 import LevelRing from './LevelRing';
 import DubMascot, { getMascot, MASCOT_KEY, type MascotSpecies } from './DubMascot';
+import { pageTheme, GOLD } from './theme';
 import {
   PLAYER_LEVELS, RING_THEMES, getRingTheme, getSelectedThemeId,
   SELECTED_THEME_KEY, type RingTheme, habitXPForDoneDays,
@@ -315,7 +316,7 @@ const LevelPage: React.FC = () => {
   };
 
   return (
-    <div className="app flush" style={{ '--theme': '#FFB928', '--theme-dim': '#FFB92866', '--theme-glow': '#FFB92814' } as React.CSSProperties}>
+    <div className="app flush" style={pageTheme(GOLD)}>
       <div className="page-content level-page-content">
         {/* Header scrolls with the page — nothing on this page needs to stay pinned */}
         <SuperdubHeader />

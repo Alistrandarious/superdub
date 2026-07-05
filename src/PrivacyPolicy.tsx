@@ -1,8 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import './App.css';
+import { GROWTH } from './theme';
 
-const THEME = '#2E8BFF';
+const THEME = GROWTH;
 
 const PrivacyPolicy: React.FC = () => {
   const navigate = useNavigate();

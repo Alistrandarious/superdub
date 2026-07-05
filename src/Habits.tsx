@@ -9,6 +9,7 @@ import CadenceCarousel from './CadenceCarousel';
 import SuperdubHeader from './SuperdubHeader';
 import LevelRing from './LevelRing';
 import DubMascot, { getMascot } from './DubMascot';
+import { pageTheme, HEALTH } from './theme';
 import {
   getRingTheme, getSelectedThemeId, type RingTheme,
   HABIT_LEVEL_TIERS as LEVEL_TIERS, HABIT_LEVEL_RATES as LEVEL_RATES,
@@ -18,10 +19,10 @@ import {
 export type Cadence = 'daily' | 'weekly' | 'monthly' | 'yearly';
 export const CADENCE_ORDER: Cadence[] = ['daily', 'weekly', 'monthly', 'yearly'];
 export const CADENCE_META: Record<Cadence, { label: string; color: string; icon: string; period: string }> = {
-  daily:   { label: 'Daily',   color: '#22C55E', icon: '✓',  period: 'today' },
+  daily:   { label: 'Daily',   color: '#2FD27E', icon: '✓',  period: 'today' },
   weekly:  { label: 'Weekly',  color: '#2E8BFF', icon: '📅', period: 'this week' },
-  monthly: { label: 'Monthly', color: '#A855F7', icon: '🗓️', period: 'this month' },
-  yearly:  { label: 'Yearly',  color: '#FF6B35', icon: '🔥', period: 'this year' },
+  monthly: { label: 'Monthly', color: '#8B5CF6', icon: '🗓️', period: 'this month' },
+  yearly:  { label: 'Yearly',  color: '#FF8A00', icon: '🔥', period: 'this year' },
 };
 const MONTH_INITIALS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
 
@@ -262,17 +263,17 @@ const FEATURED: { id: string; name: string; tagline: string; icon: string; accen
   {
     id: 'walk-10k', name: '10K Steps', cadence: 'daily',
     tagline: 'Build the daily movement habit, one step at a time.',
-    icon: '🚶‍♂️', accent: '#22C55E', bgClass: 'featured-bg-walk',
+    icon: '🚶‍♂️', accent: '#2FD27E', bgClass: 'featured-bg-walk',
   },
   {
     id: 'reading', name: 'Reading', cadence: 'daily',
     tagline: 'Sharpen your mind with just 20 pages a day.',
-    icon: '📖', accent: '#22C55E', bgClass: 'featured-bg-read',
+    icon: '📖', accent: '#2FD27E', bgClass: 'featured-bg-read',
   },
   {
     id: 'quit-smoking', name: 'Quit Smoking', cadence: 'daily',
     tagline: 'Every cigarette-free day is a victory. Start yours now.',
-    icon: '🚭', accent: '#22C55E', bgClass: 'featured-bg-smoke',
+    icon: '🚭', accent: '#2FD27E', bgClass: 'featured-bg-smoke',
   },
   // 1 weekly
   {
@@ -284,13 +285,13 @@ const FEATURED: { id: string; name: string; tagline: string; icon: string; accen
   {
     id: 'budget-review', name: 'Budget Review', cadence: 'monthly',
     tagline: 'Check your spending once a month and stay on track.',
-    icon: '💰', accent: '#A855F7', bgClass: 'featured-bg-read',
+    icon: '💰', accent: '#8B5CF6', bgClass: 'featured-bg-read',
   },
   // 1 yearly
   {
     id: 'health-checkup', name: 'Health Check-up', cadence: 'yearly',
     tagline: 'Book your annual check-up — future you will thank you.',
-    icon: '🩺', accent: '#FF6B35', bgClass: 'featured-bg-yoga',
+    icon: '🩺', accent: '#FF8A00', bgClass: 'featured-bg-yoga',
   },
 ];
 
@@ -942,7 +943,7 @@ const Habits: React.FC = () => {
 
   if (!loaded) {
     return (
-      <div className="app" style={{ '--theme': '#22C55E', '--theme-dim': '#22C55E66', '--theme-glow': '#22C55E14' } as React.CSSProperties}>
+      <div className="app" style={pageTheme(HEALTH)}>
         <div className="sd-loader-wrap"><div className="sd-loader"><img className="sd-loader-logo" src="/superdub-logo.png" alt="" /></div></div>
       </div>
     );
@@ -994,7 +995,7 @@ const Habits: React.FC = () => {
   const mandatoryStats = computeHabitStats(MANDATORY_HABIT, ht, today, startDates[MANDATORY_HABIT], xpCarry[MANDATORY_HABIT] ?? 0);
 
   return (
-    <div className="app flush" style={{ '--theme': '#22C55E', '--theme-dim': '#22C55E66', '--theme-glow': '#22C55E0D' } as React.CSSProperties}>
+    <div className="app flush" style={pageTheme(HEALTH, '0D')}>
       {/* Remove confirmation dialog */}
       {pendingRemove && (
         <div className="confirm-overlay" onClick={() => setPendingRemove(null)}>

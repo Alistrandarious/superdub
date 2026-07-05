@@ -17,6 +17,7 @@ import './App.css';
 import { api } from './api';
 import { BUILD_TAG } from './version';
 import { kcalPerStep as kcalPerStepFor, stepsToKm } from './energy';
+import { pageTheme, GROWTH, TEAL } from './theme';
 import StreakFlame from './StreakFlame';
 import DubProgressSummary from './DubProgressSummary';
 import CogMenu from './CogMenu';
@@ -258,8 +259,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
 
-  // Progress page is fixed "growth blue" (month colours still drive the month picker)
-  const themeColor = '#3B9EFF';
+  // Progress page is fixed Growth blue (guide semantic; month colours still drive the month picker)
+  const themeColor = GROWTH;
 
   // Chart state
   const [accountCreatedAt, setAccountCreatedAt] = useState<string>('');
@@ -1158,7 +1159,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
   if (!loaded) {
     return (
-      <div className="app" style={{ '--theme': '#3B9EFF', '--theme-dim': '#3B9EFF66', '--theme-glow': '#3B9EFF14' } as React.CSSProperties}>
+      <div className="app" style={pageTheme(GROWTH)}>
         <div className="sd-loader-wrap"><div className="sd-loader"><img className="sd-loader-logo" src="/superdub-logo.png" alt="" /></div></div>
       </div>
     );
@@ -1799,7 +1800,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       {moodHasData && (
         <section className="chart-section">
           <div className="chart-title-row" style={{ padding: '4px 16px 0' }}>
-            <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#FFB928' }} />Mood</h3>
+            <h3 className="chart-title"><span className="chart-title-dot" style={{ background: TEAL }} />Mood</h3>
           </div>
           {renderChartPager()}
           <DraggableChart disabled={chartRange !== 'week'} onPage={pageBy}>
@@ -1807,8 +1808,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             <ComposedChart data={moodChartData} margin={{ left: 0, right: 10, top: 10, bottom: 8 }}>
               <defs>
                 <linearGradient id="moodFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#FFB92855" />
-                  <stop offset="100%" stopColor="#FFB92805" />
+                  <stop offset="0%" stopColor={TEAL + '55'} />
+                  <stop offset="100%" stopColor={TEAL + '05'} />
                 </linearGradient>
               </defs>
               <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
@@ -1821,7 +1822,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 formatter={(v: any) => [`${v} / 5`, 'Mood']}
               />
               <Area type="monotone" dataKey="mood" stroke="none" fill="url(#moodFill)" connectNulls isAnimationActive={false} legendType="none" />
-              <Line type="monotone" dataKey="mood" name="Mood" stroke="#FFB928" strokeWidth={2.5} dot={{ r: 3, fill: '#0E0E14', stroke: '#FFB928', strokeWidth: 2 }} connectNulls isAnimationActive={false} />
+              <Line type="monotone" dataKey="mood" name="Mood" stroke={TEAL} strokeWidth={2.5} dot={{ r: 3, fill: '#0E0E14', stroke: TEAL, strokeWidth: 2 }} connectNulls isAnimationActive={false} />
             </ComposedChart>
           </ResponsiveContainer>
           </DraggableChart>

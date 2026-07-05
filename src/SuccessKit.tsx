@@ -4,6 +4,7 @@ import './App.css';
 import SuperdubHeader from './SuperdubHeader';
 import { ARTICLES, type Article, type Block } from './articles';
 import { UPDATE_LOG, type UpdateEntry } from './updates';
+import { pageTheme, GOLD } from './theme';
 
 function fmtUpdateDate(iso: string): string {
   return new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
@@ -82,10 +83,10 @@ const SECTIONS: Section[] = [
 
 // Tag accent colours for book cards
 const TAG_COLORS: Record<string, string> = {
-  Habits: '#2FD27E', Behaviour: '#5AD1FF', Science: '#A855F7', Growth: '#FFB928',
+  Habits: '#2FD27E', Behaviour: '#46C2FF', Science: '#8B5CF6', Growth: '#FFB928',
   Focus: '#2E8BFF', Resistance: '#FF5E8A', Stoicism: '#FFD23F',
   Sleep: '#7CF8C0', Longevity: '#52EFA0', Metabolism: '#2FE0C4',
-  Articles: '#FFB928', 'Mental models': '#A855F7', Reflection: '#FF9A6C',
+  Articles: '#FFB928', 'Mental models': '#8B5CF6', Reflection: '#FF9A6C',
 };
 
 function ArticleReader({ article, onClose }: { article: Article; onClose: () => void }) {
@@ -145,7 +146,7 @@ const SuccessKit: React.FC = () => {
   const [latestUpdate, ...prevUpdates] = UPDATE_LOG;
 
   return (
-    <div className="app flush" style={{ '--theme': '#FFB928', '--theme-dim': '#FFB92866', '--theme-glow': '#FFB92814' } as React.CSSProperties}>
+    <div className="app flush" style={pageTheme(GOLD)}>
       <SuperdubHeader />
       {reading && <ArticleReader article={reading} onClose={() => setReading(null)} />}
       {readingUpdate && <UpdateReader update={readingUpdate} onClose={() => setReadingUpdate(null)} />}

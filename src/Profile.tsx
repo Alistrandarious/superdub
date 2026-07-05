@@ -5,6 +5,7 @@ import { api, clearToken } from './api';
 import { computeActivity, JOB_OPTS } from './Auth';
 import SuperdubHeader from './SuperdubHeader';
 import { OCCUPATIONS, ETHNICITIES, GENDER_IDENTITIES, COUNTRIES, RELATIONSHIP_STATUSES, RELIGIONS } from './demographics';
+import { pageTheme, GROWTH } from './theme';
 
 interface ProfileData {
   dob: string;
@@ -436,7 +437,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
 
   if (!loaded) {
     return (
-      <div className="app flush" style={{ '--theme': '#2E8BFF', '--theme-dim': '#2E8BFF66', '--theme-glow': '#2E8BFF33' } as React.CSSProperties}>
+      <div className="app flush" style={pageTheme(GROWTH, '33')}>
         <div className="sd-loader-wrap"><div className="sd-loader"><img className="sd-loader-logo" src="/superdub-logo.png" alt="" /></div></div>
       </div>
     );
@@ -447,7 +448,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
   const rateLabel = isGain ? 'Gain per week' : 'Lose per week';
 
   return (
-    <div className="app flush" style={{ '--theme': '#2E8BFF', '--theme-dim': '#2E8BFF66', '--theme-glow': '#2E8BFF33' } as React.CSSProperties}>
+    <div className="app flush" style={pageTheme(GROWTH, '33')}>
       <SuperdubHeader />
       <div className="profile-content page-content">
 

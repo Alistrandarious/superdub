@@ -19,7 +19,7 @@ const SMART: { key: keyof typeof BLANK; letter: string; label: string; hint: str
   { key: 'specific',   letter: 'S', label: 'Specific',    hint: 'What exactly will you achieve?',        color: '#2FD27E' },
   { key: 'measurable', letter: 'M', label: 'Measurable',  hint: 'How will you measure progress?',         color: '#2E8BFF' },
   { key: 'achievable', letter: 'A', label: 'Achievable',  hint: 'Is it realistic? What makes it doable?', color: '#FFB928' },
-  { key: 'relevant',   letter: 'R', label: 'Relevant',    hint: 'Why does this matter to you?',           color: '#A855F7' },
+  { key: 'relevant',   letter: 'R', label: 'Relevant',    hint: 'Why does this matter to you?',           color: '#8B5CF6' },
 ];
 
 function daysLeft(date: string): number | null {

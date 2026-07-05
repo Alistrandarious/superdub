@@ -4,6 +4,7 @@ import './App.css';
 import { api } from './api';
 import { BUILD_TAG } from './version';
 import CogMenu from './CogMenu';
+import { pageTheme, HEALTH } from './theme';
 
 const ArchivedHabits: React.FC = () => {
   const navigate = useNavigate();
@@ -50,7 +51,7 @@ const ArchivedHabits: React.FC = () => {
   };
 
   return (
-    <div className="app flush" style={{ '--theme': '#22C55E', '--theme-dim': '#22C55E66', '--theme-glow': '#22C55E14' } as React.CSSProperties}>
+    <div className="app flush" style={pageTheme(HEALTH)}>
       <div className="hb-topbar">
         <button className="hb-cog" onClick={() => navigate('/')} aria-label="Back to habits">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
