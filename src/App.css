@@ -1812,6 +1812,59 @@ h1, h2, h3, h4, .sora {
 /* =====================================================================
    CHART SECTION
    ===================================================================== */
+/* ── Progress chart carousel — swipe between charts ─────────── */
+.chart-carousel { margin: 6px 0 18px; }
+.cc-tabs {
+  display: flex; gap: 6px; overflow-x: auto; padding: 0 16px 10px;
+  scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.cc-tabs::-webkit-scrollbar { display: none; }
+.cc-tab {
+  flex: 0 0 auto; padding: 6px 13px; cursor: pointer;
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  border-radius: var(--r-pill);
+  font-family: var(--font-data); font-size: 0.64rem; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.cc-tab.active {
+  color: var(--theme, #2E8BFF); border-color: var(--theme-dim, #2E8BFF66);
+  background: var(--theme-glow, rgba(46,139,255,0.14));
+}
+.cc-track {
+  display: flex; overflow-x: auto; overflow-y: hidden;
+  scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.cc-track::-webkit-scrollbar { display: none; }
+.cc-slide {
+  flex: 0 0 100%; width: 100%; scroll-snap-align: center;
+  display: flex; flex-direction: column;
+}
+/* Chart fills the slide edge-to-edge; the slide owns the horizontal gutter */
+.cc-slide > .chart-section { margin: 0 16px; width: auto; }
+.cc-note {
+  display: flex; align-items: center; gap: 10px;
+  margin: 10px 16px 0; padding: 11px 13px;
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  border-radius: var(--r-md);
+}
+.cc-note-pet { flex-shrink: 0; }
+.cc-note-text {
+  margin: 0; font-family: var(--font-ui); font-size: 0.78rem; line-height: 1.5;
+  color: rgba(255,255,255,0.68);
+}
+.cc-dots {
+  display: flex; justify-content: center; gap: 7px; margin-top: 14px;
+}
+.cc-dot {
+  width: 7px; height: 7px; border-radius: 50%; cursor: pointer; padding: 0;
+  background: rgba(255,255,255,0.2); border: none;
+  transition: background 0.15s, transform 0.15s;
+}
+.cc-dot.active { background: var(--theme, #2E8BFF); transform: scale(1.35); }
+
 .chart-section {
   margin: 0 18px 22px;
   padding: 6px 0 14px;

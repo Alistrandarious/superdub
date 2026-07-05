@@ -22,6 +22,7 @@ import StreakFlame from './StreakFlame';
 import DubProgressSummary from './DubProgressSummary';
 import CogMenu from './CogMenu';
 import PatternsCard, { PatternDay } from './PatternsCard';
+import ChartCarousel from './ChartCarousel';
 import GoalSheet from './GoalSheet';
 
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -1233,6 +1234,34 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     );
   }
 
+  // ── Chart carousel: tab names + Dub's per-chart write-up. The `show` flags
+  // MUST mirror each slide's render condition so tabs/notes stay index-aligned
+  // with the actual rendered charts. ─────────────────────────────────────────
+  const cn = (v: number) => v.toLocaleString();
+  const recentDone = (() => { const r = chartData.slice(-7); const n = r.length || 1; return Math.round(r.reduce((s, d) => s + (d.completed || 0), 0) / n * 10) / 10; })();
+  const sleepVals = sleepChartData.map(d => d.sleep).filter((v): v is number => v != null);
+  const sleepAvg = sleepVals.length ? Math.round(sleepVals.reduce((a, b) => a + b, 0) / sleepVals.length * 10) / 10 : null;
+  const chartMeta = [
+    { name: 'Weight', show: true, note: weeklyWeightTrend != null
+      ? `${Math.abs(weeklyWeightTrend)} kg/week ${weeklyWeightTrend < 0 ? 'down' : weeklyWeightTrend > 0 ? 'up' : 'flat'} lately — trust the smoothed line, not the daily jitter.`
+      : `Log a few weigh-ins and I'll read your trend right here.` },
+    { name: 'Habits', show: habits.length > 0, note: `About ${recentDone} habit${recentDone === 1 ? '' : 's'} ticked a day this week — every one is XP toward your next level.` },
+    { name: 'Steps', show: true, note: walkAvg > 0
+      ? `Averaging ${cn(walkAvg)} steps — ${walkAvg >= effectiveStepTarget ? 'at or above' : `${cn(effectiveStepTarget - walkAvg)} short of`} your ${cn(effectiveStepTarget)} goal.`
+      : `Log your steps and I'll track them against your ${cn(effectiveStepTarget)} goal.` },
+    { name: 'Intake', show: true, note: calorieHasData
+      ? `Estimated intake's averaging ${cn(avgEstIntake)} kcal vs a ${cn(targetCalories)} target — ${avgEstIntake <= targetCalories ? 'nicely under' : 'running over'}.`
+      : `As your weight and steps build up, I'll estimate your intake here.` },
+    { name: 'Mood', show: moodHasData, note: moodStats.avg7 != null
+      ? `Mood's averaging ${moodStats.avg7}/5 this week.`
+      : `Rate your mood in the daily check-in and it charts here.` },
+    { name: 'Sleep', show: sleepHasData, note: sleepAvg != null
+      ? `You're averaging ${sleepAvg}h a night — ${sleepAvg >= 7.5 ? 'right where you want to be' : 'a touch under the 8h mark, worth protecting'}.`
+      : `Add your sleep in the daily ritual to see it here.` },
+  ].filter(m => m.show);
+  const chartTabs = chartMeta.map(m => m.name);
+  const chartNotes = chartMeta.map(m => m.note);
+
   return (
     <div className="app flush" style={{ '--theme': themeColor, '--theme-dim': themeColor + '66', '--theme-glow': themeColor + '14' } as React.CSSProperties}>
       <div className="hb-topbar">
@@ -1508,6 +1537,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
       {/* Adaptive Weight Plan engine card moved to the Plan page — Progress is visuals/tracking only */}
 
+      {/* ── Charts: swipe between them instead of scrolling ── */}
+      <ChartCarousel tabs={chartTabs} notes={chartNotes}>
       <section className="chart-section chart-section--weight">
         <div className="chart-title-row">
           <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#FFFFFF' }} />Weight Trend</h3>
@@ -1539,7 +1570,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </div>
         <div className="chart-section-inner">
         <div className="chart-container">
-        <DraggableChart disabled={chartRange !== 'week'} onPage={pageBy}>
+        <DraggableChart disabled onPage={pageBy}>
         <ResponsiveContainer width="100%" height={340}>
           <ComposedChart data={chartData} margin={{ left: 0, right: 10, top: 5, bottom: 8 }}>
             <defs>
@@ -1740,7 +1771,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           {renderChartPager()}
           <div className="chart-section-inner">
             <div className="chart-container">
-              <DraggableChart disabled={chartRange !== 'week'} onPage={pageBy}>
+              <DraggableChart disabled onPage={pageBy}>
               <ResponsiveContainer width="100%" height={200}>
                 <ComposedChart data={chartData} margin={{ left: 0, right: 10, top: 10, bottom: 8 }}>
                   <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
@@ -1790,7 +1821,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               )}
             </div>
             {walkHasData ? (
-              <DraggableChart disabled={chartRange !== 'week'} onPage={pageBy}>
+              <DraggableChart disabled onPage={pageBy}>
               <ResponsiveContainer width="100%" height={180}>
                 <ComposedChart data={stepChartData} margin={{ left: 0, right: 10, top: 8, bottom: 4 }}>
                   <defs>
@@ -1857,7 +1888,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               )}
             </div>
             {calorieHasData ? (
-              <DraggableChart disabled={chartRange !== 'week'} onPage={pageBy}>
+              <DraggableChart disabled onPage={pageBy}>
               <ResponsiveContainer width="100%" height={220}>
                 <ComposedChart data={calorieChartData} margin={{ left: 0, right: 10, top: 10, bottom: 8 }}>
                   <defs>
@@ -1900,7 +1931,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             <h3 className="chart-title"><span className="chart-title-dot" style={{ background: TEAL }} />Mood</h3>
           </div>
           {renderChartPager()}
-          <DraggableChart disabled={chartRange !== 'week'} onPage={pageBy}>
+          <DraggableChart disabled onPage={pageBy}>
           <ResponsiveContainer width="100%" height={180}>
             <ComposedChart data={moodChartData} margin={{ left: 0, right: 10, top: 10, bottom: 8 }}>
               <defs>
@@ -1933,7 +1964,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#8B5CF6' }} />Sleep</h3>
           </div>
           {renderChartPager()}
-          <DraggableChart disabled={chartRange !== 'week'} onPage={pageBy}>
+          <DraggableChart disabled onPage={pageBy}>
           <ResponsiveContainer width="100%" height={180}>
             <ComposedChart data={sleepChartData} margin={{ left: 0, right: 10, top: 10, bottom: 8 }}>
               <defs>
@@ -1959,6 +1990,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           </DraggableChart>
         </section>
       )}
+      </ChartCarousel>
 
       {/* ── Day-of-week patterns + correlations across steps/habits/mood ── */}
       <PatternsCard days={patternDays} />

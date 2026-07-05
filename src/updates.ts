@@ -10,6 +10,18 @@ export interface UpdateEntry {
 
 export const UPDATE_LOG: UpdateEntry[] = [
   {
+    date: '2026-07-06',
+    emoji: '🎠',
+    title: 'Daily Log, swipeable charts & a fuller ring',
+    summary: 'A vitals strip that reinforces your daily logging, a swipe-through chart carousel with Dub\'s read on each, and a liquid ring that fills the whole disc.',
+    points: [
+      'New "Daily Log" strip at the top of Habits: weigh-in, steps and check-in chips that tick green as you log, plus a logging streak to keep the data flowing.',
+      'Progress charts are now a swipeable carousel — one full-width chart at a time with Dub\'s interpretation underneath, instead of an endless scroll.',
+      'Liquid ring themes now fill the entire disc (no separate ring) — the water level alone shows your progress.',
+      'Fixed the daily check-in running off the top of the screen — it scrolls neatly within the sheet now.',
+    ],
+  },
+  {
     date: '2026-07-05',
     emoji: '🌙',
     title: 'Your daily ritual, sleep, and a sharper look',
