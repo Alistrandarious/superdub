@@ -1259,8 +1259,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       ? `You're averaging ${sleepAvg}h a night — ${sleepAvg >= 7.5 ? 'right where you want to be' : 'a touch under the 8h mark, worth protecting'}.`
       : `Add your sleep in the daily ritual to see it here.` },
   ].filter(m => m.show);
-  const chartTabs = chartMeta.map(m => m.name);
-  const chartNotes = chartMeta.map(m => m.note);
+  // Story panels: an intro ("Today" = verdict + Dub) first, the charts in the
+  // middle, and a scrollable "Stats" panel last. Tabs/notes must stay aligned
+  // with the rendered children.
+  const storyTabs = ['Today', ...chartMeta.map(m => m.name), 'Stats'];
+  const storyNotes: (string | null)[] = [null, ...chartMeta.map(m => m.note), null];
 
   return (
     <div className="app flush" style={{ '--theme': themeColor, '--theme-dim': themeColor + '66', '--theme-glow': themeColor + '14' } as React.CSSProperties}>
@@ -1471,7 +1474,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </div>
       )}
 
-      <div className="dashboard-scroll">
+      <div className="dashboard-story">
+      <ChartCarousel tabs={storyTabs} notes={storyNotes}>
+
+      {/* ── Panel 0 · Today — verdict + Dub + quick log ── */}
+      <div className="story-panel story-panel--intro">
 
       {/* ── The verdict — yesterday's estimated intake vs target, at a glance ── */}
       {verdict && (
@@ -1535,10 +1542,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </div>
       )}
 
-      {/* Adaptive Weight Plan engine card moved to the Plan page — Progress is visuals/tracking only */}
+      </div>{/* /story-panel--intro */}
 
-      {/* ── Charts: swipe between them instead of scrolling ── */}
-      <ChartCarousel tabs={chartTabs} notes={chartNotes}>
+      {/* ── Panel 1 · Weight ── */}
       <section className="chart-section chart-section--weight">
         <div className="chart-title-row">
           <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#FFFFFF' }} />Weight Trend</h3>
@@ -1990,7 +1996,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           </DraggableChart>
         </section>
       )}
-      </ChartCarousel>
+
+      {/* ── Last panel · Stats — scrolls internally ── */}
+      <div className="story-panel story-panel--stats">
 
       {/* ── Day-of-week patterns + correlations across steps/habits/mood ── */}
       <PatternsCard days={patternDays} />
@@ -2218,6 +2226,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       </div>
       )}
 
+      </div>{/* /story-panel--stats */}
+      </ChartCarousel>
+
       {/* Honesty declaration — shown once per device before backfilling past tracker days */}
       {honestyPending && (
         <div className="honesty-overlay" onClick={() => setHonestyPending(null)}>
@@ -2233,8 +2244,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           </div>
         </div>
       )}
-      <div style={{ height: 100 }} />
-      </div>{/* /dashboard-scroll */}
+      </div>{/* /dashboard-story */}
     </div>
   );
 };
