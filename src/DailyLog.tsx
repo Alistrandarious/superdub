@@ -89,9 +89,21 @@ const DailyLog: React.FC = () => {
   }, [load]);
 
   const fire = (evt: string) => window.dispatchEvent(new CustomEvent(evt));
+  const allDone = weight != null && steps != null && checkedIn;
+
+  const chip = (done: boolean, ico: React.ReactNode, label: string, val: string | null, evt: string) => (
+    <button className={`dl-chip${done ? ' done' : ''}${allDone ? ' all-done' : ''}`} onClick={() => fire(evt)}>
+      <span className="dl-chip-ico">{ico}</span>
+      <span className="dl-chip-body">
+        <span className="dl-chip-label">{label}</span>
+        {done && val && <span className="dl-chip-val">{val}</span>}
+      </span>
+      <span className={`dl-chip-tick${done ? ' on' : ''}`}>{done && <TickIc />}</span>
+    </button>
+  );
 
   return (
-    <div className="daily-log">
+    <div className={`daily-log${allDone ? ' all-done' : ''}`}>
       <div className="daily-log-head">
         <span className="daily-log-title">TODAY'S LOG</span>
         {streak > 0 && (
@@ -99,32 +111,9 @@ const DailyLog: React.FC = () => {
         )}
       </div>
       <div className="daily-log-chips">
-        <button className={`dl-chip${weight != null ? ' done' : ''}`} onClick={() => fire('superdub:show-checkin')}>
-          <span className="dl-chip-ico"><ScaleIc /></span>
-          <span className="dl-chip-body">
-            <span className="dl-chip-label">Weigh-in</span>
-            <span className="dl-chip-val">{weight != null ? `${weight} kg` : 'Tap to log'}</span>
-          </span>
-          {weight != null && <span className="dl-chip-tick"><TickIc /></span>}
-        </button>
-
-        <button className={`dl-chip${steps != null ? ' done' : ''}`} onClick={() => fire('superdub:show-step-entry')}>
-          <span className="dl-chip-ico"><StepIc /></span>
-          <span className="dl-chip-body">
-            <span className="dl-chip-label">Steps</span>
-            <span className="dl-chip-val">{steps != null ? steps.toLocaleString() : 'Tap to log'}</span>
-          </span>
-          {steps != null && <span className="dl-chip-tick"><TickIc /></span>}
-        </button>
-
-        <button className={`dl-chip${checkedIn ? ' done' : ''}`} onClick={() => fire('superdub:show-energy-checkin')}>
-          <span className="dl-chip-ico"><MoodIc /></span>
-          <span className="dl-chip-body">
-            <span className="dl-chip-label">Check-in</span>
-            <span className="dl-chip-val">{checkedIn ? 'Logged' : 'Tap to log'}</span>
-          </span>
-          {checkedIn && <span className="dl-chip-tick"><TickIc /></span>}
-        </button>
+        {chip(weight != null, <ScaleIc />, 'Weigh-in', weight != null ? `${weight} kg` : null, 'superdub:show-checkin')}
+        {chip(steps != null, <StepIc />, 'Steps', steps != null ? steps.toLocaleString() : null, 'superdub:show-step-entry')}
+        {chip(checkedIn, <MoodIc />, 'Check-in', 'Logged', 'superdub:show-energy-checkin')}
       </div>
     </div>
   );

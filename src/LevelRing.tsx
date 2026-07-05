@@ -89,20 +89,25 @@ const LevelRing: React.FC<{
   // Wave at the liquid surface: smooth quadratic curves (no straight-segment
   // facets), extended past the clip on both sides so the CSS slosh animation
   // (translateX ±6px) never drags a hard edge into view.
-  const waveAmp = clampedP > 0.02 && clampedP < 0.98 ? 3.5 : 0;
-  const WAVE_EXT = 14;
+  // Surface = a densely-sampled line (smooth, no facets) that (a) ripples with a
+  // sine wave and (b) TILTS with device roll so the water finds its level like
+  // real liquid as you move the phone.
+  const waveAmp = clampedP > 0.02 && clampedP < 0.98 ? 3.2 : 0;
+  const WAVE_EXT = 16;
   const wx0 = cx - fillR - WAVE_EXT;
   const wx1 = cx + fillR + WAVE_EXT;
-  const waveSegs = 6; // alternating crests/troughs — 3 full periods
-  let waveD = `M${wx0.toFixed(2)},${liquidTopY.toFixed(2)}`;
-  for (let s = 0; s < waveSegs; s++) {
-    const xm = wx0 + ((wx1 - wx0) * (s + 0.5)) / waveSegs;
-    const xe = wx0 + ((wx1 - wx0) * (s + 1)) / waveSegs;
-    const dir = s % 2 === 0 ? 1 : -1;
-    waveD += ` Q${xm.toFixed(2)},${(liquidTopY + dir * waveAmp * 2).toFixed(2)} ${xe.toFixed(2)},${liquidTopY.toFixed(2)}`;
+  const slope = Math.max(-1, Math.min(1, tilt.y)) * fillR * 0.5; // height delta centre→edge
+  const N = 40;
+  let waveD = '';
+  for (let i = 0; i <= N; i++) {
+    const t = i / N;
+    const px = wx0 + (wx1 - wx0) * t;
+    const level = liquidTopY + ((px - cx) / fillR) * slope;
+    const py = level + Math.sin(t * Math.PI * 3) * waveAmp;
+    waveD += `${i === 0 ? 'M' : 'L'}${px.toFixed(2)},${py.toFixed(2)} `;
   }
   const bottomY = cy + fillR + 2;
-  const liquidPath = `${waveD} L${wx1.toFixed(2)},${bottomY.toFixed(2)} L${wx0.toFixed(2)},${bottomY.toFixed(2)} Z`;
+  const liquidPath = `${waveD}L${wx1.toFixed(2)},${bottomY.toFixed(2)} L${wx0.toFixed(2)},${bottomY.toFixed(2)} Z`;
 
   const tiltTransform = `perspective(320px) rotateY(${tilt.y * TILT_MAX_DEG}deg) rotateX(${-tilt.x * TILT_MAX_DEG * 0.85}deg)`;
 
@@ -154,11 +159,10 @@ const LevelRing: React.FC<{
                 <path d={liquidPath} fill={`url(#${gid}liq)`} className="lvl-liquid-fill" shapeRendering="geometricPrecision" />
               </g>
             )}
-            <circle
-              cx={cx} cy={cy} r={fillR} fill="none"
-              stroke={theme.to} strokeOpacity={0.55} strokeWidth={2.5}
-              style={{ filter: `drop-shadow(0 0 5px ${theme.glow})` }}
-            />
+            {/* Rim — two crisp strokes (no drop-shadow filter; filters rasterise
+                blurrily under the ring's 3D tilt and look pixelated). */}
+            <circle cx={cx} cy={cy} r={fillR} fill="none" stroke={theme.glow} strokeWidth={5} />
+            <circle cx={cx} cy={cy} r={fillR} fill="none" stroke={theme.to} strokeOpacity={0.65} strokeWidth={2.5} />
           </>
         ) : (
           <>

@@ -4764,9 +4764,16 @@ h1, h2, h3, h4, .sora {
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .dl-chip-tick {
-  margin-left: auto; display: flex; flex-shrink: 0; color: #1A1206;
-  width: 19px; height: 19px; border-radius: 50%; align-items: center; justify-content: center;
+  margin-left: auto; display: flex; flex-shrink: 0;
+  width: 20px; height: 20px; border-radius: 50%;
+  align-items: center; justify-content: center;
+  border: 1.5px solid var(--glass-border); color: transparent;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+.dl-chip-tick.on {
+  border-color: transparent; color: #06120B;
   background: linear-gradient(135deg, #3CF08E, #2FD27E);
+  box-shadow: 0 0 10px rgba(47,210,126,0.4);
 }
 /* Logged state — green vessel, brighter text */
 .dl-chip.done {
@@ -4775,6 +4782,20 @@ h1, h2, h3, h4, .sora {
 }
 .dl-chip.done .dl-chip-ico { color: #3CF08E; }
 .dl-chip.done .dl-chip-val { color: #EAF2EE; }
+
+/* Everything logged today — the strip ascends to gold */
+.dl-chip.all-done {
+  border-color: rgba(255,185,40,0.45);
+  background: linear-gradient(135deg, rgba(255,185,40,0.12), rgba(255,185,40,0.04));
+}
+.dl-chip.all-done .dl-chip-ico { color: #FFD233; }
+.dl-chip.all-done .dl-chip-label { color: rgba(255,224,138,0.7); }
+.dl-chip.all-done .dl-chip-val { color: #FFE08A; }
+.dl-chip.all-done .dl-chip-tick.on {
+  color: #1A1206; background: linear-gradient(135deg, #FFE08A, #FFB020);
+  box-shadow: 0 0 12px rgba(255,185,40,0.5);
+}
+.daily-log.all-done .daily-log-title { color: rgba(255,224,138,0.6); }
 
 /* Featured banner */
 .hb-featured {
