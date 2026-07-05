@@ -21,7 +21,7 @@ const WORKOUT_MET: Record<string, number> = {
 
 router.post('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
-    const { energy, adherence, mood, workoutDone, workoutIntensity, workoutDurationMin, sleepHours } = req.body as {
+    const { energy, adherence, mood, workoutDone, workoutIntensity, workoutDurationMin, sleepHours, sleepBedtime, sleepWaketime, adherenceLevel } = req.body as {
       energy: number;
       adherence: 'below' | 'about' | 'above';
       mood?: number;
@@ -29,6 +29,9 @@ router.post('/', requireAuth as any, async (req: AuthRequest, res: Response) => 
       workoutIntensity?: 'light' | 'moderate' | 'intense' | 'very_intense';
       workoutDurationMin?: number;
       sleepHours?: number;
+      sleepBedtime?: string;   // 'HH:MM'
+      sleepWaketime?: string;  // 'HH:MM'
+      adherenceLevel?: number; // -2..2, granular version of adherence
     };
 
     if (!energy || energy < 1 || energy > 5) {
@@ -55,19 +58,26 @@ router.post('/', requireAuth as any, async (req: AuthRequest, res: Response) => 
       workoutCalories = Math.round(met * userKg * (workoutDurationMin / 60));
     }
 
+    const lvl = adherenceLevel != null ? Math.max(-2, Math.min(2, Math.round(adherenceLevel))) : null;
     await pool.query(
-      `INSERT INTO daily_checkins (user_id, date, energy, adherence, mood, workout_done, workout_intensity, workout_duration_min, sleep_hours)
-       VALUES ($1, CURRENT_DATE, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO daily_checkins (user_id, date, energy, adherence, mood, workout_done, workout_intensity, workout_duration_min, sleep_hours, sleep_bedtime, sleep_waketime, adherence_level)
+       VALUES ($1, CURRENT_DATE, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        ON CONFLICT (user_id, date) DO UPDATE
          SET energy = $2, adherence = $3, mood = $4,
              workout_done = $5, workout_intensity = $6, workout_duration_min = $7,
-             sleep_hours = COALESCE($8, daily_checkins.sleep_hours)`,
+             sleep_hours = COALESCE($8, daily_checkins.sleep_hours),
+             sleep_bedtime = COALESCE($9, daily_checkins.sleep_bedtime),
+             sleep_waketime = COALESCE($10, daily_checkins.sleep_waketime),
+             adherence_level = COALESCE($11, daily_checkins.adherence_level)`,
       [req.userId, Math.round(energy), adherence,
        mood != null ? Math.round(mood) : null,
        workoutDone ?? false,
        workoutDone && workoutIntensity ? workoutIntensity : null,
        workoutDone && workoutDurationMin ? workoutDurationMin : null,
-       sleepHours != null ? sleepHours : null]
+       sleepHours != null ? sleepHours : null,
+       sleepBedtime || null,
+       sleepWaketime || null,
+       lvl]
     );
 
     res.json({ ok: true, xpAwarded: 5, workoutCalories });

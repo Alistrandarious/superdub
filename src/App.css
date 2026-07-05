@@ -12080,10 +12080,39 @@ details[open] .plan-explainer-summary::before { content: '▾  '; }
 .ritual-weight-unit {
   font-family: var(--font-data); font-size: 0.72rem; color: rgba(255,255,255,0.4);
 }
-.ritual-sleep-slider {
-  width: 100%; margin-top: 6px; accent-color: #8B5CF6;
+/* Sleep — bedtime → wake time */
+.sleep-times { display: flex; align-items: flex-end; gap: 12px; }
+.sleep-time-field { display: flex; flex-direction: column; gap: 5px; flex: 1; }
+.sleep-time-label {
+  font-family: var(--font-data); font-size: 0.56rem; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.32);
 }
-.ritual-sleep-slider:not(.set) { accent-color: #3A3A46; }
+.sleep-time-input {
+  padding: 9px 11px;
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  border-radius: var(--r-sm); color: #EAF2EE;
+  font-family: var(--font-data); font-size: 0.95rem; font-weight: 700;
+  color-scheme: dark;
+}
+.sleep-time-input:focus { outline: none; border-color: rgba(139,92,246,0.5); }
+.sleep-time-arrow { color: rgba(255,255,255,0.3); padding-bottom: 10px; }
+
+/* Eating — 5-block scale */
+.eating-blocks { display: flex; gap: 7px; }
+.eating-block {
+  flex: 1; padding: 12px 0; cursor: pointer;
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  border-radius: var(--r-sm); color: rgba(255,255,255,0.5);
+  font-family: var(--font-data); font-size: 0.95rem; font-weight: 700;
+  transition: border-color 0.15s, background 0.15s, color 0.15s, transform 0.1s;
+}
+.eating-block.mid { color: rgba(255,255,255,0.7); }
+.eating-block:active { transform: scale(0.94); }
+.eating-block.selected {
+  border-color: var(--theme, #2E8BFF); color: #fff;
+  background: var(--theme-glow, rgba(46,139,255,0.14));
+  box-shadow: 0 0 12px var(--theme-dim, rgba(46,139,255,0.4));
+}
 .adherence-btns {
   display: flex;
   gap: 8px;

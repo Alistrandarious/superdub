@@ -14,6 +14,30 @@ function todayDDMM() {
   return `${String(n.getDate()).padStart(2, '0')}/${String(n.getMonth() + 1).padStart(2, '0')}`;
 }
 
+// Hours between last night's bedtime and this morning's wake time (handles
+// crossing midnight). Returns null if either is missing/invalid.
+function sleepHoursFrom(bed: string, wake: string): number | null {
+  if (!bed || !wake) return null;
+  const [bh, bm] = bed.split(':').map(Number);
+  const [wh, wm] = wake.split(':').map(Number);
+  if ([bh, bm, wh, wm].some(n => isNaN(n))) return null;
+  let mins = (wh * 60 + wm) - (bh * 60 + bm);
+  if (mins <= 0) mins += 24 * 60;
+  return Math.round((mins / 60) * 10) / 10;
+}
+
+// 5-point eating scale → the 3-value enum the plan engine understands
+function adherenceEnum(level: number): 'below' | 'about' | 'above' {
+  return level <= -1 ? 'below' : level >= 1 ? 'above' : 'about';
+}
+const EATING_BLOCKS: { level: number; sym: string; label: string }[] = [
+  { level: -2, sym: '−−', label: 'Well under' },
+  { level: -1, sym: '−', label: 'Under' },
+  { level: 0, sym: '✓', label: 'About right' },
+  { level: 1, sym: '+', label: 'Over' },
+  { level: 2, sym: '++', label: 'Well over' },
+];
+
 function snoozeUntilMs() {
   return parseInt(localStorage.getItem(ENERGY_SNOOZE_KEY) || '0', 10);
 }
@@ -44,12 +68,15 @@ const EnergyCheckIn: React.FC = () => {
   const [show, setShow] = useState(false);
   const [energy, setEnergy] = useState<number | null>(null);
   const [mood, setMood] = useState<number | null>(null);
-  const [adherence, setAdherence] = useState<'below' | 'about' | 'above' | null>(null);
+  // Eating adherence as a 5-point scale (-2..+2); the 3-value enum for the
+  // plan engine is derived from it.
+  const [adherenceLevel, setAdherenceLevel] = useState<number | null>(null);
   const [workoutDone, setWorkoutDone] = useState<boolean | null>(null);
   const [workoutIntensity, setWorkoutIntensity] = useState<WorkoutIntensity | null>(null);
   const [workoutDuration, setWorkoutDuration] = useState<number | null>(null);
   const [workoutCalories, setWorkoutCalories] = useState<number | null>(null);
-  const [sleep, setSleep] = useState<number | null>(null); // hours; null until touched
+  const [bedtime, setBedtime] = useState('');   // 'HH:MM' last night
+  const [waketime, setWaketime] = useState(''); // 'HH:MM' this morning
   const [weight, setWeight] = useState(''); // optional morning weigh-in
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
@@ -106,12 +133,13 @@ const EnergyCheckIn: React.FC = () => {
       setError(null);
       setEnergy(null);
       setMood(null);
-      setAdherence(null);
+      setAdherenceLevel(null);
       setWorkoutDone(null);
       setWorkoutIntensity(null);
       setWorkoutDuration(null);
       setWorkoutCalories(null);
-      setSleep(null);
+      setBedtime('');
+      setWaketime('');
       setWeight('');
       setShow(true);
     };
@@ -119,21 +147,27 @@ const EnergyCheckIn: React.FC = () => {
     return () => window.removeEventListener('superdub:show-energy-checkin', handler);
   }, []);
 
-  const canSave = !!(energy && mood && adherence && workoutDone !== null &&
+  const sleepHours = sleepHoursFrom(bedtime, waketime);
+  const canSave = !!(energy && mood && adherenceLevel !== null && workoutDone !== null &&
     (workoutDone === false || (workoutIntensity && workoutDuration)));
 
   const save = async () => {
-    if (!canSave || !energy || !mood || !adherence) return;
+    if (!canSave || !energy || !mood || adherenceLevel === null) return;
     setSaving(true);
     setError(null);
     try {
-      const result: any = await api.submitCheckIn(
-        energy, adherence, mood,
-        workoutDone ?? false,
-        workoutDone ? workoutIntensity ?? undefined : undefined,
-        workoutDone ? workoutDuration ?? undefined : undefined,
-        sleep ?? undefined,
-      );
+      const result: any = await api.submitCheckIn({
+        energy,
+        adherence: adherenceEnum(adherenceLevel),
+        adherenceLevel,
+        mood,
+        workoutDone: workoutDone ?? false,
+        workoutIntensity: workoutDone ? workoutIntensity ?? undefined : undefined,
+        workoutDurationMin: workoutDone ? workoutDuration ?? undefined : undefined,
+        sleepHours: sleepHours ?? undefined,
+        sleepBedtime: bedtime || undefined,
+        sleepWaketime: waketime || undefined,
+      });
       // Optional morning weigh-in — write today's tracker weight alongside
       const w = parseFloat(weight);
       if (w > 0) {
@@ -223,41 +257,50 @@ const EnergyCheckIn: React.FC = () => {
           </div>
         </div>
 
-        {/* Sleep — hours last night, slider */}
+        {/* Sleep — two points: when you went to bed and when you woke */}
         <div className="energy-section">
           <p className="energy-label-row">
             Sleep last night
-            <span className="energy-selected-label"> — {sleep != null ? `${sleep % 1 === 0 ? sleep : sleep.toFixed(1)} h` : 'not set'}</span>
+            {sleepHours != null && (
+              <span className="energy-selected-label"> — {sleepHours % 1 === 0 ? sleepHours : sleepHours.toFixed(1)} h</span>
+            )}
           </p>
-          <input
-            type="range" min={0} max={12} step={0.5}
-            value={sleep ?? 7}
-            onChange={e => setSleep(parseFloat(e.target.value))}
-            className={`ritual-sleep-slider${sleep != null ? ' set' : ''}`}
-            aria-label="Hours slept"
-          />
-          <div className="energy-pip-labels">
-            <span>0h</span>
-            <span>12h</span>
+          <div className="sleep-times">
+            <label className="sleep-time-field">
+              <span className="sleep-time-label">Bed</span>
+              <input type="time" className="sleep-time-input" value={bedtime} onChange={e => setBedtime(e.target.value)} />
+            </label>
+            <span className="sleep-time-arrow">→</span>
+            <label className="sleep-time-field">
+              <span className="sleep-time-label">Woke</span>
+              <input type="time" className="sleep-time-input" value={waketime} onChange={e => setWaketime(e.target.value)} />
+            </label>
           </div>
         </div>
 
-        {/* Adherence — eating relative to target */}
+        {/* Eating — 5-block scale from well-under to well-over */}
         <div className="adherence-section">
-          <p className="energy-label-row">Eating vs. your target today?</p>
-          <div className="adherence-btns">
-            {(['below', 'about', 'above'] as const).map(a => {
-              const labels = { below: 'Below target', about: 'About right', above: 'Above target' };
-              return (
-                <button
-                  key={a}
-                  className={`adherence-btn${adherence === a ? ' selected' : ''}`}
-                  onClick={() => setAdherence(a)}
-                >
-                  {labels[a]}
-                </button>
-              );
-            })}
+          <p className="energy-label-row">
+            Eating vs. your target today?
+            {adherenceLevel !== null && (
+              <span className="energy-selected-label"> — {EATING_BLOCKS.find(b => b.level === adherenceLevel)?.label}</span>
+            )}
+          </p>
+          <div className="eating-blocks">
+            {EATING_BLOCKS.map(b => (
+              <button
+                key={b.level}
+                className={`eating-block${adherenceLevel === b.level ? ' selected' : ''}${b.level === 0 ? ' mid' : ''}`}
+                onClick={() => setAdherenceLevel(b.level)}
+                aria-label={b.label}
+              >
+                {b.sym}
+              </button>
+            ))}
+          </div>
+          <div className="energy-pip-labels">
+            <span>Well under</span>
+            <span>Well over</span>
           </div>
         </div>
 
