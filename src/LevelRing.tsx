@@ -76,19 +76,23 @@ const LevelRing: React.FC<{
   const glareX = cx + tilt.y * size * 0.28;
   const glareY = cy + tilt.x * size * 0.22;
 
-  // Liquid fill: part of the theme's identity (fill: 'liquid')
+  // Liquid fill: part of the theme's identity (fill: 'liquid'). Liquid themes
+  // are a filled vessel — NO arc ring; the water expands to the full outer
+  // radius and its level alone shows progress.
   const useLiquid = theme.fill === 'liquid';
-  const innerR = r - stroke / 2 - 1;
-  // Liquid level: rises from bottom of inner circle
-  const liquidTopY = cy + innerR - clampedP * innerR * 2;
+  const innerR = r - stroke / 2 - 1;      // inner disc for arc themes
+  const R = size / 2;
+  const fillR = useLiquid ? R - 2 : innerR; // water radius (hairline rim on liquid)
+  // Liquid level: rises from the bottom of the fill circle
+  const liquidTopY = cy + fillR - clampedP * fillR * 2;
 
   // Wave at the liquid surface: smooth quadratic curves (no straight-segment
   // facets), extended past the clip on both sides so the CSS slosh animation
   // (translateX ±6px) never drags a hard edge into view.
   const waveAmp = clampedP > 0.02 && clampedP < 0.98 ? 3.5 : 0;
   const WAVE_EXT = 14;
-  const wx0 = cx - innerR - WAVE_EXT;
-  const wx1 = cx + innerR + WAVE_EXT;
+  const wx0 = cx - fillR - WAVE_EXT;
+  const wx1 = cx + fillR + WAVE_EXT;
   const waveSegs = 6; // alternating crests/troughs — 3 full periods
   let waveD = `M${wx0.toFixed(2)},${liquidTopY.toFixed(2)}`;
   for (let s = 0; s < waveSegs; s++) {
@@ -97,7 +101,7 @@ const LevelRing: React.FC<{
     const dir = s % 2 === 0 ? 1 : -1;
     waveD += ` Q${xm.toFixed(2)},${(liquidTopY + dir * waveAmp * 2).toFixed(2)} ${xe.toFixed(2)},${liquidTopY.toFixed(2)}`;
   }
-  const bottomY = cy + innerR + 2;
+  const bottomY = cy + fillR + 2;
   const liquidPath = `${waveD} L${wx1.toFixed(2)},${bottomY.toFixed(2)} L${wx0.toFixed(2)},${bottomY.toFixed(2)} Z`;
 
   const tiltTransform = `perspective(320px) rotateY(${tilt.y * TILT_MAX_DEG}deg) rotateX(${-tilt.x * TILT_MAX_DEG * 0.85}deg)`;
@@ -126,10 +130,10 @@ const LevelRing: React.FC<{
             </linearGradient>
           )}
 
-          {/* Clip path: inner circle only */}
+          {/* Clip path: the full water disc */}
           {useLiquid && (
             <clipPath id={`${gid}clip`}>
-              <circle cx={cx} cy={cy} r={innerR} />
+              <circle cx={cx} cy={cy} r={fillR} />
             </clipPath>
           )}
 
@@ -140,36 +144,39 @@ const LevelRing: React.FC<{
           </radialGradient>
         </defs>
 
-        {/* 1. Track ring */}
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke="#33333D" strokeWidth={stroke} />
-
-        {/* 2. Liquid fill (animated themes only) */}
-        {useLiquid && clampedP > 0 && (
-          <g clipPath={`url(#${gid}clip)`}>
-            <path d={liquidPath} fill={`url(#${gid}liq)`} className="lvl-liquid-fill" shapeRendering="geometricPrecision" />
-          </g>
+        {useLiquid ? (
+          <>
+            {/* LIQUID THEME — a filled vessel, no arc. Dark empty vessel, water
+                on top clipped to the full disc, then a thin themed rim. */}
+            <circle cx={cx} cy={cy} r={fillR} fill="#0B0B11" />
+            {clampedP > 0 && (
+              <g clipPath={`url(#${gid}clip)`}>
+                <path d={liquidPath} fill={`url(#${gid}liq)`} className="lvl-liquid-fill" shapeRendering="geometricPrecision" />
+              </g>
+            )}
+            <circle
+              cx={cx} cy={cy} r={fillR} fill="none"
+              stroke={theme.to} strokeOpacity={0.55} strokeWidth={2.5}
+              style={{ filter: `drop-shadow(0 0 5px ${theme.glow})` }}
+            />
+          </>
+        ) : (
+          <>
+            {/* ARC THEME — track + progress arc around a dark inner disc */}
+            <circle cx={cx} cy={cy} r={r} fill="none" stroke="#33333D" strokeWidth={stroke} />
+            <circle
+              className={`lvl-ring-arc${theme.animated ? ' animated' : ''}`}
+              cx={cx} cy={cy} r={r} fill="none"
+              stroke={`url(#${gid}arc)`} strokeWidth={stroke} strokeLinecap="butt"
+              strokeDasharray={circ} strokeDashoffset={offset}
+              transform={`rotate(-90 ${cx} ${cy})`}
+              style={{ filter: `drop-shadow(0 0 4px ${theme.glow})` }}
+            />
+            <circle cx={cx} cy={cy} r={innerR} fill="#0B0B11" />
+          </>
         )}
 
-        {/* 3. Progress arc */}
-        <circle
-          className={`lvl-ring-arc${theme.animated ? ' animated' : ''}`}
-          cx={cx} cy={cy} r={r} fill="none"
-          stroke={`url(#${gid}arc)`} strokeWidth={stroke} strokeLinecap="butt"
-          strokeDasharray={circ} strokeDashoffset={offset}
-          transform={`rotate(-90 ${cx} ${cy})`}
-          style={{ filter: `drop-shadow(0 0 4px ${theme.glow})` }}
-        />
-
-        {/* 4. Inner background (hide liquid outside the ring area) */}
-        {!useLiquid && (
-          <circle cx={cx} cy={cy} r={innerR} fill="#0B0B11" />
-        )}
-        {useLiquid && (
-          /* Dark overlay ring between inner circle edge and outer ring edge */
-          <circle cx={cx} cy={cy} r={innerR} fill="none" stroke="#0B0B11" strokeWidth={2} />
-        )}
-
-        {/* 5. Glare highlight — shifts with tilt */}
+        {/* Glare highlight — shifts with tilt */}
         <circle cx={glareX} cy={glareY} r={size * 0.36} fill={`url(#${gid}glare)`} style={{ pointerEvents: 'none' }} />
       </svg>
 

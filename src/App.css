@@ -11874,6 +11874,12 @@ details[open] .plan-explainer-summary::before { content: '▾  '; }
 /* ── Energy check-in modal ─────────────────────────────────────────────────── */
 .energy-checkin-modal {
   padding: 28px 24px 24px;
+  /* Bottom sheet: cap height and scroll inside so the ritual never runs off
+     the top of the screen as it grows (weigh-in + energy + mood + sleep + …). */
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
 }
 .energy-section,
 .adherence-section {
