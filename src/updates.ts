@@ -10,6 +10,20 @@ export interface UpdateEntry {
 
 export const UPDATE_LOG: UpdateEntry[] = [
   {
+    date: '2026-07-05',
+    emoji: '🌙',
+    title: 'Your daily ritual, sleep, and a sharper look',
+    summary: 'A morning ritual with a sleep slider, a new Progress hero that leads with the number that matters, and a top-to-bottom design pass.',
+    points: [
+      'New "Yesterday\'s Verdict" hero at the top of Progress: your estimated intake vs target at a glance, with an under/over chip, safe-zone status, and this week\'s weight change.',
+      'The daily check-in is now a proper ritual — add a sleep slider and an optional morning weigh-in without leaving the screen.',
+      'Sleep is saved and charted: a new graph on Progress with an 8-hour reference line, so you can see rest against everything else.',
+      'One consistent colour language app-wide — green for the body, blue for growth, gold reserved for XP — no more mismatched accents.',
+      'The Level page was rebuilt into "The Ascension": a gold identity, a level ladder, and a cleaner cosmetics shelf, with emoji removed from the app\'s chrome.',
+      'Fixed the weight axis (now on the left), the personalise header, and smoothed the liquid ring fill.',
+    ],
+  },
+  {
     date: '2026-07-03',
     emoji: '📐',
     title: 'Honest maths & the Liquid ring',
