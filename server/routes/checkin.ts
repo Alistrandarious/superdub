@@ -21,13 +21,14 @@ const WORKOUT_MET: Record<string, number> = {
 
 router.post('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
-    const { energy, adherence, mood, workoutDone, workoutIntensity, workoutDurationMin } = req.body as {
+    const { energy, adherence, mood, workoutDone, workoutIntensity, workoutDurationMin, sleepHours } = req.body as {
       energy: number;
       adherence: 'below' | 'about' | 'above';
       mood?: number;
       workoutDone?: boolean;
       workoutIntensity?: 'light' | 'moderate' | 'intense' | 'very_intense';
       workoutDurationMin?: number;
+      sleepHours?: number;
     };
 
     if (!energy || energy < 1 || energy > 5) {
@@ -38,6 +39,9 @@ router.post('/', requireAuth as any, async (req: AuthRequest, res: Response) => 
     }
     if (mood !== undefined && (mood < 1 || mood > 5)) {
       return res.status(400).json({ error: 'mood must be 1–5' });
+    }
+    if (sleepHours !== undefined && sleepHours !== null && (sleepHours < 0 || sleepHours > 24)) {
+      return res.status(400).json({ error: 'sleepHours must be 0–24' });
     }
 
     // Estimate calories burned from workout (MET × kg × hours)
@@ -52,16 +56,18 @@ router.post('/', requireAuth as any, async (req: AuthRequest, res: Response) => 
     }
 
     await pool.query(
-      `INSERT INTO daily_checkins (user_id, date, energy, adherence, mood, workout_done, workout_intensity, workout_duration_min)
-       VALUES ($1, CURRENT_DATE, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO daily_checkins (user_id, date, energy, adherence, mood, workout_done, workout_intensity, workout_duration_min, sleep_hours)
+       VALUES ($1, CURRENT_DATE, $2, $3, $4, $5, $6, $7, $8)
        ON CONFLICT (user_id, date) DO UPDATE
          SET energy = $2, adherence = $3, mood = $4,
-             workout_done = $5, workout_intensity = $6, workout_duration_min = $7`,
+             workout_done = $5, workout_intensity = $6, workout_duration_min = $7,
+             sleep_hours = COALESCE($8, daily_checkins.sleep_hours)`,
       [req.userId, Math.round(energy), adherence,
        mood != null ? Math.round(mood) : null,
        workoutDone ?? false,
        workoutDone && workoutIntensity ? workoutIntensity : null,
-       workoutDone && workoutDurationMin ? workoutDurationMin : null]
+       workoutDone && workoutDurationMin ? workoutDurationMin : null,
+       sleepHours != null ? sleepHours : null]
     );
 
     res.json({ ok: true, xpAwarded: 5, workoutCalories });
@@ -128,7 +134,7 @@ router.get('/history', requireAuth as any, async (req: AuthRequest, res: Respons
   try {
     const days = Math.min(365, Math.max(7, parseInt(String(req.query.days ?? '90')) || 90));
     const { rows } = await pool.query(
-      `SELECT date::text AS date, energy, mood, adherence
+      `SELECT date::text AS date, energy, mood, adherence, sleep_hours
        FROM daily_checkins
        WHERE user_id = $1 AND date >= CURRENT_DATE - ($2 || ' days')::interval
        ORDER BY date ASC`,
@@ -140,6 +146,7 @@ router.get('/history', requireAuth as any, async (req: AuthRequest, res: Respons
         energy: r.energy != null ? Number(r.energy) : null,
         mood: r.mood != null ? Number(r.mood) : null,
         adherence: r.adherence ?? null,
+        sleep: r.sleep_hours != null ? Number(r.sleep_hours) : null,
       })),
     });
   } catch (err: any) {

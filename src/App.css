@@ -6016,6 +6016,49 @@ h1, h2, h3, h4, .sora {
 .coach-species-opt.active { background: rgba(47,210,126,0.14); border-color: rgba(47,210,126,0.5); color: #fff; }
 .coach-species-opt.locked { opacity: 0.55; cursor: not-allowed; }
 
+/* ── The Verdict — Progress hero card ─────────────────────── */
+.verdict-card {
+  margin: 4px 16px 14px;
+  padding: 14px 16px 12px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-card);
+}
+.verdict-eyebrow {
+  font-family: var(--font-data); font-size: 0.62rem; font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: rgba(255,255,255,0.35); margin-bottom: 8px;
+}
+.verdict-main { display: flex; align-items: center; gap: 12px; }
+.verdict-num {
+  font-family: var(--font-data); font-weight: 700; font-size: 1.9rem; line-height: 1;
+}
+.verdict-meta {
+  display: flex; flex-direction: column; gap: 2px;
+  font-family: var(--font-ui); font-size: 0.68rem; color: rgba(255,255,255,0.55);
+}
+.verdict-meta-dim { color: rgba(255,255,255,0.32); font-family: var(--font-data); }
+.verdict-chip {
+  margin-left: auto; padding: 5px 11px; border-radius: var(--r-pill);
+  font-family: var(--font-data); font-size: 0.68rem; font-weight: 700;
+}
+.verdict-chip.good { background: rgba(47,210,126,0.12); border: 1px solid rgba(47,210,126,0.35); color: #3CF08E; }
+.verdict-chip.bad  { background: rgba(255,84,112,0.1);  border: 1px solid rgba(255,84,112,0.35);  color: #FF5470; }
+.verdict-row2 {
+  display: flex; align-items: center; gap: 10px; margin-top: 10px;
+  padding-top: 9px; border-top: 1px solid var(--glass-border);
+}
+.verdict-tag {
+  font-family: var(--font-data); font-size: 0.62rem; font-weight: 700;
+  letter-spacing: 0.04em; text-transform: uppercase;
+}
+.verdict-tag.zone { color: #FFD233; }
+.verdict-tag.off  { color: #FF5470; }
+.verdict-week {
+  margin-left: auto; font-family: var(--font-data); font-size: 0.66rem;
+  color: rgba(255,255,255,0.5);
+}
+
 /* ── Progress quick-log pills (Log weight + Mood) ─────────── */
 .progress-quicklog {
   display: flex; gap: 10px; padding: 0 16px 16px;
@@ -9243,10 +9286,6 @@ h1, h2, h3, h4, .sora {
   border-color: #252532 !important;
   position: relative; overflow: hidden;
 }
-.sa-card::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-  background: linear-gradient(90deg, #FFD23388, #FFD23322);
-}
 .sa-header {
   display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
 }
@@ -11891,6 +11930,30 @@ details[open] .plan-explainer-summary::before { content: '▾  '; }
   color: rgba(255,255,255,0.3);
   margin-top: 4px;
 }
+
+/* ── Daily ritual additions: weigh-in + sleep ─────────────── */
+.ritual-optional {
+  font-family: var(--font-data); font-size: 0.56rem; font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: rgba(255,255,255,0.28); margin-left: 8px;
+}
+.ritual-weight-row {
+  display: flex; align-items: baseline; gap: 8px;
+}
+.ritual-weight-input {
+  width: 110px; padding: 9px 12px;
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  border-radius: var(--r-sm); color: #EAF2EE;
+  font-family: var(--font-data); font-size: 1.05rem; font-weight: 700;
+}
+.ritual-weight-input:focus { outline: none; border-color: var(--theme-dim, #2E8BFF66); }
+.ritual-weight-unit {
+  font-family: var(--font-data); font-size: 0.72rem; color: rgba(255,255,255,0.4);
+}
+.ritual-sleep-slider {
+  width: 100%; margin-top: 6px; accent-color: #8B5CF6;
+}
+.ritual-sleep-slider:not(.set) { accent-color: #3A3A46; }
 .adherence-btns {
   display: flex;
   gap: 8px;
@@ -12274,7 +12337,6 @@ details[open] .plan-explainer-summary::before { content: '▾  '; }
   background: var(--glass-bg);
   overflow: hidden;
 }
-.plan-hero-accent { height: 3px; width: 100%; }
 .plan-hero-head {
   display: flex;
   align-items: center;

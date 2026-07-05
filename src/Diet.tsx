@@ -159,8 +159,6 @@ const PlanSummaryCard: React.FC<{
       overflow: 'hidden',
       fontFamily: 'inherit',
     }}>
-      {/* Accent bar */}
-      <div style={{ height: 3, background: `linear-gradient(90deg, ${accent}, ${accent}33)` }} />
 
       {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 20px 12px' }}>
@@ -962,8 +960,6 @@ const Diet: React.FC = () => {
 
       {/* Plan summary hero */}
       <section className="plan-hero">
-        <div className="plan-hero-accent" style={{ background: `linear-gradient(90deg, ${accent}, ${accent}22)` }} />
-
         <div className="plan-hero-head">
           <span className="plan-goal-pill" style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)`, boxShadow: `0 4px 16px ${accent}40` }}>
             {goalText}

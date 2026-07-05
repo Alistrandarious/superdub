@@ -222,6 +222,7 @@ const migrations = [
   `ALTER TABLE daily_checkins ADD COLUMN IF NOT EXISTS workout_done BOOLEAN`,
   `ALTER TABLE daily_checkins ADD COLUMN IF NOT EXISTS workout_intensity TEXT CHECK (workout_intensity IN ('light','moderate','intense','very_intense'))`,
   `ALTER TABLE daily_checkins ADD COLUMN IF NOT EXISTS workout_duration_min INTEGER CHECK (workout_duration_min > 0)`,
+  `ALTER TABLE daily_checkins ADD COLUMN IF NOT EXISTS sleep_hours NUMERIC(4,1) CHECK (sleep_hours >= 0 AND sleep_hours <= 24)`,
   // ── Weekly intentions (Sunday Review free-text) ──────────────────────────────
   `CREATE TABLE IF NOT EXISTS weekly_intentions (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),

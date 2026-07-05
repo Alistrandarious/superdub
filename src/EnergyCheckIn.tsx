@@ -9,6 +9,11 @@ function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function todayDDMM() {
+  const n = new Date();
+  return `${String(n.getDate()).padStart(2, '0')}/${String(n.getMonth() + 1).padStart(2, '0')}`;
+}
+
 function snoozeUntilMs() {
   return parseInt(localStorage.getItem(ENERGY_SNOOZE_KEY) || '0', 10);
 }
@@ -44,6 +49,8 @@ const EnergyCheckIn: React.FC = () => {
   const [workoutIntensity, setWorkoutIntensity] = useState<WorkoutIntensity | null>(null);
   const [workoutDuration, setWorkoutDuration] = useState<number | null>(null);
   const [workoutCalories, setWorkoutCalories] = useState<number | null>(null);
+  const [sleep, setSleep] = useState<number | null>(null); // hours; null until touched
+  const [weight, setWeight] = useState(''); // optional morning weigh-in
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -104,6 +111,8 @@ const EnergyCheckIn: React.FC = () => {
       setWorkoutIntensity(null);
       setWorkoutDuration(null);
       setWorkoutCalories(null);
+      setSleep(null);
+      setWeight('');
       setShow(true);
     };
     window.addEventListener('superdub:show-energy-checkin', handler);
@@ -123,7 +132,14 @@ const EnergyCheckIn: React.FC = () => {
         workoutDone ?? false,
         workoutDone ? workoutIntensity ?? undefined : undefined,
         workoutDone ? workoutDuration ?? undefined : undefined,
+        sleep ?? undefined,
       );
+      // Optional morning weigh-in — write today's tracker weight alongside
+      const w = parseFloat(weight);
+      if (w > 0) {
+        await api.updateTrackerDay(todayDDMM(), { weight: String(w) }).catch(() => {});
+        window.dispatchEvent(new CustomEvent('superdub:tracker-updated'));
+      }
       if (result?.workoutCalories) setWorkoutCalories(result.workoutCalories);
       setDone(true);
       setTimeout(dismiss, 2000);
@@ -140,7 +156,20 @@ const EnergyCheckIn: React.FC = () => {
     <div className="checkin-overlay">
       <div className="checkin-modal energy-checkin-modal">
         <h2 className="checkin-title">How's today feeling?</h2>
-        <p className="checkin-subtitle">Two quick taps — no logging required.</p>
+        <p className="checkin-subtitle">Your daily ritual — thirty seconds, all of it optional but the taps.</p>
+
+        {/* Optional morning weigh-in — saves to the tracker with everything else */}
+        <div className="energy-section">
+          <p className="energy-label-row">Weigh-in <span className="ritual-optional">optional</span></p>
+          <div className="ritual-weight-row">
+            <input
+              type="text" inputMode="decimal" className="ritual-weight-input"
+              placeholder="—" value={weight}
+              onChange={e => { const v = e.target.value; if (v === '' || /^\d*\.?\d*$/.test(v)) setWeight(v); }}
+            />
+            <span className="ritual-weight-unit">kg</span>
+          </div>
+        </div>
 
         {/* Energy scale */}
         <div className="energy-section">
@@ -191,6 +220,25 @@ const EnergyCheckIn: React.FC = () => {
           <div className="energy-pip-labels">
             <span>Rough</span>
             <span>Great</span>
+          </div>
+        </div>
+
+        {/* Sleep — hours last night, slider */}
+        <div className="energy-section">
+          <p className="energy-label-row">
+            Sleep last night
+            <span className="energy-selected-label"> — {sleep != null ? `${sleep % 1 === 0 ? sleep : sleep.toFixed(1)} h` : 'not set'}</span>
+          </p>
+          <input
+            type="range" min={0} max={12} step={0.5}
+            value={sleep ?? 7}
+            onChange={e => setSleep(parseFloat(e.target.value))}
+            className={`ritual-sleep-slider${sleep != null ? ' set' : ''}`}
+            aria-label="Hours slept"
+          />
+          <div className="energy-pip-labels">
+            <span>0h</span>
+            <span>12h</span>
           </div>
         </div>
 

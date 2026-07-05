@@ -17,7 +17,7 @@ import './App.css';
 import { api } from './api';
 import { BUILD_TAG } from './version';
 import { kcalPerStep as kcalPerStepFor, stepsToKm } from './energy';
-import { pageTheme, GROWTH, TEAL } from './theme';
+import { pageTheme, GROWTH, TEAL, HEALTH, DANGER, GOLD } from './theme';
 import StreakFlame from './StreakFlame';
 import DubProgressSummary from './DubProgressSummary';
 import CogMenu from './CogMenu';
@@ -249,6 +249,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const [, setName] = useState('');
   const [habits, setHabits] = useState<string[]>([]);
   const [moodByDate, setMoodByDate] = useState<Record<string, number>>({}); // ISO date → mood 1..5
+  const [sleepByDate, setSleepByDate] = useState<Record<string, number>>({}); // ISO date → hours slept
   const [newHabit, setNewHabit] = useState('');
   const [tracker, setTracker] = useState<Record<string, DayData>>(INITIAL_TRACKER);
   const [loaded, setLoaded] = useState(false);
@@ -452,8 +453,13 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       // Mood history feeds the Patterns card (day-of-week + correlations).
       const moods = api.getCheckInHistory(120).then((h) => {
         const m: Record<string, number> = {};
-        for (const e of h.entries) if (e.mood != null) m[e.date] = e.mood;
+        const s: Record<string, number> = {};
+        for (const e of h.entries) {
+          if (e.mood != null) m[e.date] = e.mood;
+          if (e.sleep != null) s[e.date] = e.sleep;
+        }
         setMoodByDate(m);
+        setSleepByDate(s);
       }).catch(() => {});
       Promise.allSettled([coaching, plan, moods]).then(() => setLoaded(true));
       // The adjustment cycle is slower and only affects minor styling — run it after reveal.
@@ -646,6 +652,16 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     [chartDayRange, moodByDate] // eslint-disable-line react-hooks/exhaustive-deps
   );
   const moodHasData = moodChartData.some(d => d.mood != null);
+
+  // Sleep (hours) chart data — from the daily ritual's sleep slider
+  const sleepChartData = useMemo(() =>
+    chartDayRange.map(({ ddmm }) => {
+      const iso = `${YEAR}-${ddmm.slice(3)}-${ddmm.slice(0, 2)}`;
+      return { day: ddmm, sleep: sleepByDate[iso] ?? null };
+    }),
+    [chartDayRange, sleepByDate] // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const sleepHasData = sleepChartData.some(d => d.sleep != null);
   const moodStats = useMemo(() => {
     const v7: number[] = [], v30: number[] = [];
     for (let i = 0; i < 30; i++) {
@@ -979,6 +995,58 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const calorieEstVals = calorieChartData.map(d => d.intake).filter((v): v is number => v != null);
   const calorieHasData = calorieEstVals.length > 0;
   const avgEstIntake = calorieHasData ? Math.round(calorieEstVals.reduce((a, b) => a + b, 0) / calorieEstVals.length) : 0;
+
+  // ── Verdict hero: yesterday's estimated intake vs target, corridor status,
+  // and this week's actual change. Computed over a fixed trailing window so it
+  // never shifts when the chart range changes. ─────────────────────────────────
+  const verdict = (() => {
+    if (!(bmr > 0) || !(targetCalories > 0)) return null;
+    const EMA_A = 0.25;
+    const days: { ddmm: string; date: Date }[] = [];
+    for (let i = 14; i >= 0; i--) {
+      const d = new Date(now); d.setDate(now.getDate() - i);
+      days.push({ ddmm: `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`, date: d });
+    }
+    let ema: number | null = null;
+    const rows = days.map(({ ddmm, date }) => {
+      const w = parseFloat(tracker[ddmm]?.weight ?? '') || null;
+      if (w != null) ema = ema == null ? w : EMA_A * w + (1 - EMA_A) * ema;
+      const steps = parseInt(tracker[ddmm]?.steps ?? '') || 0;
+      return { ddmm, date, w, ema, steps };
+    });
+    // Yesterday's estimated intake (same energy-balance math as the chart)
+    const WIN = 7;
+    const yi = rows.length - 2;
+    const r = rows[yi];
+    let intake: number | null = null;
+    if (r && (r.ema != null || r.steps > 0)) {
+      const j = Math.max(0, yi - WIN);
+      const span = yi - j;
+      const emaJ = rows[j].ema;
+      const slopePerDay = (span > 0 && r.ema != null && emaJ != null) ? (r.ema - emaJ) / span : 0;
+      const wForBmr = r.ema ?? startWeight;
+      const dayBmr = (10 * wForBmr) + (6.25 * ht) - (5 * ag) + sexConst;
+      const est = Math.round(dayBmr * al + (walkAvg > 0 ? (r.steps - walkAvg) * kcalPerStep : 0) + slopePerDay * KCAL_PER_KG);
+      intake = est > 600 ? est : null;
+    }
+    if (intake == null) return null;
+    const delta = intake - targetCalories;
+
+    // Corridor status at the latest weigh-in (smoothed weight vs the gold band)
+    let zoneStatus: 'in' | 'above' | 'below' | null = null;
+    const latest = [...rows].reverse().find(x => x.w != null);
+    if (zoneActive && latest) {
+      const z = getZone(new Date(latest.date.getFullYear(), latest.date.getMonth(), latest.date.getDate()).getTime());
+      if (z.zoneLow != null && z.zoneHigh != null) {
+        const wv = latest.ema ?? latest.w!;
+        zoneStatus = wv > z.zoneHigh ? 'above' : wv < z.zoneLow ? 'below' : 'in';
+      }
+    }
+    // This week's actual change: first vs last weigh-in in the trailing 7 days
+    const wk = rows.slice(-7).filter(x => x.w != null);
+    const weekChange = wk.length >= 2 ? +(wk[wk.length - 1].w! - wk[0].w!).toFixed(1) : null;
+    return { intake, delta, zoneStatus, weekChange };
+  })();
 
   // ── New KPIs for the Progress page ────────────────────────────────────────
   // Total steps for the selected period (month)
@@ -1375,6 +1443,35 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       )}
 
       <div className="dashboard-scroll">
+
+      {/* ── The verdict — yesterday's estimated intake vs target, at a glance ── */}
+      {verdict && (
+        <section className="verdict-card">
+          <div className="verdict-eyebrow">YESTERDAY'S VERDICT</div>
+          <div className="verdict-main">
+            <span className="verdict-num" style={{ color: verdict.delta <= 0 ? HEALTH : DANGER }}>
+              {verdict.intake.toLocaleString()}
+            </span>
+            <div className="verdict-meta">
+              <span>est. kcal eaten</span>
+              <span className="verdict-meta-dim">target {targetCalories.toLocaleString()}</span>
+            </div>
+            <span className={`verdict-chip ${verdict.delta <= 0 ? 'good' : 'bad'}`}>
+              {Math.abs(verdict.delta).toLocaleString()} {verdict.delta <= 0 ? 'under' : 'over'}
+            </span>
+          </div>
+          <div className="verdict-row2">
+            {verdict.zoneStatus && (
+              <span className={`verdict-tag ${verdict.zoneStatus === 'in' ? 'zone' : 'off'}`}>
+                {verdict.zoneStatus === 'in' ? 'in the safe zone' : verdict.zoneStatus === 'above' ? 'above the safe zone' : 'below the safe zone'}
+              </span>
+            )}
+            {verdict.weekChange != null && (
+              <span className="verdict-week">{verdict.weekChange > 0 ? '+' : ''}{verdict.weekChange} kg this week</span>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Dub's read on your progress — at the top, but scrolls with the page */}
       <DubProgressSummary />
@@ -1823,6 +1920,40 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               />
               <Area type="monotone" dataKey="mood" stroke="none" fill="url(#moodFill)" connectNulls isAnimationActive={false} legendType="none" />
               <Line type="monotone" dataKey="mood" name="Mood" stroke={TEAL} strokeWidth={2.5} dot={{ r: 3, fill: '#0E0E14', stroke: TEAL, strokeWidth: 2 }} connectNulls isAnimationActive={false} />
+            </ComposedChart>
+          </ResponsiveContainer>
+          </DraggableChart>
+        </section>
+      )}
+
+      {/* ── Sleep (hours from the daily ritual) ── */}
+      {sleepHasData && (
+        <section className="chart-section">
+          <div className="chart-title-row" style={{ padding: '4px 16px 0' }}>
+            <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#8B5CF6' }} />Sleep</h3>
+          </div>
+          {renderChartPager()}
+          <DraggableChart disabled={chartRange !== 'week'} onPage={pageBy}>
+          <ResponsiveContainer width="100%" height={180}>
+            <ComposedChart data={sleepChartData} margin={{ left: 0, right: 10, top: 10, bottom: 8 }}>
+              <defs>
+                <linearGradient id="sleepFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#8B5CF655" />
+                  <stop offset="100%" stopColor="#8B5CF605" />
+                </linearGradient>
+              </defs>
+              <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+              <XAxis dataKey="day" stroke="rgba(255,255,255,0.1)" tick={chartXTick} interval={displayInterval} tickLine={false} height={36} padding={{ left: 6, right: 6 }} />
+              <YAxis stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} width={26} axisLine={false} tickLine={false} domain={[0, 12]} ticks={[0, 4, 8, 12]} />
+              <Tooltip
+                cursor={{ stroke: 'rgba(255,255,255,0.15)' }}
+                contentStyle={{ background: '#100E16', border: '1px solid #2c2440', borderRadius: 10, fontSize: 12 }}
+                labelStyle={{ color: '#ac9' }}
+                formatter={(v: any) => [`${v} h`, 'Sleep']}
+              />
+              <ReferenceLine y={8} stroke="rgba(139,92,246,0.45)" strokeDasharray="4 4" label={{ value: '8h', fill: 'rgba(139,92,246,0.8)', fontSize: 10, position: 'insideTopRight' }} />
+              <Area type="monotone" dataKey="sleep" stroke="none" fill="url(#sleepFill)" connectNulls isAnimationActive={false} legendType="none" />
+              <Line type="monotone" dataKey="sleep" name="Sleep" stroke="#8B5CF6" strokeWidth={2.5} dot={{ r: 3, fill: '#0E0E14', stroke: '#8B5CF6', strokeWidth: 2 }} connectNulls isAnimationActive={false} />
             </ComposedChart>
           </ResponsiveContainer>
           </DraggableChart>

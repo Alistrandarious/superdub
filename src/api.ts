@@ -147,7 +147,7 @@ export const api = {
   swapMeal: (body: { slotName: string; targetCal: number; diets: string[]; excludeIds: number[]; halal: boolean }) =>
     request('/meal-plans/swap', { method: 'POST', body: JSON.stringify(body) }),
 
-  // daily check-in (energy + adherence + optional workout)
+  // daily check-in (energy + adherence + optional workout + sleep)
   submitCheckIn: (
     energy: number,
     adherence: 'below' | 'about' | 'above',
@@ -155,10 +155,11 @@ export const api = {
     workoutDone?: boolean,
     workoutIntensity?: 'light' | 'moderate' | 'intense' | 'very_intense',
     workoutDurationMin?: number,
+    sleepHours?: number,
   ) =>
-    request('/checkin', { method: 'POST', body: JSON.stringify({ energy, adherence, mood, workoutDone, workoutIntensity, workoutDurationMin }) }),
+    request('/checkin', { method: 'POST', body: JSON.stringify({ energy, adherence, mood, workoutDone, workoutIntensity, workoutDurationMin, sleepHours }) }),
   getRecentCheckIns: () => request('/checkin/recent'),
-  getCheckInHistory: (days = 90): Promise<{ entries: { date: string; energy: number | null; mood: number | null; adherence: string | null }[] }> =>
+  getCheckInHistory: (days = 90): Promise<{ entries: { date: string; energy: number | null; mood: number | null; adherence: string | null; sleep: number | null }[] }> =>
     request(`/checkin/history?days=${days}`),
   getCoachingMessage: () => request('/checkin/coaching'),
   getWeeklyIntention: (weekStart: string) =>
