@@ -9,6 +9,7 @@ import CadenceCarousel from './CadenceCarousel';
 import SuperdubHeader from './SuperdubHeader';
 import LevelRing from './LevelRing';
 import DubMascot, { getMascot } from './DubMascot';
+import DailyLog from './DailyLog';
 import { pageTheme, HEALTH } from './theme';
 import {
   getRingTheme, getSelectedThemeId, type RingTheme,
@@ -1187,6 +1188,9 @@ const Habits: React.FC = () => {
           })}
         </div>
         <p className="hb-week-caption">{mandatoryStats.streak}-day check-in streak · keep it alive</p>
+
+        {/* Daily Log — the app's own inputs (weigh-in / steps / check-in) */}
+        <DailyLog />
 
         {/* Weekly Recap — Sunday only, right under the gold circles */}
         {isSunday && <WeeklyRecap />}

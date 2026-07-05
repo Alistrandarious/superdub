@@ -4673,6 +4673,56 @@ h1, h2, h3, h4, .sora {
   margin: 12px 0 4px;
 }
 
+/* ── Daily Log — the "Daily Superdub" vitals strip ──────────── */
+.daily-log { margin: 16px 16px 4px; }
+.daily-log-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.daily-log-title {
+  font-family: var(--font-data); font-size: 0.62rem; font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.35);
+}
+.daily-log-streak {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: var(--font-data); font-size: 0.62rem; font-weight: 700;
+  color: #FF8A00;
+}
+.daily-log-chips { display: flex; gap: 8px; }
+.dl-chip {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 9px;
+  padding: 10px 11px; cursor: pointer; text-align: left;
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  border-radius: var(--r-md);
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+}
+.dl-chip:active { transform: scale(0.97); }
+.dl-chip-ico {
+  display: flex; flex-shrink: 0; color: rgba(255,255,255,0.4);
+}
+.dl-chip-body { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.dl-chip-label {
+  font-family: var(--font-ui); font-size: 0.64rem; font-weight: 600;
+  color: rgba(255,255,255,0.42);
+}
+.dl-chip-val {
+  font-family: var(--font-data); font-size: 0.78rem; font-weight: 700;
+  color: rgba(255,255,255,0.55);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dl-chip-tick {
+  margin-left: auto; display: flex; flex-shrink: 0; color: #1A1206;
+  width: 19px; height: 19px; border-radius: 50%; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #3CF08E, #2FD27E);
+}
+/* Logged state — green vessel, brighter text */
+.dl-chip.done {
+  border-color: rgba(47,210,126,0.4);
+  background: rgba(47,210,126,0.07);
+}
+.dl-chip.done .dl-chip-ico { color: #3CF08E; }
+.dl-chip.done .dl-chip-val { color: #EAF2EE; }
+
 /* Featured banner */
 .hb-featured {
   display: flex;
