@@ -107,27 +107,10 @@ const EnergyCheckIn: React.FC = () => {
     setTimeout(() => { if (shouldShowToday()) setShow(true); }, until - now.getTime());
   };
 
-  // Show after weight check-in completes (weight dispatches tracker-updated),
-  // or fall back to a 10-second delay on first load.
-  useEffect(() => {
-    if (!shouldShowToday()) return;
-
-    // Listen for weight check-in completion
-    const onWeightSaved = () => {
-      if (shouldShowToday()) setShow(true);
-    };
-    window.addEventListener('superdub:checkin-done', onWeightSaved);
-
-    // Fallback: if they skipped weight or already had it logged, show after 10s
-    const fallback = setTimeout(() => {
-      if (shouldShowToday()) setShow(true);
-    }, 10000);
-
-    return () => {
-      window.removeEventListener('superdub:checkin-done', onWeightSaved);
-      clearTimeout(fallback);
-    };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Auto-show is retired: the split time-based prompts (Vitals, Exercise,
+  // Nutrition) now cover the day. This combined ritual stays reachable only on
+  // demand — the cog menu's "Log Check-in" — for the fuller eating/workout
+  // detail. It no longer pops itself, so it can't collide with the new prompts.
 
   // Manual trigger (e.g. from a settings page)
   useEffect(() => {

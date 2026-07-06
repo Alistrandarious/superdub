@@ -34,7 +34,23 @@ const VitalsPrompt: React.FC = () => {
   useEffect(() => {
     const open = () => { reset(); setShow(true); };
     window.addEventListener('superdub:show-vitals', open);
-    return () => window.removeEventListener('superdub:show-vitals', open);
+
+    // Time-lock: this is the morning step. Roll in after the weight prompt saves
+    // (its checkin-done), or on open if weight's already handled — mornings only,
+    // once/day. The VITALS_KEY guard stops our own save from re-triggering it.
+    const done = () => localStorage.getItem(VITALS_KEY) === todayISO();
+    const morning = () => new Date().getHours() < 12;
+    const morningAuto = () => { if (!done() && morning()) open(); };
+    window.addEventListener('superdub:checkin-done', morningAuto);
+    let t: ReturnType<typeof setTimeout> | undefined;
+    if (!done() && morning() && localStorage.getItem('superdub.weight.checkin') === todayISO()) {
+      t = setTimeout(morningAuto, 1500);
+    }
+    return () => {
+      window.removeEventListener('superdub:show-vitals', open);
+      window.removeEventListener('superdub:checkin-done', morningAuto);
+      if (t) clearTimeout(t);
+    };
   }, []);
 
   const dismiss = () => { localStorage.setItem(VITALS_KEY, todayISO()); setShow(false); };

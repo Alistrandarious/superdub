@@ -4,6 +4,8 @@ import './index.css';
 import Habits from './Habits';
 import DailyCheckIn from './DailyCheckIn';
 import VitalsPrompt from './VitalsPrompt';
+import ExercisePrompt from './ExercisePrompt';
+import NutritionPrompt from './NutritionPrompt';
 import EnergyCheckIn from './EnergyCheckIn';
 import StepEntry from './StepEntry';
 import BottomNav from './BottomNav';
@@ -77,7 +79,8 @@ function AppRouter() {
     const params = new URLSearchParams(location.search);
     const prompt = params.get('prompt');
     if (!prompt) return;
-    const evt = prompt === 'exercise' ? 'superdub:show-energy-checkin'
+    const evt = prompt === 'exercise' ? 'superdub:show-exercise'
+      : prompt === 'nutrition' ? 'superdub:show-nutrition'
       : prompt === 'weight' ? 'superdub:show-checkin' : null;
     window.history.replaceState({}, '', location.pathname);
     // Defer so the overlay listeners (siblings mounted this same tick) are attached.
@@ -113,6 +116,8 @@ function AppRouter() {
       </Suspense>
       <DailyCheckIn />
       <VitalsPrompt />
+      <ExercisePrompt />
+      <NutritionPrompt />
       <EnergyCheckIn />
       <StepEntry />
       <BottomNav />

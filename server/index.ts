@@ -354,7 +354,7 @@ async function runReminders() {
           const ok = await sendPush(r.subscription, {
             title: 'Evening — superdub 🍽️',
             body: 'How did eating land today? Log it against your target.',
-            url: '/food-log',
+            url: '/?prompt=nutrition',
             tag: 'nutrition-reminder',
           });
           if (!ok) { await prune(r.id); continue; }

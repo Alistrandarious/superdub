@@ -11,6 +11,18 @@ export interface UpdateEntry {
 export const UPDATE_LOG: UpdateEntry[] = [
   {
     date: '2026-07-06',
+    emoji: '⏰',
+    title: 'Exercise and nutrition prompts, timed to your day',
+    summary: 'The check-in is now four focused prompts that each show up at the right time and have their own notification: morning weigh-in, morning vitals, a post-workout loop, and an evening eating check.',
+    points: [
+      'New exercise prompt: a one-tap "Did you close your loop today?" that appears after your workout hour, and its notification opens straight to it.',
+      'New evening nutrition prompt: an "eating today vs target" ring that shows up after your nutrition hour if you have not logged, with a quick jump to log calories.',
+      'Each prompt is time-locked and has a matching notification you can time in the menu under Notifications (Morning, Nutrition, Workout).',
+      'The old all-in-one check-in no longer pops up on its own; it stays in the menu under Log Check-in for the fuller eating and workout detail.',
+    ],
+  },
+  {
+    date: '2026-07-06',
     emoji: '🌗',
     title: 'A sleek new morning check-in: slide, slide, done',
     summary: 'The Check-in on Home is now a focused vitals prompt with sliders. Set last night\'s sleep, then mood, then energy, each sliding into place as you go.',

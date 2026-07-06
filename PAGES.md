@@ -27,8 +27,11 @@
 
 | Component | Role |
 |---|---|
-| `DailyCheckIn.tsx` | Morning ritual — mood, energy, sleep slider, optional weigh-in |
-| `EnergyCheckIn.tsx` | Energy check-in; nudges the day's step target |
+| `DailyCheckIn.tsx` | Morning weigh-in prompt (Yes/No gate) |
+| `VitalsPrompt.tsx` | Morning vitals — sleep slider (4–12h) + mood/energy 1–10 sliders |
+| `ExercisePrompt.tsx` | Post-workout one-tap "closed your loop?" (time-locked to workout hour) |
+| `NutritionPrompt.tsx` | Evening "eating vs target" ring (time-locked to nutrition hour) |
+| `EnergyCheckIn.tsx` | Legacy combined check-in — on-demand only (cog menu → Log Check-in) |
 | `StepEntry.tsx` | Manual step entry (fallback to native step sync) |
 | `CoachReport.tsx` | Dub's post-weigh-in read (win / slipping / next step) |
 | `LevelUpCelebration.tsx` | Full-screen level-up moment |
