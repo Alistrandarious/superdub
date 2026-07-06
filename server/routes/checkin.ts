@@ -34,13 +34,15 @@ router.post('/', requireAuth as any, async (req: AuthRequest, res: Response) => 
       adherenceLevel?: number; // -2..2, granular version of adherence
     };
 
-    if (!energy || energy < 1 || energy > 5) {
+    // Every field is optional now — each time-based prompt (vitals / exercise /
+    // nutrition) writes only its own slice, and the upsert COALESCEs the rest.
+    if (energy !== undefined && energy !== null && (energy < 1 || energy > 5)) {
       return res.status(400).json({ error: 'energy must be 1–5' });
     }
-    if (!['below', 'about', 'above'].includes(adherence)) {
+    if (adherence !== undefined && adherence !== null && !['below', 'about', 'above'].includes(adherence)) {
       return res.status(400).json({ error: 'adherence must be below, about, or above' });
     }
-    if (mood !== undefined && (mood < 1 || mood > 5)) {
+    if (mood !== undefined && mood !== null && (mood < 1 || mood > 5)) {
       return res.status(400).json({ error: 'mood must be 1–5' });
     }
     if (sleepHours !== undefined && sleepHours !== null && (sleepHours < 0 || sleepHours > 24)) {
@@ -59,19 +61,28 @@ router.post('/', requireAuth as any, async (req: AuthRequest, res: Response) => 
     }
 
     const lvl = adherenceLevel != null ? Math.max(-2, Math.min(2, Math.round(adherenceLevel))) : null;
+    // COALESCE every column so a prompt that only sends its slice (e.g. vitals =
+    // energy/mood/sleep) never wipes what another prompt wrote (e.g. workout).
+    // workoutDone is a real boolean, so only overwrite it when explicitly sent.
     await pool.query(
       `INSERT INTO daily_checkins (user_id, date, energy, adherence, mood, workout_done, workout_intensity, workout_duration_min, sleep_hours, sleep_bedtime, sleep_waketime, adherence_level)
        VALUES ($1, CURRENT_DATE, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        ON CONFLICT (user_id, date) DO UPDATE
-         SET energy = $2, adherence = $3, mood = $4,
-             workout_done = $5, workout_intensity = $6, workout_duration_min = $7,
+         SET energy = COALESCE($2, daily_checkins.energy),
+             adherence = COALESCE($3, daily_checkins.adherence),
+             mood = COALESCE($4, daily_checkins.mood),
+             workout_done = COALESCE($5, daily_checkins.workout_done),
+             workout_intensity = COALESCE($6, daily_checkins.workout_intensity),
+             workout_duration_min = COALESCE($7, daily_checkins.workout_duration_min),
              sleep_hours = COALESCE($8, daily_checkins.sleep_hours),
              sleep_bedtime = COALESCE($9, daily_checkins.sleep_bedtime),
              sleep_waketime = COALESCE($10, daily_checkins.sleep_waketime),
              adherence_level = COALESCE($11, daily_checkins.adherence_level)`,
-      [req.userId, Math.round(energy), adherence,
+      [req.userId,
+       energy != null ? Math.round(energy) : null,
+       adherence ?? null,
        mood != null ? Math.round(mood) : null,
-       workoutDone ?? false,
+       workoutDone ?? null,
        workoutDone && workoutIntensity ? workoutIntensity : null,
        workoutDone && workoutDurationMin ? workoutDurationMin : null,
        sleepHours != null ? sleepHours : null,

@@ -75,8 +75,11 @@ const DailyLog: React.FC = () => {
       }
       setWeight(tW); setSteps(tS);
       setStreak(loggingStreak(logged));
-      // check-in done today: recent endpoint's `today`, or the ritual's localStorage stamp
-      setCheckedIn(!!recent?.today || localStorage.getItem('superdub.energy.checkin') === todayISO());
+      // check-in done today: recent endpoint's `today`, or either ritual's stamp
+      // (vitals prompt or the older combined energy check-in)
+      setCheckedIn(!!recent?.today
+        || localStorage.getItem('superdub.vitals.checkin') === todayISO()
+        || localStorage.getItem('superdub.energy.checkin') === todayISO());
     } catch { /* non-critical */ }
   }, []);
 
@@ -134,7 +137,7 @@ const DailyLog: React.FC = () => {
         <div className="daily-log-chips">
           {chip(weight != null, <ScaleIc />, 'Weigh-in', weight != null ? formatWeightKg(parseFloat(weight), unit) : null, 'superdub:show-checkin')}
           {chip(steps != null, <StepIc />, 'Steps', steps != null ? steps.toLocaleString() : null, 'superdub:show-step-entry')}
-          {chip(checkedIn, <MoodIc />, 'Check-in', 'Logged', 'superdub:show-energy-checkin')}
+          {chip(checkedIn, <MoodIc />, 'Check-in', 'Logged', 'superdub:show-vitals')}
         </div>
       )}
     </div>

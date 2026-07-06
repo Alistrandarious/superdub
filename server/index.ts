@@ -228,6 +228,11 @@ const migrations = [
   `ALTER TABLE daily_checkins ADD COLUMN IF NOT EXISTS sleep_bedtime TEXT`,   // 'HH:MM'
   `ALTER TABLE daily_checkins ADD COLUMN IF NOT EXISTS sleep_waketime TEXT`,  // 'HH:MM'
   `ALTER TABLE daily_checkins ADD COLUMN IF NOT EXISTS adherence_level INTEGER CHECK (adherence_level BETWEEN -2 AND 2)`,
+  // The check-in split into separate time-based prompts (vitals / exercise /
+  // nutrition), each writing only its own slice — so energy & adherence can no
+  // longer be required at insert time.
+  `ALTER TABLE daily_checkins ALTER COLUMN energy DROP NOT NULL`,
+  `ALTER TABLE daily_checkins ALTER COLUMN adherence DROP NOT NULL`,
   // ── Weekly intentions (Sunday Review free-text) ──────────────────────────────
   `CREATE TABLE IF NOT EXISTS weekly_intentions (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),

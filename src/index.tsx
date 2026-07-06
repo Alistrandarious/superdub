@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import Habits from './Habits';
 import DailyCheckIn from './DailyCheckIn';
+import VitalsPrompt from './VitalsPrompt';
 import EnergyCheckIn from './EnergyCheckIn';
 import StepEntry from './StepEntry';
 import BottomNav from './BottomNav';
@@ -111,6 +112,7 @@ function AppRouter() {
       </Routes>
       </Suspense>
       <DailyCheckIn />
+      <VitalsPrompt />
       <EnergyCheckIn />
       <StepEntry />
       <BottomNav />

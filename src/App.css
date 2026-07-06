@@ -1969,6 +1969,33 @@ h1, h2, h3, h4, .sora {
   color: rgba(255,255,255,0.55);
 }
 
+/* ── Vitals prompt — sleek sleep/mood/energy sliders that reveal in sequence ── */
+.vitals-step { margin: 16px 0 2px; }
+.vitals-label {
+  display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;
+  font-family: var(--font-ui); font-size: 0.9rem; font-weight: 600; color: #E8ECF4;
+}
+.vitals-value { font-family: var(--font-data); font-weight: 700; font-size: 1.15rem; color: #FFD233; }
+.vitals-of { font-size: 0.68rem; color: rgba(255,255,255,0.4); font-weight: 700; }
+/* Native range tinted gold (accent-color fills the track up to the value and
+   colours the thumb) — sleek, cross-browser, and a comfortable tap target. */
+.vitals-slider {
+  width: 100%; height: 26px; cursor: pointer; accent-color: #FFD233;
+  background: transparent;
+}
+.vitals-slider.mood { accent-color: #19C5B0; }   /* teal — the check-in accent */
+.vitals-scale {
+  display: flex; justify-content: space-between; margin-top: 2px;
+  font-family: var(--font-data); font-size: 0.58rem; letter-spacing: 0.04em;
+  text-transform: uppercase; color: rgba(255,255,255,0.32);
+}
+/* Sequential reveal — each step slides into place once the prior one is set. */
+.vitals-reveal {
+  max-height: 0; opacity: 0; overflow: hidden; margin: 0;
+  transition: max-height 0.35s cubic-bezier(0.22,1,0.36,1), opacity 0.3s ease, margin 0.35s ease;
+}
+.vitals-reveal.in { max-height: 130px; opacity: 1; margin: 16px 0 2px; }
+
 /* ── Live/Yesterday Matrix — 2×2 grid that fills the locked visualization height ── */
 .ltm {
   flex: 1; min-height: 0; width: auto;

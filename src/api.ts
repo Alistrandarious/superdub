@@ -149,8 +149,8 @@ export const api = {
 
   // daily check-in (energy + adherence + optional workout + sleep)
   submitCheckIn: (data: {
-    energy: number;
-    adherence: 'below' | 'about' | 'above';
+    energy?: number;
+    adherence?: 'below' | 'about' | 'above';
     mood?: number;
     workoutDone?: boolean;
     workoutIntensity?: 'light' | 'moderate' | 'intense' | 'very_intense';

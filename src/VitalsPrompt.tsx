@@ -1,0 +1,119 @@
+import React, { useState, useEffect } from 'react';
+import './App.css';
+import { api } from './api';
+
+// ── Vitals prompt — the sleek morning "how did you sleep & feel?" step from the
+// prompt-system spec. One focused pop-up (not the old combined check-in): a
+// horizontal sleep slider (4–12h), then mood and energy on 1–10 sliders that
+// reveal one after another. Stored as sleepHours + energy/mood (mapped to the
+// engine's 1–5 scale, which the coaching + step-target logic still expects).
+
+const VITALS_KEY = 'superdub.vitals.checkin'; // value = YYYY-MM-DD when done
+const todayISO = () => new Date().toISOString().slice(0, 10);
+const to5 = (v: number) => Math.max(1, Math.min(5, Math.round(v / 2))); // 1–10 → 1–5
+
+const VitalsPrompt: React.FC = () => {
+  const [show, setShow] = useState(false);
+  const [sleep, setSleep] = useState(8);
+  const [sleepTouched, setSleepTouched] = useState(false);
+  const [mood, setMood] = useState(6);
+  const [moodTouched, setMoodTouched] = useState(false);
+  const [energy, setEnergy] = useState(6);
+  const [energyTouched, setEnergyTouched] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const reset = () => {
+    setSleep(8); setSleepTouched(false);
+    setMood(6); setMoodTouched(false);
+    setEnergy(6); setEnergyTouched(false);
+    setDone(false); setError(null);
+  };
+
+  useEffect(() => {
+    const open = () => { reset(); setShow(true); };
+    window.addEventListener('superdub:show-vitals', open);
+    return () => window.removeEventListener('superdub:show-vitals', open);
+  }, []);
+
+  const dismiss = () => { localStorage.setItem(VITALS_KEY, todayISO()); setShow(false); };
+
+  const canSave = sleepTouched && moodTouched && energyTouched;
+  const save = async () => {
+    if (!canSave) return;
+    setSaving(true); setError(null);
+    try {
+      await api.submitCheckIn({ energy: to5(energy), mood: to5(mood), sleepHours: sleep });
+      localStorage.setItem(VITALS_KEY, todayISO());
+      window.dispatchEvent(new CustomEvent('superdub:tracker-updated'));
+      window.dispatchEvent(new CustomEvent('superdub:checkin-done'));
+      setDone(true);
+      setTimeout(() => setShow(false), 900);
+    } catch (e: any) {
+      setError(e?.message ?? 'Could not save. Tap to retry.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!show) return null;
+
+  return (
+    <div className="checkin-overlay">
+      <div className="checkin-modal vitals-modal">
+        <h2 className="checkin-title">Morning vitals</h2>
+        <p className="checkin-subtitle">A few taps — how you slept, then how you feel.</p>
+
+        {/* Sleep — horizontal slider bounded 4–12h */}
+        <div className="vitals-step">
+          <div className="vitals-label"><span>Sleep last night</span><span className="vitals-value">{sleep % 1 === 0 ? sleep : sleep.toFixed(1)}h</span></div>
+          <input
+            type="range" min={4} max={12} step={0.5} value={sleep} className="vitals-slider"
+            onChange={e => { setSleep(parseFloat(e.target.value)); setSleepTouched(true); }}
+            aria-label="Hours slept"
+          />
+          <div className="vitals-scale"><span>4h</span><span>12h</span></div>
+        </div>
+
+        {/* Mood — 1–10, slides in once sleep is set */}
+        <div className={`vitals-step vitals-reveal${sleepTouched ? ' in' : ''}`}>
+          <div className="vitals-label"><span>Mood</span><span className="vitals-value">{mood}<span className="vitals-of">/10</span></span></div>
+          <input
+            type="range" min={1} max={10} step={1} value={mood} className="vitals-slider mood"
+            onChange={e => { setMood(parseInt(e.target.value, 10)); setMoodTouched(true); }}
+            aria-label="Mood"
+          />
+          <div className="vitals-scale"><span>rough</span><span>great</span></div>
+        </div>
+
+        {/* Energy — 1–10, slides in once mood is set */}
+        <div className={`vitals-step vitals-reveal${moodTouched ? ' in' : ''}`}>
+          <div className="vitals-label"><span>Energy</span><span className="vitals-value">{energy}<span className="vitals-of">/10</span></span></div>
+          <input
+            type="range" min={1} max={10} step={1} value={energy} className="vitals-slider"
+            onChange={e => { setEnergy(parseInt(e.target.value, 10)); setEnergyTouched(true); }}
+            aria-label="Energy"
+          />
+          <div className="vitals-scale"><span>drained</span><span>peak</span></div>
+        </div>
+
+        <div className="checkin-actions">
+          {done ? (
+            <div className="checkin-done">✓ Logged! +5 XP</div>
+          ) : (
+            <>
+              {error && <p className="checkin-error">{error}</p>}
+              <button className="checkin-save-btn" onClick={save} disabled={saving || !canSave}>
+                {saving ? 'Saving…' : error ? 'Retry' : canSave ? 'Log it' : 'Slide all three'}
+              </button>
+              <button className="checkin-skip-btn" onClick={dismiss} disabled={saving}>Skip today</button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default VitalsPrompt;

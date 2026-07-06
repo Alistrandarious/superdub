@@ -11,6 +11,17 @@ export interface UpdateEntry {
 export const UPDATE_LOG: UpdateEntry[] = [
   {
     date: '2026-07-06',
+    emoji: '🌗',
+    title: 'A sleek new morning check-in: slide, slide, done',
+    summary: 'The Check-in on Home is now a focused vitals prompt with sliders. Set last night\'s sleep, then mood, then energy, each sliding into place as you go.',
+    points: [
+      'Tap Check-in and you get a clean pop-up: a sleep slider from 4 to 12 hours, then mood and energy on 1 to 10 sliders that appear one after another so it never feels busy.',
+      'It saves just those vitals without touching anything else you have logged that day.',
+      'This is the first of the split, time-based prompts. Focused exercise and evening nutrition pop-ups are next.',
+    ],
+  },
+  {
+    date: '2026-07-06',
     emoji: '🗓️',
     title: 'Nicer due dates on Lists, and they finally stick',
     summary: 'The clunky date box on Lists is gone. Add a task, then tap the calendar to pick a due date from a tidy dropdown, and it now saves properly and rides under the task.',
