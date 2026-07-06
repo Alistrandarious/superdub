@@ -11,6 +11,18 @@ export interface UpdateEntry {
 export const UPDATE_LOG: UpdateEntry[] = [
   {
     date: '2026-07-06',
+    emoji: '🩹',
+    title: 'Fixed the blank Progress charts, plus a tidier menu',
+    summary: 'The Progress charts were rendering as empty boxes after the height-lock change. They fill their space properly again, and the settings menu got a cleanup with more quick-log options.',
+    points: [
+      'Fixed the Progress charts showing up blank: they now fill the locked height correctly instead of collapsing to nothing.',
+      'Quick log in the menu now covers everything you can track by hand: weight, steps, check-in, and food and calories.',
+      'Menu cleanup: removed the old Tracker shortcut, moved Personalise into Settings, and tucked The Maths under About Superdub.',
+      'Dub is a touch bigger at the top of each Progress tab, because he was feeling left out.',
+    ],
+  },
+  {
+    date: '2026-07-06',
     emoji: '🔒',
     title: 'Progress pages are height-locked, with Dub talking up top',
     summary: 'Every Progress tab now fits one screen with no scrolling. Dub gives you a line at the top of each tab (tap him for the full read), and the chart fills all the space below it.',

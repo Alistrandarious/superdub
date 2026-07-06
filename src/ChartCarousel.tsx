@@ -51,7 +51,7 @@ const ChartCarousel: React.FC<{
                 onClick={() => window.dispatchEvent(new CustomEvent('superdub:show-coach'))}
                 aria-label="Ask Dub for more"
               >
-                <span className="cc-dubbar-pet"><DubMascot size={38} mood="happy" species={species} /></span>
+                <span className="cc-dubbar-pet"><DubMascot size={46} mood="happy" species={species} /></span>
                 <p className="cc-dubbar-text">{notes[i]}</p>
                 <span className="cc-dubbar-more" aria-hidden>›</span>
               </button>

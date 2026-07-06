@@ -93,6 +93,8 @@ const CogMenu: React.FC = () => {
               <span className="cog-mi-ico"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2v6M18 2v6M3 10h18M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span> Log Weight
             </button>
             <button className="cog-menu-item" onClick={() => fire('superdub:show-step-entry')}><span className="cog-mi-ico"><Ic><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></Ic></span> Log Steps</button>
+            <button className="cog-menu-item" onClick={() => fire('superdub:show-energy-checkin')}><span className="cog-mi-ico"><Ic><circle cx="12" cy="12" r="10" /><path d="M8 14s1.5 2 4 2 4-2 4-2" /><line x1="9" y1="9" x2="9.01" y2="9" /><line x1="15" y1="9" x2="15.01" y2="9" /></Ic></span> Log Check-in</button>
+            <button className="cog-menu-item" onClick={() => go('/food-log')}><span className="cog-mi-ico"><Ic><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20M21 15V2a5 5 0 0 0-3 5v6c0 1.1.9 2 3 2z" /></Ic></span> Log Food &amp; Calories</button>
 
             <div className="cog-menu-sep" />
             <div className="cog-menu-label">Go to</div>
@@ -105,13 +107,11 @@ const CogMenu: React.FC = () => {
                 </span>
               )}
             </button>
-            <button className="cog-menu-item" onClick={() => { close(); window.dispatchEvent(new CustomEvent('superdub:open-tracker')); }}><span className="cog-mi-ico"><Ic><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></Ic></span> Tracker</button>
             <button className="cog-menu-item" onClick={() => go('/archived')}><span className="cog-mi-ico"><Ic><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4" /></Ic></span> Archived Habits</button>
-            <button className="cog-menu-item" onClick={() => go('/maths')}><span className="cog-mi-ico"><Ic><path d="M19 5L5 19" /><circle cx="6.5" cy="6.5" r="2.5" /><circle cx="17.5" cy="17.5" r="2.5" /></Ic></span> The Maths</button>
-            <button className="cog-menu-item" onClick={() => go('/level')}><span className="cog-mi-ico"><Ic><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" /></Ic></span> Personalise</button>
 
             <div className="cog-menu-sep" />
             <div className="cog-menu-label">Settings</div>
+            <button className="cog-menu-item" onClick={() => go('/level')}><span className="cog-mi-ico"><Ic><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" /></Ic></span> Personalise</button>
             <button className="cog-menu-item" onClick={toggleCheckin}>
               <span className="cog-mi-ico"><Ic><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" /></Ic></span> Daily Check-in
               <span className={`checkin-toggle-pill ${checkinEnabled ? 'on' : 'off'}`} style={{ marginLeft: 'auto' }}>{checkinEnabled ? 'ON' : 'OFF'}</span>
@@ -149,6 +149,7 @@ const CogMenu: React.FC = () => {
             <div className="cog-menu-sep" />
             <button className="cog-menu-item" onClick={() => go('/profile')}><span className="cog-mi-ico"><Ic><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></Ic></span> Profile &amp; Settings</button>
             <button className="cog-menu-item" onClick={() => go('/about')}><span className="cog-mi-ico"><Ic><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></Ic></span> About Superdub</button>
+            <button className="cog-menu-item" onClick={() => go('/maths')}><span className="cog-mi-ico"><Ic><path d="M19 5L5 19" /><circle cx="6.5" cy="6.5" r="2.5" /><circle cx="17.5" cy="17.5" r="2.5" /></Ic></span> The Maths</button>
             <button className="cog-menu-item" onClick={() => go('/privacy')}><span className="cog-mi-ico"><Ic><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></Ic></span> Privacy Policy</button>
             <button className="cog-menu-item cog-menu-item--danger" onClick={logout}><span className="cog-mi-ico"><Ic><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></Ic></span> Log out</button>
 

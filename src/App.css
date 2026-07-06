@@ -1885,8 +1885,13 @@ h1, h2, h3, h4, .sora {
    content height (flex-grow 0 by default) and don't stretch. */
 .cc-slide-viz > .chart-section { flex: 1; min-height: 0; display: flex; flex-direction: column; margin: 0 16px; width: auto; }
 .cc-slide-viz .chart-section-inner { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-.cc-slide-viz .chart-container { flex: 1; min-height: 0; }
-.chart-fill { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.cc-slide-viz .chart-container { flex: 1; min-height: 0; position: relative; }
+/* recharts' ResponsiveContainer height:100% won't resolve against a flex-grown
+   parent (percentage heights need a definite base), so it collapses to 0. Make
+   the chart-fill a positioned box and absolutely fill it with the chart — now
+   it sizes against the parent's real pixel box, not a percentage. */
+.chart-fill { flex: 1; min-height: 0; position: relative; }
+.chart-fill > .recharts-responsive-container { position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
 /* Sleep & Mood stacks two charts — split the height between them. */
 .cc-slide-viz > .chart-section--sleepmood .chart-fill { flex: 1 1 50%; }
 /* Chips moved below the visualization space — now the last row before BottomNav,
