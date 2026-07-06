@@ -1849,6 +1849,7 @@ h1, h2, h3, h4, .sora {
 .cc-track::-webkit-scrollbar { display: none; }
 .cc-slide {
   flex: 0 0 100%; width: 100%; height: 100%; scroll-snap-align: center;
+  scroll-snap-stop: always; /* one swipe advances exactly one page — never skip slides on a fast fling */
   display: flex; flex-direction: column;
   overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;
   padding-bottom: 24px;
@@ -1881,10 +1882,25 @@ h1, h2, h3, h4, .sora {
 
 /* Story panels: intro (Today) and the scrollable stats page */
 .story-panel { display: flex; flex-direction: column; }
-.story-panel--intro { padding-top: 4px; }
+/* Today: a full-height "story" screen — pinned to the slide height and centred,
+   so it never grows its own scrollbar (you swipe to the next panel instead).
+   Content is kept lean (verdict + Dub) so it fits a phone without clipping. */
+.story-panel--intro {
+  padding-top: 4px;
+  height: 100%;
+  min-height: 0;
+  justify-content: center;
+  gap: 6px;
+  overflow: hidden;
+}
 .story-panel--intro .verdict-card,
-.story-panel--intro .dub-summary,
-.story-panel--intro .progress-quicklog { margin-left: 16px; margin-right: 16px; }
+.story-panel--intro .dub-summary { margin-left: 16px; margin-right: 16px; }
+
+/* Stats: the one panel that legitimately runs taller than a screen. Hold it at
+   its natural content height (flex-shrink:0) so the .cc-slide column-flex shell
+   can't crush it — the slide's overflow-y:auto then scrolls. See the flex-collapse
+   pitfall: shrinkable children get squashed instead of scrolling. */
+.story-panel--stats { flex-shrink: 0; }
 
 .chart-section {
   margin: 0 18px 22px;
@@ -6204,23 +6220,6 @@ h1, h2, h3, h4, .sora {
   color: rgba(255,255,255,0.5);
 }
 
-/* ── Progress quick-log pills (Log weight + Mood) ─────────── */
-.progress-quicklog {
-  display: flex; gap: 10px; padding: 0 16px 16px;
-}
-.progress-ql-pill {
-  flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px;
-  padding: 11px 12px;
-  background: var(--glass-bg); border: 1px solid var(--glass-border);
-  border-radius: 50px; cursor: pointer;
-  color: rgba(255,255,255,0.75);
-  font-family: 'Sora', sans-serif; font-size: 0.78rem; font-weight: 600;
-  transition: border-color 0.15s, color 0.15s, background 0.15s, transform 0.1s;
-}
-.progress-ql-pill svg { color: var(--theme, #2FD27E); flex-shrink: 0; }
-.progress-ql-pill:hover { color: #fff; border-color: var(--theme-dim); background: var(--glass-bg-strong); }
-.progress-ql-pill:active { transform: scale(0.96); }
-
 /* Progress tools row (legacy, kept for reference) */
 .progress-tools {
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
@@ -7131,7 +7130,7 @@ h1, h2, h3, h4, .sora {
 }
 .maths-formula code {
   font-family: 'Space Mono', monospace; font-size: 0.72rem; line-height: 1.5;
-  color: #46C2FF; white-space: pre;
+  color: #46C2FF; white-space: pre-wrap; overflow-wrap: anywhere;
 }
 .maths-example {
   margin: 10px 0 0; padding: 9px 12px;
@@ -9044,6 +9043,8 @@ h1, h2, h3, h4, .sora {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap; /* narrow screens: wide steppers wrap below the label instead of spilling off the side */
+  gap: 10px;
   padding: 12px 16px;
   border-bottom: 1px solid #15151E;
 }

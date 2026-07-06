@@ -18,11 +18,24 @@ interface Task {
   text: string;
   done: boolean;
   type: 'todo' | 'shopping';
+  dueDate?: string; // ISO 8601, e.g. 2026-07-06; undefined = no due date
 }
 
 // Brand-family accents — green = To-Do (health/done), blue = Shopping (growth).
 const TODO_ACCENT = HEALTH;
 const SHOP_ACCENT = GROWTH;
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+// Local YYYY-MM-DD. Native <input type="date"> emits this format, so lexical string
+// compare (dueDate < today) is a correct date compare without timezone parsing.
+const todayISO = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+const formatDue = (iso: string) => {
+  const [y, m, d] = iso.split('-').map(Number);
+  return y && m && d ? `Due ${d} ${MONTHS[m - 1]}` : iso;
+};
 
 const CheckIcon: React.FC<{ size?: number }> = ({ size = 16 }) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
@@ -43,6 +56,7 @@ const Tasks: React.FC = () => {
   const [tasks, setTasks]   = useState<Task[]>([]);
   const [tab, setTab]       = useState<'todo' | 'shopping' | 'goals'>('todo');
   const [input, setInput]   = useState('');
+  const [due, setDue]       = useState('');
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -57,9 +71,10 @@ const Tasks: React.FC = () => {
     if (!text || tab === 'goals') return;
     const listType: 'todo' | 'shopping' = tab;
     const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const newTask: Task = { id, text, done: false, type: listType };
+    const newTask: Task = { id, text, done: false, type: listType, dueDate: due || undefined };
     setTasks(prev => [...prev, newTask]);
     setInput('');
+    setDue('');
     if (tab === 'shopping') {
       api.createShoppingItem(id, text).catch(() => {});
     } else {
@@ -89,6 +104,7 @@ const Tasks: React.FC = () => {
 
   const visible = tasks.filter(t => t.type === tab);
   const doneCount = visible.filter(t => t.done).length;
+  const today = todayISO();
 
   const isShopping = tab === 'shopping';
   const isGoals = tab === 'goals';
@@ -139,6 +155,13 @@ const Tasks: React.FC = () => {
             onKeyDown={e => e.key === 'Enter' && addItem()}
             placeholder={isShopping ? 'Add item to shop for…' : 'New task…'}
           />
+          <input
+            className="lists-date-input"
+            type="date"
+            value={due}
+            onChange={e => setDue(e.target.value)}
+            aria-label="Due date (optional)"
+          />
           <button
             className="lists-add-btn"
             onClick={addItem}
@@ -171,7 +194,14 @@ const Tasks: React.FC = () => {
                   >
                     {task.done && <span className="lists-check-tick">✓</span>}
                   </button>
-                  <span className="lists-text">{task.text}</span>
+                  <div className="lists-text-col">
+                    <span className="lists-text">{task.text}</span>
+                    {task.dueDate && (
+                      <span className={`lists-due${!task.done && task.dueDate < today ? ' lists-due--overdue' : ''}`}>
+                        {formatDue(task.dueDate)}
+                      </span>
+                    )}
+                  </div>
                   <button className="lists-remove" onClick={() => removeItem(task.id)}>✕</button>
                 </li>
               ))}

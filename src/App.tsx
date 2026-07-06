@@ -1509,20 +1509,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </section>
       )}
 
-      {/* Dub's read on your progress — at the top, but scrolls with the page */}
+      {/* Dub's read on your progress — the essential diagnostic beside the verdict */}
       <DubProgressSummary />
 
-      {/* Two quiet quick-log pills — weight and mood only, scroll with content */}
-      <div className="progress-quicklog">
-        <button className="progress-ql-pill" onClick={() => window.dispatchEvent(new CustomEvent('superdub:show-checkin'))}>
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2v6M18 2v6M3 10h18M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-          Log weight
-        </button>
-        <button className="progress-ql-pill" onClick={() => window.dispatchEvent(new CustomEvent('superdub:show-energy-checkin'))}>
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
-          Mood
-        </button>
-      </div>
+      {/* Quick-log pills removed — logging lives in the daily check-in / cog menu.
+          The Today panel stays a lean, full-height "verdict + Dub" story screen. */}
 
       {/* ── Cohort onboarding banner (shown once after signup) ── */}
       {cohortMsg && !cohortDismissed && (

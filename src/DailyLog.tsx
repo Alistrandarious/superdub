@@ -55,6 +55,7 @@ const DailyLog: React.FC = () => {
   const [steps, setSteps] = useState<number | null>(null);
   const [checkedIn, setCheckedIn] = useState(false);
   const [streak, setStreak] = useState(0);
+  const [collapsed, setCollapsed] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -91,6 +92,15 @@ const DailyLog: React.FC = () => {
   const fire = (evt: string) => window.dispatchEvent(new CustomEvent(evt));
   const allDone = weight != null && steps != null && checkedIn;
 
+  // Once everything's logged: hold on the gold state briefly, then fold the three
+  // chips into a slim line. Tapping the line re-expands (setCollapsed(false) sticks
+  // because this effect only re-fires when allDone itself flips).
+  useEffect(() => {
+    if (!allDone) { setCollapsed(false); return; }
+    const t = setTimeout(() => setCollapsed(true), 900);
+    return () => clearTimeout(t);
+  }, [allDone]);
+
   const chip = (done: boolean, ico: React.ReactNode, label: string, val: string | null, evt: string) => (
     <button className={`dl-chip${done ? ' done' : ''}${allDone ? ' all-done' : ''}`} onClick={() => fire(evt)}>
       <span className="dl-chip-ico">{ico}</span>
@@ -110,11 +120,21 @@ const DailyLog: React.FC = () => {
           <span className="daily-log-streak"><FlameIc /> {streak}-day logging streak</span>
         )}
       </div>
-      <div className="daily-log-chips">
-        {chip(weight != null, <ScaleIc />, 'Weigh-in', weight != null ? `${weight} kg` : null, 'superdub:show-checkin')}
-        {chip(steps != null, <StepIc />, 'Steps', steps != null ? steps.toLocaleString() : null, 'superdub:show-step-entry')}
-        {chip(checkedIn, <MoodIc />, 'Check-in', 'Logged', 'superdub:show-energy-checkin')}
-      </div>
+      {collapsed ? (
+        <button
+          className="daily-log-line"
+          onClick={() => setCollapsed(false)}
+          aria-label="All logged today — tap to expand"
+        >
+          <span className="daily-log-line-bar" />
+        </button>
+      ) : (
+        <div className="daily-log-chips">
+          {chip(weight != null, <ScaleIc />, 'Weigh-in', weight != null ? `${weight} kg` : null, 'superdub:show-checkin')}
+          {chip(steps != null, <StepIc />, 'Steps', steps != null ? steps.toLocaleString() : null, 'superdub:show-step-entry')}
+          {chip(checkedIn, <MoodIc />, 'Check-in', 'Logged', 'superdub:show-energy-checkin')}
+        </div>
+      )}
     </div>
   );
 };

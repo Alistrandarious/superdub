@@ -371,6 +371,51 @@ const CheckSVG: React.FC<{ size?: number; strokeWidth?: number }> = ({ size = 14
   </svg>
 );
 
+// One weekday mini-circle. Single tap toggles done↔blank (the primary action);
+// double tap toggles failed↔blank. A short timer disambiguates the two, so the
+// first tap is deferred ~220ms — the standard cost of supporting double-tap.
+// `displayState` may differ from the stored state (past due days auto-fail), so
+// the toggles are driven by `rawState` (what's actually persisted).
+const TAP_DELAY_MS = 220;
+const DayCircle: React.FC<{
+  label: string;
+  displayState: HabitState;
+  rawState: HabitState;
+  isFuture: boolean;
+  isToday: boolean;
+  onSetState: (state: HabitState) => void;
+}> = ({ label, displayState, rawState, isFuture, isToday, onSetState }) => {
+  const tapRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (tapRef.current) clearTimeout(tapRef.current); }, []);
+  const handleTap = () => {
+    if (isFuture) return;
+    if (tapRef.current) {                       // second tap within window → fail
+      clearTimeout(tapRef.current);
+      tapRef.current = null;
+      onSetState(rawState === 'failed' ? null : 'failed');
+    } else {                                     // first tap → wait, then toggle done
+      tapRef.current = setTimeout(() => {
+        tapRef.current = null;
+        onSetState(rawState === 'done' ? null : 'done');
+      }, TAP_DELAY_MS);
+    }
+  };
+  return (
+    <div className={`hcard-day ${displayState === 'done' ? 'done' : ''} ${displayState === 'failed' ? 'failed' : ''} ${isFuture ? 'future' : ''} ${isToday ? 'is-today' : ''}`}>
+      <button
+        className="hcard-day-circle"
+        disabled={isFuture}
+        onClick={handleTap}
+        aria-label={`${label}: ${displayState ?? 'blank'} — tap to mark done, double-tap to mark failed`}
+      >
+        {displayState === 'done' && <span className="hcard-day-tick"><CheckSVG size={15} strokeWidth={2} /></span>}
+        {displayState === 'failed' && <span className="hcard-day-tick hcard-day-fail">✗</span>}
+      </button>
+      <span className="hcard-day-label">{label}</span>
+    </div>
+  );
+};
+
 // Full habit card — XP bar · gate dots · weekly M-T-W circles · big done button
 const HabitCard: React.FC<{
   habit: string;
@@ -547,24 +592,17 @@ const HabitCard: React.FC<{
 
       {isDaily ? (
         <div className="hcard-week">
-          {weekDays.map(({ key, label, isFuture, isToday }) => {
-            const raw = ht[key]?.[habit] ?? null;
-            const state = dayState(key); // auto-fail past due days
-            return (
-              <div key={key} className={`hcard-day ${state === 'done' ? 'done' : ''} ${state === 'failed' ? 'failed' : ''} ${isFuture ? 'future' : ''} ${isToday ? 'is-today' : ''}`}>
-                <button
-                  className="hcard-day-circle"
-                  disabled={isFuture}
-                  onClick={() => !isFuture && onToggleDay(habit, key, cycleState(raw))}
-                  aria-label={`${label}: ${state ?? 'blank'}`}
-                >
-                  {state === 'done' && <span className="hcard-day-tick"><CheckSVG size={15} strokeWidth={2} /></span>}
-                  {state === 'failed' && <span className="hcard-day-tick hcard-day-fail">✗</span>}
-                </button>
-                <span className="hcard-day-label">{label}</span>
-              </div>
-            );
-          })}
+          {weekDays.map(({ key, label, isFuture, isToday }) => (
+            <DayCircle
+              key={key}
+              label={label}
+              displayState={dayState(key)}          // auto-fail past due days
+              rawState={ht[key]?.[habit] ?? null}    // toggles act on what's stored
+              isFuture={isFuture}
+              isToday={isToday}
+              onSetState={s => onToggleDay(habit, key, s)}
+            />
+          ))}
         </div>
       ) : (
         <div className={`hcard-week hcard-week--${units.length}`} style={{ ['--cad' as any]: accent }}>
@@ -726,7 +764,7 @@ const Habits: React.FC = () => {
 
   const today = todayKey();
   const weekDays = getWeekDays();
-  const { totalXP: totalXPAll, playerLevel } = useXP();
+  const { totalXP: totalXPAll, playerLevel, refresh: refreshXP } = useXP();
   const ringTheme = useRingTheme();
   const [mascotSpecies, setMascotSpecies] = useState(getMascot);
   useEffect(() => {
@@ -839,8 +877,13 @@ const Habits: React.FC = () => {
 
   const handleToggleDay = useCallback((habit: string, dayKey: string, state: HabitState) => {
     setHt(prev => ({ ...prev, [dayKey]: { ...prev[dayKey], [habit]: state } }));
-    api.toggleTrackerHabit(dayKey, habit, state).catch(() => {});
-  }, []);
+    // Refresh global XP/level once the write commits so the top-of-page level ring
+    // updates on the same tap. (Deliberately NOT superdub:tracker-updated — that
+    // event also re-opens the daily check-in overlay.)
+    api.toggleTrackerHabit(dayKey, habit, state)
+      .then(() => refreshXP())
+      .catch(() => {});
+  }, [refreshXP]);
 
   // Backfill past days — gated by a one-time honesty declaration. Persisted in
   // localStorage so it's accepted once per device, not re-prompted every launch
