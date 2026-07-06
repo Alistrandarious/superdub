@@ -1907,7 +1907,27 @@ h1, h2, h3, h4, .sora {
    viz wrapper scrolls it (the one panel that's allowed to). */
 .cc-slide-viz > .story-panel--stats { flex-shrink: 0; }
 
-/* ── Live Target Matrix — 2×2 grid that fills the locked visualization height ── */
+/* ── Today placeholder — a simple centred "coming soon" card in the locked box ── */
+.today-soon { align-items: center; justify-content: center; }
+.today-soon-card {
+  margin: 0 16px; padding: 26px 22px; text-align: center;
+  background: #14141C; border: 1px solid rgba(255,255,255,0.05);
+  border-radius: var(--r-card, 18px);
+}
+.today-soon-eyebrow {
+  font-family: var(--font-data); font-size: 0.6rem; font-weight: 700;
+  letter-spacing: 0.16em; color: #FFD233;
+}
+.today-soon-title {
+  margin: 10px 0 8px; font-family: var(--font-display); font-weight: 700;
+  font-size: 1.1rem; color: #F0F4FF;
+}
+.today-soon-body {
+  margin: 0; font-family: var(--font-ui); font-size: 0.82rem; line-height: 1.5;
+  color: rgba(255,255,255,0.55);
+}
+
+/* ── Live/Yesterday Matrix — 2×2 grid that fills the locked visualization height ── */
 .ltm {
   flex: 1; min-height: 0; width: auto;
   display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;

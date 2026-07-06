@@ -11,6 +11,17 @@ export interface UpdateEntry {
 export const UPDATE_LOG: UpdateEntry[] = [
   {
     date: '2026-07-06',
+    emoji: '📅',
+    title: 'A Yesterday tab that grades your day, with Today on the way',
+    summary: 'The first Progress tab is now Yesterday: your closing numbers for the day just gone, at a glance. A new Today tab is coming soon and will show live targets.',
+    points: [
+      'New Yesterday tab: calories eaten versus target, steps taken, sleep and mood, and how many habits you closed, all in one glance at how the day actually went.',
+      'A Today tab now sits next to it, holding the spot for live daily targets. It says coming soon for now.',
+      'Dub still gives you the plain-English verdict on yesterday at the top of the tab.',
+    ],
+  },
+  {
+    date: '2026-07-06',
     emoji: '🩹',
     title: 'Fixed the blank Progress charts, plus a tidier menu',
     summary: 'The Progress charts were rendering as empty boxes after the height-lock change. They fill their space properly again, and the settings menu got a cleanup with more quick-log options.',

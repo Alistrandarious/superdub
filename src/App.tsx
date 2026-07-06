@@ -25,7 +25,7 @@ import CogMenu from './CogMenu';
 import PatternsCard, { PatternDay } from './PatternsCard';
 import ChartCarousel from './ChartCarousel';
 // DubProgressSummary retired from the Today panel — the live verdict text now carries Dub's read.
-import LiveTargetMatrix from './LiveTargetMatrix';
+import YesterdayMatrix from './YesterdayMatrix';
 import GoalSheet from './GoalSheet';
 import SleepCandleChart, { hhmmToAxis, type SleepCandle } from './SleepCandleChart';
 
@@ -1284,18 +1284,16 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         : `Log sleep and mood in the daily ritual to see them side by side.` },
   ].filter(m => m.show);
 
-  // ── Live Target Matrix inputs (today's live state) ──────────────────────────
-  const todayData = tracker[todayKey];
-  const todaySteps = parseInt(todayData?.steps ?? '') || 0;
-  const todayCalories = parseInt(todayData?.calories ?? '') || 0;
-  const todayISO = `${YEAR}-${todayKey.slice(3)}-${todayKey.slice(0, 2)}`;
-  const todaySleep = sleepByDate[todayISO] ?? null;
-  // Priority habit: the first uncompleted real habit today (the mandatory
-  // auto-tick is excluded). ponytail: naive order-based pick; upgrade path is to
-  // weight by each habit's live streak so the one with the most to lose wins.
-  const priorityHabit = habits.find(h =>
-    h !== 'Logging into Superdub' && todayData?.habits[h] !== true
-  ) ?? null;
+  // ── Yesterday Matrix inputs (yesterday's closing KPIs) ──────────────────────
+  const yDate = new Date(now); yDate.setDate(now.getDate() - 1);
+  const yesterdayKey = `${String(yDate.getDate()).padStart(2, '0')}/${String(yDate.getMonth() + 1).padStart(2, '0')}`;
+  const yesterdayISO = `${yDate.getFullYear()}-${String(yDate.getMonth() + 1).padStart(2, '0')}-${String(yDate.getDate()).padStart(2, '0')}`;
+  const yData = tracker[yesterdayKey];
+  const ySteps = parseInt(yData?.steps ?? '') || 0;
+  const ySleep = sleepByDate[yesterdayISO] ?? null;
+  const yMood = moodByDate[yesterdayISO] ?? null;
+  const realHabits = habits.filter(h => h !== 'Logging into Superdub');
+  const yHabitsDone = realHabits.filter(h => yData?.habits[h] === true).length;
   // Retrospective verdict — a clean prose read on YESTERDAY's closing metrics
   // (estimated intake vs target, safe-zone status, the week's actual change).
   // Falls back to the coaching engine's message when the numbers aren't in yet.
@@ -1310,11 +1308,16 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     return `Yesterday you ate about ${verdict.intake.toLocaleString()} kcal — ${Math.abs(verdict.delta).toLocaleString()} ${verdict.delta <= 0 ? 'under' : 'over'} your ${targetCalories.toLocaleString()} target.${zone}${wk}`;
   })();
 
-  // Story panels: Today (the matrix) first, the charts in the middle, and a
-  // scrollable Stats panel last. Tabs/notes stay index-aligned with the slides;
-  // note 0 is Today's yesterday-verdict, shown in Dub's top bar by the carousel.
-  const storyTabs = ['Today', ...chartMeta.map(m => m.name), 'Stats'];
-  const storyNotes: (string | null)[] = [liveVerdict, ...chartMeta.map(m => m.note), null];
+  // Story panels: Yesterday (retrospective KPIs) first, then a placeholder Today,
+  // the charts in the middle, and a scrollable Stats panel last. Tabs/notes stay
+  // index-aligned with the slides; Dub's top bar shows each note.
+  const storyTabs = ['Yesterday', 'Today', ...chartMeta.map(m => m.name), 'Stats'];
+  const storyNotes: (string | null)[] = [
+    liveVerdict,
+    "Your live plan for today is on its way. For now, peek at yesterday to see how you closed the day.",
+    ...chartMeta.map(m => m.note),
+    null,
+  ];
 
   return (
     <div className="app flush" style={{ '--theme': themeColor, '--theme-dim': themeColor + '66', '--theme-glow': themeColor + '14' } as React.CSSProperties}>
@@ -1516,19 +1519,20 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="dashboard-story">
       <ChartCarousel tabs={storyTabs} notes={storyNotes}>
 
-      {/* ── Panel 0 · Today — the Live Target Matrix fills the locked height.
+      {/* ── Panel 0 · Yesterday — retrospective KPIs fill the locked height.
              Dub's yesterday-verdict rides in the carousel's top bar (note 0). ── */}
       <div className="story-panel story-panel--intro">
 
-      <LiveTargetMatrix
+      <YesterdayMatrix
+        intake={verdict?.intake ?? null}
         targetCalories={targetCalories}
-        caloriesConsumed={todayCalories}
-        steps={todaySteps}
-        stepTarget={effectiveStepTarget}
-        sleepHours={todaySleep}
-        energyScore={coachingMsg?.todayEnergy ?? null}
-        priorityHabit={priorityHabit}
-        onToggleHabit={(h) => handleCheck(todayKey, h)}
+        delta={verdict?.delta ?? null}
+        steps={ySteps}
+        stepTarget={stepTarget}
+        sleepHours={ySleep}
+        mood={yMood}
+        habitsDone={yHabitsDone}
+        habitsTotal={realHabits.length}
       />
 
       {/* ── Cohort onboarding banner (shown once after signup) ── */}
@@ -1549,9 +1553,18 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </div>
       )}
 
-      </div>{/* /story-panel--intro */}
+      </div>{/* /Yesterday panel */}
 
-      {/* ── Panel 1 · Weight ── */}
+      {/* ── Panel 1 · Today — placeholder until the live plan ships ── */}
+      <div className="story-panel story-panel--intro today-soon">
+        <div className="today-soon-card">
+          <span className="today-soon-eyebrow">TODAY</span>
+          <h3 className="today-soon-title">Your live plan is coming soon</h3>
+          <p className="today-soon-body">Soon this tab will show today's live targets: the calories, steps and habits to aim for right now. For today, check Yesterday to see how you closed the day.</p>
+        </div>
+      </div>
+
+      {/* ── Panel 2 · Weight ── */}
       <section className="chart-section chart-section--weight">
         <div className="chart-title-row">
           <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#FFFFFF' }} />Weight Trend</h3>
