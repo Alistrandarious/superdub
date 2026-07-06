@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 import { api } from './api';
+import WeightInput from './WeightInput';
+import { useWeightUnit, formatWeightKg } from './weightUnit';
 
 const CHECKIN_KEY = 'superdub.weight.checkin';
 const SNOOZE_KEY = 'superdub.weight.snooze';   // timestamp (ms) to re-ask after "Ask me later"
@@ -23,7 +25,7 @@ const DailyCheckIn: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [done, setDone]     = useState(false);
   const [error, setError]   = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const unit = useWeightUnit();
 
   // Prefill with the most recent weight the user has logged (yesterday's carries
   // over to today), falling back to their profile weight.
@@ -103,7 +105,7 @@ const DailyCheckIn: React.FC = () => {
   const save = async () => {
     const parsed = Math.round(parseFloat(weight) * 100) / 100;
     if (!parsed || parsed < 20 || parsed > 400) {
-      setError('Enter a weight between 20 and 400 kg.');
+      setError(`Enter a weight between ${formatWeightKg(20, unit)} and ${formatWeightKg(400, unit)}.`);
       return;
     }
     setSaving(true);
@@ -131,21 +133,17 @@ const DailyCheckIn: React.FC = () => {
         <h2 className="checkin-title">Morning Check-in</h2>
         <p className="checkin-subtitle">Weigh yourself first thing in the morning, after using the bathroom and before eating — this gives you the most consistent reading.</p>
 
-        {/* Tap-to-type weight */}
-        <div className="checkin-weight-input-wrap" onClick={() => inputRef.current?.focus()}>
-          <input
-            ref={inputRef}
-            className="checkin-weight-input"
-            type="text"
-            inputMode="decimal"
-            value={weight}
+        {/* Tap-to-type weight — entered in the user's unit, stored as kg */}
+        <div className="checkin-weight-input-wrap">
+          <WeightInput
+            valueKg={weight}
+            onChangeKg={setWeight}
+            unit={unit}
+            inputClassName="checkin-weight-input"
             autoFocus
-            onChange={e => setWeight(e.target.value.replace(/[^0-9.]/g, ''))}
-            onKeyDown={e => e.key === 'Enter' && save()}
-            placeholder="0.0"
-            aria-label="Weight in kilograms"
+            onEnter={save}
+            ariaLabel="Weight"
           />
-          <span className="checkin-weight-unit">kg</span>
         </div>
 
         <div className="checkin-actions">

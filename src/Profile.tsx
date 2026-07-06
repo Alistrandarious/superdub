@@ -6,6 +6,7 @@ import { computeActivity, JOB_OPTS } from './Auth';
 import SuperdubHeader from './SuperdubHeader';
 import { OCCUPATIONS, ETHNICITIES, GENDER_IDENTITIES, COUNTRIES, RELATIONSHIP_STATUSES, RELIGIONS } from './demographics';
 import { pageTheme, GROWTH } from './theme';
+import { setWeightUnit as persistWeightUnit } from './weightUnit';
 
 interface ProfileData {
   dob: string;
@@ -344,7 +345,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
 
   const changeWeightUnit = (unit: 'kg' | 'lbs' | 'st') => {
     setWeightUnit(unit);
-    localStorage.setItem('superdub.weightUnit', unit);
+    persistWeightUnit(unit); // writes localStorage + broadcasts to open screens
   };
 
   const saveTrainingSettings = (spw: number, intensity: string, minutes: number, activities: WeeklyActivity[]) => {

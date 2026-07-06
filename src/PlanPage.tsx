@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from './api';
+import WeightInput from './WeightInput';
+import { useWeightUnit, formatWeightKg, unitLabel } from './weightUnit';
 
 interface ActiveGoal {
   goalType: 'lose' | 'gain' | 'maintain';
@@ -72,6 +74,7 @@ const PlanPage: React.FC = () => {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [cycle, setCycle] = useState<CycleData | null>(null);
   const [latestWeight, setLatestWeight] = useState<number | null>(null);
+  const unit = useWeightUnit();
 
   // Form state
   const [targetWeight, setTargetWeight] = useState('');
@@ -264,7 +267,7 @@ const PlanPage: React.FC = () => {
                 <span className="plan-status-arrow">
                   {activeGoal.goalType === 'lose' ? '↓' : activeGoal.goalType === 'gain' ? '↑' : '→'}
                 </span>
-                <span className="plan-status-weights">{activeGoal.startWeight} → {activeGoal.targetWeight} kg</span>
+                <span className="plan-status-weights">{formatWeightKg(activeGoal.startWeight, unit)} → {formatWeightKg(activeGoal.targetWeight, unit)}</span>
                 <span className="plan-status-date">by {new Date(activeGoal.targetDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
               </div>
 
@@ -361,20 +364,19 @@ const PlanPage: React.FC = () => {
             <div className="goal-field">
               <span className="goal-field-label">Current weight</span>
               <span className="goal-field-readonly">
-                {latestWeight != null ? `${latestWeight} kg` : '— no weigh-in yet'}
+                {latestWeight != null ? formatWeightKg(latestWeight, unit) : '— no weigh-in yet'}
               </span>
             </div>
 
             <div className="goal-field">
-              <label className="goal-field-label" htmlFor="pp-target-weight">Target weight (kg)</label>
-              <input
+              <label className="goal-field-label" htmlFor="pp-target-weight">Target weight ({unitLabel(unit)})</label>
+              <WeightInput
                 id="pp-target-weight"
-                className="goal-input"
-                type="text"
-                inputMode="decimal"
-                value={targetWeight}
-                onChange={e => { if (e.target.value === '' || /^\d*\.?\d*$/.test(e.target.value)) setTargetWeight(e.target.value); }}
-                placeholder={latestWeight != null ? `e.g. ${(latestWeight - 5).toFixed(1)}` : 'e.g. 80'}
+                valueKg={targetWeight}
+                onChangeKg={setTargetWeight}
+                unit={unit}
+                inputClassName="goal-input"
+                ariaLabel="Target weight"
               />
             </div>
 
