@@ -5,7 +5,7 @@ import { ComposedChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveCon
 // Each night is a "candle" whose BODY spans actual bed → wake clock time, so its
 // length is the sleep duration. The Y axis is clock time on a 6pm→6pm scale
 // (evening at top, morning at bottom) so nights that cross midnight don't wrap.
-// The body is a solid violet bar; that morning's mood still shows in the tooltip.
+// Each night is a violet "I" (line capped top & bottom); mood shows in the tooltip.
 
 export interface SleepCandle {
   day: string;          // 'DD/MM' x-axis label
@@ -27,6 +27,22 @@ const axisToClock = (v: number): string => {
   const h = Math.round((v + 18) % 24);
   const hr = h % 12 === 0 ? 12 : h % 12;
   return `${hr}${h < 12 ? 'am' : 'pm'}`;
+};
+
+// Render each night as an "I": a thin vertical line from bed → wake, capped
+// with a short horizontal tick at the top (bedtime) and bottom (wake).
+const SleepIBar = (props: any) => {
+  const { x, y, width, height } = props;
+  const cx = x + width / 2;
+  const tick = Math.max(width / 2, 4);
+  const bottom = y + height;
+  return (
+    <g stroke="#8B5CF6" strokeWidth={2} strokeLinecap="round">
+      <line x1={cx} y1={y} x2={cx} y2={bottom} />
+      <line x1={cx - tick} y1={y} x2={cx + tick} y2={y} />
+      <line x1={cx - tick} y1={bottom} x2={cx + tick} y2={bottom} />
+    </g>
+  );
 };
 
 const SleepCandleChart: React.FC<{ data: SleepCandle[] }> = ({ data }) => (
@@ -54,8 +70,9 @@ const SleepCandleChart: React.FC<{ data: SleepCandle[] }> = ({ data }) => (
           return [`${d.bedtime} → ${d.waketime} (${d.hours.toFixed(1)}h)${moodTxt}`, 'Sleep'];
         }}
       />
-      {/* Floating bar: recharts renders a [start,end] array dataKey as a body spanning the two values. */}
-      <Bar dataKey={(d: SleepCandle) => [d.bedVal, d.wakeVal]} barSize={12} radius={3} fill="#8B5CF6" isAnimationActive={false} />
+      {/* Floating bar: a [start,end] array dataKey gives recharts the bed→wake span;
+          SleepIBar draws it as a capped vertical line instead of a solid body. */}
+      <Bar dataKey={(d: SleepCandle) => [d.bedVal, d.wakeVal]} barSize={12} shape={SleepIBar} isAnimationActive={false} />
     </ComposedChart>
   </ResponsiveContainer>
 );
