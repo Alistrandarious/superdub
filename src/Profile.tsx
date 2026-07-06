@@ -376,18 +376,6 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
     localStorage.setItem('superdub.weightUnit', unit);
   };
 
-  const saveGoalWeightKg = (kg: number) => {
-    if (isNaN(kg) || kg <= 0) return;
-    const cur = currentKg;
-    setGoalWeight(String(kg));
-    api.updateWeightSettings({ ...wsRef, goalWeight: String(kg), currentWeight: profile.weightKg }).catch(() => {});
-    setWsRef((prev: any) => ({ ...prev, goalWeight: String(kg) }));
-    const derived: 'cut' | 'maintain' | 'bulk' = kg < cur ? 'cut' : kg > cur ? 'bulk' : 'maintain';
-    setDietGoal(derived);
-    api.updateDietSettings({ goal: derived, calorieLock: locks.calories, lockProtein: locks.protein, lockCarbs: locks.carbs, lockFats: locks.fats }).catch(() => {});
-    if (!locks.calories) applyGoalCalories(derived);
-  };
-
   const saveTrainingSettings = (spw: number, intensity: string, minutes: number, activities: WeeklyActivity[]) => {
     api.updateProfile({ gymSessionsPerWeek: spw, gymIntensity: intensity, gymMinutes: minutes, weeklyActivities: JSON.stringify(activities) }).catch(() => {});
   };

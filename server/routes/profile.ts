@@ -4,7 +4,7 @@ import { requireAuth, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 
-function ageFromDob(dob: string | null): string {
+export function ageFromDob(dob: string | null): string {
   if (!dob) return '';
   const born = new Date(dob);
   const today = new Date();
