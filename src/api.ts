@@ -161,7 +161,7 @@ export const api = {
     adherenceLevel?: number;
   }) => request('/checkin', { method: 'POST', body: JSON.stringify(data) }),
   getRecentCheckIns: () => request('/checkin/recent'),
-  getCheckInHistory: (days = 90): Promise<{ entries: { date: string; energy: number | null; mood: number | null; adherence: string | null; sleep: number | null }[] }> =>
+  getCheckInHistory: (days = 90): Promise<{ entries: { date: string; energy: number | null; mood: number | null; adherence: string | null; sleep: number | null; bedtime: string | null; waketime: string | null }[] }> =>
     request(`/checkin/history?days=${days}`),
   getCoachingMessage: () => request('/checkin/coaching'),
   getWeeklyIntention: (weekStart: string) =>

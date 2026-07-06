@@ -96,7 +96,9 @@ const LevelRing: React.FC<{
   const WAVE_EXT = 16;
   const wx0 = cx - fillR - WAVE_EXT;
   const wx1 = cx + fillR + WAVE_EXT;
-  const slope = Math.max(-1, Math.min(1, tilt.y)) * fillR * 0.5; // height delta centre→edge
+  // Negative: water pools toward the LOW edge, so the surface rises (smaller y)
+  // on the side the phone tilts down — real liquid finds its level opposite the roll.
+  const slope = -Math.max(-1, Math.min(1, tilt.y)) * fillR * 0.5; // height delta centre→edge
   const N = 40;
   let waveD = '';
   for (let i = 0; i <= N; i++) {

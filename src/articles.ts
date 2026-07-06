@@ -18,6 +18,25 @@ export interface Article {
 
 export const ARTICLES: Article[] = [
   {
+    id: 'sleep-candles',
+    title: 'Your Sleep, as Candlesticks',
+    author: 'Ali Shah',
+    readMins: 2,
+    tag: 'Sleep',
+    accent: '#8B5CF6',
+    dek: 'Every night is a candle: the body is the hours you slept, the colour is how you woke up feeling.',
+    body: [
+      { t: 'p', text: 'Sleep used to show up as a simple line of hours. Useful, but it hid the two things that actually matter: when you went to bed, and how that night left you feeling the next morning. So we rebuilt it as a candlestick chart.' },
+      { t: 'h', text: 'How to read a candle' },
+      { t: 'p', text: 'Each night is one candle. The body runs from the time you went to bed down to the time you woke up, so a longer candle simply means more sleep. The vertical axis is the clock, evening at the top and morning at the bottom, which is why a night that crosses midnight still reads as one clean bar.' },
+      { t: 'h', text: 'The colour is the point' },
+      { t: 'p', text: 'Here is the part worth staring at: each candle is coloured by the mood you logged the next morning. Green is a good morning, red is a rough one, amber sits in between. Line up a week of candles and the pattern jumps out, the late nights that turn the next day red, or the run of early nights that keeps you green.' },
+      { t: 'quote', text: 'You cannot fix what you cannot see. Now you can see the night behind the mood.' },
+      { t: 'h', text: 'Do this tonight' },
+      { t: 'p', text: 'Open your daily check-in and log the time you went to bed and the time you woke. Do it for a few nights, then swipe to the Sleep card on Progress and read the colours. One honest week is usually enough to spot the trade you have been making. 😴' },
+    ],
+  },
+  {
     id: 'meet-dub',
     title: 'Meet Dub, Your Coach',
     author: 'Ali Shah',

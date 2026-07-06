@@ -11,6 +11,19 @@ export interface UpdateEntry {
 export const UPDATE_LOG: UpdateEntry[] = [
   {
     date: '2026-07-06',
+    emoji: '😴',
+    title: 'Sleep as candlesticks, plus fixes across the app',
+    summary: 'Your nights now read as bed-to-wake candles coloured by your morning mood, and a batch of fixes lands across Habits, Progress, Steps and Profile.',
+    points: [
+      'New sleep chart: each night is a candle whose body runs from when you went to bed to when you woke, so its length is the time you actually slept. The colour is that morning\'s mood (green good, red rough), so you can see how sleep and mood move together.',
+      'Habits: double-tap a day circle to mark it as a miss (a single tap still marks it done), and your XP and level ring now update the instant you tick a habit.',
+      'Log Steps: a month calendar (green for logged days, red for missed) that stays open, so you can fill several days in one go.',
+      'Progress: one swipe now moves exactly one chart, and the Today panel sits full-height without scrolling.',
+      'Fixes: the water ring tilts the correct way now, The Maths no longer runs off the side of the screen, and the Plan section on Profile no longer spills over the edge.',
+    ],
+  },
+  {
+    date: '2026-07-06',
     emoji: '🎠',
     title: 'Daily Log, swipeable charts & a fuller ring',
     summary: 'A vitals strip that reinforces your daily logging, a swipe-through chart carousel with Dub\'s read on each, and a liquid ring that fills the whole disc.',

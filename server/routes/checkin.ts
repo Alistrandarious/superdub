@@ -144,7 +144,7 @@ router.get('/history', requireAuth as any, async (req: AuthRequest, res: Respons
   try {
     const days = Math.min(365, Math.max(7, parseInt(String(req.query.days ?? '90')) || 90));
     const { rows } = await pool.query(
-      `SELECT date::text AS date, energy, mood, adherence, sleep_hours
+      `SELECT date::text AS date, energy, mood, adherence, sleep_hours, sleep_bedtime, sleep_waketime
        FROM daily_checkins
        WHERE user_id = $1 AND date >= CURRENT_DATE - ($2 || ' days')::interval
        ORDER BY date ASC`,
@@ -157,6 +157,8 @@ router.get('/history', requireAuth as any, async (req: AuthRequest, res: Respons
         mood: r.mood != null ? Number(r.mood) : null,
         adherence: r.adherence ?? null,
         sleep: r.sleep_hours != null ? Number(r.sleep_hours) : null,
+        bedtime: r.sleep_bedtime ?? null,   // 'HH:MM' or null
+        waketime: r.sleep_waketime ?? null, // 'HH:MM' or null
       })),
     });
   } catch (err: any) {

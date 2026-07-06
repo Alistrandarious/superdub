@@ -24,6 +24,7 @@ import CogMenu from './CogMenu';
 import PatternsCard, { PatternDay } from './PatternsCard';
 import ChartCarousel from './ChartCarousel';
 import GoalSheet from './GoalSheet';
+import SleepCandleChart, { hhmmToAxis, type SleepCandle } from './SleepCandleChart';
 
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -251,6 +252,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const [habits, setHabits] = useState<string[]>([]);
   const [moodByDate, setMoodByDate] = useState<Record<string, number>>({}); // ISO date → mood 1..5
   const [sleepByDate, setSleepByDate] = useState<Record<string, number>>({}); // ISO date → hours slept
+  const [sleepTimesByDate, setSleepTimesByDate] = useState<Record<string, { bedtime: string; waketime: string }>>({}); // ISO → bed/wake 'HH:MM'
   const [newHabit, setNewHabit] = useState('');
   const [tracker, setTracker] = useState<Record<string, DayData>>(INITIAL_TRACKER);
   const [loaded, setLoaded] = useState(false);
@@ -455,12 +457,15 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       const moods = api.getCheckInHistory(120).then((h) => {
         const m: Record<string, number> = {};
         const s: Record<string, number> = {};
+        const t: Record<string, { bedtime: string; waketime: string }> = {};
         for (const e of h.entries) {
           if (e.mood != null) m[e.date] = e.mood;
           if (e.sleep != null) s[e.date] = e.sleep;
+          if (e.bedtime && e.waketime) t[e.date] = { bedtime: e.bedtime, waketime: e.waketime };
         }
         setMoodByDate(m);
         setSleepByDate(s);
+        setSleepTimesByDate(t);
       }).catch(() => {});
       Promise.allSettled([coaching, plan, moods]).then(() => setLoaded(true));
       // The adjustment cycle is slower and only affects minor styling — run it after reveal.
@@ -663,6 +668,28 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     [chartDayRange, sleepByDate] // eslint-disable-line react-hooks/exhaustive-deps
   );
   const sleepHasData = sleepChartData.some(d => d.sleep != null);
+
+  // Sleep candlestick data — bed→wake bodies coloured by the morning's mood.
+  // Only nights with both bed + wake times get a candle (older hours-only entries
+  // are skipped). Times cross midnight, so the 6pm→6pm axis keeps them ordered.
+  const sleepCandleData = useMemo<SleepCandle[]>(() =>
+    chartDayRange.flatMap(({ ddmm }) => {
+      const iso = `${YEAR}-${ddmm.slice(3)}-${ddmm.slice(0, 2)}`;
+      const times = sleepTimesByDate[iso];
+      if (!times) return [];
+      const bedVal = hhmmToAxis(times.bedtime);
+      let wakeVal = hhmmToAxis(times.waketime);
+      if (wakeVal <= bedVal) wakeVal += 24; // guard: wake never before bed on the axis
+      return [{
+        day: ddmm, bedVal, wakeVal,
+        hours: +(wakeVal - bedVal).toFixed(1),
+        mood: moodByDate[iso] ?? null,
+        bedtime: times.bedtime, waketime: times.waketime,
+      }];
+    }),
+    [chartDayRange, sleepTimesByDate, moodByDate] // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const sleepCandleHasData = sleepCandleData.length > 0;
   const moodStats = useMemo(() => {
     const v7: number[] = [], v30: number[] = [];
     for (let i = 0; i < 30; i++) {
@@ -1255,7 +1282,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     { name: 'Mood', show: moodHasData, note: moodStats.avg7 != null
       ? `Mood's averaging ${moodStats.avg7}/5 this week.`
       : `Rate your mood in the daily check-in and it charts here.` },
-    { name: 'Sleep', show: sleepHasData, note: sleepAvg != null
+    { name: 'Sleep', show: sleepHasData || sleepCandleHasData, note: sleepAvg != null
       ? `You're averaging ${sleepAvg}h a night — ${sleepAvg >= 7.5 ? 'right where you want to be' : 'a touch under the 8h mark, worth protecting'}.`
       : `Add your sleep in the daily ritual to see it here.` },
   ].filter(m => m.show);
@@ -1954,14 +1981,19 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </section>
       )}
 
-      {/* ── Sleep (hours from the daily ritual) ── */}
-      {sleepHasData && (
+      {/* ── Sleep — bed→wake candles (coloured by mood), or the hours line for
+             older entries that only logged a duration ── */}
+      {(sleepCandleHasData || sleepHasData) && (
         <section className="chart-section">
           <div className="chart-title-row" style={{ padding: '4px 16px 0' }}>
             <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#8B5CF6' }} />Sleep</h3>
+            {sleepCandleHasData && <span className="chart-sub" style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>bar = time asleep · colour = mood</span>}
           </div>
           {renderChartPager()}
           <DraggableChart disabled onPage={pageBy}>
+          {sleepCandleHasData ? (
+            <SleepCandleChart data={sleepCandleData} />
+          ) : (
           <ResponsiveContainer width="100%" height={180}>
             <ComposedChart data={sleepChartData} margin={{ left: 0, right: 10, top: 10, bottom: 8 }}>
               <defs>
@@ -1984,6 +2016,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               <Line type="monotone" dataKey="sleep" name="Sleep" stroke="#8B5CF6" strokeWidth={2.5} dot={{ r: 3, fill: '#0E0E14', stroke: '#8B5CF6', strokeWidth: 2 }} connectNulls isAnimationActive={false} />
             </ComposedChart>
           </ResponsiveContainer>
+          )}
           </DraggableChart>
         </section>
       )}
