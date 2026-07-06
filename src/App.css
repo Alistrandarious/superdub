@@ -2021,6 +2021,39 @@ h1, h2, h3, h4, .sora {
 .nut-verdict { text-align: center; margin: 6px 0 2px; font-family: var(--font-data); font-size: 0.8rem; font-weight: 700; color: #FFD233; }
 .nut-verdict.over { color: #B84DFF; }
 
+/* ── Sleep "between" slider — two thumbs on a 6pm→6pm track ── */
+.srs { padding: 4px 0 2px; }
+.srs-readout {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;
+  font-family: var(--font-data); font-size: 0.82rem; font-weight: 700; color: #FFE08A;
+}
+.srs-end { display: flex; flex-direction: column; }
+.srs-end--r { text-align: right; }
+.srs-end-cap { font-size: 0.5rem; letter-spacing: 0.14em; color: rgba(255,255,255,0.35); margin-bottom: 2px; }
+.srs-dur { font-size: 0.7rem; color: #FFD233; }
+.srs-track {
+  position: relative; height: 12px; border-radius: 999px;
+  background: rgba(255,255,255,0.08); margin: 0 11px; touch-action: none;
+}
+.srs-band {
+  position: absolute; top: 0; bottom: 0; border-radius: 999px;
+  background: linear-gradient(90deg, #7C3AED, #FFB020);  /* night → morning */
+  box-shadow: 0 0 12px rgba(255,185,40,0.25);
+}
+.srs-thumb {
+  position: absolute; top: 50%; width: 22px; height: 22px; padding: 0;
+  transform: translate(-50%, -50%); border-radius: 50%; cursor: grab;
+  background: linear-gradient(135deg, #FFE08A, #FF8A00);
+  border: 2px solid #0E0E14; box-shadow: 0 0 10px rgba(255,185,40,0.55); touch-action: none;
+}
+.srs-thumb:active { cursor: grabbing; }
+.srs-thumb::before { content: ''; position: absolute; inset: -11px; border-radius: 50%; } /* 44px hit target */
+.srs-ticks { position: relative; height: 14px; margin: 8px 11px 0; }
+.srs-tick {
+  position: absolute; transform: translateX(-50%); top: 0;
+  font-family: var(--font-data); font-size: 0.54rem; color: rgba(255,255,255,0.3); white-space: nowrap;
+}
+
 /* ── Live/Yesterday Matrix — 2×2 grid that fills the locked visualization height ── */
 .ltm {
   flex: 1; min-height: 0; width: auto;

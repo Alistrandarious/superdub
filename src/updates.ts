@@ -10,6 +10,16 @@ export interface UpdateEntry {
 
 export const UPDATE_LOG: UpdateEntry[] = [
   {
+    date: '2026-07-07',
+    emoji: '🌙',
+    title: 'Sleep is now a slide-between-two-points',
+    summary: 'The morning vitals sleep step is a two-handle slider across the night. Drag one point to when you went to bed and the other to when you woke, and both times are saved.',
+    points: [
+      'Set sleep by dragging two thumbs on a 6pm-to-6pm track: one for bedtime, one for wake time. The band between them is your night, and the hours are worked out for you.',
+      'Because it now captures when you actually woke, your sleep candlestick chart fills in properly again, coloured by mood.',
+    ],
+  },
+  {
     date: '2026-07-06',
     emoji: '⏰',
     title: 'Exercise and nutrition prompts, timed to your day',

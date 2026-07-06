@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import { api } from './api';
+import SleepRangeSlider, { axisToHHMM, DEFAULT_BED, DEFAULT_WAKE } from './SleepRangeSlider';
 
 // ── Vitals prompt — the sleek morning "how did you sleep & feel?" step from the
 // prompt-system spec. One focused pop-up (not the old combined check-in): a
-// horizontal sleep slider (4–12h), then mood and energy on 1–10 sliders that
-// reveal one after another. Stored as sleepHours + energy/mood (mapped to the
-// engine's 1–5 scale, which the coaching + step-target logic still expects).
+// two-thumb "between" sleep slider (bedtime → wake, capturing both), then mood
+// and energy on 1–10 sliders that reveal one after another. Stored as
+// sleepHours + bedtime/waketime (feeds the candlestick) + energy/mood (mapped
+// to the engine's 1–5 scale, which the coaching + step-target logic expects).
 
 const VITALS_KEY = 'superdub.vitals.checkin'; // value = YYYY-MM-DD when done
 const todayISO = () => new Date().toISOString().slice(0, 10);
@@ -14,7 +16,8 @@ const to5 = (v: number) => Math.max(1, Math.min(5, Math.round(v / 2))); // 1–1
 
 const VitalsPrompt: React.FC = () => {
   const [show, setShow] = useState(false);
-  const [sleep, setSleep] = useState(8);
+  const [bed, setBed] = useState(DEFAULT_BED);   // axis: hours after 6pm
+  const [wake, setWake] = useState(DEFAULT_WAKE);
   const [sleepTouched, setSleepTouched] = useState(false);
   const [mood, setMood] = useState(6);
   const [moodTouched, setMoodTouched] = useState(false);
@@ -25,7 +28,7 @@ const VitalsPrompt: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const reset = () => {
-    setSleep(8); setSleepTouched(false);
+    setBed(DEFAULT_BED); setWake(DEFAULT_WAKE); setSleepTouched(false);
     setMood(6); setMoodTouched(false);
     setEnergy(6); setEnergyTouched(false);
     setDone(false); setError(null);
@@ -60,7 +63,11 @@ const VitalsPrompt: React.FC = () => {
     if (!canSave) return;
     setSaving(true); setError(null);
     try {
-      await api.submitCheckIn({ energy: to5(energy), mood: to5(mood), sleepHours: sleep });
+      await api.submitCheckIn({
+        energy: to5(energy), mood: to5(mood),
+        sleepHours: +(wake - bed).toFixed(1),
+        sleepBedtime: axisToHHMM(bed), sleepWaketime: axisToHHMM(wake),
+      });
       localStorage.setItem(VITALS_KEY, todayISO());
       window.dispatchEvent(new CustomEvent('superdub:tracker-updated'));
       window.dispatchEvent(new CustomEvent('superdub:checkin-done'));
@@ -81,15 +88,13 @@ const VitalsPrompt: React.FC = () => {
         <h2 className="checkin-title">Morning vitals</h2>
         <p className="checkin-subtitle">A few taps — how you slept, then how you feel.</p>
 
-        {/* Sleep — horizontal slider bounded 4–12h */}
+        {/* Sleep — a two-thumb "between" slider: drag bedtime and wake time */}
         <div className="vitals-step">
-          <div className="vitals-label"><span>Sleep last night</span><span className="vitals-value">{sleep % 1 === 0 ? sleep : sleep.toFixed(1)}h</span></div>
-          <input
-            type="range" min={4} max={12} step={0.5} value={sleep} className="vitals-slider"
-            onChange={e => { setSleep(parseFloat(e.target.value)); setSleepTouched(true); }}
-            aria-label="Hours slept"
+          <div className="vitals-label"><span>Sleep last night</span></div>
+          <SleepRangeSlider
+            bed={bed} wake={wake}
+            onChange={(b, w) => { setBed(b); setWake(w); setSleepTouched(true); }}
           />
-          <div className="vitals-scale"><span>4h</span><span>12h</span></div>
         </div>
 
         {/* Mood — 1–10, slides in once sleep is set */}
