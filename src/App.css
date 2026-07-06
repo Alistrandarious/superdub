@@ -1880,12 +1880,11 @@ h1, h2, h3, h4, .sora {
    so it never grows its own scrollbar (you swipe to the next panel instead).
    Content is kept lean (verdict + Dub) so it fits a phone without clipping. */
 .story-panel--intro {
-  padding-top: 4px;
-  height: 100%;
-  min-height: 0;
-  justify-content: center;
-  gap: 6px;
-  overflow: hidden;
+  padding-top: 8px;
+  gap: 12px;
+  /* Natural height so the taller (380px) matrix + verdict flow and the slide's
+     own overflow-y scrolls if a short screen needs it — no clipping. */
+  flex-shrink: 0;
 }
 .story-panel--intro .today-verdict,
 .story-panel--intro .ltm { margin-left: 16px; margin-right: 16px; }
@@ -1904,7 +1903,7 @@ h1, h2, h3, h4, .sora {
 /* ── Live Target Matrix — fixed 2×2, pixel-frozen against the charts ── */
 .ltm {
   flex-shrink: 0;                       /* never let the column-flex shell crush it */
-  height: 280px; width: auto;
+  height: 380px; width: auto;           /* uniform visualization height across tabs */
   display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
   gap: 10px;
 }
@@ -1938,6 +1937,7 @@ h1, h2, h3, h4, .sora {
 .ltm-metric { font-family: var(--font-data); font-weight: 700; font-size: 1.35rem; line-height: 1; color: #F0F4FF; margin-top: 12px; }
 .ltm-metric-unit { font-family: var(--font-ui); font-size: 0.52rem; color: rgba(255,255,255,0.4); margin-left: 4px; }
 .ltm-metric.ltm-empty { color: rgba(255,255,255,0.3); }
+.ltm-metric.ltm-cleared { color: #FFD233; }
 /* Progress bar (steps / sleep) */
 .ltm-bar { width: 82%; height: 6px; border-radius: 999px; background: rgba(255,255,255,0.07); overflow: hidden; margin-top: 8px; }
 .ltm-bar-fill { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #FFD233, #FF8A00); transition: width 0.5s cubic-bezier(0.22,1,0.36,1); }

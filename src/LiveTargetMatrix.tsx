@@ -20,23 +20,16 @@ export interface LiveTargetMatrixProps {
   onToggleHabit: (habit: string) => void;
 }
 
-// Fraction of the active waking day elapsed (07:00–22:00), for step pacing.
-function activeDayFraction(d = new Date()): number {
-  const mins = d.getHours() * 60 + d.getMinutes();
-  const start = 7 * 60, end = 22 * 60;
-  return Math.max(0, Math.min(1, (mins - start) / (end - start)));
+// Sleep Optimizer — how many hours to aim for TONIGHT so tomorrow's energy
+// bands sit in the good zone. Baseline 8h, nudged by how today actually went:
+// a low-energy day (running on a debt) earns more recovery; a short night last
+// night compounds it. Deterministic, mirrors the "sleep feeds energy" logic.
+function recommendedSleepTonight(energy: number | null, lastNight: number | null): number {
+  let target = 8;
+  if (energy != null && energy <= 2) target += 0.5;      // ran low today → bank recovery
+  if (lastNight != null && lastNight < 6.5) target += 0.5; // short last night → repay debt
+  return Math.min(9, Math.round(target * 2) / 2);
 }
-
-// Predicted afternoon energy: this morning's energy nudged by last night's
-// sleep (a short night pulls the afternoon peak down; a full one lifts it).
-// Deterministic, mirrors the coaching engine's "sleep feeds energy" logic.
-function predictedAfternoonEnergy(energy: number | null, sleep: number | null): number | null {
-  if (energy == null) return null;
-  let e = energy;
-  if (sleep != null) { if (sleep >= 7.5) e += 0.5; else if (sleep < 6) e -= 1; }
-  return Math.max(1, Math.min(5, Math.round(e * 10) / 10));
-}
-const ENERGY_LABEL = (e: number) => e >= 4.5 ? 'Peak' : e >= 3.5 ? 'Strong' : e >= 2.5 ? 'Steady' : e >= 1.5 ? 'Low' : 'Drained';
 
 // A clean SVG progress ring. `over` flips it to the violet critical gradient.
 const Ring: React.FC<{ pct: number; over: boolean; children: React.ReactNode }> = ({ pct, over, children }) => {
@@ -76,16 +69,14 @@ const LiveTargetMatrix: React.FC<LiveTargetMatrixProps> = ({
   const over = runway < 0;
   const intakePct = targetCalories > 0 ? caloriesConsumed / targetCalories : 0;
 
-  // ── Activity · step pace ──
-  const expectedByNow = Math.round(stepTarget * activeDayFraction());
-  const paceDelta = steps - expectedByNow;
+  // ── Activity · step aim (steps still needed today to clear the target) ──
+  const stepsToGo = Math.max(0, stepTarget - steps);
   const stepPct = stepTarget > 0 ? steps / stepTarget : 0;
-  const ahead = paceDelta >= 0;
+  const stepCleared = stepsToGo === 0;
 
-  // ── Vitals · sleep + predicted energy ──
-  const sleepBounded = sleepHours != null ? Math.max(4, Math.min(12, sleepHours)) : null;
-  const sleepPct = sleepBounded != null ? (sleepBounded - 4) / 8 : 0; // 4h→0, 12h→1
-  const predEnergy = predictedAfternoonEnergy(energyScore, sleepHours);
+  // ── Vitals · sleep optimizer (hours to aim for tonight) ──
+  const recSleep = recommendedSleepTonight(energyScore, sleepHours);
+  const recPct = (recSleep - 4) / 8; // 4h→0, 12h→1, for the gauge bar
 
   return (
     <div className="ltm">
@@ -104,28 +95,28 @@ const LiveTargetMatrix: React.FC<LiveTargetMatrixProps> = ({
           : <span className="ltm-sub">runway to {targetCalories.toLocaleString()}</span>}
       </div>
 
-      {/* Activity · Step Pace tracker */}
+      {/* Activity · Step Aim — steps still needed today to clear the target */}
       <div className="ltm-cell">
         <span className="ltm-eyebrow">ACTIVITY</span>
-        <div className="ltm-metric">{steps.toLocaleString()}<span className="ltm-metric-unit">steps</span></div>
-        <div className="ltm-bar"><span className={`ltm-bar-fill${ahead ? '' : ' behind'}`} style={{ width: `${Math.min(100, stepPct * 100)}%` }} /></div>
-        <span className={`ltm-sub${ahead ? ' good' : ' warn'}`}>
-          {ahead ? '+' : '−'}{Math.abs(paceDelta).toLocaleString()} steps {ahead ? 'ahead of' : 'behind'} pace
+        {stepCleared ? (
+          <div className="ltm-metric ltm-cleared">✓<span className="ltm-metric-unit">target hit</span></div>
+        ) : (
+          <div className="ltm-metric">{stepsToGo.toLocaleString()}<span className="ltm-metric-unit">to go</span></div>
+        )}
+        <div className="ltm-bar"><span className="ltm-bar-fill" style={{ width: `${Math.min(100, stepPct * 100)}%` }} /></div>
+        <span className={`ltm-sub${stepCleared ? ' good' : ''}`}>
+          {stepCleared ? `${steps.toLocaleString()} steps — above ${stepTarget.toLocaleString()}` : `aim ${stepTarget.toLocaleString()} today · ${steps.toLocaleString()} so far`}
         </span>
       </div>
 
-      {/* Vitals · Sleep & Energy vector */}
+      {/* Vitals · Sleep Optimizer — hours to aim for tonight */}
       <div className="ltm-cell">
         <span className="ltm-eyebrow">VITALS</span>
-        {sleepBounded != null ? (
-          <div className="ltm-metric">{sleepBounded % 1 === 0 ? sleepBounded : sleepBounded.toFixed(1)}<span className="ltm-metric-unit">h slept</span></div>
-        ) : (
-          <div className="ltm-metric ltm-empty">—<span className="ltm-metric-unit">no sleep log</span></div>
-        )}
-        <div className="ltm-bar"><span className="ltm-bar-fill" style={{ width: `${Math.min(100, sleepPct * 100)}%` }} /></div>
-        {predEnergy != null
-          ? <span className="ltm-sub">PM energy: <strong className="ltm-energy">{ENERGY_LABEL(predEnergy)}</strong> ({predEnergy}/5)</span>
-          : <span className="ltm-sub ltm-empty">rate energy in the check-in</span>}
+        <div className="ltm-metric">{recSleep % 1 === 0 ? recSleep : recSleep.toFixed(1)}<span className="ltm-metric-unit">h tonight</span></div>
+        <div className="ltm-bar"><span className="ltm-bar-fill" style={{ width: `${Math.min(100, recPct * 100)}%` }} /></div>
+        <span className="ltm-sub">
+          {sleepHours != null ? `last night ${sleepHours % 1 === 0 ? sleepHours : sleepHours.toFixed(1)}h · ` : ''}aim here to steady tomorrow
+        </span>
       </div>
 
       {/* Focus · Priority Habit token */}

@@ -45,8 +45,8 @@ const SleepIBar = (props: any) => {
   );
 };
 
-const SleepCandleChart: React.FC<{ data: SleepCandle[] }> = ({ data }) => (
-  <ResponsiveContainer width="100%" height={180}>
+const SleepCandleChart: React.FC<{ data: SleepCandle[]; height?: number }> = ({ data, height = 180 }) => (
+  <ResponsiveContainer width="100%" height={height}>
     <ComposedChart data={data} margin={{ left: 0, right: 10, top: 10, bottom: 8 }}>
       <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
       <XAxis

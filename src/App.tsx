@@ -110,6 +110,11 @@ function getYearDays(year: number): string[] {
 const YEAR = new Date().getFullYear();
 const ALL_DAYS = getYearDays(YEAR);
 
+// Uniform chart-canvas height across every Progress tab — expands the charts to
+// fill the viewport and keeps the visualization space the same size on every
+// tab so switching chips never shifts the layout.
+const CHART_H = 380;
+
 // Chart ranges — historical (week/all) + forward-projection horizons.
 type ChartRange = 'week' | 'm' | '3m' | 'goal' | 'all';
 const RANGE_ORDER: ChartRange[] = ['week', 'm', 'goal', 'all'];
@@ -1271,12 +1276,12 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     { name: 'Intake', show: true, note: calorieHasData
       ? `Estimated intake's averaging ${cn(avgEstIntake)} kcal vs a ${cn(targetCalories)} target — ${avgEstIntake <= targetCalories ? 'nicely under' : 'running over'}.`
       : `As your weight and steps build up, I'll estimate your intake here.` },
-    { name: 'Mood', show: moodHasData, note: moodStats.avg7 != null
-      ? `Mood's averaging ${moodStats.avg7}/5 this week.`
-      : `Rate your mood in the daily check-in and it charts here.` },
-    { name: 'Sleep', show: sleepHasData || sleepCandleHasData, note: sleepAvg != null
-      ? `You're averaging ${sleepAvg}h a night — ${sleepAvg >= 7.5 ? 'right where you want to be' : 'a touch under the 8h mark, worth protecting'}.`
-      : `Add your sleep in the daily ritual to see it here.` },
+    { name: 'Sleep & Mood', show: moodHasData || sleepHasData || sleepCandleHasData,
+      note: sleepAvg != null && moodStats.avg7 != null
+        ? `Averaging ${sleepAvg}h a night and ${moodStats.avg7}/5 mood — watch how the two move together.`
+        : sleepAvg != null ? `You're averaging ${sleepAvg}h a night — ${sleepAvg >= 7.5 ? 'right where you want to be' : 'a touch under 8h, worth protecting'}.`
+        : moodStats.avg7 != null ? `Mood's averaging ${moodStats.avg7}/5 this week.`
+        : `Log sleep and mood in the daily ritual to see them side by side.` },
   ].filter(m => m.show);
   // Story panels: an intro ("Today" = verdict + Dub) first, the charts in the
   // middle, and a scrollable "Stats" panel last. Tabs/notes must stay aligned
@@ -1296,9 +1301,19 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const priorityHabit = habits.find(h =>
     h !== 'Logging into Superdub' && todayData?.habits[h] !== true
   ) ?? null;
-  // Live verdict line — the coaching engine's read on today, shown as raw text.
-  const liveVerdict = coachingMsg?.message
-    ?? (verdict ? `Yesterday you ate about ${verdict.intake.toLocaleString()} kcal, ${Math.abs(verdict.delta).toLocaleString()} ${verdict.delta <= 0 ? 'under' : 'over'} your ${targetCalories.toLocaleString()} target.` : null);
+  // Retrospective verdict — a clean prose read on YESTERDAY's closing metrics
+  // (estimated intake vs target, safe-zone status, the week's actual change).
+  // Falls back to the coaching engine's message when the numbers aren't in yet.
+  const liveVerdict = (() => {
+    if (!verdict) return coachingMsg?.message ?? null;
+    const zone = verdict.zoneStatus === 'in' ? " You're holding inside the safe zone."
+      : verdict.zoneStatus === 'above' ? " You're sitting above the safe zone."
+      : verdict.zoneStatus === 'below' ? " You're below the safe zone." : '';
+    const wk = verdict.weekChange != null
+      ? ` ${verdict.weekChange > 0 ? 'Up' : verdict.weekChange < 0 ? 'Down' : 'Flat'} ${Math.abs(kgToUnitValue(verdict.weekChange, unit)).toFixed(1)} ${unitLabel(unit)} this week.`
+      : '';
+    return `Yesterday you ate about ${verdict.intake.toLocaleString()} kcal — ${Math.abs(verdict.delta).toLocaleString()} ${verdict.delta <= 0 ? 'under' : 'over'} your ${targetCalories.toLocaleString()} target.${zone}${wk}`;
+  })();
 
   return (
     <div className="app flush" style={{ '--theme': themeColor, '--theme-dim': themeColor + '66', '--theme-glow': themeColor + '14' } as React.CSSProperties}>
@@ -1507,7 +1522,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           from the coaching engine (falls back to yesterday's intake vs target). */}
       {liveVerdict && (
         <p className="today-verdict">
-          <span className="today-verdict-eyebrow">DUB'S VERDICT</span>
+          <span className="today-verdict-eyebrow">DUB'S VERDICT · YESTERDAY</span>
           {liveVerdict}
         </p>
       )}
@@ -1578,7 +1593,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         <div className="chart-section-inner">
         <div className="chart-container">
         <DraggableChart disabled onPage={pageBy}>
-        <ResponsiveContainer width="100%" height={340}>
+        <ResponsiveContainer width="100%" height={CHART_H}>
           <ComposedChart data={chartData} margin={{ left: 0, right: 10, top: 5, bottom: 8 }}>
             <defs>
               <linearGradient id="barGradient" x1="0" y1="1" x2="0" y2="0">
@@ -1779,7 +1794,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           <div className="chart-section-inner">
             <div className="chart-container">
               <DraggableChart disabled onPage={pageBy}>
-              <ResponsiveContainer width="100%" height={200}>
+              <ResponsiveContainer width="100%" height={CHART_H}>
                 <ComposedChart data={chartData} margin={{ left: 0, right: 10, top: 10, bottom: 8 }}>
                   <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
                   <XAxis dataKey="day" stroke="rgba(255,255,255,0.1)" tick={chartXTick} interval={displayInterval} tickLine={false} height={36} padding={{ left: 6, right: 6 }} />
@@ -1829,7 +1844,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             </div>
             {walkHasData ? (
               <DraggableChart disabled onPage={pageBy}>
-              <ResponsiveContainer width="100%" height={180}>
+              <ResponsiveContainer width="100%" height={CHART_H}>
                 <ComposedChart data={stepChartData} margin={{ left: 0, right: 10, top: 8, bottom: 4 }}>
                   <defs>
                     <linearGradient id="stepHit" x1="0" y1="0" x2="0" y2="1">
@@ -1896,7 +1911,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             </div>
             {calorieHasData ? (
               <DraggableChart disabled onPage={pageBy}>
-              <ResponsiveContainer width="100%" height={220}>
+              <ResponsiveContainer width="100%" height={CHART_H}>
                 <ComposedChart data={calorieChartData} margin={{ left: 0, right: 10, top: 10, bottom: 8 }}>
                   <defs>
                     <linearGradient id="intakeFill" x1="0" y1="0" x2="0" y2="1">
@@ -1931,76 +1946,74 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </div>
       </section>
 
-      {/* ── Mood trend (1–5 from daily check-ins) ── */}
-      {moodHasData && (
-        <section className="chart-section">
+      {/* ── Sleep & Mood — the two on one panel, sharing the date axis so you
+             can eyeball how rest and mood move together. Sleep on top (bed→wake
+             candles, or an hours line for older duration-only entries), mood
+             below. Together they fill the uniform canvas height. ── */}
+      {(moodHasData || sleepHasData || sleepCandleHasData) && (
+        <section className="chart-section chart-section--sleepmood">
           <div className="chart-title-row" style={{ padding: '4px 16px 0' }}>
-            <h3 className="chart-title"><span className="chart-title-dot" style={{ background: TEAL }} />Mood</h3>
+            <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#8B5CF6' }} />Sleep &amp; Mood</h3>
+            <span className="chart-sub" style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>rest vs. how you felt</span>
           </div>
           {renderChartPager()}
-          <DraggableChart disabled onPage={pageBy}>
-          <ResponsiveContainer width="100%" height={180}>
-            <ComposedChart data={moodChartData} margin={{ left: 0, right: 10, top: 10, bottom: 8 }}>
-              <defs>
-                <linearGradient id="moodFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={TEAL + '55'} />
-                  <stop offset="100%" stopColor={TEAL + '05'} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
-              <XAxis dataKey="day" stroke="rgba(255,255,255,0.1)" tick={chartXTick} interval={displayInterval} tickLine={false} height={36} padding={{ left: 6, right: 6 }} />
-              <YAxis stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} width={26} axisLine={false} tickLine={false} domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} />
-              <Tooltip
-                cursor={{ stroke: 'rgba(255,255,255,0.15)' }}
-                contentStyle={{ background: '#161006', border: '1px solid #3a2f14', borderRadius: 10, fontSize: 12 }}
-                labelStyle={{ color: '#caa' }}
-                formatter={(v: any) => [`${v} / 5`, 'Mood']}
-              />
-              <Area type="monotone" dataKey="mood" stroke="none" fill="url(#moodFill)" connectNulls isAnimationActive={false} legendType="none" />
-              <Line type="monotone" dataKey="mood" name="Mood" stroke={TEAL} strokeWidth={2.5} dot={{ r: 3, fill: '#0E0E14', stroke: TEAL, strokeWidth: 2 }} connectNulls isAnimationActive={false} />
-            </ComposedChart>
-          </ResponsiveContainer>
-          </DraggableChart>
-        </section>
-      )}
 
-      {/* ── Sleep — bed→wake candles (coloured by mood), or the hours line for
-             older entries that only logged a duration ── */}
-      {(sleepCandleHasData || sleepHasData) && (
-        <section className="chart-section">
-          <div className="chart-title-row" style={{ padding: '4px 16px 0' }}>
-            <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#8B5CF6' }} />Sleep</h3>
-            {sleepCandleHasData && <span className="chart-sub" style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>bar = time asleep · colour = mood</span>}
-          </div>
-          {renderChartPager()}
-          <DraggableChart disabled onPage={pageBy}>
-          {sleepCandleHasData ? (
-            <SleepCandleChart data={sleepCandleData} />
-          ) : (
-          <ResponsiveContainer width="100%" height={180}>
-            <ComposedChart data={sleepChartData} margin={{ left: 0, right: 10, top: 10, bottom: 8 }}>
-              <defs>
-                <linearGradient id="sleepFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#8B5CF655" />
-                  <stop offset="100%" stopColor="#8B5CF605" />
-                </linearGradient>
-              </defs>
-              <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
-              <XAxis dataKey="day" stroke="rgba(255,255,255,0.1)" tick={chartXTick} interval={displayInterval} tickLine={false} height={36} padding={{ left: 6, right: 6 }} />
-              <YAxis stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} width={26} axisLine={false} tickLine={false} domain={[0, 12]} ticks={[0, 4, 8, 12]} />
-              <Tooltip
-                cursor={{ stroke: 'rgba(255,255,255,0.15)' }}
-                contentStyle={{ background: '#100E16', border: '1px solid #2c2440', borderRadius: 10, fontSize: 12 }}
-                labelStyle={{ color: '#ac9' }}
-                formatter={(v: any) => [`${v} h`, 'Sleep']}
-              />
-              <ReferenceLine y={8} stroke="rgba(139,92,246,0.45)" strokeDasharray="4 4" label={{ value: '8h', fill: 'rgba(139,92,246,0.8)', fontSize: 10, position: 'insideTopRight' }} />
-              <Area type="monotone" dataKey="sleep" stroke="none" fill="url(#sleepFill)" connectNulls isAnimationActive={false} legendType="none" />
-              <Line type="monotone" dataKey="sleep" name="Sleep" stroke="#8B5CF6" strokeWidth={2.5} dot={{ r: 3, fill: '#0E0E14', stroke: '#8B5CF6', strokeWidth: 2 }} connectNulls isAnimationActive={false} />
-            </ComposedChart>
-          </ResponsiveContainer>
+          {(sleepCandleHasData || sleepHasData) && (
+            <DraggableChart disabled onPage={pageBy}>
+            {sleepCandleHasData ? (
+              <SleepCandleChart data={sleepCandleData} height={190} />
+            ) : (
+            <ResponsiveContainer width="100%" height={190}>
+              <ComposedChart data={sleepChartData} margin={{ left: 0, right: 10, top: 10, bottom: 8 }}>
+                <defs>
+                  <linearGradient id="sleepFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#8B5CF655" />
+                    <stop offset="100%" stopColor="#8B5CF605" />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+                <XAxis dataKey="day" stroke="rgba(255,255,255,0.1)" tick={chartXTick} interval={displayInterval} tickLine={false} height={36} padding={{ left: 6, right: 6 }} />
+                <YAxis stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} width={26} axisLine={false} tickLine={false} domain={[0, 12]} ticks={[0, 4, 8, 12]} />
+                <Tooltip
+                  cursor={{ stroke: 'rgba(255,255,255,0.15)' }}
+                  contentStyle={{ background: '#100E16', border: '1px solid #2c2440', borderRadius: 10, fontSize: 12 }}
+                  labelStyle={{ color: '#ac9' }}
+                  formatter={(v: any) => [`${v} h`, 'Sleep']}
+                />
+                <ReferenceLine y={8} stroke="rgba(139,92,246,0.45)" strokeDasharray="4 4" label={{ value: '8h', fill: 'rgba(139,92,246,0.8)', fontSize: 10, position: 'insideTopRight' }} />
+                <Area type="monotone" dataKey="sleep" stroke="none" fill="url(#sleepFill)" connectNulls isAnimationActive={false} legendType="none" />
+                <Line type="monotone" dataKey="sleep" name="Sleep" stroke="#8B5CF6" strokeWidth={2.5} dot={{ r: 3, fill: '#0E0E14', stroke: '#8B5CF6', strokeWidth: 2 }} connectNulls isAnimationActive={false} />
+              </ComposedChart>
+            </ResponsiveContainer>
+            )}
+            </DraggableChart>
           )}
-          </DraggableChart>
+
+          {moodHasData && (
+            <DraggableChart disabled onPage={pageBy}>
+            <ResponsiveContainer width="100%" height={190}>
+              <ComposedChart data={moodChartData} margin={{ left: 0, right: 10, top: 6, bottom: 8 }}>
+                <defs>
+                  <linearGradient id="moodFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={TEAL + '55'} />
+                    <stop offset="100%" stopColor={TEAL + '05'} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+                <XAxis dataKey="day" stroke="rgba(255,255,255,0.1)" tick={chartXTick} interval={displayInterval} tickLine={false} height={36} padding={{ left: 6, right: 6 }} />
+                <YAxis stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} width={26} axisLine={false} tickLine={false} domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} />
+                <Tooltip
+                  cursor={{ stroke: 'rgba(255,255,255,0.15)' }}
+                  contentStyle={{ background: '#161006', border: '1px solid #3a2f14', borderRadius: 10, fontSize: 12 }}
+                  labelStyle={{ color: '#caa' }}
+                  formatter={(v: any) => [`${v} / 5`, 'Mood']}
+                />
+                <Area type="monotone" dataKey="mood" stroke="none" fill="url(#moodFill)" connectNulls isAnimationActive={false} legendType="none" />
+                <Line type="monotone" dataKey="mood" name="Mood" stroke={TEAL} strokeWidth={2.5} dot={{ r: 3, fill: '#0E0E14', stroke: TEAL, strokeWidth: 2 }} connectNulls isAnimationActive={false} />
+              </ComposedChart>
+            </ResponsiveContainer>
+            </DraggableChart>
+          )}
         </section>
       )}
 

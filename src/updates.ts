@@ -11,6 +11,18 @@ export interface UpdateEntry {
 export const UPDATE_LOG: UpdateEntry[] = [
   {
     date: '2026-07-06',
+    emoji: '📐',
+    title: 'Progress tab: taller charts, forward targets, sleep and mood together',
+    summary: 'Every Progress chart now fills a taller uniform canvas so tabs no longer jump, the Today gauges point at what to hit next, the verdict reads yesterday back to you, and Sleep and Mood share one panel.',
+    points: [
+      'All Progress charts share one taller height, so switching between Today, Weight, Steps and the rest no longer shifts the layout, and the graphs use the full screen instead of leaving dead space.',
+      'The Today matrix is now forward-looking: Activity shows the steps you still need to hit today\'s target, and Vitals recommends how many hours to aim for tonight to steady tomorrow\'s energy.',
+      'Dub\'s verdict up top is a clean retrospective read on yesterday: what you ate versus target, your safe-zone status, and the week\'s change.',
+      'Sleep and Mood moved onto a single panel, stacked on a shared date axis so you can see how last night\'s rest and the next day\'s mood track together.',
+    ],
+  },
+  {
+    date: '2026-07-06',
     emoji: '🎯',
     title: 'The Today tab is now a Live Target Matrix',
     summary: 'The Progress "Today" view is rebuilt: a plain-text read from Dub up top, then a fixed four-gauge matrix of live pace and buffers, with the chart chips moved underneath and the pager dots gone.',
