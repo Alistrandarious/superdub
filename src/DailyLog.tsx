@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { api } from './api';
+import { useWeightUnit, formatWeightKg } from './weightUnit';
 
 // ── Daily Log — the "Daily Superdub" vitals strip ───────────────────────────
 // These are the app's OWN inputs (weigh-in, steps, check-in) that feed the
@@ -51,6 +52,7 @@ const FlameIc = () => (
 );
 
 const DailyLog: React.FC = () => {
+  const unit = useWeightUnit();
   const [weight, setWeight] = useState<string | null>(null);
   const [steps, setSteps] = useState<number | null>(null);
   const [checkedIn, setCheckedIn] = useState(false);
@@ -130,7 +132,7 @@ const DailyLog: React.FC = () => {
         </button>
       ) : (
         <div className="daily-log-chips">
-          {chip(weight != null, <ScaleIc />, 'Weigh-in', weight != null ? `${weight} kg` : null, 'superdub:show-checkin')}
+          {chip(weight != null, <ScaleIc />, 'Weigh-in', weight != null ? formatWeightKg(parseFloat(weight), unit) : null, 'superdub:show-checkin')}
           {chip(steps != null, <StepIc />, 'Steps', steps != null ? steps.toLocaleString() : null, 'superdub:show-step-entry')}
           {chip(checkedIn, <MoodIc />, 'Check-in', 'Logged', 'superdub:show-energy-checkin')}
         </div>

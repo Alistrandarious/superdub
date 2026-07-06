@@ -18,6 +18,8 @@ import { api } from './api';
 import { BUILD_TAG } from './version';
 import { kcalPerStep as kcalPerStepFor, stepsToKm } from './energy';
 import { pageTheme, GROWTH, TEAL, HEALTH, DANGER } from './theme';
+import { useWeightUnit, formatWeightKg, kgToUnitValue, unitLabel, WeightUnit } from './weightUnit';
+import WeightInput from './WeightInput';
 import StreakFlame from './StreakFlame';
 import DubProgressSummary from './DubProgressSummary';
 import CogMenu from './CogMenu';
@@ -43,7 +45,7 @@ function isDarkColor(c: string): boolean {
   return v === '#000' || v === '#000000' || v === 'black';
 }
 
-function makeChartTooltip(emaColor: string, todayDDMM: string) {
+function makeChartTooltip(emaColor: string, todayDDMM: string, unit: WeightUnit) {
   return ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
     const hasData = payload.some((e: any) => e.value != null && e.value !== 0);
@@ -81,7 +83,7 @@ function makeChartTooltip(emaColor: string, todayDDMM: string) {
               )}
               <span style={{ color: textColor, opacity: isProjection ? 0.65 : 0.85, fontFamily: "'Sora', sans-serif", fontSize: 11 }}>{entry.name}</span>
               <span style={{ color: textColor, opacity: isProjection ? 0.65 : 1, fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700, marginLeft: 'auto', paddingLeft: 12 }}>
-                {isCount ? entry.value : `${entry.value} kg`}
+                {isCount ? entry.value : formatWeightKg(entry.value, unit)}
               </span>
             </div>
           );
@@ -228,6 +230,7 @@ const INITIAL_TRACKER = initData([]);
 interface AppProps { onLogout?: () => void; }
 
 const App: React.FC<AppProps> = ({ onLogout }) => {
+  const unit = useWeightUnit();
   const trackerBodyRef = useRef<HTMLDivElement>(null);
 
   const scrollTrackerToToday = () => {
@@ -896,7 +899,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     : '#FFFFFF';
 
   // Tooltip render function (colour-matched per series)
-  const renderTooltip = makeChartTooltip(emaColor, todayKey);
+  const renderTooltip = makeChartTooltip(emaColor, todayKey, unit);
 
   // ── Reporting: consistency heatmap — shows the entire month(s) since signup ──
   // Cell states: 'off' = wasn't on the app (black) · 'change' = on app but missed
@@ -1334,24 +1337,12 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             </div>
             <div className="plan-row">
               <label>
-                <span>Current Weight (kg)</span>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={currentWeight}
-                  onChange={handleNumericInput(setCurrentWeight)}
-                  placeholder="e.g. 85"
-                />
+                <span>Current Weight ({unitLabel(unit)})</span>
+                <WeightInput valueKg={currentWeight} onChangeKg={setCurrentWeight} unit={unit} wrapClassName="weight-input-block" ariaLabel="Current weight" />
               </label>
               <label>
-                <span>Goal Weight (kg)</span>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={goalWeight}
-                  onChange={handleNumericInput(setGoalWeight)}
-                  placeholder="e.g. 70"
-                />
+                <span>Goal Weight ({unitLabel(unit)})</span>
+                <WeightInput valueKg={goalWeight} onChangeKg={setGoalWeight} unit={unit} wrapClassName="weight-input-block" ariaLabel="Goal weight" />
               </label>
               <label>
                 <span>Expected Loss/Week (kg)</span>
@@ -1400,8 +1391,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             <div className="goal-reached-burst">🎉</div>
             <h3 className="goal-reached-title">You hit your goal weight!</h3>
             <p className="goal-reached-sub">
-              You're at <strong>{goalReached.latestWeight} kg</strong> — your target was{' '}
-              <strong>{goalReached.targetWeight} kg</strong>. However you got here, that's real work. What now?
+              You're at <strong>{formatWeightKg(goalReached.latestWeight, unit)}</strong> — your target was{' '}
+              <strong>{formatWeightKg(goalReached.targetWeight, unit)}</strong>. However you got here, that's real work. What now?
             </p>
             <div className="goal-reached-actions">
               <button
@@ -1518,7 +1509,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               </span>
             )}
             {verdict.weekChange != null && (
-              <span className="verdict-week">{verdict.weekChange > 0 ? '+' : ''}{verdict.weekChange} kg this week</span>
+              <span className="verdict-week">{verdict.weekChange > 0 ? '+' : ''}{kgToUnitValue(verdict.weekChange, unit).toFixed(1)} {unitLabel(unit)} this week</span>
             )}
           </div>
         </section>
@@ -1617,7 +1608,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               const lo = goalKg != null ? Math.min(dataLo, goalKg) - 1 : dataLo - 1;
               const hi = Math.ceil((Math.max(...allVals) + 1) / 2) * 2;
               return [Math.floor(lo), hi] as [number, number];
-            })()} width={42} axisLine={false} tickLine={false} />
+            })()} width={42} axisLine={false} tickLine={false} tickFormatter={(v: number) => String(Math.round(kgToUnitValue(v, unit) * 10) / 10)} />
             <Tooltip
               cursor={{ fill: 'rgba(255,255,255,0.05)' }}
               content={renderTooltip}
@@ -1636,7 +1627,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                     strokeDasharray="9 3"
                     label={(props: any) => {
                       const { viewBox } = props;
-                      const text = `Goal ${goalKg}kg`;
+                      const text = `Goal ${formatWeightKg(goalKg, unit)}`;
                       const w = text.length * 6.4 + 14;
                       return (
                         <g transform={`translate(${viewBox.x + 4}, ${viewBox.y - 19})`}>
@@ -2064,7 +2055,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             <span className="kpi-label">Change</span>
             {/* Positive = gain = red; negative = loss = green — sign-agnostic */}
             <span className={`kpi-value ${weightLoss !== null ? (weightLoss < 0 ? 'kpi-good' : weightLoss > 0 ? 'kpi-bad' : '') : ''}`}>
-              {weightLoss !== null ? `${weightLoss > 0 ? '+' : ''}${weightLoss} kg` : '—'}
+              {weightLoss !== null ? `${weightLoss > 0 ? '+' : ''}${kgToUnitValue(weightLoss, unit).toFixed(1)} ${unitLabel(unit)}` : '—'}
             </span>
           </div>
           <div className="kpi-card kpi-row-layout">

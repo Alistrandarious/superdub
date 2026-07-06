@@ -11,6 +11,7 @@ interface Props {
   onChangeKg: (kg: string) => void;
   unit: WeightUnit;
   inputClassName?: string;
+  wrapClassName?: string;              // extra class on the wrapper (e.g. block layout)
   id?: string;
   autoFocus?: boolean;
   onEnter?: () => void;
@@ -21,7 +22,7 @@ const clean = (s: string) => s.replace(/[^0-9.]/g, '');
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
 export default function WeightInput({
-  valueKg, onChangeKg, unit, inputClassName, id, autoFocus, onEnter, ariaLabel,
+  valueKg, onChangeKg, unit, inputClassName, wrapClassName, id, autoFocus, onEnter, ariaLabel,
 }: Props) {
   // Local display strings so partial typing (e.g. "8.") isn't clobbered by
   // round-tripping through kg on every keystroke.
@@ -50,7 +51,7 @@ export default function WeightInput({
       onChangeKg(s === 0 && l === 0 && stVal === '' && lbVal === '' ? '' : String(round1(stLbToKg(s, l))));
     };
     return (
-      <span className="weight-input-st">
+      <span className={`weight-input-st${wrapClassName ? ' ' + wrapClassName : ''}`}>
         <input
           className={inputClassName} inputMode="decimal" value={st} id={id} autoFocus={autoFocus}
           aria-label={ariaLabel ? `${ariaLabel} (stone)` : 'Weight (stone)'}
@@ -74,7 +75,7 @@ export default function WeightInput({
     onChangeKg(String(round1(unit === 'lbs' ? lbsToKg(n) : n)));
   };
   return (
-    <span className="weight-input-single">
+    <span className={`weight-input-single${wrapClassName ? ' ' + wrapClassName : ''}`}>
       <input
         className={inputClassName} inputMode="decimal" value={single} id={id} autoFocus={autoFocus}
         aria-label={ariaLabel ?? 'Weight'}

@@ -52,6 +52,12 @@ export const stLbToKg = (st: number, lb: number): number => lbsToKg(st * 14 + lb
 export const unitLabel = (unit: WeightUnit = getWeightUnit()): string =>
   unit === 'lbs' ? 'lb' : unit === 'st' ? 'st' : 'kg';
 
+// Numeric value of a kg amount in the chosen unit (stone as a decimal).
+// Linear through the origin, so it's also correct for deltas (e.g. "3.2 kg to go").
+// Use this for single-number displays and chart axes; formatWeightKg for st+lb.
+export const kgToUnitValue = (kg: number, unit: WeightUnit = getWeightUnit()): number =>
+  unit === 'lbs' ? kgToLbs(kg) : unit === 'st' ? kgToLbs(kg) / 14 : kg;
+
 // Read-only display for a canonical kg value (chart labels, "current weight").
 export function formatWeightKg(kg: number, unit: WeightUnit = getWeightUnit()): string {
   if (!kg || kg <= 0) return '—';

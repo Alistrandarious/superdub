@@ -1,7 +1,7 @@
 // Self-check for weight-unit conversions (run: npx tsx src/weightUnit.check.ts)
 // Only the pure converters are exercised — the React hook needs a DOM.
 import assert from 'assert';
-import { kgToLbs, lbsToKg, kgToStLb, stLbToKg, formatWeightKg, unitLabel } from './weightUnit';
+import { kgToLbs, lbsToKg, kgToStLb, stLbToKg, formatWeightKg, unitLabel, kgToUnitValue } from './weightUnit';
 
 const near = (a: number, b: number, tol = 0.05) => assert.ok(Math.abs(a - b) < tol, `${a} !~= ${b}`);
 
@@ -33,5 +33,12 @@ assert.strictEqual(formatWeightKg(-5, 'st'), '—');  // guard against garbage
 assert.strictEqual(unitLabel('kg'), 'kg');
 assert.strictEqual(unitLabel('lbs'), 'lb');
 assert.strictEqual(unitLabel('st'), 'st');
+
+// ── kgToUnitValue: numeric (used for chart axes + single-number displays) ────────
+assert.strictEqual(kgToUnitValue(80, 'kg'), 80);
+near(kgToUnitValue(100, 'lbs'), 220.462);
+near(kgToUnitValue(100, 'st'), 220.462 / 14); // ~15.75 st decimal
+// linear through origin → correct for signed deltas too
+near(kgToUnitValue(-2, 'lbs'), -4.409);
 
 console.log('weightUnit: all checks passed');

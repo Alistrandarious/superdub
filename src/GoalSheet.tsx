@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { api } from './api';
+import WeightInput from './WeightInput';
+import { useWeightUnit, formatWeightKg, unitLabel } from './weightUnit';
 
 interface ActiveGoal {
   goalType: 'lose' | 'gain' | 'maintain';
@@ -49,6 +51,7 @@ function addWeeks(from: Date, weeks: number): Date {
 }
 
 const GoalSheet: React.FC<GoalSheetProps> = ({ open, onClose, latestWeight, onGoalSaved }) => {
+  const unit = useWeightUnit();
   const [activeGoal, setActiveGoal] = useState<ActiveGoal | null>(null);
   const [currentTarget, setCurrentTarget] = useState<CurrentTarget | null>(null);
   const [loading, setLoading] = useState(false);
@@ -172,21 +175,20 @@ const GoalSheet: React.FC<GoalSheetProps> = ({ open, onClose, latestWeight, onGo
             <div className="goal-field">
               <span className="goal-field-label">Current weight</span>
               <span className="goal-field-readonly">
-                {currentWeight != null ? `${currentWeight} kg` : '— no weigh-in yet'}
+                {currentWeight != null ? formatWeightKg(currentWeight, unit) : '— no weigh-in yet'}
               </span>
             </div>
 
             {/* ── Target weight ── */}
             <div className="goal-field">
-              <label className="goal-field-label" htmlFor="gs-target-weight">Target weight (kg)</label>
-              <input
+              <label className="goal-field-label" htmlFor="gs-target-weight">Target weight ({unitLabel(unit)})</label>
+              <WeightInput
                 id="gs-target-weight"
-                className="goal-input"
-                type="text"
-                inputMode="decimal"
-                value={targetWeight}
-                onChange={e => { if (e.target.value === '' || /^\d*\.?\d*$/.test(e.target.value)) setTargetWeight(e.target.value); }}
-                placeholder={currentWeight != null ? `e.g. ${(currentWeight - 5).toFixed(1)}` : 'e.g. 80'}
+                valueKg={targetWeight}
+                onChangeKg={setTargetWeight}
+                unit={unit}
+                inputClassName="goal-input"
+                ariaLabel="Target weight"
               />
             </div>
 
@@ -263,7 +265,7 @@ const GoalSheet: React.FC<GoalSheetProps> = ({ open, onClose, latestWeight, onGo
                 <div className="goal-active-label">Active goal</div>
                 <div className="goal-active-row">
                   <span>{activeGoal.goalType === 'lose' ? '↓' : activeGoal.goalType === 'gain' ? '↑' : '~'}</span>
-                  <span>{activeGoal.startWeight} → {activeGoal.targetWeight} kg</span>
+                  <span>{formatWeightKg(activeGoal.startWeight, unit)} → {formatWeightKg(activeGoal.targetWeight, unit)}</span>
                   <span className="goal-active-date">by {new Date(activeGoal.targetDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                 </div>
                 {currentTarget && (

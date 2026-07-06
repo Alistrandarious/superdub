@@ -1,4 +1,5 @@
 import React from 'react';
+import { useWeightUnit, formatWeightKg } from './weightUnit';
 
 // Adaptive Weight Plan engine card — pure render.
 // Its data (plan status, weekly cycle, coaching signal, weight EMA) is fetched
@@ -10,6 +11,7 @@ const AdaptiveWeightPlanCard: React.FC<{
   coachingMsg: any;
   lastEMAValue: number | null;
 }> = ({ planStatus, planCycle, coachingMsg, lastEMAValue }) => {
+  const unit = useWeightUnit();
   if (!planStatus?.active || !planStatus.currentTarget) return null;
 
   const target = planStatus.currentTarget!;
@@ -75,7 +77,7 @@ const AdaptiveWeightPlanCard: React.FC<{
               <div className="plan-engine-pace-sep">·</div>
               <div className="plan-engine-pace-item">
                 <span className="plan-engine-pace-label">Remaining</span>
-                <span className="plan-engine-pace-val">{kgLeft.toFixed(1)} kg</span>
+                <span className="plan-engine-pace-val">{formatWeightKg(kgLeft, unit)}</span>
               </div>
             </>
           )}

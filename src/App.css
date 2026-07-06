@@ -8768,6 +8768,9 @@ h1, h2, h3, h4, .sora {
   font-weight: 600;
   color: rgba(255,255,255,0.4);
 }
+/* Full-width variant for modal fields: input flexes, unit label sits at the end. */
+.weight-input-block { display: flex; width: 100%; }
+.weight-input-block input { flex: 1 1 auto; min-width: 0; }
 .checkin-weight-dot {
   font-size: 2rem; font-weight: 700; color: #555;
   align-self: center; padding-bottom: 4px;

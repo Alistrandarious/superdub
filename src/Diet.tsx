@@ -7,6 +7,7 @@ import SuperdubHeader from './SuperdubHeader';
 import AdaptiveWeightPlanCard from './AdaptiveWeightPlanCard';
 import { kcalPerStep } from './energy';
 import { pageTheme, GROWTH, HEALTH } from './theme';
+import { useWeightUnit, formatWeightKg, kgToUnitValue, unitLabel } from './weightUnit';
 
 interface ProfileData {
   dob: string;
@@ -313,6 +314,7 @@ const WeightSparkline: React.FC<{
   goalWeight: number;
   lossPerWeek: number;
 }> = ({ allTrackerDays, currentWeight, goalWeight, lossPerWeek }) => {
+  const unit = useWeightUnit();
   const isBulk = goalWeight > currentWeight && currentWeight > 0;
   const now = new Date();
 
@@ -427,7 +429,7 @@ const WeightSparkline: React.FC<{
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '1px 0' }}>
               <span style={{ width: 8, height: 8, borderRadius: 2, background: swatch, flexShrink: 0 }} />
               <span style={{ color: '#c8ccd8', fontSize: 11, fontFamily: "'Sora', sans-serif" }}>{nm}</span>
-              <span style={{ marginLeft: 'auto', paddingLeft: 12, color: '#fff', fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700 }}>{e.value} kg</span>
+              <span style={{ marginLeft: 'auto', paddingLeft: 12, color: '#fff', fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700 }}>{formatWeightKg(e.value, unit)}</span>
             </div>
           );
         })}
@@ -450,7 +452,7 @@ const WeightSparkline: React.FC<{
         <ResponsiveContainer width="100%" height={132}>
           <ComposedChart data={weekData} margin={{ top: 8, right: 14, bottom: 0, left: -8 }}>
             <XAxis dataKey="label" tick={(p: any) => <DayCircleTick {...p} doneFlags={weekDone} />} axisLine={false} tickLine={false} height={40} interval={0} padding={{ left: 16, right: 16 }} />
-            <YAxis domain={[minW, maxW]} allowDataOverflow={true} tick={{ fill: '#444', fontSize: 10 }} axisLine={false} tickLine={false} width={34} />
+            <YAxis domain={[minW, maxW]} allowDataOverflow={true} tick={{ fill: '#444', fontSize: 10 }} axisLine={false} tickLine={false} width={34} tickFormatter={(v: number) => String(Math.round(kgToUnitValue(v, unit) * 10) / 10)} />
             <Tooltip content={renderTip} />
             {/* Golden safe-zone corridor: light fill + gold edge lines (no vertical cap) */}
             <Area type="linear" dataKey="zoneLow" stackId="zone" stroke="none" fill="none" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} />
@@ -760,6 +762,7 @@ const ActivityTargetsCard: React.FC<{
 // ── Diet page ─────────────────────────────────────────────────────────────────
 const Diet: React.FC = () => {
   const navigate = useNavigate();
+  const unit = useWeightUnit();
   const [profile, setProfile] = useState<ProfileData>(DEFAULT_PROFILE);
   const [target, setTarget] = useState<MacroSet>(DEFAULT_TARGET);
   const [goal, setGoal] = useState<'cut' | 'maintain' | 'bulk'>('cut');
@@ -986,19 +989,19 @@ const Diet: React.FC = () => {
             )}
           </svg>
           <div className="plan-gauge-center">
-            <span className="plan-gauge-now">{displayWeight > 0 ? displayWeight.toFixed(1) : '—'}</span>
-            <span className="plan-gauge-now-unit">kg now</span>
+            <span className="plan-gauge-now">{displayWeight > 0 ? kgToUnitValue(displayWeight, unit).toFixed(1) : '—'}</span>
+            <span className="plan-gauge-now-unit">{unitLabel(unit)} now</span>
             {weightPct !== null && (
               <span className="plan-gauge-pct" style={{ color: accent }}>{Math.round(weightPct * 100)}% there</span>
             )}
           </div>
           <div className="plan-gauge-ends">
             <div className="plan-gauge-end">
-              <span className="plan-gauge-end-val">{startW != null ? startW.toFixed(1) : (displayWeight > 0 ? displayWeight.toFixed(1) : '—')}</span>
+              <span className="plan-gauge-end-val">{startW != null ? kgToUnitValue(startW, unit).toFixed(1) : (displayWeight > 0 ? kgToUnitValue(displayWeight, unit).toFixed(1) : '—')}</span>
               <span className="plan-gauge-end-lbl">Start</span>
             </div>
             <div className="plan-gauge-end right">
-              <span className="plan-gauge-end-val" style={{ color: accent }}>{targetW != null ? targetW.toFixed(1) : '—'}</span>
+              <span className="plan-gauge-end-val" style={{ color: accent }}>{targetW != null ? kgToUnitValue(targetW, unit).toFixed(1) : '—'}</span>
               <span className="plan-gauge-end-lbl">Goal</span>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import React, { useRef, useCallback, useState, useEffect, useMemo } from 'react';
 import { api } from './api';
 import { stepsToKm } from './energy';
+import { useWeightUnit, kgToUnitValue, unitLabel } from './weightUnit';
 
 const XP_GATES: [number, number][] = [
   [0, 10], [7, 15], [14, 20], [30, 25], [60, 30], [100, 35], [200, 40], [365, 50],
@@ -38,6 +39,7 @@ interface DayData {
 
 const WeeklyRecap: React.FC = () => {
   // Self-contained: fetches its own habits + full tracker so it can live anywhere.
+  const unit = useWeightUnit();
   const [habits, setHabits] = useState<string[]>([]);
   const [tracker, setTracker] = useState<Record<string, DayData>>({});
   useEffect(() => {
@@ -406,7 +408,7 @@ const WeeklyRecap: React.FC = () => {
                           className={`wr-kpi-value ${weightChange !== null && weightChange < 0 ? 'wr-kpi-green' : ''}`}
                         >
                           {weightChange !== null
-                            ? `${weightChange > 0 ? '+' : ''}${weightChange} kg`
+                            ? `${weightChange > 0 ? '+' : ''}${kgToUnitValue(weightChange, unit).toFixed(1)} ${unitLabel(unit)}`
                             : '—'}
                         </div>
                         <div className="wr-kpi-delta">

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from './api';
+import WeightInput from './WeightInput';
+import { useWeightUnit } from './weightUnit';
 
 const ENERGY_KEY = 'superdub.energy.checkin';   // value = YYYY-MM-DD
 const ENABLED_KEY = 'superdub.checkin.enabled';  // 'false' = disabled
@@ -77,7 +79,8 @@ const EnergyCheckIn: React.FC = () => {
   const [workoutCalories, setWorkoutCalories] = useState<number | null>(null);
   const [bedtime, setBedtime] = useState('');   // 'HH:MM' last night
   const [waketime, setWaketime] = useState(''); // 'HH:MM' this morning
-  const [weight, setWeight] = useState(''); // optional morning weigh-in
+  const [weight, setWeight] = useState(''); // optional morning weigh-in (canonical kg)
+  const unit = useWeightUnit();
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -196,12 +199,13 @@ const EnergyCheckIn: React.FC = () => {
         <div className="energy-section">
           <p className="energy-label-row">Weigh-in <span className="ritual-optional">optional</span></p>
           <div className="ritual-weight-row">
-            <input
-              type="text" inputMode="decimal" className="ritual-weight-input"
-              placeholder="—" value={weight}
-              onChange={e => { const v = e.target.value; if (v === '' || /^\d*\.?\d*$/.test(v)) setWeight(v); }}
+            <WeightInput
+              valueKg={weight}
+              onChangeKg={setWeight}
+              unit={unit}
+              inputClassName="ritual-weight-input"
+              ariaLabel="Weight"
             />
-            <span className="ritual-weight-unit">kg</span>
           </div>
         </div>
 
