@@ -1,12 +1,11 @@
 import React from 'react';
-import { ComposedChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { ComposedChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 // ── Sleep candlestick ────────────────────────────────────────────────────────
 // Each night is a "candle" whose BODY spans actual bed → wake clock time, so its
 // length is the sleep duration. The Y axis is clock time on a 6pm→6pm scale
 // (evening at top, morning at bottom) so nights that cross midnight don't wrap.
-// The body is COLOURED by that morning's mood (green good · red poor) — that's
-// the sleep↔mood correlation, read at a glance.
+// The body is a solid violet bar; that morning's mood still shows in the tooltip.
 
 export interface SleepCandle {
   day: string;          // 'DD/MM' x-axis label
@@ -29,14 +28,6 @@ const axisToClock = (v: number): string => {
   const hr = h % 12 === 0 ? 12 : h % 12;
   return `${hr}${h < 12 ? 'am' : 'pm'}`;
 };
-
-// Mood → candle colour. Neutral violet when mood wasn't logged.
-function moodColor(mood: number | null): string {
-  if (mood == null) return '#8B5CF6';
-  if (mood >= 4) return '#2FD27E';   // good morning
-  if (mood <= 2) return '#FF5470';   // rough morning
-  return '#FFB928';                  // middling
-}
 
 const SleepCandleChart: React.FC<{ data: SleepCandle[] }> = ({ data }) => (
   <ResponsiveContainer width="100%" height={180}>
@@ -64,9 +55,7 @@ const SleepCandleChart: React.FC<{ data: SleepCandle[] }> = ({ data }) => (
         }}
       />
       {/* Floating bar: recharts renders a [start,end] array dataKey as a body spanning the two values. */}
-      <Bar dataKey={(d: SleepCandle) => [d.bedVal, d.wakeVal]} barSize={12} radius={3} isAnimationActive={false}>
-        {data.map((d, i) => <Cell key={i} fill={moodColor(d.mood)} />)}
-      </Bar>
+      <Bar dataKey={(d: SleepCandle) => [d.bedVal, d.wakeVal]} barSize={12} radius={3} fill="#8B5CF6" isAnimationActive={false} />
     </ComposedChart>
   </ResponsiveContainer>
 );
