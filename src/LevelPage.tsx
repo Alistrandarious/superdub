@@ -6,6 +6,7 @@ import { api } from './api';
 import { useXP } from './XPContext';
 import SuperdubHeader from './SuperdubHeader';
 import LevelRing from './LevelRing';
+import CoreHabitsMatrix from './CoreHabitsMatrix';
 import DubMascot, { getMascot, MASCOT_KEY, type MascotSpecies } from './DubMascot';
 import { pageTheme, GOLD } from './theme';
 import {
@@ -341,6 +342,9 @@ const LevelPage: React.FC = () => {
             )}
           </div>
         </div>
+
+        {/* Core Habits — the four daily loops as illuminating tokens */}
+        <CoreHabitsMatrix />
 
         {/* Next unlock — swatch of the actual reward, mono eyebrow, no emoji */}
         {playerLevel.nextReward && (

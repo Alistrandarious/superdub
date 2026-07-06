@@ -3,15 +3,38 @@ import { api } from './api';
 
 const ENABLED_KEY = 'superdub.push.enabled';
 const REMINDER_HOUR_KEY = 'superdub.push.reminderHour';
+const NUTRITION_HOUR_KEY = 'superdub.push.nutritionHour';
+const WORKOUT_HOUR_KEY = 'superdub.push.workoutHour';   // 'off' or 0–23
 
-export function getReminderHour(): number {
-  const v = parseInt(localStorage.getItem(REMINDER_HOUR_KEY) ?? '8', 10);
-  return Number.isInteger(v) && v >= 0 && v <= 23 ? v : 8;
+function hourOr(key: string, dflt: number): number {
+  const v = parseInt(localStorage.getItem(key) ?? String(dflt), 10);
+  return Number.isInteger(v) && v >= 0 && v <= 23 ? v : dflt;
+}
+
+export function getReminderHour(): number { return hourOr(REMINDER_HOUR_KEY, 8); }
+export function getNutritionHour(): number { return hourOr(NUTRITION_HOUR_KEY, 20); }
+
+// Exercise prompt is opt-in: null = off.
+export function getWorkoutHour(): number | null {
+  const raw = localStorage.getItem(WORKOUT_HOUR_KEY);
+  if (raw == null || raw === 'off') return null;
+  const v = parseInt(raw, 10);
+  return Number.isInteger(v) && v >= 0 && v <= 23 ? v : null;
 }
 
 export async function setReminderHour(hour: number): Promise<void> {
   localStorage.setItem(REMINDER_HOUR_KEY, String(hour));
   try { await api.pushSetReminderTime(hour); } catch { /* will apply on next subscribe */ }
+}
+
+export async function setNutritionHour(hour: number): Promise<void> {
+  localStorage.setItem(NUTRITION_HOUR_KEY, String(hour));
+  try { await api.pushSetPromptTimes({ nutritionHour: hour }); } catch { /* applies on next subscribe */ }
+}
+
+export async function setWorkoutHour(hour: number | null): Promise<void> {
+  localStorage.setItem(WORKOUT_HOUR_KEY, hour == null ? 'off' : String(hour));
+  try { await api.pushSetPromptTimes({ workoutHour: hour }); } catch { /* applies on next subscribe */ }
 }
 
 function urlBase64ToUint8Array(base64: string): Uint8Array {
@@ -49,7 +72,7 @@ export async function enablePush(): Promise<{ ok: boolean; reason?: string }> {
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(key) as BufferSource,
     });
-    await api.pushSubscribe(sub.toJSON(), new Date().getTimezoneOffset(), getReminderHour());
+    await api.pushSubscribe(sub.toJSON(), new Date().getTimezoneOffset(), getReminderHour(), getNutritionHour(), getWorkoutHour());
     localStorage.setItem(ENABLED_KEY, '1');
     return { ok: true };
   } catch (e: any) {

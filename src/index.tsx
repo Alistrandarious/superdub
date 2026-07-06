@@ -68,6 +68,21 @@ function AppRouter() {
     };
   }, [authed]);
 
+  // Deep-link from a push notification: ?prompt=weight|exercise opens the
+  // matching overlay (the SW lands us here; nutrition points straight at
+  // /food-log so it needs no handler). Strip the param so a refresh won't repeat.
+  useEffect(() => {
+    if (!authed) return;
+    const params = new URLSearchParams(location.search);
+    const prompt = params.get('prompt');
+    if (!prompt) return;
+    const evt = prompt === 'exercise' ? 'superdub:show-energy-checkin'
+      : prompt === 'weight' ? 'superdub:show-checkin' : null;
+    window.history.replaceState({}, '', location.pathname);
+    // Defer so the overlay listeners (siblings mounted this same tick) are attached.
+    if (evt) setTimeout(() => window.dispatchEvent(new CustomEvent(evt)), 80);
+  }, [authed, location.search, location.pathname]);
+
   if (NO_NAV_PATHS.includes(location.pathname)) {
     return <Suspense fallback={null}><PrivacyPolicy /></Suspense>;
   }

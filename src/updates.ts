@@ -11,6 +11,18 @@ export interface UpdateEntry {
 export const UPDATE_LOG: UpdateEntry[] = [
   {
     date: '2026-07-06',
+    emoji: '🔔',
+    title: 'Reminders that fit your day, and a Core Habits matrix',
+    summary: 'Notifications now cover the whole loop (morning, evening, and an optional post-workout nudge), and The Ascension shows your four daily loops as tokens that light up gold as you close them.',
+    points: [
+      'Notifications settings now let you pick three separate times: a morning weigh-in, an evening nutrition check, and (optional) a post-workout "did you close your exercise loop?" nudge. Each one stays quiet if you have already logged that thing.',
+      'Tapping a reminder drops you straight into the right place: the weigh-in opens the morning check-in, the workout nudge opens your daily ritual, and the nutrition one opens Food Log.',
+      'New Core Habits matrix on The Ascension, under your level ring: four tokens (Weight, Sleep and Energy, Steps, Calories) that light gold the moment you close each loop for the day.',
+      'The morning check-in now opens with a simple "Did you weigh yourself?" Yes or No, so a quiet no just stops the nagging for the day instead of sitting in your way.',
+    ],
+  },
+  {
+    date: '2026-07-06',
     emoji: '😴',
     title: 'Sleep as candlesticks, plus fixes across the app',
     summary: 'Your nights now read as bed-to-wake candles coloured by your morning mood, and a batch of fixes lands across Habits, Progress, Steps and Profile.',

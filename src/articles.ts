@@ -18,6 +18,26 @@ export interface Article {
 
 export const ARTICLES: Article[] = [
   {
+    id: 'reminders-that-fit',
+    title: 'Reminders That Fit Your Day',
+    author: 'Ali Shah',
+    readMins: 2,
+    tag: 'Superdub',
+    accent: '#FFB928',
+    dek: 'Three gentle nudges timed to your real routine, and a row of tokens that light up as you close each loop.',
+    body: [
+      { t: 'p', text: 'A reminder is only useful if it lands at the right moment. One 8am buzz cannot cover a whole day, so notifications now come in three parts, each set to a time that suits you, and each smart enough to stay quiet once you have already done the thing.' },
+      { t: 'h', text: 'Pick your three times' },
+      { t: 'p', text: 'Open the menu, turn Notifications on, and you will see three time pickers. Morning is your weigh-in nudge. Nutrition is an evening check to log how eating landed against your target. Workout is optional (leave it Off if you like): set it to roughly thirty minutes after you usually finish training, and it will ask the one question that matters.' },
+      { t: 'quote', text: 'Did you close your exercise loop today? One tap, and the day is honest.' },
+      { t: 'h', text: 'Tap it, and you are already there' },
+      { t: 'p', text: 'Every reminder deep-links to the exact place that answers it. The weigh-in opens your morning check-in, the workout nudge opens your daily ritual, and the nutrition one drops you into Food Log. No hunting through the app.' },
+      { t: 'h', text: 'The Core Habits matrix' },
+      { t: 'p', text: 'On The Ascension, just under your level ring, four tokens track the loops that feed everything else: Weight, Sleep and Energy, Steps, Calories. Each one is dim until you close it, then it lights gold. A quick glance tells you what is left before the day is fully logged.' },
+      { t: 'p', text: 'Set your three times once, then just answer the taps as they come. Log, see the trend, get your read, do one small thing. 🔔' },
+    ],
+  },
+  {
     id: 'sleep-candles',
     title: 'Your Sleep, as Candlesticks',
     author: 'Ali Shah',

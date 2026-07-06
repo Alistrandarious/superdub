@@ -18,6 +18,7 @@ import checkinRoutes from './routes/checkin';
 import pushRoutes from './routes/push';
 import goalsRoutes from './routes/goals';
 import { sendPush, pushEnabled } from './services/push';
+import { reminderDue } from './reminderSchedule';
 import { pool } from './db';
 
 dotenv.config();
@@ -248,6 +249,13 @@ const migrations = [
   // Per-user reminder hour (local 24h); defaults to 8 AM. Added post-hoc for
   // existing rows via ADD COLUMN IF NOT EXISTS.
   `ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS reminder_hour INTEGER DEFAULT 8`,
+  // Evening nutrition nudge (local 24h; default 8 PM) + optional exercise
+  // check-in (NULL = off; user sets it to ~30 min after they finish training).
+  // Each fires once/day, tracked by its own last_* date so they're independent.
+  `ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS nutrition_hour INTEGER DEFAULT 20`,
+  `ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS workout_hour INTEGER`,
+  `ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS last_nutrition DATE`,
+  `ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS last_workout DATE`,
   // Demographic / job / religion fields (optional, captured at signup + Profile).
   `ALTER TABLE profile ADD COLUMN IF NOT EXISTS occupation TEXT`,
   `ALTER TABLE profile ADD COLUMN IF NOT EXISTS ethnicity TEXT`,
@@ -280,39 +288,91 @@ const migrations = [
   console.log('[migrate] done');
 })();
 
-// ── Daily reminder push — runs every 30 min, nudges at ~8 AM local once/day ──
+// ── Daily reminder pushes — runs every 30 min. Three independent nudges, each
+// fires once/day at the user's chosen local hour and self-suppresses if the
+// matching loop is already closed: morning weigh-in, evening nutrition, and an
+// optional post-workout check-in.
+// ponytail: food_logs.date / daily_checkins.date are stored as server-UTC
+// CURRENT_DATE, so the "already logged today" skip is off by up to a tz-day at
+// the extremes — acceptable for a nudge (worst case: one redundant reminder).
+// Upgrade path: store the client's local date alongside those rows.
 async function runReminders() {
   if (!pushEnabled) return;
+  const localHelper = (r: any) => {
+    const local = new Date(Date.now() - (Number(r.tz_offset) || 0) * 60000);
+    return { local, localDate: local.toISOString().slice(0, 10), hour: local.getUTCHours() };
+  };
+  const stamp = (col: string, id: string, localDate: string) =>
+    pool.query(`UPDATE push_subscriptions SET ${col} = $2 WHERE id = $1`, [id, localDate]).catch(() => {});
+  const prune = (id: string) =>
+    pool.query('DELETE FROM push_subscriptions WHERE id = $1', [id]).catch(() => {});
+
   try {
     const { rows } = await pool.query(
-      'SELECT id, user_id, endpoint, subscription, tz_offset, last_reminded, reminder_hour FROM push_subscriptions'
+      `SELECT id, user_id, subscription, tz_offset, reminder_hour,
+              nutrition_hour, workout_hour, last_reminded, last_nutrition, last_workout
+         FROM push_subscriptions`
     );
-    const nowUtcMs = Date.now();
     for (const r of rows) {
-      const local = new Date(nowUtcMs - (Number(r.tz_offset) || 0) * 60000);
-      const hour = Number.isInteger(r.reminder_hour) ? r.reminder_hour : 8;
-      if (local.getUTCHours() !== hour) continue;            // user-picked reminder hour, local
-      const localDate = local.toISOString().slice(0, 10);
-      if (r.last_reminded && new Date(r.last_reminded).toISOString().slice(0, 10) >= localDate) continue;
+      const { local, localDate, hour } = localHelper(r);
 
-      // Skip if they've already weighed in today (local)
-      const ddmm = `${String(local.getUTCDate()).padStart(2, '0')}/${String(local.getUTCMonth() + 1).padStart(2, '0')}`;
-      const w = await pool.query(
-        `SELECT 1 FROM tracker WHERE user_id = $1 AND day = $2 AND year = $3
-           AND weight IS NOT NULL AND weight != '' AND weight::NUMERIC > 0 LIMIT 1`,
-        [r.user_id, ddmm, local.getUTCFullYear()]
-      ).catch(() => ({ rows: [] as any[] }));
-
-      if (w.rows.length === 0) {
-        const ok = await sendPush(r.subscription, {
-          title: 'Morning — superdub 🌅',
-          body: 'Quick weigh-in + how are you feeling today?',
-          url: '/',
-          tag: 'daily-reminder',
-        });
-        if (!ok) { await pool.query('DELETE FROM push_subscriptions WHERE id = $1', [r.id]).catch(() => {}); continue; }
+      // 1. Morning weigh-in — skip if they've already weighed in today (local)
+      const morningHour = Number.isInteger(r.reminder_hour) ? r.reminder_hour : 8;
+      if (reminderDue(morningHour, hour, r.last_reminded, localDate)) {
+        const ddmm = `${String(local.getUTCDate()).padStart(2, '0')}/${String(local.getUTCMonth() + 1).padStart(2, '0')}`;
+        const w = await pool.query(
+          `SELECT 1 FROM tracker WHERE user_id = $1 AND day = $2 AND year = $3
+             AND weight IS NOT NULL AND weight != '' AND weight::NUMERIC > 0 LIMIT 1`,
+          [r.user_id, ddmm, local.getUTCFullYear()]
+        ).catch(() => ({ rows: [] as any[] }));
+        if (w.rows.length === 0) {
+          const ok = await sendPush(r.subscription, {
+            title: 'Morning — superdub 🌅',
+            body: 'Quick weigh-in + how are you feeling today?',
+            url: '/?prompt=weight',
+            tag: 'daily-reminder',
+          });
+          if (!ok) { await prune(r.id); continue; }
+        }
+        await stamp('last_reminded', r.id, localDate);
       }
-      await pool.query('UPDATE push_subscriptions SET last_reminded = $2 WHERE id = $1', [r.id, localDate]).catch(() => {});
+
+      // 2. Evening nutrition — skip if they've logged any food today (local)
+      const nutritionHour = Number.isInteger(r.nutrition_hour) ? r.nutrition_hour : 20;
+      if (reminderDue(nutritionHour, hour, r.last_nutrition, localDate)) {
+        const f = await pool.query(
+          'SELECT 1 FROM food_logs WHERE user_id = $1 AND date = $2 LIMIT 1',
+          [r.user_id, localDate]
+        ).catch(() => ({ rows: [] as any[] }));
+        if (f.rows.length === 0) {
+          const ok = await sendPush(r.subscription, {
+            title: 'Evening — superdub 🍽️',
+            body: 'How did eating land today? Log it against your target.',
+            url: '/food-log',
+            tag: 'nutrition-reminder',
+          });
+          if (!ok) { await prune(r.id); continue; }
+        }
+        await stamp('last_nutrition', r.id, localDate);
+      }
+
+      // 3. Post-workout check-in — opt-in (NULL = off); skip if already logged today
+      if (reminderDue(r.workout_hour, hour, r.last_workout, localDate)) {
+        const wo = await pool.query(
+          'SELECT 1 FROM daily_checkins WHERE user_id = $1 AND date = $2 AND workout_done = true LIMIT 1',
+          [r.user_id, localDate]
+        ).catch(() => ({ rows: [] as any[] }));
+        if (wo.rows.length === 0) {
+          const ok = await sendPush(r.subscription, {
+            title: 'superdub 💪',
+            body: 'Did you close your exercise loop today?',
+            url: '/?prompt=exercise',
+            tag: 'workout-reminder',
+          });
+          if (!ok) { await prune(r.id); continue; }
+        }
+        await stamp('last_workout', r.id, localDate);
+      }
     }
   } catch (err: any) {
     console.error('[reminders]', err?.message);

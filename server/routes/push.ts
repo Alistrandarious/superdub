@@ -44,16 +44,22 @@ router.get('/vapid-public-key', (_req, res) => {
 // Save / refresh a subscription for this user
 router.post('/subscribe', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
-    const { subscription, tzOffsetMinutes, reminderHour } = req.body as { subscription: any; tzOffsetMinutes?: number; reminderHour?: number };
+    const { subscription, tzOffsetMinutes, reminderHour, nutritionHour, workoutHour } =
+      req.body as { subscription: any; tzOffsetMinutes?: number; reminderHour?: number; nutritionHour?: number; workoutHour?: number | null };
     if (!subscription?.endpoint) return res.status(400).json({ error: 'invalid subscription' });
-    const hour = Number.isInteger(reminderHour) ? Math.max(0, Math.min(23, reminderHour as number)) : 8;
+    const clampHour = (h: any, dflt: number) => Number.isInteger(h) ? Math.max(0, Math.min(23, h)) : dflt;
+    const hour = clampHour(reminderHour, 8);
+    const nutrition = clampHour(nutritionHour, 20);
+    // workoutHour is opt-in: a valid 0–23 turns it on, anything else leaves it off (NULL).
+    const workout = Number.isInteger(workoutHour) ? Math.max(0, Math.min(23, workoutHour as number)) : null;
     await pool.query(
-      `INSERT INTO push_subscriptions (user_id, endpoint, subscription, tz_offset, reminder_hour)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO push_subscriptions (user_id, endpoint, subscription, tz_offset, reminder_hour, nutrition_hour, workout_hour)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        ON CONFLICT (endpoint) DO UPDATE
          SET user_id = EXCLUDED.user_id, subscription = EXCLUDED.subscription,
-             tz_offset = EXCLUDED.tz_offset, reminder_hour = EXCLUDED.reminder_hour`,
-      [req.userId, subscription.endpoint, JSON.stringify(subscription), tzOffsetMinutes ?? 0, hour]
+             tz_offset = EXCLUDED.tz_offset, reminder_hour = EXCLUDED.reminder_hour,
+             nutrition_hour = EXCLUDED.nutrition_hour, workout_hour = EXCLUDED.workout_hour`,
+      [req.userId, subscription.endpoint, JSON.stringify(subscription), tzOffsetMinutes ?? 0, hour, nutrition, workout]
     );
     res.json({ ok: true });
   } catch (err: any) {
@@ -89,6 +95,35 @@ router.post('/reminder-time', requireAuth as any, async (req: AuthRequest, res: 
     res.json({ ok: true, hour });
   } catch (err: any) {
     console.error('[push/reminder-time]', err?.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Update the evening nutrition nudge hour and/or the opt-in post-workout
+// check-in hour (send workoutHour: null to turn the exercise prompt off).
+router.post('/prompt-times', requireAuth as any, async (req: AuthRequest, res: Response) => {
+  try {
+    const { nutritionHour, workoutHour } = req.body as { nutritionHour?: number; workoutHour?: number | null };
+    const sets: string[] = [];
+    const vals: any[] = [req.userId];
+    if (nutritionHour !== undefined) {
+      if (!Number.isInteger(nutritionHour) || nutritionHour < 0 || nutritionHour > 23) {
+        return res.status(400).json({ error: 'nutritionHour must be 0–23' });
+      }
+      vals.push(nutritionHour);
+      sets.push(`nutrition_hour = $${vals.length}`);
+    }
+    if (workoutHour !== undefined) {
+      // null (or non-integer) disables the exercise prompt.
+      const w = Number.isInteger(workoutHour) && (workoutHour as number) >= 0 && (workoutHour as number) <= 23 ? workoutHour : null;
+      vals.push(w);
+      sets.push(`workout_hour = $${vals.length}`);
+    }
+    if (sets.length === 0) return res.status(400).json({ error: 'nothing to update' });
+    await pool.query(`UPDATE push_subscriptions SET ${sets.join(', ')} WHERE user_id = $1`, vals);
+    res.json({ ok: true });
+  } catch (err: any) {
+    console.error('[push/prompt-times]', err?.message);
     res.status(500).json({ error: 'Server error' });
   }
 });

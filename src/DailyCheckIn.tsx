@@ -21,6 +21,9 @@ function ddmmNum(ddmm: string): number {
 
 const DailyCheckIn: React.FC = () => {
   const [show, setShow] = useState(false);
+  // 'ask' = the "Did you weigh yourself?" Yes/No gate (auto-prompt only);
+  // 'input' = the weight field. Manual triggers jump straight to 'input'.
+  const [gate, setGate] = useState<'ask' | 'input'>('ask');
   const [weight, setWeight] = useState('');   // the typed value
   const [saving, setSaving] = useState(false);
   const [done, setDone]     = useState(false);
@@ -69,9 +72,9 @@ const DailyCheckIn: React.FC = () => {
       else prefillWeight();
       const snooze = parseInt(localStorage.getItem(SNOOZE_KEY) || '0', 10);
       const delay = snooze > Date.now() ? (snooze - Date.now()) : 800;
-      tid = setTimeout(() => setShow(true), delay);
+      tid = setTimeout(() => { setGate('ask'); setShow(true); }, delay);
     }).catch(() => {
-      if (!cancelled) { prefillWeight(); tid = setTimeout(() => setShow(true), 800); }
+      if (!cancelled) { prefillWeight(); tid = setTimeout(() => { setGate('ask'); setShow(true); }, 800); }
     });
     return () => { cancelled = true; clearTimeout(tid); };
   }, []);
@@ -80,6 +83,7 @@ const DailyCheckIn: React.FC = () => {
     const handler = () => {
       setDone(false);
       setError(null);
+      setGate('input');   // explicit "Log Weight" — skip the Yes/No gate
       prefillWeight();
       setShow(true);
     };
@@ -98,7 +102,7 @@ const DailyCheckIn: React.FC = () => {
     localStorage.setItem(SNOOZE_KEY, String(Date.now() + SNOOZE_MS));
     setShow(false);
     setTimeout(() => {
-      if (localStorage.getItem(CHECKIN_KEY) !== todayStr()) setShow(true);
+      if (localStorage.getItem(CHECKIN_KEY) !== todayStr()) { setGate('ask'); setShow(true); }
     }, SNOOZE_MS);
   };
 
@@ -126,6 +130,24 @@ const DailyCheckIn: React.FC = () => {
   };
 
   if (!show) return null;
+
+  // Gate step — the design's "Did you weigh yourself this morning?" Yes/No.
+  // "No" reassures and stops nagging for the day (dismiss marks it done).
+  if (gate === 'ask') {
+    return (
+      <div className="checkin-overlay">
+        <div className="checkin-modal">
+          <h2 className="checkin-title">Morning Check-in</h2>
+          <p className="checkin-subtitle">Did you weigh yourself this morning? Before breakfast, after using the bathroom — that's the most consistent reading.</p>
+          <div className="checkin-actions">
+            <button className="checkin-save-btn" onClick={() => setGate('input')}>Yes, log it</button>
+            <button className="checkin-later-btn" onClick={askLater}>Ask me later</button>
+            <button className="checkin-skip-btn" onClick={dismiss}>No — try tomorrow</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="checkin-overlay">

@@ -4834,6 +4834,53 @@ h1, h2, h3, h4, .sora {
 }
 .daily-log.all-done .daily-log-title { color: rgba(255,224,138,0.6); }
 
+/* ── Core Habits Matrix — four illuminating tokens under the level ring ── */
+.chm { margin: 4px 16px 18px; }
+.chm-head {
+  display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px;
+}
+.chm-title {
+  font-family: var(--font-data); font-size: 0.62rem; font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,224,138,0.55);
+}
+.chm-count {
+  font-family: var(--font-data); font-size: 0.62rem; font-weight: 700;
+  color: rgba(255,255,255,0.35);
+}
+.chm-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.chm-slot {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  min-height: 72px; padding: 12px 6px; border-radius: var(--r-md, 12px); cursor: pointer;
+  /* Pending: dim violet rank ring (guide: violet = rare rank) */
+  border: 1px solid rgba(139,92,246,0.28);
+  background: rgba(139,92,246,0.05);
+  color: rgba(200,190,235,0.65);
+  transition: transform 0.12s ease, border-color 0.2s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+.chm-slot:active { transform: scale(0.96); }
+.chm-slot-ico { display: flex; }
+.chm-slot-label {
+  font-family: var(--font-ui); font-size: 0.62rem; font-weight: 600; text-align: center;
+  line-height: 1.1;
+}
+.chm-slot-tick {
+  position: absolute; top: 6px; right: 6px; width: 16px; height: 16px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: transparent; transition: color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+/* Lit: the loop is closed — token ascends to gold (guide: gold = earned/XP) */
+.chm-slot.lit {
+  border-color: rgba(255,185,40,0.5);
+  background: linear-gradient(135deg, rgba(255,185,40,0.14), rgba(255,185,40,0.04));
+  color: #FFE08A;
+  box-shadow: 0 0 14px rgba(255,185,40,0.16);
+}
+.chm-slot.lit .chm-slot-ico { color: #FFD233; }
+.chm-slot.lit .chm-slot-tick.on {
+  color: #1A1206; background: linear-gradient(135deg, #FFE08A, #FFB020);
+  box-shadow: 0 0 10px rgba(255,185,40,0.5);
+}
+
 /* Featured banner */
 .hb-featured {
   display: flex;

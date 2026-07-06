@@ -41,5 +41,14 @@
 - `DubMascot.tsx` — the coach avatar (dog/cat).
 - `ChartCarousel.tsx` / `CadenceCarousel.tsx` — swipeable Progress charts.
 - `WeeklyRecap.tsx`, `DubProgressSummary.tsx`, `PatternsCard.tsx` — insight cards.
+- `CoreHabitsMatrix.tsx` — four daily-loop tokens (Weight · Sleep/Energy · Steps ·
+  Calories) that light gold as each is closed; sits under the ring on `/level`.
+
+## Push reminders
+`CogMenu` exposes three per-user daily push times (morning weigh-in, evening
+nutrition, optional post-workout). The server scheduler (`server/index.ts`
+`runReminders`, gated by pure `server/reminderSchedule.ts`) fires each once/day,
+skipping loops already closed. Taps deep-link via `?prompt=weight|exercise` (see
+`AppRouter`) or straight to `/food-log`.
 
 See also: [APP_OVERVIEW.md](APP_OVERVIEW.md) · [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md)

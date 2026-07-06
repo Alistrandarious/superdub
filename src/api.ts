@@ -171,12 +171,14 @@ export const api = {
 
   // push notifications
   getVapidKey: (): Promise<{ key: string }> => request('/push/vapid-public-key'),
-  pushSubscribe: (subscription: any, tzOffsetMinutes: number, reminderHour?: number) =>
-    request('/push/subscribe', { method: 'POST', body: JSON.stringify({ subscription, tzOffsetMinutes, reminderHour }) }),
+  pushSubscribe: (subscription: any, tzOffsetMinutes: number, reminderHour?: number, nutritionHour?: number, workoutHour?: number | null) =>
+    request('/push/subscribe', { method: 'POST', body: JSON.stringify({ subscription, tzOffsetMinutes, reminderHour, nutritionHour, workoutHour }) }),
   pushUnsubscribe: (endpoint?: string) =>
     request('/push/unsubscribe', { method: 'POST', body: JSON.stringify({ endpoint }) }),
   pushSetReminderTime: (hour: number) =>
     request('/push/reminder-time', { method: 'POST', body: JSON.stringify({ hour }) }),
+  pushSetPromptTimes: (times: { nutritionHour?: number; workoutHour?: number | null }) =>
+    request('/push/prompt-times', { method: 'POST', body: JSON.stringify(times) }),
 
   // food log
   parseFoodLog: (transcript: string) =>

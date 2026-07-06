@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { enablePush, disablePush, pushIsEnabled, pushSupported, getReminderHour, setReminderHour } from './push';
+import { enablePush, disablePush, pushIsEnabled, pushSupported, getReminderHour, setReminderHour, getNutritionHour, setNutritionHour, getWorkoutHour, setWorkoutHour } from './push';
 import { clearToken } from './api';
 import { BUILD_TAG } from './version';
 
@@ -20,6 +20,11 @@ const Ic: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{children}</svg>
 );
 
+// 12 AM … 11 PM options, shared by the three reminder-time selects.
+const HOUR_OPTIONS = Array.from({ length: 24 }, (_, h) => (
+  <option key={h} value={h}>{h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`}</option>
+));
+
 // The single settings/menu surface, shared on every page header. Bundles the
 // quick-log actions, navigation, and app settings that used to be split between
 // the Habits cog and the bottom-nav "More" menu.
@@ -30,6 +35,8 @@ const CogMenu: React.FC = () => {
   const [pushOn, setPushOn] = useState(pushIsEnabled);
   const [pushBusy, setPushBusy] = useState(false);
   const [reminderHour, setReminderHourState] = useState(getReminderHour);
+  const [nutritionHour, setNutritionHourState] = useState(getNutritionHour);
+  const [workoutHour, setWorkoutHourState] = useState<number | null>(getWorkoutHour);
   const planBadge = readPlanBadge();
 
   const logout = () => { clearToken(); window.location.href = '/'; };
@@ -55,6 +62,11 @@ const CogMenu: React.FC = () => {
     setPushBusy(false);
   };
   const changeReminderHour = (hour: number) => { setReminderHourState(hour); setReminderHour(hour); };
+  const changeNutritionHour = (hour: number) => { setNutritionHourState(hour); setNutritionHour(hour); };
+  const changeWorkoutHour = (v: string) => {
+    const hour = v === 'off' ? null : parseInt(v, 10);
+    setWorkoutHourState(hour); setWorkoutHour(hour);
+  };
   const toggleCheckin = () => {
     const next = !checkinEnabled;
     setCheckinEnabled(next);
@@ -111,14 +123,27 @@ const CogMenu: React.FC = () => {
               </button>
             )}
             {pushSupported() && pushOn && (
-              <div className="cog-menu-item" style={{ cursor: 'default' }}>
-                <span className="cog-mi-ico"><Ic><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></Ic></span> Reminder
-                <select className="reminder-time-select" style={{ marginLeft: 'auto' }} value={reminderHour} onChange={e => changeReminderHour(parseInt(e.target.value, 10))}>
-                  {Array.from({ length: 24 }, (_, h) => (
-                    <option key={h} value={h}>{h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`}</option>
-                  ))}
-                </select>
-              </div>
+              <>
+                <div className="cog-menu-item" style={{ cursor: 'default' }}>
+                  <span className="cog-mi-ico"><Ic><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></Ic></span> Morning
+                  <select className="reminder-time-select" style={{ marginLeft: 'auto' }} value={reminderHour} onChange={e => changeReminderHour(parseInt(e.target.value, 10))}>
+                    {HOUR_OPTIONS}
+                  </select>
+                </div>
+                <div className="cog-menu-item" style={{ cursor: 'default' }}>
+                  <span className="cog-mi-ico"><Ic><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20M21 15V2a5 5 0 0 0-3 5v6c0 1.1.9 2 3 2z" /></Ic></span> Nutrition
+                  <select className="reminder-time-select" style={{ marginLeft: 'auto' }} value={nutritionHour} onChange={e => changeNutritionHour(parseInt(e.target.value, 10))}>
+                    {HOUR_OPTIONS}
+                  </select>
+                </div>
+                <div className="cog-menu-item" style={{ cursor: 'default' }}>
+                  <span className="cog-mi-ico"><Ic><path d="M6.5 6.5l11 11M21 21l-1-1M3 3l1 1M18 22l4-4M2 6l4-4M6 18l-4 4M22 18l-4 4" /></Ic></span> Workout
+                  <select className="reminder-time-select" style={{ marginLeft: 'auto' }} value={workoutHour == null ? 'off' : workoutHour} onChange={e => changeWorkoutHour(e.target.value)}>
+                    <option value="off">Off</option>
+                    {HOUR_OPTIONS}
+                  </select>
+                </div>
+              </>
             )}
 
             <div className="cog-menu-sep" />
