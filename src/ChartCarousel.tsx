@@ -44,13 +44,20 @@ const ChartCarousel: React.FC<{
       <div className="cc-track" ref={trackRef} onScroll={onScroll}>
         {slides.map((child, i) => (
           <div className="cc-slide" key={i}>
-            {child}
+            {/* Dub speaks at the top; tapping him opens the full coach read. */}
             {notes[i] && (
-              <div className="cc-note">
-                <span className="cc-note-pet"><DubMascot size={34} mood="happy" species={species} /></span>
-                <p className="cc-note-text">{notes[i]}</p>
-              </div>
+              <button
+                className="cc-dubbar"
+                onClick={() => window.dispatchEvent(new CustomEvent('superdub:show-coach'))}
+                aria-label="Ask Dub for more"
+              >
+                <span className="cc-dubbar-pet"><DubMascot size={38} mood="happy" species={species} /></span>
+                <p className="cc-dubbar-text">{notes[i]}</p>
+                <span className="cc-dubbar-more" aria-hidden>›</span>
+              </button>
             )}
+            {/* Height-locked visualization — fills the rest; swipe here pages. */}
+            <div className="cc-slide-viz">{child}</div>
           </div>
         ))}
       </div>

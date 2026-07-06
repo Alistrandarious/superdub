@@ -110,11 +110,6 @@ function getYearDays(year: number): string[] {
 const YEAR = new Date().getFullYear();
 const ALL_DAYS = getYearDays(YEAR);
 
-// Uniform chart-canvas height across every Progress tab — expands the charts to
-// fill the viewport and keeps the visualization space the same size on every
-// tab so switching chips never shifts the layout.
-const CHART_H = 380;
-
 // Chart ranges — historical (week/all) + forward-projection horizons.
 type ChartRange = 'week' | 'm' | '3m' | 'goal' | 'all';
 const RANGE_ORDER: ChartRange[] = ['week', 'm', 'goal', 'all'];
@@ -144,6 +139,11 @@ const DraggableChart: React.FC<{ disabled?: boolean; onPage: (deltaWindows: numb
   const axisRef = useRef<'h' | 'v' | null>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const width = () => wrapRef.current?.clientWidth ?? 1;
+
+  // Disabled (the only mode we ship): a plain height-filling flex box with NO
+  // touch-action override, so a horizontal swipe on the chart flows through to
+  // the carousel and pages to the next tab instead of being trapped here.
+  if (disabled) return <div className="chart-fill">{children}</div>;
 
   const down = (e: React.PointerEvent) => {
     if (disabled) return;
@@ -1283,11 +1283,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         : moodStats.avg7 != null ? `Mood's averaging ${moodStats.avg7}/5 this week.`
         : `Log sleep and mood in the daily ritual to see them side by side.` },
   ].filter(m => m.show);
-  // Story panels: an intro ("Today" = verdict + Dub) first, the charts in the
-  // middle, and a scrollable "Stats" panel last. Tabs/notes must stay aligned
-  // with the rendered children.
-  const storyTabs = ['Today', ...chartMeta.map(m => m.name), 'Stats'];
-  const storyNotes: (string | null)[] = [null, ...chartMeta.map(m => m.note), null];
 
   // ── Live Target Matrix inputs (today's live state) ──────────────────────────
   const todayData = tracker[todayKey];
@@ -1314,6 +1309,12 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       : '';
     return `Yesterday you ate about ${verdict.intake.toLocaleString()} kcal — ${Math.abs(verdict.delta).toLocaleString()} ${verdict.delta <= 0 ? 'under' : 'over'} your ${targetCalories.toLocaleString()} target.${zone}${wk}`;
   })();
+
+  // Story panels: Today (the matrix) first, the charts in the middle, and a
+  // scrollable Stats panel last. Tabs/notes stay index-aligned with the slides;
+  // note 0 is Today's yesterday-verdict, shown in Dub's top bar by the carousel.
+  const storyTabs = ['Today', ...chartMeta.map(m => m.name), 'Stats'];
+  const storyNotes: (string | null)[] = [liveVerdict, ...chartMeta.map(m => m.note), null];
 
   return (
     <div className="app flush" style={{ '--theme': themeColor, '--theme-dim': themeColor + '66', '--theme-glow': themeColor + '14' } as React.CSSProperties}>
@@ -1515,20 +1516,10 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="dashboard-story">
       <ChartCarousel tabs={storyTabs} notes={storyNotes}>
 
-      {/* ── Panel 0 · Today — live verdict text + the Live Target Matrix ── */}
+      {/* ── Panel 0 · Today — the Live Target Matrix fills the locked height.
+             Dub's yesterday-verdict rides in the carousel's top bar (note 0). ── */}
       <div className="story-panel story-panel--intro">
 
-      {/* Verdict: an unboxed, raw-typography read on today's live state, straight
-          from the coaching engine (falls back to yesterday's intake vs target). */}
-      {liveVerdict && (
-        <p className="today-verdict">
-          <span className="today-verdict-eyebrow">DUB'S VERDICT · YESTERDAY</span>
-          {liveVerdict}
-        </p>
-      )}
-
-      {/* Visualization space — fixed 280px 2×2 gauge grid, pixel-frozen against
-          the trend charts so switching tabs never shifts the container. */}
       <LiveTargetMatrix
         targetCalories={targetCalories}
         caloriesConsumed={todayCalories}
@@ -1593,7 +1584,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         <div className="chart-section-inner">
         <div className="chart-container">
         <DraggableChart disabled onPage={pageBy}>
-        <ResponsiveContainer width="100%" height={CHART_H}>
+        <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={chartData} margin={{ left: 0, right: 10, top: 5, bottom: 8 }}>
             <defs>
               <linearGradient id="barGradient" x1="0" y1="1" x2="0" y2="0">
@@ -1794,7 +1785,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           <div className="chart-section-inner">
             <div className="chart-container">
               <DraggableChart disabled onPage={pageBy}>
-              <ResponsiveContainer width="100%" height={CHART_H}>
+              <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={chartData} margin={{ left: 0, right: 10, top: 10, bottom: 8 }}>
                   <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
                   <XAxis dataKey="day" stroke="rgba(255,255,255,0.1)" tick={chartXTick} interval={displayInterval} tickLine={false} height={36} padding={{ left: 6, right: 6 }} />
@@ -1844,7 +1835,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             </div>
             {walkHasData ? (
               <DraggableChart disabled onPage={pageBy}>
-              <ResponsiveContainer width="100%" height={CHART_H}>
+              <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={stepChartData} margin={{ left: 0, right: 10, top: 8, bottom: 4 }}>
                   <defs>
                     <linearGradient id="stepHit" x1="0" y1="0" x2="0" y2="1">
@@ -1911,7 +1902,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             </div>
             {calorieHasData ? (
               <DraggableChart disabled onPage={pageBy}>
-              <ResponsiveContainer width="100%" height={CHART_H}>
+              <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={calorieChartData} margin={{ left: 0, right: 10, top: 10, bottom: 8 }}>
                   <defs>
                     <linearGradient id="intakeFill" x1="0" y1="0" x2="0" y2="1">
@@ -1961,9 +1952,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           {(sleepCandleHasData || sleepHasData) && (
             <DraggableChart disabled onPage={pageBy}>
             {sleepCandleHasData ? (
-              <SleepCandleChart data={sleepCandleData} height={190} />
+              <SleepCandleChart data={sleepCandleData} height="100%" />
             ) : (
-            <ResponsiveContainer width="100%" height={190}>
+            <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={sleepChartData} margin={{ left: 0, right: 10, top: 10, bottom: 8 }}>
                 <defs>
                   <linearGradient id="sleepFill" x1="0" y1="0" x2="0" y2="1">
@@ -1991,7 +1982,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
           {moodHasData && (
             <DraggableChart disabled onPage={pageBy}>
-            <ResponsiveContainer width="100%" height={190}>
+            <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={moodChartData} margin={{ left: 0, right: 10, top: 6, bottom: 8 }}>
                 <defs>
                   <linearGradient id="moodFill" x1="0" y1="0" x2="0" y2="1">

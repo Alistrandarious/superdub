@@ -11,6 +11,18 @@ export interface UpdateEntry {
 export const UPDATE_LOG: UpdateEntry[] = [
   {
     date: '2026-07-06',
+    emoji: '🔒',
+    title: 'Progress pages are height-locked, with Dub talking up top',
+    summary: 'Every Progress tab now fits one screen with no scrolling. Dub gives you a line at the top of each tab (tap him for the full read), and the chart fills all the space below it.',
+    points: [
+      'No more scrolling on the Progress tabs: each one is locked to a single screen, so the chart stretches as tall as it can instead of leaving gaps.',
+      'Dub sits at the top of every tab with a short read on what you are looking at. Tap him and he opens the full coaching breakdown.',
+      'Swiping left or right on the chart itself now flips to the next tab, so you can move through Today, Weight, Steps and the rest without reaching for the chips.',
+      'Tap a point on a chart to see its details; the tooltip stays put so you can actually read it.',
+    ],
+  },
+  {
+    date: '2026-07-06',
     emoji: '📐',
     title: 'Progress tab: taller charts, forward targets, sleep and mood together',
     summary: 'Every Progress chart now fills a taller uniform canvas so tabs no longer jump, the Today gauges point at what to hit next, the verdict reads yesterday back to you, and Sleep and Mood share one panel.',

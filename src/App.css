@@ -1851,59 +1851,60 @@ h1, h2, h3, h4, .sora {
   flex: 0 0 100%; width: 100%; height: 100%; scroll-snap-align: center;
   scroll-snap-stop: always; /* one swipe advances exactly one page — never skip slides on a fast fling */
   display: flex; flex-direction: column;
-  overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;
-  padding-bottom: 24px;
+  overflow: hidden;          /* height-locked: the page itself never scrolls */
 }
-.cc-slide::-webkit-scrollbar { display: none; }
-/* Chart fills the slide edge-to-edge; the slide owns the horizontal gutter */
-.cc-slide > .chart-section { margin: 12px 16px 0; width: auto; }
-.cc-note {
-  display: flex; align-items: center; gap: 10px;
-  margin: 10px 16px 0; padding: 11px 13px;
+
+/* Dub speaks at the top of every slide; tapping him opens the full coach read. */
+.cc-dubbar {
+  flex-shrink: 0; display: flex; align-items: center; gap: 10px;
+  margin: 10px 16px 0; padding: 10px 12px; text-align: left; cursor: pointer;
   background: var(--glass-bg); border: 1px solid var(--glass-border);
-  border-radius: var(--r-md);
+  border-radius: var(--r-md); color: inherit;
+  transition: transform 0.12s ease, border-color 0.15s ease;
 }
-.cc-note-pet { flex-shrink: 0; }
-.cc-note-text {
-  margin: 0; font-family: var(--font-ui); font-size: 0.78rem; line-height: 1.5;
-  color: rgba(255,255,255,0.68);
+.cc-dubbar:active { transform: scale(0.99); }
+.cc-dubbar-pet { flex-shrink: 0; }
+.cc-dubbar-text {
+  margin: 0; flex: 1; min-width: 0;
+  font-family: var(--font-ui); font-size: 0.8rem; line-height: 1.45; color: rgba(255,255,255,0.72);
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
 }
+.cc-dubbar-more { flex-shrink: 0; color: var(--theme, #2E8BFF); font-size: 1.3rem; font-weight: 700; line-height: 1; }
+
+/* Visualization space — fills the remaining locked height. A little padding
+   between Dub's bar and the canvas; scrolls internally only for tall Stats. */
+.cc-slide-viz {
+  flex: 1; min-height: 0; display: flex; flex-direction: column;
+  overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;
+  padding: 10px 0;
+}
+.cc-slide-viz::-webkit-scrollbar { display: none; }
+
+/* Chart-fill chain: the section and its wrappers grow to fill the viz so the
+   graph canvas is as tall as possible. Headers (title/legend/pager) keep their
+   content height (flex-grow 0 by default) and don't stretch. */
+.cc-slide-viz > .chart-section { flex: 1; min-height: 0; display: flex; flex-direction: column; margin: 0 16px; width: auto; }
+.cc-slide-viz .chart-section-inner { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.cc-slide-viz .chart-container { flex: 1; min-height: 0; }
+.chart-fill { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+/* Sleep & Mood stacks two charts — split the height between them. */
+.cc-slide-viz > .chart-section--sleepmood .chart-fill { flex: 1 1 50%; }
 /* Chips moved below the visualization space — now the last row before BottomNav,
    so it carries the safe-area inset. Pagination dots were removed entirely. */
 .cc-tabs--under {
   padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
 }
 
-/* Story panels: intro (Today) and the scrollable stats page */
+/* Story panels: intro (Today) fills the locked height; stats scrolls. */
 .story-panel { display: flex; flex-direction: column; }
-/* Today: a full-height "story" screen — pinned to the slide height and centred,
-   so it never grows its own scrollbar (you swipe to the next panel instead).
-   Content is kept lean (verdict + Dub) so it fits a phone without clipping. */
-.story-panel--intro {
-  padding-top: 8px;
-  gap: 12px;
-  /* Natural height so the taller (380px) matrix + verdict flow and the slide's
-     own overflow-y scrolls if a short screen needs it — no clipping. */
-  flex-shrink: 0;
-}
-.story-panel--intro .today-verdict,
-.story-panel--intro .ltm { margin-left: 16px; margin-right: 16px; }
+.cc-slide-viz > .story-panel--intro { flex: 1; min-height: 0; margin: 0 16px; }
+/* Stats legitimately runs taller than a screen — keep its natural height so the
+   viz wrapper scrolls it (the one panel that's allowed to). */
+.cc-slide-viz > .story-panel--stats { flex-shrink: 0; }
 
-/* ── Dub's Verdict — unboxed raw typography, no card, no border ── */
-.today-verdict {
-  margin: 0 16px; font-family: var(--font-ui); font-weight: 500;
-  font-size: 0.98rem; line-height: 1.5; color: rgba(240,244,255,0.9);
-}
-.today-verdict-eyebrow {
-  display: block; margin-bottom: 6px;
-  font-family: var(--font-data); font-size: 0.6rem; font-weight: 700;
-  letter-spacing: 0.16em; color: #FFD233;
-}
-
-/* ── Live Target Matrix — fixed 2×2, pixel-frozen against the charts ── */
+/* ── Live Target Matrix — 2×2 grid that fills the locked visualization height ── */
 .ltm {
-  flex-shrink: 0;                       /* never let the column-flex shell crush it */
-  height: 380px; width: auto;           /* uniform visualization height across tabs */
+  flex: 1; min-height: 0; width: auto;
   display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
   gap: 10px;
 }
