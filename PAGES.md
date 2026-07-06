@@ -39,7 +39,10 @@
 - `CogMenu.tsx` — unified per-page cog menu (settings, navigation, quick-log).
 - `LevelRing.tsx` / ring themes — XP ring, incl. the Liquid ring cosmetic.
 - `DubMascot.tsx` — the coach avatar (dog/cat).
-- `ChartCarousel.tsx` / `CadenceCarousel.tsx` — swipeable Progress charts.
+- `ChartCarousel.tsx` / `CadenceCarousel.tsx` — swipeable Progress charts. Chips
+  sit **under** the viz; pagination dots removed. First slide is the Today matrix.
+- `LiveTargetMatrix.tsx` — Progress "Today" panel: fixed 280px 2×2 gauge grid
+  (Intake runway · Step pace · Sleep/Energy · priority habit). Fed by `App.tsx`.
 - `WeeklyRecap.tsx`, `DubProgressSummary.tsx`, `PatternsCard.tsx` — insight cards.
 - `CoreHabitsMatrix.tsx` — four daily-loop tokens (Weight · Sleep/Energy · Steps ·
   Calories) that light gold as each is closed; sits under the ring on `/level`.

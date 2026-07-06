@@ -18,6 +18,25 @@ export interface Article {
 
 export const ARTICLES: Article[] = [
   {
+    id: 'live-target-matrix',
+    title: 'Your Day, as a Live Target Matrix',
+    author: 'Ali Shah',
+    readMins: 2,
+    tag: 'Progress',
+    accent: '#FFD233',
+    dek: 'The Today tab stopped reporting the past and started coaching the present: four gauges of live pace and buffer.',
+    body: [
+      { t: 'p', text: 'The old Today view told you about yesterday. Useful once, but by the time you are looking at it, the day is already moving. So we rebuilt it around a simple question: right now, are you ahead or behind?' },
+      { t: 'h', text: 'Four gauges, all live' },
+      { t: 'p', text: 'Intake is a runway, not a tally: it shows how many calories you have left against target, and if you cross the line it flashes a critical buffer so there is no pretending. Activity does not just count steps, it counts them against where you should be by this hour, then tells you how far ahead or behind pace you are.' },
+      { t: 'p', text: 'Vitals pairs last night\'s sleep with a prediction of your afternoon energy, because a short night usually shows up around 3pm whether you planned for it or not. Focus picks the single habit still open today and puts it one tap away, so the thing most at risk of slipping is the thing in front of you.' },
+      { t: 'quote', text: 'A number about yesterday is history. A buffer about right now is a decision.' },
+      { t: 'h', text: 'Frozen in place, on purpose' },
+      { t: 'p', text: 'The matrix is locked to the exact size of your trend charts, and the chart chips now sit right underneath it. Tap between Today, Weight, Steps and the rest and nothing jumps: the frame stays put, only the content changes. Less visual noise, less fatigue, more logging.' },
+      { t: 'p', text: 'Open Progress, glance at the four gauges, and do the one small thing they are pointing at. That is the whole loop. 🎯' },
+    ],
+  },
+  {
     id: 'reminders-that-fit',
     title: 'Reminders That Fit Your Day',
     author: 'Ali Shah',

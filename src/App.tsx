@@ -17,14 +17,15 @@ import './App.css';
 import { api } from './api';
 import { BUILD_TAG } from './version';
 import { kcalPerStep as kcalPerStepFor, stepsToKm } from './energy';
-import { pageTheme, GROWTH, TEAL, HEALTH, DANGER } from './theme';
+import { pageTheme, GROWTH, TEAL } from './theme';
 import { useWeightUnit, formatWeightKg, kgToUnitValue, unitLabel, WeightUnit } from './weightUnit';
 import WeightInput from './WeightInput';
 import StreakFlame from './StreakFlame';
-import DubProgressSummary from './DubProgressSummary';
 import CogMenu from './CogMenu';
 import PatternsCard, { PatternDay } from './PatternsCard';
 import ChartCarousel from './ChartCarousel';
+// DubProgressSummary retired from the Today panel — the live verdict text now carries Dub's read.
+import LiveTargetMatrix from './LiveTargetMatrix';
 import GoalSheet from './GoalSheet';
 import SleepCandleChart, { hhmmToAxis, type SleepCandle } from './SleepCandleChart';
 
@@ -1283,6 +1284,22 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const storyTabs = ['Today', ...chartMeta.map(m => m.name), 'Stats'];
   const storyNotes: (string | null)[] = [null, ...chartMeta.map(m => m.note), null];
 
+  // ── Live Target Matrix inputs (today's live state) ──────────────────────────
+  const todayData = tracker[todayKey];
+  const todaySteps = parseInt(todayData?.steps ?? '') || 0;
+  const todayCalories = parseInt(todayData?.calories ?? '') || 0;
+  const todayISO = `${YEAR}-${todayKey.slice(3)}-${todayKey.slice(0, 2)}`;
+  const todaySleep = sleepByDate[todayISO] ?? null;
+  // Priority habit: the first uncompleted real habit today (the mandatory
+  // auto-tick is excluded). ponytail: naive order-based pick; upgrade path is to
+  // weight by each habit's live streak so the one with the most to lose wins.
+  const priorityHabit = habits.find(h =>
+    h !== 'Logging into Superdub' && todayData?.habits[h] !== true
+  ) ?? null;
+  // Live verdict line — the coaching engine's read on today, shown as raw text.
+  const liveVerdict = coachingMsg?.message
+    ?? (verdict ? `Yesterday you ate about ${verdict.intake.toLocaleString()} kcal, ${Math.abs(verdict.delta).toLocaleString()} ${verdict.delta <= 0 ? 'under' : 'over'} your ${targetCalories.toLocaleString()} target.` : null);
+
   return (
     <div className="app flush" style={{ '--theme': themeColor, '--theme-dim': themeColor + '66', '--theme-glow': themeColor + '14' } as React.CSSProperties}>
       <div className="hb-topbar">
@@ -1483,43 +1500,30 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="dashboard-story">
       <ChartCarousel tabs={storyTabs} notes={storyNotes}>
 
-      {/* ── Panel 0 · Today — verdict + Dub + quick log ── */}
+      {/* ── Panel 0 · Today — live verdict text + the Live Target Matrix ── */}
       <div className="story-panel story-panel--intro">
 
-      {/* ── The verdict — yesterday's estimated intake vs target, at a glance ── */}
-      {verdict && (
-        <section className="verdict-card">
-          <div className="verdict-eyebrow">YESTERDAY'S VERDICT</div>
-          <div className="verdict-main">
-            <span className="verdict-num" style={{ color: verdict.delta <= 0 ? HEALTH : DANGER }}>
-              {verdict.intake.toLocaleString()}
-            </span>
-            <div className="verdict-meta">
-              <span>est. kcal eaten</span>
-              <span className="verdict-meta-dim">target {targetCalories.toLocaleString()}</span>
-            </div>
-            <span className={`verdict-chip ${verdict.delta <= 0 ? 'good' : 'bad'}`}>
-              {Math.abs(verdict.delta).toLocaleString()} {verdict.delta <= 0 ? 'under' : 'over'}
-            </span>
-          </div>
-          <div className="verdict-row2">
-            {verdict.zoneStatus && (
-              <span className={`verdict-tag ${verdict.zoneStatus === 'in' ? 'zone' : 'off'}`}>
-                {verdict.zoneStatus === 'in' ? 'in the safe zone' : verdict.zoneStatus === 'above' ? 'above the safe zone' : 'below the safe zone'}
-              </span>
-            )}
-            {verdict.weekChange != null && (
-              <span className="verdict-week">{verdict.weekChange > 0 ? '+' : ''}{kgToUnitValue(verdict.weekChange, unit).toFixed(1)} {unitLabel(unit)} this week</span>
-            )}
-          </div>
-        </section>
+      {/* Verdict: an unboxed, raw-typography read on today's live state, straight
+          from the coaching engine (falls back to yesterday's intake vs target). */}
+      {liveVerdict && (
+        <p className="today-verdict">
+          <span className="today-verdict-eyebrow">DUB'S VERDICT</span>
+          {liveVerdict}
+        </p>
       )}
 
-      {/* Dub's read on your progress — the essential diagnostic beside the verdict */}
-      <DubProgressSummary />
-
-      {/* Quick-log pills removed — logging lives in the daily check-in / cog menu.
-          The Today panel stays a lean, full-height "verdict + Dub" story screen. */}
+      {/* Visualization space — fixed 280px 2×2 gauge grid, pixel-frozen against
+          the trend charts so switching tabs never shifts the container. */}
+      <LiveTargetMatrix
+        targetCalories={targetCalories}
+        caloriesConsumed={todayCalories}
+        steps={todaySteps}
+        stepTarget={effectiveStepTarget}
+        sleepHours={todaySleep}
+        energyScore={coachingMsg?.todayEnergy ?? null}
+        priorityHabit={priorityHabit}
+        onToggleHabit={(h) => handleCheck(todayKey, h)}
+      />
 
       {/* ── Cohort onboarding banner (shown once after signup) ── */}
       {cohortMsg && !cohortDismissed && (

@@ -1868,17 +1868,11 @@ h1, h2, h3, h4, .sora {
   margin: 0; font-family: var(--font-ui); font-size: 0.78rem; line-height: 1.5;
   color: rgba(255,255,255,0.68);
 }
-.cc-dots {
-  flex-shrink: 0;
-  display: flex; justify-content: center; gap: 7px;
-  padding: 12px 0 calc(10px + env(safe-area-inset-bottom, 0px));
+/* Chips moved below the visualization space — now the last row before BottomNav,
+   so it carries the safe-area inset. Pagination dots were removed entirely. */
+.cc-tabs--under {
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
 }
-.cc-dot {
-  width: 7px; height: 7px; border-radius: 50%; cursor: pointer; padding: 0;
-  background: rgba(255,255,255,0.2); border: none;
-  transition: background 0.15s, transform 0.15s;
-}
-.cc-dot.active { background: var(--theme, #2E8BFF); transform: scale(1.35); }
 
 /* Story panels: intro (Today) and the scrollable stats page */
 .story-panel { display: flex; flex-direction: column; }
@@ -1893,8 +1887,93 @@ h1, h2, h3, h4, .sora {
   gap: 6px;
   overflow: hidden;
 }
-.story-panel--intro .verdict-card,
-.story-panel--intro .dub-summary { margin-left: 16px; margin-right: 16px; }
+.story-panel--intro .today-verdict,
+.story-panel--intro .ltm { margin-left: 16px; margin-right: 16px; }
+
+/* ── Dub's Verdict — unboxed raw typography, no card, no border ── */
+.today-verdict {
+  margin: 0 16px; font-family: var(--font-ui); font-weight: 500;
+  font-size: 0.98rem; line-height: 1.5; color: rgba(240,244,255,0.9);
+}
+.today-verdict-eyebrow {
+  display: block; margin-bottom: 6px;
+  font-family: var(--font-data); font-size: 0.6rem; font-weight: 700;
+  letter-spacing: 0.16em; color: #FFD233;
+}
+
+/* ── Live Target Matrix — fixed 2×2, pixel-frozen against the charts ── */
+.ltm {
+  flex-shrink: 0;                       /* never let the column-flex shell crush it */
+  height: 280px; width: auto;
+  display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
+  gap: 10px;
+}
+.ltm-cell {
+  position: relative; min-width: 0; min-height: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; padding: 10px 8px; border-radius: var(--r-card, 18px);
+  background: #14141C;                  /* muted obsidian on the #0E0E14 canvas */
+  border: 1px solid rgba(255,255,255,0.05);
+  text-align: center; overflow: hidden;
+}
+.ltm-eyebrow {
+  position: absolute; top: 9px; left: 12px;
+  font-family: var(--font-data); font-size: 0.54rem; font-weight: 700;
+  letter-spacing: 0.16em; color: rgba(255,255,255,0.32);
+}
+/* Ring */
+.ltm-ring { width: 82px; height: 82px; margin-top: 6px; }
+.ltm-ring-track { fill: none; stroke: rgba(255,255,255,0.07); stroke-width: 7; }
+.ltm-ring-fill {
+  fill: none; stroke-width: 7; stroke-linecap: round;
+  transition: stroke-dasharray 0.5s cubic-bezier(0.22,1,0.36,1);
+}
+.ltm-ring-fill.over { animation: ltm-flash 1.1s ease-in-out infinite; }
+@keyframes ltm-flash { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
+.ltm-ring-center { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.ltm-ring-num { font-family: var(--font-data); font-weight: 700; font-size: 0.94rem; line-height: 1; color: #FFE08A; }
+.ltm-ring-num.over { color: #B84DFF; }
+.ltm-ring-unit { font-family: var(--font-ui); font-size: 0.5rem; color: rgba(255,255,255,0.4); margin-top: 2px; }
+/* Metric line (steps / sleep) */
+.ltm-metric { font-family: var(--font-data); font-weight: 700; font-size: 1.35rem; line-height: 1; color: #F0F4FF; margin-top: 12px; }
+.ltm-metric-unit { font-family: var(--font-ui); font-size: 0.52rem; color: rgba(255,255,255,0.4); margin-left: 4px; }
+.ltm-metric.ltm-empty { color: rgba(255,255,255,0.3); }
+/* Progress bar (steps / sleep) */
+.ltm-bar { width: 82%; height: 6px; border-radius: 999px; background: rgba(255,255,255,0.07); overflow: hidden; margin-top: 8px; }
+.ltm-bar-fill { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #FFD233, #FF8A00); transition: width 0.5s cubic-bezier(0.22,1,0.36,1); }
+.ltm-bar-fill.behind { background: rgba(255,255,255,0.22); }
+/* Sub caption */
+.ltm-sub { font-family: var(--font-ui); font-size: 0.58rem; line-height: 1.3; color: rgba(255,255,255,0.5); margin-top: 6px; }
+.ltm-sub.good { color: #FFD233; }
+.ltm-sub.warn { color: rgba(255,255,255,0.45); }
+.ltm-sub.ltm-empty { color: rgba(255,255,255,0.32); }
+.ltm-energy { color: #FFD233; font-weight: 700; }
+/* Critical overage flash */
+.ltm-alert {
+  font-family: var(--font-data); font-size: 0.56rem; font-weight: 700; letter-spacing: 0.04em;
+  color: #fff; background: linear-gradient(135deg, #7C3AED, #B84DFF);
+  padding: 3px 8px; border-radius: 999px; margin-top: 6px;
+  animation: ltm-flash 1.1s ease-in-out infinite;
+}
+/* Focus · priority habit token */
+.ltm-focus {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  width: 100%; height: 100%; padding: 4px; cursor: pointer; border: none; background: none;
+  transition: transform 0.12s ease;
+}
+.ltm-focus:active { transform: scale(0.96); }
+.ltm-focus-ring {
+  width: 30px; height: 30px; border-radius: 50%; margin-top: 8px;
+  border: 2px solid #FFD233; box-shadow: 0 0 12px rgba(255,185,40,0.4);
+}
+.ltm-focus.done .ltm-focus-tick {
+  width: 30px; height: 30px; margin-top: 8px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #FFE08A, #FF8A00); color: #1A1206; font-weight: 800;
+}
+.ltm-focus-label { font-family: var(--font-ui); font-size: 0.72rem; font-weight: 600; color: #F0F4FF; line-height: 1.15; }
+.ltm-focus-cta { font-family: var(--font-data); font-size: 0.5rem; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,210,51,0.75); }
+.ltm-focus.done .ltm-focus-cta { color: rgba(255,255,255,0.35); }
 
 /* Stats: the one panel that legitimately runs taller than a screen. Hold it at
    its natural content height (flex-shrink:0) so the .cc-slide column-flex shell

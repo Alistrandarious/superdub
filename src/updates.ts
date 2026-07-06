@@ -11,6 +11,18 @@ export interface UpdateEntry {
 export const UPDATE_LOG: UpdateEntry[] = [
   {
     date: '2026-07-06',
+    emoji: '🎯',
+    title: 'The Today tab is now a Live Target Matrix',
+    summary: 'The Progress "Today" view is rebuilt: a plain-text read from Dub up top, then a fixed four-gauge matrix of live pace and buffers, with the chart chips moved underneath and the pager dots gone.',
+    points: [
+      'New Live Target Matrix: four live gauges in a fixed 2x2 grid. Intake shows your calorie runway as a ring (and flashes a critical buffer if you go over), Activity tracks your steps against where you should be by now, Vitals reads last night\'s sleep and predicts your afternoon energy, and Focus surfaces the one habit still open today (tap it to tick it).',
+      'Dub\'s verdict is now plain text at the top of Today, a live read on where you stand right now rather than a boxed number.',
+      'The chart chips (Today, Weight, Habits and the rest) moved directly under the visualization, and the little pagination dots are gone. Tap a chip to switch instantly.',
+      'The Today matrix is locked to the same width as the trend charts, so moving between them no longer shifts the layout.',
+    ],
+  },
+  {
+    date: '2026-07-06',
     emoji: '🔔',
     title: 'Reminders that fit your day, and a Core Habits matrix',
     summary: 'Notifications now cover the whole loop (morning, evening, and an optional post-workout nudge), and The Ascension shows your four daily loops as tokens that light up gold as you close them.',

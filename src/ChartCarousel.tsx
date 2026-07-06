@@ -37,16 +37,10 @@ const ChartCarousel: React.FC<{
     btn?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
   }, [active]);
 
+  // Chips sit BELOW the visualization space (per the Today layout spec) and are
+  // the only navigation — the pagination dots are gone. Taps switch instantly.
   return (
     <div className="chart-carousel">
-      <div className="cc-tabs" ref={tabsRef}>
-        {tabs.map((name, i) => (
-          <button key={name} className={`cc-tab${active === i ? ' active' : ''}`} onClick={() => goTo(i)}>
-            {name}
-          </button>
-        ))}
-      </div>
-
       <div className="cc-track" ref={trackRef} onScroll={onScroll}>
         {slides.map((child, i) => (
           <div className="cc-slide" key={i}>
@@ -61,9 +55,11 @@ const ChartCarousel: React.FC<{
         ))}
       </div>
 
-      <div className="cc-dots">
-        {slides.map((_, i) => (
-          <button key={i} className={`cc-dot${active === i ? ' active' : ''}`} onClick={() => goTo(i)} aria-label={`Go to ${tabs[i] ?? `chart ${i + 1}`}`} />
+      <div className="cc-tabs cc-tabs--under" ref={tabsRef}>
+        {tabs.map((name, i) => (
+          <button key={name} className={`cc-tab${active === i ? ' active' : ''}`} onClick={() => goTo(i)}>
+            {name}
+          </button>
         ))}
       </div>
     </div>
