@@ -17,7 +17,7 @@ import './App.css';
 import { api } from './api';
 import { BUILD_TAG } from './version';
 import { kcalPerStep as kcalPerStepFor, stepsToKm } from './energy';
-import { pageTheme, GROWTH, TEAL, HEALTH, DANGER, GOLD } from './theme';
+import { pageTheme, GROWTH, TEAL, HEALTH, DANGER } from './theme';
 import StreakFlame from './StreakFlame';
 import DubProgressSummary from './DubProgressSummary';
 import CogMenu from './CogMenu';

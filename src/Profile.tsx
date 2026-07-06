@@ -67,21 +67,6 @@ function cmToFtIn(cm: number) {
   return { ft: Math.floor(totalIn / 12), inch: totalIn % 12 };
 }
 function ftInToCm(ft: number, inch: number) { return Math.round((ft * 12 + inch) * 2.54); }
-function kgToLbs(kg: number) { return Math.round(kg * 2.20462 * 10) / 10; }
-function lbsToKg(lbs: number) { return Math.round(lbs / 2.20462 * 10) / 10; }
-function kgToStLb(kg: number) {
-  const totalLbs = kg * 2.20462;
-  const st = Math.floor(totalLbs / 14);
-  const lb = Math.round((totalLbs % 14) * 10) / 10;
-  return { st, lb };
-}
-function stLbToKg(st: number, lb: number) { return Math.round((st * 14 + lb) / 2.20462 * 10) / 10; }
-function fmtWeight(kg: number, unit: 'kg' | 'lbs' | 'st'): string {
-  if (!kg) return '—';
-  if (unit === 'lbs') return `${kgToLbs(kg)} lbs`;
-  if (unit === 'st') { const { st, lb } = kgToStLb(kg); return `${st} st ${lb} lb`; }
-  return `${kg} kg`;
-}
 
 interface ProfileProps { onLogout?: () => void; }
 
@@ -156,10 +141,6 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
   );
   const [heightFt, setHeightFt] = useState('5');
   const [heightIn, setHeightIn] = useState('9');
-  // Goal weight drafts for non-kg modes
-  const [goalWeightLbs, setGoalWeightLbs] = useState('');
-  const [goalWeightSt, setGoalWeightSt] = useState('');
-  const [goalWeightStLb, setGoalWeightStLb] = useState('');
 
   const [draft, setDraft] = useState({
     calories: String(DEFAULT_TARGET.calories),
@@ -167,16 +148,6 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
     carbs: String(DEFAULT_TARGET.carbs),
     fats: String(DEFAULT_TARGET.fats),
   });
-
-  // Sync goal weight drafts when goalWeight or weightUnit changes
-  useEffect(() => {
-    const kg = parseFloat(goalWeight);
-    if (!kg) { setGoalWeightLbs(''); setGoalWeightSt(''); setGoalWeightStLb(''); return; }
-    setGoalWeightLbs(String(kgToLbs(kg)));
-    const { st, lb } = kgToStLb(kg);
-    setGoalWeightSt(String(st));
-    setGoalWeightStLb(String(lb));
-  }, [goalWeight, weightUnit]);
 
   useEffect(() => {
     Promise.all([
