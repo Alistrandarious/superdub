@@ -1,20 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
-import App from './App';
-import Diet from './Diet';
-import Tasks from './Tasks';
-import Profile from './Profile';
 import Habits from './Habits';
-import About from './About';
-import PrivacyPolicy from './PrivacyPolicy';
-import MathsPage from './MathsPage';
-import LevelPage from './LevelPage';
-import ArchivedHabits from './ArchivedHabits';
-import SuccessKit from './SuccessKit';
-import FoodLog from './FoodLog';
-import MealPlans from './MealPlans';
-import PlanPage from './PlanPage';
 import DailyCheckIn from './DailyCheckIn';
 import EnergyCheckIn from './EnergyCheckIn';
 import StepEntry from './StepEntry';
@@ -28,6 +15,22 @@ import { XPProvider } from './XPContext';
 import LevelUpCelebration from './LevelUpCelebration';
 import CoachReport from './CoachReport';
 import BackgroundApplier from './BackgroundApplier';
+
+// Habits (home) stays eager for instant first paint; everything else splits
+// into its own chunk so recharts etc. load only when the page is visited.
+const App = lazy(() => import('./App'));
+const Diet = lazy(() => import('./Diet'));
+const Tasks = lazy(() => import('./Tasks'));
+const Profile = lazy(() => import('./Profile'));
+const About = lazy(() => import('./About'));
+const PrivacyPolicy = lazy(() => import('./PrivacyPolicy'));
+const MathsPage = lazy(() => import('./MathsPage'));
+const LevelPage = lazy(() => import('./LevelPage'));
+const ArchivedHabits = lazy(() => import('./ArchivedHabits'));
+const SuccessKit = lazy(() => import('./SuccessKit'));
+const FoodLog = lazy(() => import('./FoodLog'));
+const MealPlans = lazy(() => import('./MealPlans'));
+const PlanPage = lazy(() => import('./PlanPage'));
 
 const NO_NAV_PATHS = ['/privacy'];
 
@@ -66,7 +69,7 @@ function AppRouter() {
   }, [authed]);
 
   if (NO_NAV_PATHS.includes(location.pathname)) {
-    return <PrivacyPolicy />;
+    return <Suspense fallback={null}><PrivacyPolicy /></Suspense>;
   }
 
   if (!authed) {
@@ -75,6 +78,7 @@ function AppRouter() {
 
   return (
     <>
+      <Suspense fallback={null}>
       <Routes>
         <Route path="/" element={<Habits />} />
         <Route path="/dashboard" element={<App onLogout={handleLogout} />} />
@@ -90,6 +94,7 @@ function AppRouter() {
         <Route path="/meal-plans" element={<MealPlans />} />
         <Route path="/plan" element={<PlanPage />} />
       </Routes>
+      </Suspense>
       <DailyCheckIn />
       <EnergyCheckIn />
       <StepEntry />
