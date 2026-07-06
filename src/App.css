@@ -1442,6 +1442,48 @@ h1, h2, h3, h4, .sora {
 }
 .lists-add-btn:hover { filter: brightness(1.08); }
 
+/* Add block: input row + a collapsible due-date dropdown underneath it, so the
+   date is part of the UI instead of a raw native box wedged in the row. */
+.lists-input-block { margin-bottom: var(--gutter); }
+.lists-input-block .lists-input-row { margin-bottom: 0; }
+.lists-date-toggle {
+  flex-shrink: 0; display: flex; align-items: center; gap: 6px;
+  height: 44px; padding: 0 12px; border-radius: var(--r-sm); cursor: pointer;
+  background: var(--surface-raised); border: 1px solid var(--glass-border);
+  color: rgba(255,255,255,0.5); font-family: var(--font-data); font-size: 0.72rem; font-weight: 700;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.lists-date-toggle.open { border-color: var(--theme); color: var(--theme); }
+.lists-date-toggle.has-date { border-color: var(--theme-dim); color: var(--theme); }
+.lists-date-toggle-val { white-space: nowrap; }
+.lists-date-drop {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
+  animation: lists-date-in 0.16s ease;
+}
+@keyframes lists-date-in { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+.lists-date-chip {
+  position: relative; display: inline-flex; align-items: center; gap: 5px;
+  padding: 7px 12px; border-radius: var(--r-pill); cursor: pointer;
+  background: var(--surface-raised); border: 1px solid var(--glass-border);
+  color: rgba(255,255,255,0.6); font-family: var(--font-ui); font-size: 0.76rem; font-weight: 600;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.lists-date-chip:hover { border-color: var(--theme-dim); }
+.lists-date-chip.active { border-color: var(--theme); color: var(--theme); background: var(--theme-glow); }
+.lists-date-pick { color: var(--theme); border-color: var(--theme-dim); }
+/* Native date input hidden but tappable over the "Pick…" chip — no ugly box. */
+.lists-date-pick input[type="date"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.lists-date-clear { color: var(--danger, #FF5470); border-color: transparent; background: none; }
+
+/* Task text + its due date, stacked so the date rides under the task in line. */
+.lists-text-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.lists-due {
+  font-family: var(--font-data); font-size: 0.64rem; font-weight: 700;
+  color: rgba(255,255,255,0.4);
+}
+.lists-due--overdue { color: var(--danger, #FF5470); }
+.lists-item--done .lists-due { color: #555; }
+
 /* List items */
 .lists-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .lists-item {

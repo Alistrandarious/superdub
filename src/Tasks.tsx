@@ -36,6 +36,22 @@ const formatDue = (iso: string) => {
   const [y, m, d] = iso.split('-').map(Number);
   return y && m && d ? `Due ${d} ${MONTHS[m - 1]}` : iso;
 };
+// Short label for the add-row chip, e.g. "6 Jul".
+const shortDue = (iso: string) => {
+  const [y, m, d] = iso.split('-').map(Number);
+  return y && m && d ? `${d} ${MONTHS[m - 1]}` : iso;
+};
+// today + N days as local YYYY-MM-DD, for the quick-pick chips.
+const isoPlus = (days: number) => {
+  const d = new Date(); d.setDate(d.getDate() + days);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+const CalendarIcon: React.FC<{ size?: number }> = ({ size = 15 }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
+    <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
+  </svg>
+);
 
 const CheckIcon: React.FC<{ size?: number }> = ({ size = 16 }) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
@@ -57,6 +73,7 @@ const Tasks: React.FC = () => {
   const [tab, setTab]       = useState<'todo' | 'shopping' | 'goals'>('todo');
   const [input, setInput]   = useState('');
   const [due, setDue]       = useState('');
+  const [showDate, setShowDate] = useState(false); // due-date dropdown open?
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -75,10 +92,11 @@ const Tasks: React.FC = () => {
     setTasks(prev => [...prev, newTask]);
     setInput('');
     setDue('');
+    setShowDate(false);
     if (tab === 'shopping') {
       api.createShoppingItem(id, text).catch(() => {});
     } else {
-      api.createTask(id, text).catch(() => {});
+      api.createTask(id, text, due || undefined).catch(() => {});
     }
   };
 
@@ -145,28 +163,54 @@ const Tasks: React.FC = () => {
           <GoalsPanel accent={GOAL_ACCENT} />
         ) : (
         <>
-        {/* Input row */}
-        <div className="lists-input-row">
-          <input
-            className="lists-input"
-            type="text"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && addItem()}
-            placeholder={isShopping ? 'Add item to shop for…' : 'New task…'}
-          />
-          <input
-            className="lists-date-input"
-            type="date"
-            value={due}
-            onChange={e => setDue(e.target.value)}
-            aria-label="Due date (optional)"
-          />
-          <button
-            className="lists-add-btn"
-            onClick={addItem}
-            style={{ background: accent }}
-          >+</button>
+        {/* Add block: task text + add. A due date lives in a dropdown below the
+            row, not as a raw date box inline — so it's part of the UI, not stuck
+            on the side. Once picked it rides on the task itself (lists-due). */}
+        <div className="lists-input-block">
+          <div className="lists-input-row">
+            <input
+              className="lists-input"
+              type="text"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && addItem()}
+              placeholder={isShopping ? 'Add item to shop for…' : 'New task…'}
+            />
+            {!isShopping && (
+              <button
+                className={`lists-date-toggle${due ? ' has-date' : ''}${showDate ? ' open' : ''}`}
+                onClick={() => setShowDate(s => !s)}
+                aria-label={due ? `Due ${shortDue(due)} — change` : 'Add a due date'}
+                title="Add a due date"
+              >
+                <CalendarIcon />
+                {due && <span className="lists-date-toggle-val">{shortDue(due)}</span>}
+              </button>
+            )}
+            <button className="lists-add-btn" onClick={addItem} style={{ background: accent }}>+</button>
+          </div>
+
+          {!isShopping && showDate && (
+            <div className="lists-date-drop">
+              {[{ label: 'Today', d: 0 }, { label: 'Tomorrow', d: 1 }, { label: 'Next week', d: 7 }].map(o => (
+                <button
+                  key={o.d}
+                  className={`lists-date-chip${due === isoPlus(o.d) ? ' active' : ''}`}
+                  onClick={() => { setDue(isoPlus(o.d)); setShowDate(false); }}
+                >{o.label}</button>
+              ))}
+              <label className="lists-date-chip lists-date-pick">
+                <CalendarIcon size={13} />
+                {due && ![isoPlus(0), isoPlus(1), isoPlus(7)].includes(due) ? shortDue(due) : 'Pick…'}
+                <input type="date" value={due} min={todayISO()} onChange={e => setDue(e.target.value)} />
+              </label>
+              {due && (
+                <button className="lists-date-chip lists-date-clear" onClick={() => { setDue(''); setShowDate(false); }}>
+                  Clear
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* List */}

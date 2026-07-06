@@ -90,8 +90,8 @@ export const api = {
 
   // tasks & lists
   getTasks: () => request('/tasks'),
-  createTask: (id: string, text: string) =>
-    request('/tasks', { method: 'POST', body: JSON.stringify({ id, text, type: 'todo' }) }),
+  createTask: (id: string, text: string, dueDate?: string) =>
+    request('/tasks', { method: 'POST', body: JSON.stringify({ id, text, type: 'todo', dueDate }) }),
   createShoppingItem: (id: string, text: string) =>
     request('/tasks', { method: 'POST', body: JSON.stringify({ id, text, type: 'shopping' }) }),
   updateTask: (id: string, done: boolean) =>

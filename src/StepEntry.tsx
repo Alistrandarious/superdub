@@ -152,18 +152,7 @@ const StepEntry: React.FC = () => {
         </div>
 
         <div className="step-entry-field">
-          <label>Date</label>
-          <input
-            type="date"
-            className="step-entry-date"
-            value={date}
-            max={todayISO()}
-            onChange={e => setDate(e.target.value)}
-          />
-        </div>
-
-        <div className="step-entry-field">
-          <label>Steps</label>
+          <label>Steps · {(() => { const [, mm, dd] = date.split('-').map(Number); return `${dd} ${MONTHS[mm - 1]}`; })()}</label>
           <input
             type="number"
             inputMode="numeric"

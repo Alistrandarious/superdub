@@ -95,6 +95,7 @@ const migrations = [
     END IF;
   END $$`,
   `ALTER TABLE tasks ADD COLUMN IF NOT EXISTS type TEXT DEFAULT 'todo'`,
+  `ALTER TABLE tasks ADD COLUMN IF NOT EXISTS due_date DATE`,
   // Per-source step provenance: keep every value per (day, source), flag the active one.
   // tracker.steps stays as a denormalized cache of the active value so charts/KPIs are untouched.
   `CREATE TABLE IF NOT EXISTS step_entries (

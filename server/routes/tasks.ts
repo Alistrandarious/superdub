@@ -7,7 +7,12 @@ const router = Router();
 router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
     const { rows } = await pool.query(
-      `SELECT id, text, done, COALESCE(type, 'todo') AS type FROM tasks WHERE user_id = $1 ORDER BY created_at`,
+      // to_char keeps due_date a clean 'YYYY-MM-DD' string (node-pg would
+      // otherwise hand back a Date that serialises to a UTC timestamp and breaks
+      // the client's lexical date compare).
+      `SELECT id, text, done, COALESCE(type, 'todo') AS type,
+              to_char(due_date, 'YYYY-MM-DD') AS "dueDate"
+         FROM tasks WHERE user_id = $1 ORDER BY created_at`,
       [req.userId]
     );
     res.json(rows);
@@ -18,11 +23,13 @@ router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
 
 router.post('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
-    const { id, text, type = 'todo' } = req.body;
+    const { id, text, type = 'todo', dueDate } = req.body as { id: string; text: string; type?: string; dueDate?: string };
     if (!id || !text) return res.status(400).json({ error: 'id and text required' });
+    // Accept only a plain YYYY-MM-DD; anything else stores NULL (no due date).
+    const due = typeof dueDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dueDate) ? dueDate : null;
     await pool.query(
-      `INSERT INTO tasks (id, user_id, text, done, type) VALUES ($1, $2, $3, false, $4)`,
-      [id, req.userId, text, type]
+      `INSERT INTO tasks (id, user_id, text, done, type, due_date) VALUES ($1, $2, $3, false, $4, $5)`,
+      [id, req.userId, text, type, due]
     );
     res.json({ ok: true });
   } catch {

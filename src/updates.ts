@@ -11,6 +11,17 @@ export interface UpdateEntry {
 export const UPDATE_LOG: UpdateEntry[] = [
   {
     date: '2026-07-06',
+    emoji: '🗓️',
+    title: 'Nicer due dates on Lists, and they finally stick',
+    summary: 'The clunky date box on Lists is gone. Add a task, then tap the calendar to pick a due date from a tidy dropdown, and it now saves properly and rides under the task.',
+    points: [
+      'Add a task, then tap the calendar button to set a due date from a dropdown of quick picks (Today, Tomorrow, Next week) or a date of your choice, instead of the raw date box that sat awkwardly in the row.',
+      'Due dates now actually save: before they vanished on refresh, now they stick and show under the task, turning red when overdue.',
+      'Log Steps dropped its separate date field, since the calendar already picks the day. The Steps box now shows which day you are logging.',
+    ],
+  },
+  {
+    date: '2026-07-06',
     emoji: '📅',
     title: 'A Yesterday tab that grades your day, with Today on the way',
     summary: 'The first Progress tab is now Yesterday: your closing numbers for the day just gone, at a glance. A new Today tab is coming soon and will show live targets.',
