@@ -864,7 +864,7 @@ const Habits: React.FC = () => {
       localStorage.setItem('superdub.dayStreak', String(s));
       window.dispatchEvent(new CustomEvent('superdub:streak-updated'));
     }
-  }, [loaded, ht, today, startDates]);
+  }, [loaded, ht, today, startDates, xpCarry]);
 
   // Fallback: check every 5 minutes if 6 hours have passed
   useEffect(() => {
