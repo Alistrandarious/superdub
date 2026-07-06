@@ -1,10 +1,10 @@
 // A weight entry field that speaks the user's chosen unit but reports kg.
 //
 // value/onChange are ALWAYS canonical kg (string, '' = empty). Internally it
-// shows kg, lb, or st+lb; conversion happens only here so callers never touch
-// unit math. Stone renders two inputs (st + lb) — the conventional format.
+// shows a single decimal in kg, lb, or st (stone as a decimal, e.g. 15.8);
+// conversion happens only here so callers never touch unit math.
 import { useState, useEffect } from 'react';
-import { WeightUnit, kgToLbs, lbsToKg, kgToStLb, stLbToKg } from './weightUnit';
+import { WeightUnit, kgToUnitValue, unitValueToKg, unitLabel } from './weightUnit';
 
 interface Props {
   valueKg: string;                     // canonical kg ('' allowed)
@@ -12,6 +12,7 @@ interface Props {
   unit: WeightUnit;
   inputClassName?: string;
   wrapClassName?: string;              // extra class on the wrapper (e.g. block layout)
+  hideUnit?: boolean;                  // suppress the trailing unit label (dense grids)
   id?: string;
   autoFocus?: boolean;
   onEnter?: () => void;
@@ -22,66 +23,36 @@ const clean = (s: string) => s.replace(/[^0-9.]/g, '');
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
 export default function WeightInput({
-  valueKg, onChangeKg, unit, inputClassName, wrapClassName, id, autoFocus, onEnter, ariaLabel,
+  valueKg, onChangeKg, unit, inputClassName, wrapClassName, hideUnit, id, autoFocus, onEnter, ariaLabel,
 }: Props) {
-  // Local display strings so partial typing (e.g. "8.") isn't clobbered by
+  // Local display string so partial typing (e.g. "8.") isn't clobbered by
   // round-tripping through kg on every keystroke.
-  const [single, setSingle] = useState('');
-  const [st, setSt] = useState('');
-  const [lb, setLb] = useState('');
+  const [display, setDisplay] = useState('');
 
   // Re-hydrate display when the canonical value or unit changes externally
-  // (prefill, unit toggle) — but not from our own edits, which already match.
+  // (prefill, unit toggle) — our own edits already match, so this is a no-op then.
   useEffect(() => {
     const kg = parseFloat(valueKg);
-    if (!valueKg || isNaN(kg)) { setSingle(''); setSt(''); setLb(''); return; }
-    if (unit === 'kg') setSingle(String(round1(kg)));
-    else if (unit === 'lbs') setSingle(String(round1(kgToLbs(kg))));
-    else { const s = kgToStLb(kg); setSt(String(s.st)); setLb(String(s.lb)); }
+    setDisplay(!valueKg || isNaN(kg) ? '' : String(round1(kgToUnitValue(kg, unit))));
   }, [valueKg, unit]);
 
-  const key = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') { (e.target as HTMLInputElement).blur(); onEnter?.(); }
-  };
-
-  if (unit === 'st') {
-    const emit = (stVal: string, lbVal: string) => {
-      const s = parseFloat(stVal) || 0;
-      const l = parseFloat(lbVal) || 0;
-      onChangeKg(s === 0 && l === 0 && stVal === '' && lbVal === '' ? '' : String(round1(stLbToKg(s, l))));
-    };
-    return (
-      <span className={`weight-input-st${wrapClassName ? ' ' + wrapClassName : ''}`}>
-        <input
-          className={inputClassName} inputMode="decimal" value={st} id={id} autoFocus={autoFocus}
-          aria-label={ariaLabel ? `${ariaLabel} (stone)` : 'Weight (stone)'}
-          onChange={e => { const v = clean(e.target.value); setSt(v); emit(v, lb); }}
-          onKeyDown={key} placeholder="0" />
-        <span className="weight-input-unit">st</span>
-        <input
-          className={inputClassName} inputMode="decimal" value={lb}
-          aria-label={ariaLabel ? `${ariaLabel} (pounds)` : 'Weight (pounds)'}
-          onChange={e => { const v = clean(e.target.value); setLb(v); emit(st, v); }}
-          onKeyDown={key} placeholder="0" />
-        <span className="weight-input-unit">lb</span>
-      </span>
-    );
-  }
-
-  const emitSingle = (v: string) => {
+  const onChange = (raw: string) => {
+    const v = clean(raw);
+    setDisplay(v);
     if (v === '') { onChangeKg(''); return; }
     const n = parseFloat(v);
-    if (isNaN(n)) { onChangeKg(''); return; }
-    onChangeKg(String(round1(unit === 'lbs' ? lbsToKg(n) : n)));
+    onChangeKg(isNaN(n) ? '' : String(round1(unitValueToKg(n, unit))));
   };
+
   return (
     <span className={`weight-input-single${wrapClassName ? ' ' + wrapClassName : ''}`}>
       <input
-        className={inputClassName} inputMode="decimal" value={single} id={id} autoFocus={autoFocus}
+        className={inputClassName} inputMode="decimal" value={display} id={id} autoFocus={autoFocus}
         aria-label={ariaLabel ?? 'Weight'}
-        onChange={e => { const v = clean(e.target.value); setSingle(v); emitSingle(v); }}
-        onKeyDown={key} placeholder="0" />
-      <span className="weight-input-unit">{unit === 'lbs' ? 'lb' : 'kg'}</span>
+        onChange={e => onChange(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Enter') { (e.target as HTMLInputElement).blur(); onEnter?.(); } }}
+        placeholder="0" />
+      {!hideUnit && <span className="weight-input-unit">{unitLabel(unit)}</span>}
     </span>
   );
 }

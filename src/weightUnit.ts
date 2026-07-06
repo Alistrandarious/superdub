@@ -39,29 +39,20 @@ export function useWeightUnit(): WeightUnit {
 export const kgToLbs = (kg: number): number => kg * LBS_PER_KG;
 export const lbsToKg = (lbs: number): number => lbs / LBS_PER_KG;
 
-// Stone is conventionally two parts: whole stone + remaining pounds (0–13.9).
-export function kgToStLb(kg: number): { st: number; lb: number } {
-  const totalLbs = kg * LBS_PER_KG;
-  let st = Math.floor(totalLbs / 14);
-  let lb = Math.round((totalLbs - st * 14) * 10) / 10;
-  if (lb >= 14) { st += 1; lb = 0; } // rounding edge: 13.97 lb → next stone
-  return { st, lb };
-}
-export const stLbToKg = (st: number, lb: number): number => lbsToKg(st * 14 + lb);
-
 export const unitLabel = (unit: WeightUnit = getWeightUnit()): string =>
   unit === 'lbs' ? 'lb' : unit === 'st' ? 'st' : 'kg';
 
-// Numeric value of a kg amount in the chosen unit (stone as a decimal).
+// Numeric value of a kg amount in the chosen unit (stone as a decimal, e.g. 15.8).
 // Linear through the origin, so it's also correct for deltas (e.g. "3.2 kg to go").
-// Use this for single-number displays and chart axes; formatWeightKg for st+lb.
 export const kgToUnitValue = (kg: number, unit: WeightUnit = getWeightUnit()): number =>
   unit === 'lbs' ? kgToLbs(kg) : unit === 'st' ? kgToLbs(kg) / 14 : kg;
 
-// Read-only display for a canonical kg value (chart labels, "current weight").
+// Inverse: a value the user typed in their unit → canonical kg.
+export const unitValueToKg = (value: number, unit: WeightUnit = getWeightUnit()): number =>
+  unit === 'lbs' ? lbsToKg(value) : unit === 'st' ? lbsToKg(value * 14) : value;
+
+// Read-only display of a canonical kg value: a single decimal + unit ("15.8 st").
 export function formatWeightKg(kg: number, unit: WeightUnit = getWeightUnit()): string {
   if (!kg || kg <= 0) return '—';
-  if (unit === 'lbs') return `${Math.round(kgToLbs(kg) * 10) / 10} lb`;
-  if (unit === 'st') { const { st, lb } = kgToStLb(kg); return `${st} st ${lb} lb`; }
-  return `${Math.round(kg * 10) / 10} kg`;
+  return `${Math.round(kgToUnitValue(kg, unit) * 10) / 10} ${unitLabel(unit)}`;
 }

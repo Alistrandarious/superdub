@@ -2155,17 +2155,18 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           {visibleDays.map(day => (
             <div key={day} className={`tracker-header-cell ${day === todayKey ? 'today-col' : ''}`}>{day}</div>
           ))}
-          {/* Weight row (always visible) */}
-          <div className="tracker-label">Weight (kg)</div>
+          {/* Weight row (always visible) — entered in the user's unit, stored as kg */}
+          <div className="tracker-label">Weight ({unitLabel(unit)})</div>
           {visibleDays.map(day => (
             <div key={`w-${day}`} className="tracker-cell">
-              <input
-                className="weight-input"
-                type="text"
-                inputMode="decimal"
-                value={tracker[day]?.weight ?? ''}
-                onChange={e => handleWeight(day, e.target.value)}
-                placeholder="—"
+              <WeightInput
+                valueKg={tracker[day]?.weight ?? ''}
+                onChangeKg={v => handleWeight(day, v)}
+                unit={unit}
+                inputClassName="weight-input"
+                wrapClassName="weight-input-block"
+                hideUnit
+                ariaLabel={`Weight ${day}`}
               />
             </div>
           ))}
