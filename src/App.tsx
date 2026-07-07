@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { useXP } from './XPContext';
 import {
   ComposedChart,
@@ -130,6 +130,30 @@ function getChartDayRange(from: Date, to: Date): Array<{ ddmm: string; date: Dat
   return result;
 }
 
+// Fills its flex box and hands recharts an explicit PIXEL height. ResponsiveContainer
+// height="100%" collapses to 0 against a flex-grown parent (percentage heights need a
+// definite base), which left every chart blank — so we measure the box with a
+// ResizeObserver and clone the child chart with a real number instead.
+const ChartFill: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [h, setH] = useState(0);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => setH(el.clientHeight || 0);
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  // Fallback 320 until measured (and if the box ever reports 0), so a chart always shows.
+  const sized = React.isValidElement(children)
+    ? React.cloneElement(children as React.ReactElement<{ height?: number }>, { height: h || 320 })
+    : children;
+  return <div ref={ref} className="chart-fill">{sized}</div>;
+};
+
 // Drag-to-pan wrapper: the chart physically follows your finger left/right, then
 // settles into the new interval window on release (positive drag = older).
 const DraggableChart: React.FC<{ disabled?: boolean; onPage: (deltaWindows: number) => void; children: React.ReactNode }> = ({ disabled, onPage, children }) => {
@@ -140,10 +164,10 @@ const DraggableChart: React.FC<{ disabled?: boolean; onPage: (deltaWindows: numb
   const wrapRef = useRef<HTMLDivElement>(null);
   const width = () => wrapRef.current?.clientWidth ?? 1;
 
-  // Disabled (the only mode we ship): a plain height-filling flex box with NO
+  // Disabled (the only mode we ship): a measured, height-filling flex box with NO
   // touch-action override, so a horizontal swipe on the chart flows through to
   // the carousel and pages to the next tab instead of being trapped here.
-  if (disabled) return <div className="chart-fill">{children}</div>;
+  if (disabled) return <ChartFill>{children}</ChartFill>;
 
   const down = (e: React.PointerEvent) => {
     if (disabled) return;

@@ -11,6 +11,15 @@ export interface UpdateEntry {
 export const UPDATE_LOG: UpdateEntry[] = [
   {
     date: '2026-07-07',
+    emoji: '📊',
+    title: 'Progress charts actually draw again',
+    summary: 'The blank Progress charts are fixed for real this time. They now fill their space and render properly on every tab.',
+    points: [
+      'Fixed the empty chart boxes: the chart area now gets a real measured height instead of collapsing to nothing, so Weight, Steps and the rest draw again and fill the screen.',
+    ],
+  },
+  {
+    date: '2026-07-07',
     emoji: '🌙',
     title: 'Sleep is now a slide-between-two-points',
     summary: 'The morning vitals sleep step is a two-handle slider across the night. Drag one point to when you went to bed and the other to when you woke, and both times are saved.',
