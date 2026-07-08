@@ -50,7 +50,7 @@ const ExercisePrompt: React.FC = () => {
         <h2 className="checkin-title">Exercise loop</h2>
         <p className="checkin-subtitle">Did you close your exercise loop today?</p>
         {result ? (
-          <div className="checkin-done">{result === 'yes' ? '💪 Nice — logged!' : 'No worries — tomorrow.'}</div>
+          <div className="checkin-done">{result === 'yes' ? '💪 Nice, logged!' : 'No worries, tomorrow.'}</div>
         ) : (
           <>
             <div className="exercise-btns">

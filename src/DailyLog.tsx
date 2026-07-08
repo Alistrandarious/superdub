@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { api } from './api';
+import { loggingNow } from './day';
 import { useWeightUnit, formatWeightKg } from './weightUnit';
 
 // ── Daily Log — the "Daily Superdub" vitals strip ───────────────────────────
@@ -7,10 +8,13 @@ import { useWeightUnit, formatWeightKg } from './weightUnit';
 // reverse-calorie engine — a different species from user habits, so they get
 // their own compact data-chip UI + a logging streak to reinforce feeding data.
 
-function todayDDMM(d = new Date()): string {
+// Default arg is the current logging day (2 AM boundary): a no-arg call before
+// 2 AM returns yesterday's key. Callers that pass an explicit date (e.g. the
+// streak walk-back) are unaffected.
+function todayDDMM(d = loggingNow()): string {
   return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
-function todayISO(): string { return new Date().toISOString().slice(0, 10); }
+function todayISO(): string { return loggingNow().toISOString().slice(0, 10); }
 
 // Consecutive days (ending today or yesterday) with any core log — weight or
 // steps. Days are 'DD/MM'; walk back one calendar day at a time.

@@ -16,7 +16,8 @@ import {
 import './App.css';
 import { api } from './api';
 import { BUILD_TAG } from './version';
-import { kcalPerStep as kcalPerStepFor, stepsToKm } from './energy';
+import { kcalPerStep as kcalPerStepFor, stepsToKm, estimateIntakeKcal } from './energy';
+import { loggingNow } from './day';
 import { pageTheme, GROWTH, TEAL } from './theme';
 import { useWeightUnit, formatWeightKg, kgToUnitValue, unitLabel, WeightUnit } from './weightUnit';
 import WeightInput from './WeightInput';
@@ -291,7 +292,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const [loaded, setLoaded] = useState(false);
 
   // Calendar state
-  const now = new Date();
+  const now = loggingNow(); // 2 AM boundary: before 2 AM this is still yesterday
   const currentMonth = now.getMonth();
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
@@ -691,26 +692,28 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const sleepHasData = sleepChartData.some(d => d.sleep != null);
 
   // Sleep candlestick data — bed→wake bodies coloured by the morning's mood.
-  // Only nights with both bed + wake times get a candle (older hours-only entries
-  // are skipped). Times cross midnight, so the 6pm→6pm axis keeps them ordered.
+  // One row per day across the whole range (nights without both times get a null
+  // candle) so this shares an identical x-axis with the mood chart below it.
+  // Times cross midnight, so the 6pm→6pm axis keeps them ordered.
   const sleepCandleData = useMemo<SleepCandle[]>(() =>
-    chartDayRange.flatMap(({ ddmm }) => {
+    chartDayRange.map(({ ddmm }) => {
       const iso = `${YEAR}-${ddmm.slice(3)}-${ddmm.slice(0, 2)}`;
       const times = sleepTimesByDate[iso];
-      if (!times) return [];
+      const mood = moodByDate[iso] ?? null;
+      if (!times) return { day: ddmm, bedVal: null, wakeVal: null, hours: 0, mood, bedtime: '', waketime: '' };
       const bedVal = hhmmToAxis(times.bedtime);
       let wakeVal = hhmmToAxis(times.waketime);
       if (wakeVal <= bedVal) wakeVal += 24; // guard: wake never before bed on the axis
-      return [{
+      return {
         day: ddmm, bedVal, wakeVal,
         hours: +(wakeVal - bedVal).toFixed(1),
-        mood: moodByDate[iso] ?? null,
+        mood,
         bedtime: times.bedtime, waketime: times.waketime,
-      }];
+      };
     }),
     [chartDayRange, sleepTimesByDate, moodByDate] // eslint-disable-line react-hooks/exhaustive-deps
   );
-  const sleepCandleHasData = sleepCandleData.length > 0;
+  const sleepCandleHasData = sleepCandleData.some(d => d.bedVal != null);
   const moodStats = useMemo(() => {
     const v7: number[] = [], v30: number[] = [];
     for (let i = 0; i < 30; i++) {
@@ -814,15 +817,21 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   };
 
   // Build base (daily) chart data (trend = linear regression line, ema = smoothed signal)
+  // "Undeclared" = a visible habit left untouched (neither done nor failed) on a day
+  // that's already past — drawn grey so a quietly-missed day reads differently from an
+  // explicit fail. Today and future days show no grey (the day isn't over yet).
+  const todayStartMs = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const dailyChartData = chartDayRange.map(({ ddmm, date }, i) => {
     const d = tracker[ddmm] ?? { weight: '', habits: {}, calories: '', protein: '', carbs: '', fats: '', steps: '' };
-    const completed = habits.filter(h => !hiddenHabits.has(h) && d.habits[h] === true).length;
-    const failed = habits.filter(h => !hiddenHabits.has(h) && d.habits[h] === 'failed').length;
+    const visible = habits.filter(h => !hiddenHabits.has(h));
+    const completed = visible.filter(h => d.habits[h] === true).length;
+    const failed = visible.filter(h => d.habits[h] === 'failed').length;
+    const undeclared = date.getTime() < todayStartMs ? visible.length - completed - failed : 0;
     const ema = chartEMA[i] != null ? chartEMA[i] : null;
     // Only show trend line where we have real weight data nearby (within 3 days)
     const trend = hasTrend ? +(trendIntercept + trendSlope * i).toFixed(2) : null;
     const { zoneLow, zoneBand, zoneHigh } = getZone(date.getTime());
-    return { day: ddmm, completed, failed, weight: d.weight ? Number(d.weight) : null, ema, trend, projection: null as number | null, zoneLow, zoneBand, zoneHigh };
+    return { day: ddmm, completed, failed, undeclared, weight: d.weight ? Number(d.weight) : null, ema, trend, projection: null as number | null, zoneLow, zoneBand, zoneHigh };
   });
 
   // Forward projection days (EMA slope extended past today)
@@ -849,7 +858,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         // Extend the regression trend line forward so it spans the whole chart on long views
         const trend = hasTrend ? +(trendIntercept + trendSlope * futureIdx).toFixed(2) : null;
         const { zoneLow, zoneBand, zoneHigh } = getZone(futureDate.getTime());
-        return { day: `${dd}/${mm}`, completed: 0, failed: 0, weight: null as number | null, ema: null as number | null, trend, projection: proj as number | null, zoneLow, zoneBand, zoneHigh };
+        return { day: `${dd}/${mm}`, completed: 0, failed: 0, undeclared: 0, weight: null as number | null, ema: null as number | null, trend, projection: proj as number | null, zoneLow, zoneBand, zoneHigh };
       })
     : [];
 
@@ -879,6 +888,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         weight: data.weights.length > 0 ? +(data.weights.reduce((a, b) => a + b, 0) / data.weights.length).toFixed(1) : null,
         completed: data.done,
         failed: data.failed,
+        undeclared: 0, // aggregate weeks sum multiple days; grey is a daily-view signal
         trend: null,
         ema: null,
         projection: null,
@@ -889,6 +899,16 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   }
 
   const chartData = shouldAggregate ? weeklyChartData : [...dailyChartData, ...futureChartData];
+
+  // Habits Y-axis: pin ticks to the real habit count so recharts doesn't "nice" the
+  // max up to 16 when you only track ~12 (which left a big dead band up top).
+  const habitAxisMax = Math.max(1, habits.length - hiddenHabits.size);
+  const habitTicks = (() => {
+    const step = Math.max(1, Math.ceil(habitAxisMax / 4));
+    const t: number[] = [];
+    for (let v = 0; v <= habitAxisMax; v += step) t.push(v);
+    return t;
+  })();
 
   // XAxis tick density
   const displayInterval = chartData.length <= 10 ? 0
@@ -1012,7 +1032,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   // probable intake(day) ≈ maintenance(BMR×activity) + step-deviation burn
   //                         + weight-trend stored energy (7700 kcal/kg)
   // Uses a 7-day EMA slope so the estimate is smooth, not spiky day-to-day.
-  const KCAL_PER_KG = 7700;
+  // The energy-balance maths (and its clamps) live in estimateIntakeKcal().
   const kcalPerStep = kcalPerStepFor(startWeight);
   const calorieChartData = (() => {
     if (!(bmr > 0)) return [] as { day: string; intake: number | null; target: number }[];
@@ -1029,16 +1049,16 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       if (r.ema == null && r.steps === 0) return { day: r.ddmm, intake: null, target: targetCalories };
       // smooth daily slope over up to WIN days
       const j = Math.max(0, i - WIN);
-      const span = i - j;
-      const emaJ = rows[j].ema;
-      const slopePerDay = (span > 0 && r.ema != null && emaJ != null) ? (r.ema - emaJ) / span : 0;
       const wForBmr = r.ema ?? startWeight;
       const dayBmr = (10 * wForBmr) + (6.25 * ht) - (5 * ag) + sexConst;
-      const maintenance = dayBmr * al;
-      const stepDev = walkAvg > 0 ? (r.steps - walkAvg) * kcalPerStep : 0;
-      const trendCals = slopePerDay * KCAL_PER_KG;
-      const intake = Math.round(maintenance + stepDev + trendCals);
-      return { day: r.ddmm, intake: intake > 600 ? intake : null, target: targetCalories };
+      const intake = estimateIntakeKcal({
+        maintenance: dayBmr * al,
+        stepDev: walkAvg > 0 ? (r.steps - walkAvg) * kcalPerStep : 0,
+        emaNow: r.ema,
+        emaThen: rows[j].ema,
+        spanDays: i - j,
+      });
+      return { day: r.ddmm, intake, target: targetCalories };
     });
   })();
   const calorieEstVals = calorieChartData.map(d => d.intake).filter((v): v is number => v != null);
@@ -1070,13 +1090,15 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     let intake: number | null = null;
     if (r && (r.ema != null || r.steps > 0)) {
       const j = Math.max(0, yi - WIN);
-      const span = yi - j;
-      const emaJ = rows[j].ema;
-      const slopePerDay = (span > 0 && r.ema != null && emaJ != null) ? (r.ema - emaJ) / span : 0;
       const wForBmr = r.ema ?? startWeight;
       const dayBmr = (10 * wForBmr) + (6.25 * ht) - (5 * ag) + sexConst;
-      const est = Math.round(dayBmr * al + (walkAvg > 0 ? (r.steps - walkAvg) * kcalPerStep : 0) + slopePerDay * KCAL_PER_KG);
-      intake = est > 600 ? est : null;
+      intake = estimateIntakeKcal({
+        maintenance: dayBmr * al,
+        stepDev: walkAvg > 0 ? (r.steps - walkAvg) * kcalPerStep : 0,
+        emaNow: r.ema,
+        emaThen: rows[j].ema,
+        spanDays: yi - j,
+      });
     }
     if (intake == null) return null;
     const delta = intake - targetCalories;
@@ -1291,19 +1313,19 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const sleepAvg = sleepVals.length ? Math.round(sleepVals.reduce((a, b) => a + b, 0) / sleepVals.length * 10) / 10 : null;
   const chartMeta = [
     { name: 'Weight', show: true, note: weeklyWeightTrend != null
-      ? `${Math.abs(weeklyWeightTrend)} kg/week ${weeklyWeightTrend < 0 ? 'down' : weeklyWeightTrend > 0 ? 'up' : 'flat'} lately — trust the smoothed line, not the daily jitter.`
+      ? `${Math.abs(weeklyWeightTrend)} kg/week ${weeklyWeightTrend < 0 ? 'down' : weeklyWeightTrend > 0 ? 'up' : 'flat'} lately. Trust the smoothed line, not the daily jitter.`
       : `Log a few weigh-ins and I'll read your trend right here.` },
-    { name: 'Habits', show: habits.length > 0, note: `About ${recentDone} habit${recentDone === 1 ? '' : 's'} ticked a day this week — every one is XP toward your next level.` },
+    { name: 'Habits', show: habits.length > 0, note: `About ${recentDone} habit${recentDone === 1 ? '' : 's'} ticked a day this week. Every one is XP toward your next level.` },
     { name: 'Steps', show: true, note: walkAvg > 0
-      ? `Averaging ${cn(walkAvg)} steps — ${walkAvg >= effectiveStepTarget ? 'at or above' : `${cn(effectiveStepTarget - walkAvg)} short of`} your ${cn(effectiveStepTarget)} goal.`
+      ? `Averaging ${cn(walkAvg)} steps, ${walkAvg >= effectiveStepTarget ? 'at or above' : `${cn(effectiveStepTarget - walkAvg)} short of`} your ${cn(effectiveStepTarget)} goal.`
       : `Log your steps and I'll track them against your ${cn(effectiveStepTarget)} goal.` },
     { name: 'Intake', show: true, note: calorieHasData
-      ? `Estimated intake's averaging ${cn(avgEstIntake)} kcal vs a ${cn(targetCalories)} target — ${avgEstIntake <= targetCalories ? 'nicely under' : 'running over'}.`
+      ? `Estimated intake's averaging ${cn(avgEstIntake)} kcal vs a ${cn(targetCalories)} target, ${avgEstIntake <= targetCalories ? 'nicely under' : 'running over'}.`
       : `As your weight and steps build up, I'll estimate your intake here.` },
     { name: 'Sleep & Mood', show: moodHasData || sleepHasData || sleepCandleHasData,
       note: sleepAvg != null && moodStats.avg7 != null
-        ? `Averaging ${sleepAvg}h a night and ${moodStats.avg7}/5 mood — watch how the two move together.`
-        : sleepAvg != null ? `You're averaging ${sleepAvg}h a night — ${sleepAvg >= 7.5 ? 'right where you want to be' : 'a touch under 8h, worth protecting'}.`
+        ? `Averaging ${sleepAvg}h a night and ${moodStats.avg7}/5 mood. Watch how the two move together.`
+        : sleepAvg != null ? `You're averaging ${sleepAvg}h a night, ${sleepAvg >= 7.5 ? 'right where you want to be' : 'a touch under 8h, worth protecting'}.`
         : moodStats.avg7 != null ? `Mood's averaging ${moodStats.avg7}/5 this week.`
         : `Log sleep and mood in the daily ritual to see them side by side.` },
   ].filter(m => m.show);
@@ -1329,7 +1351,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     const wk = verdict.weekChange != null
       ? ` ${verdict.weekChange > 0 ? 'Up' : verdict.weekChange < 0 ? 'Down' : 'Flat'} ${Math.abs(kgToUnitValue(verdict.weekChange, unit)).toFixed(1)} ${unitLabel(unit)} this week.`
       : '';
-    return `Yesterday you ate about ${verdict.intake.toLocaleString()} kcal — ${Math.abs(verdict.delta).toLocaleString()} ${verdict.delta <= 0 ? 'under' : 'over'} your ${targetCalories.toLocaleString()} target.${zone}${wk}`;
+    return `Yesterday you ate about ${verdict.intake.toLocaleString()} kcal, ${Math.abs(verdict.delta).toLocaleString()} ${verdict.delta <= 0 ? 'under' : 'over'} your ${targetCalories.toLocaleString()} target.${zone}${wk}`;
   })();
 
   // Story panels: Yesterday (retrospective KPIs) first, then a placeholder Today,
@@ -1826,14 +1848,16 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 <ComposedChart data={chartData} margin={{ left: 0, right: 10, top: 10, bottom: 8 }}>
                   <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
                   <XAxis dataKey="day" stroke="rgba(255,255,255,0.1)" tick={chartXTick} interval={displayInterval} tickLine={false} height={36} padding={{ left: 6, right: 6 }} />
-                  <YAxis stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} allowDecimals={false} width={26} axisLine={false} tickLine={false} domain={[0, Math.max(1, habits.length - hiddenHabits.size)]} />
+                  <YAxis stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} allowDecimals={false} width={26} axisLine={false} tickLine={false} domain={[0, habitAxisMax]} ticks={habitTicks} />
                   <Tooltip
                     cursor={{ fill: 'rgba(255,255,255,0.05)' }}
                     contentStyle={{ background: '#0E1510', border: '1px solid #1f3a2a', borderRadius: 10, fontSize: 12 }}
                     labelStyle={{ color: '#9ac' }}
+                    itemStyle={{ color: '#E8ECF4' }}
                   />
                   <Bar dataKey="completed" stackId="habits" fill="#2FD27E" name="Done" radius={[4, 4, 0, 0]} isAnimationActive={false} />
                   <Bar dataKey="failed" stackId="habits" fill="#FF5470" name="Failed" radius={[4, 4, 0, 0]} isAnimationActive={false} />
+                  <Bar dataKey="undeclared" stackId="habits" fill="#3B424D" name="Undeclared" radius={[4, 4, 0, 0]} isAnimationActive={false} />
                 </ComposedChart>
               </ResponsiveContainer>
               </DraggableChart>
@@ -1891,6 +1915,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                     cursor={{ fill: 'rgba(255,255,255,0.04)' }}
                     contentStyle={{ background: '#0E1418', border: '1px solid #132820', borderRadius: 10, fontSize: 12 }}
                     labelStyle={{ color: '#9aa' }}
+                    itemStyle={{ color: '#E8ECF4' }}
                     formatter={(v: any) => [Number(v).toLocaleString() + ' steps', '']}
                   />
                   <ReferenceLine y={effectiveStepTarget} stroke="#2E8BFF" strokeWidth={1.5} strokeDasharray="8 4" label={(props: any) => {
@@ -1954,6 +1979,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                     cursor={{ stroke: 'rgba(255,255,255,0.15)' }}
                     contentStyle={{ background: '#160E06', border: '1px solid #3a2a14', borderRadius: 10, fontSize: 12 }}
                     labelStyle={{ color: '#caa' }}
+                    itemStyle={{ color: '#E8ECF4' }}
                     formatter={(v: any) => [`${Number(v).toLocaleString()} kcal`, 'Est. intake']}
                   />
                   <ReferenceLine y={targetCalories} stroke="#2E8BFF" strokeDasharray="4 4" label={{ value: `${targetCalories} target`, fill: '#2E8BFF', fontSize: 10, position: 'insideTopRight' }} />
@@ -1989,7 +2015,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           {(sleepCandleHasData || sleepHasData) && (
             <DraggableChart disabled onPage={pageBy}>
             {sleepCandleHasData ? (
-              <SleepCandleChart data={sleepCandleData} height="100%" />
+              <SleepCandleChart data={sleepCandleData} height="100%" interval={displayInterval} xTick={chartXTick} />
             ) : (
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={sleepChartData} margin={{ left: 0, right: 10, top: 10, bottom: 8 }}>
@@ -2001,11 +2027,12 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 </defs>
                 <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
                 <XAxis dataKey="day" stroke="rgba(255,255,255,0.1)" tick={chartXTick} interval={displayInterval} tickLine={false} height={36} padding={{ left: 6, right: 6 }} />
-                <YAxis stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} width={26} axisLine={false} tickLine={false} domain={[0, 12]} ticks={[0, 4, 8, 12]} />
+                <YAxis stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} width={34} axisLine={false} tickLine={false} domain={[0, 12]} ticks={[0, 4, 8, 12]} />
                 <Tooltip
                   cursor={{ stroke: 'rgba(255,255,255,0.15)' }}
                   contentStyle={{ background: '#100E16', border: '1px solid #2c2440', borderRadius: 10, fontSize: 12 }}
                   labelStyle={{ color: '#ac9' }}
+                  itemStyle={{ color: '#E8ECF4' }}
                   formatter={(v: any) => [`${v} h`, 'Sleep']}
                 />
                 <ReferenceLine y={8} stroke="rgba(139,92,246,0.45)" strokeDasharray="4 4" label={{ value: '8h', fill: 'rgba(139,92,246,0.8)', fontSize: 10, position: 'insideTopRight' }} />
@@ -2029,11 +2056,12 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 </defs>
                 <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
                 <XAxis dataKey="day" stroke="rgba(255,255,255,0.1)" tick={chartXTick} interval={displayInterval} tickLine={false} height={36} padding={{ left: 6, right: 6 }} />
-                <YAxis stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} width={26} axisLine={false} tickLine={false} domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} />
+                <YAxis stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} width={34} axisLine={false} tickLine={false} domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} />
                 <Tooltip
                   cursor={{ stroke: 'rgba(255,255,255,0.15)' }}
                   contentStyle={{ background: '#161006', border: '1px solid #3a2f14', borderRadius: 10, fontSize: 12 }}
                   labelStyle={{ color: '#caa' }}
+                  itemStyle={{ color: '#E8ECF4' }}
                   formatter={(v: any) => [`${v} / 5`, 'Mood']}
                 />
                 <Area type="monotone" dataKey="mood" stroke="none" fill="url(#moodFill)" connectNulls isAnimationActive={false} legendType="none" />

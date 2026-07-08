@@ -86,7 +86,7 @@ const VitalsPrompt: React.FC = () => {
     <div className="checkin-overlay">
       <div className="checkin-modal vitals-modal">
         <h2 className="checkin-title">Morning vitals</h2>
-        <p className="checkin-subtitle">A few taps — how you slept, then how you feel.</p>
+        <p className="checkin-subtitle">A few taps. How you slept, then how you feel.</p>
 
         {/* Sleep — a two-thumb "between" slider: drag bedtime and wake time */}
         <div className="vitals-step">

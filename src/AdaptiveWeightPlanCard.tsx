@@ -27,14 +27,14 @@ const AdaptiveWeightPlanCard: React.FC<{
     if (slope == null || targetSlope == null) return null;
     const diff = Math.abs(slope) - Math.abs(targetSlope);
     const direction = g.goalType === 'lose' ? (slope < 0 ? 'losing' : 'gaining') : (slope > 0 ? 'gaining' : 'losing');
-    if (Math.abs(diff) < 0.03) return `${direction} at target pace`;
+    if (Math.abs(diff) < 0.03) return `${direction} right on pace`;
     if (g.goalType === 'lose')
       return slope < targetSlope
-        ? `losing ${Math.abs(diff).toFixed(2)} kg/wk faster than needed`
-        : `${Math.abs(diff).toFixed(2)} kg/wk behind target pace`;
+        ? `losing ${Math.abs(diff).toFixed(2)} kg/wk faster than you need`
+        : `${Math.abs(diff).toFixed(2)} kg/wk behind the pace you need`;
     return slope > targetSlope
-      ? `gaining ${Math.abs(diff).toFixed(2)} kg/wk faster than needed`
-      : `${Math.abs(diff).toFixed(2)} kg/wk behind target pace`;
+      ? `gaining ${Math.abs(diff).toFixed(2)} kg/wk faster than you need`
+      : `${Math.abs(diff).toFixed(2)} kg/wk behind the pace you need`;
   })();
 
   const signalLabel = coachingMsg?.churnRisk === 'LOW' ? 'Strong' : coachingMsg?.churnRisk === 'MEDIUM' ? 'Moderate' : coachingMsg?.churnRisk ? 'Low' : null;
@@ -67,7 +67,7 @@ const AdaptiveWeightPlanCard: React.FC<{
           </div>
           <div className="plan-engine-pace-sep">vs</div>
           <div className="plan-engine-pace-item">
-            <span className="plan-engine-pace-label">Needed pace</span>
+            <span className="plan-engine-pace-label">Pace you need</span>
             <span className="plan-engine-pace-val">
               {targetSlope > 0 ? '+' : ''}{targetSlope.toFixed(2)} kg/wk
             </span>
@@ -92,14 +92,14 @@ const AdaptiveWeightPlanCard: React.FC<{
       {/* Prose summary of what the engine is doing */}
       <div className="plan-engine-reasoning">
         {paceDesc && <span className="plan-engine-reasoning-pace">{paceDesc}. </span>}
-        {daysAgo === 0 ? 'Updated today' : daysAgo === 1 ? 'Updated yesterday' : `Updated ${daysAgo}d ago`} — {target.reason}
+        {daysAgo === 0 ? 'Updated today' : daysAgo === 1 ? 'Updated yesterday' : `Updated ${daysAgo}d ago`}. {target.reason}
       </div>
 
       {/* Check-in signal indicator */}
       {signalLabel && (
         <div className="plan-engine-signal">
           <span className="plan-engine-signal-dot" style={{ background: signalColor }} />
-          <span className="plan-engine-signal-text">Check-in signal: <strong style={{ color: signalColor }}>{signalLabel}</strong> — engine confidence {signalLabel === 'Strong' ? 'high' : signalLabel === 'Moderate' ? 'moderate' : 'reduced'}</span>
+          <span className="plan-engine-signal-text">Check-in signal: <strong style={{ color: signalColor }}>{signalLabel}</strong> · confidence {signalLabel === 'Strong' ? 'high' : signalLabel === 'Moderate' ? 'moderate' : 'reduced'}</span>
         </div>
       )}
       {/* Metabolic Protection alert */}
@@ -107,7 +107,7 @@ const AdaptiveWeightPlanCard: React.FC<{
         <div className="plan-engine-metabolic-warning">
           <span className="plan-engine-metabolic-icon">⚡</span>
           <span className="plan-engine-metabolic-text">
-            <strong>Metabolic Protection</strong> — weight velocity has exceeded 1.5% of body weight/week for 2+ consecutive weeks. Consider a calorie maintenance boost to protect lean mass.
+            <strong>Protecting muscle.</strong> You've been losing weight fast for two weeks running, so your target is nudging up a little to keep the loss coming from fat, not muscle.
           </span>
         </div>
       )}
@@ -115,12 +115,12 @@ const AdaptiveWeightPlanCard: React.FC<{
       {/* Learned personal maintenance (TDEE) */}
       {planStatus.tdee && planStatus.tdee.observedTDEE != null && (
         <div className="plan-engine-ml-row">
-          <span className="plan-engine-ml-label">Learned maintenance</span>
+          <span className="plan-engine-ml-label">What you actually burn</span>
           <span className="plan-engine-ml-val">
             {planStatus.tdee.blendedTDEE.toLocaleString()} kcal
             <span className="plan-engine-ml-sub">
               {' '}· {Math.round(planStatus.tdee.confidence * 100)}% confident
-              {planStatus.tdee.blendedTDEE !== planStatus.tdee.formulaTDEE && ` · formula est. ${planStatus.tdee.formulaTDEE.toLocaleString()}`}
+              {planStatus.tdee.blendedTDEE !== planStatus.tdee.formulaTDEE && ` · formula says ${planStatus.tdee.formulaTDEE.toLocaleString()}`}
             </span>
           </span>
         </div>

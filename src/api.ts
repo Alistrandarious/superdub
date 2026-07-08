@@ -171,19 +171,12 @@ export const api = {
 
   // push notifications
   getVapidKey: (): Promise<{ key: string }> => request('/push/vapid-public-key'),
-  pushSubscribe: (subscription: any, tzOffsetMinutes: number, reminderHour?: number, nutritionHour?: number, workoutHour?: number | null) =>
-    request('/push/subscribe', { method: 'POST', body: JSON.stringify({ subscription, tzOffsetMinutes, reminderHour, nutritionHour, workoutHour }) }),
+  pushSubscribe: (subscription: any, tzOffsetMinutes: number, reminderHour?: number, workoutHour?: number | null) =>
+    request('/push/subscribe', { method: 'POST', body: JSON.stringify({ subscription, tzOffsetMinutes, reminderHour, workoutHour }) }),
   pushUnsubscribe: (endpoint?: string) =>
     request('/push/unsubscribe', { method: 'POST', body: JSON.stringify({ endpoint }) }),
   pushSetReminderTime: (hour: number) =>
     request('/push/reminder-time', { method: 'POST', body: JSON.stringify({ hour }) }),
-  pushSetPromptTimes: (times: { nutritionHour?: number; workoutHour?: number | null }) =>
+  pushSetPromptTimes: (times: { workoutHour?: number | null }) =>
     request('/push/prompt-times', { method: 'POST', body: JSON.stringify(times) }),
-
-  // food log
-  parseFoodLog: (transcript: string) =>
-    request('/food-log/parse', { method: 'POST', body: JSON.stringify({ transcript }) }),
-  getFoodLogsToday: () => request('/food-log/today'),
-  saveFoodLog: (data: object) => request('/food-log', { method: 'POST', body: JSON.stringify(data) }),
-  deleteFoodLog: (id: string) => request(`/food-log/${id}`, { method: 'DELETE' }),
 };

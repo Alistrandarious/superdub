@@ -87,7 +87,7 @@ const YesterdayMatrix: React.FC<YesterdayMatrixProps> = ({
         <div className="ltm-metric">{steps.toLocaleString()}{stepsHit && <span className="ltm-metric-unit"> ✓</span>}</div>
         <div className="ltm-bar"><span className="ltm-bar-fill" style={{ width: `${Math.min(100, stepPct * 100)}%` }} /></div>
         <span className={`ltm-sub${stepsHit ? ' good' : ''}`}>
-          {steps > 0 ? `of ${stepTarget.toLocaleString()} target${stepsHit ? ' — hit' : ''}` : 'no steps logged'}
+          {steps > 0 ? `of ${stepTarget.toLocaleString()} target${stepsHit ? ' · hit' : ''}` : 'no steps logged'}
         </span>
       </div>
 
@@ -113,7 +113,7 @@ const YesterdayMatrix: React.FC<YesterdayMatrixProps> = ({
             <div className="ltm-metric">{habitsDone}<span className="ltm-metric-unit">/ {habitsTotal}</span></div>
             <div className="ltm-bar"><span className="ltm-bar-fill" style={{ width: `${Math.min(100, habitPct * 100)}%` }} /></div>
             <span className={`ltm-sub${habitsDone === habitsTotal ? ' good' : ''}`}>
-              {habitsDone === habitsTotal ? 'all done — clean sweep' : `${habitsDone === 1 ? 'habit' : 'habits'} closed`}
+              {habitsDone === habitsTotal ? 'all done · clean sweep' : `${habitsDone === 1 ? 'habit' : 'habits'} closed`}
             </span>
           </>
         ) : (

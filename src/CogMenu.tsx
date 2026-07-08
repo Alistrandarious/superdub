@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { enablePush, disablePush, pushIsEnabled, pushSupported, getReminderHour, setReminderHour, getNutritionHour, setNutritionHour, getWorkoutHour, setWorkoutHour } from './push';
+import { enablePush, disablePush, pushIsEnabled, pushSupported, getReminderHour, setReminderHour, getWorkoutHour, setWorkoutHour } from './push';
 import { clearToken } from './api';
 import { BUILD_TAG } from './version';
 
@@ -35,7 +35,6 @@ const CogMenu: React.FC = () => {
   const [pushOn, setPushOn] = useState(pushIsEnabled);
   const [pushBusy, setPushBusy] = useState(false);
   const [reminderHour, setReminderHourState] = useState(getReminderHour);
-  const [nutritionHour, setNutritionHourState] = useState(getNutritionHour);
   const [workoutHour, setWorkoutHourState] = useState<number | null>(getWorkoutHour);
   const planBadge = readPlanBadge();
 
@@ -62,7 +61,6 @@ const CogMenu: React.FC = () => {
     setPushBusy(false);
   };
   const changeReminderHour = (hour: number) => { setReminderHourState(hour); setReminderHour(hour); };
-  const changeNutritionHour = (hour: number) => { setNutritionHourState(hour); setNutritionHour(hour); };
   const changeWorkoutHour = (v: string) => {
     const hour = v === 'off' ? null : parseInt(v, 10);
     setWorkoutHourState(hour); setWorkoutHour(hour);
@@ -94,13 +92,12 @@ const CogMenu: React.FC = () => {
             </button>
             <button className="cog-menu-item" onClick={() => fire('superdub:show-step-entry')}><span className="cog-mi-ico"><Ic><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></Ic></span> Log Steps</button>
             <button className="cog-menu-item" onClick={() => fire('superdub:show-energy-checkin')}><span className="cog-mi-ico"><Ic><circle cx="12" cy="12" r="10" /><path d="M8 14s1.5 2 4 2 4-2 4-2" /><line x1="9" y1="9" x2="9.01" y2="9" /><line x1="15" y1="9" x2="15.01" y2="9" /></Ic></span> Log Check-in</button>
-            <button className="cog-menu-item" onClick={() => go('/food-log')}><span className="cog-mi-ico"><Ic><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20M21 15V2a5 5 0 0 0-3 5v6c0 1.1.9 2 3 2z" /></Ic></span> Log Food &amp; Calories</button>
 
             <div className="cog-menu-sep" />
             <div className="cog-menu-label">Go to</div>
             <button className="cog-menu-item" onClick={() => go('/plan')}>
               <span className="cog-mi-ico"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>
-              Weight Goal
+              Adaptive Weight Plan
               {planBadge?.active && (
                 <span className={`plan-nav-badge ${planBadge.onTrack === true ? 'badge-on' : planBadge.onTrack === false ? 'badge-off' : 'badge-neutral'}`} style={{ marginLeft: 'auto' }}>
                   {planBadge.onTrack === true ? 'on pace' : planBadge.onTrack === false ? 'off pace' : '●'}
@@ -127,12 +124,6 @@ const CogMenu: React.FC = () => {
                 <div className="cog-menu-item" style={{ cursor: 'default' }}>
                   <span className="cog-mi-ico"><Ic><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></Ic></span> Morning
                   <select className="reminder-time-select" style={{ marginLeft: 'auto' }} value={reminderHour} onChange={e => changeReminderHour(parseInt(e.target.value, 10))}>
-                    {HOUR_OPTIONS}
-                  </select>
-                </div>
-                <div className="cog-menu-item" style={{ cursor: 'default' }}>
-                  <span className="cog-mi-ico"><Ic><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20M21 15V2a5 5 0 0 0-3 5v6c0 1.1.9 2 3 2z" /></Ic></span> Nutrition
-                  <select className="reminder-time-select" style={{ marginLeft: 'auto' }} value={nutritionHour} onChange={e => changeNutritionHour(parseInt(e.target.value, 10))}>
                     {HOUR_OPTIONS}
                   </select>
                 </div>

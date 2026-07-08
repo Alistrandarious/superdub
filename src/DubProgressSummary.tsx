@@ -71,8 +71,8 @@ const DubProgressSummary: React.FC = () => {
         </div>
         <p className="dub-summary-msg">
           {report
-            ? <>{report.emoji} {report.headline}.{lead ? ` ${lead.title} — tap for the full read.` : ''}</>
-            : 'Weigh in and tick your habits — I\'ll start tracking your progress and rate how it\'s going.'}
+            ? <>{report.emoji} {report.headline}.{lead ? ` ${lead.title}. Tap for the full read.` : ''}</>
+            : 'Weigh in and tick your habits. I\'ll start tracking your progress and rate how it\'s going.'}
         </p>
       </div>
       <span className="dub-summary-chev">›</span>

@@ -119,6 +119,10 @@ Back-calculated from energy balance:
 ```
 intake ≈ TDEE + stepDeviation×kcalPerStep + (7-day EMA slope)×7700
 ```
+The EMA slope is clamped to **±0.3 kg/day** and the whole figure to **≤ 2.5×
+maintenance** before display, so a single outlier weigh-in or garbage step count
+cannot inflate a day to tens of thousands of kcal. Values under 600 are hidden.
+Implemented once in `estimateIntakeKcal()` (`src/energy.ts`).
 
 ## 10. XP & levels
 XP is **recomputed live** from your habits' streaks (not stored):

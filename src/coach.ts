@@ -84,7 +84,7 @@ function weightLine(weights: WeighIn[], goal: Goal | null, seed: number): CoachL
   if (!goal || goal.targetWeight == null || !goalType || goalType === 'maintain') {
     if (plateau) return { icon: '⚖️', title: 'Holding steady', tone: 'neutral', body: `You're stable around ${latest.toFixed(1)} kg${detail}. Consistency is its own win.` };
     return { icon: losing ? '📉' : '📈', title: losing ? 'Trending down' : 'Trending up', tone: 'neutral',
-      body: `${absWk.toFixed(1)} kg ${losing ? 'down' : 'up'} ${weekWord}${detail} — now at ${latest.toFixed(1)} kg.` };
+      body: `${absWk.toFixed(1)} kg ${losing ? 'down' : 'up'} ${weekWord}${detail}, now at ${latest.toFixed(1)} kg.` };
   }
 
   const target = goal.targetWeight;
@@ -92,12 +92,12 @@ function weightLine(weights: WeighIn[], goal: Goal | null, seed: number): CoachL
   const remaining = Math.abs(latest - target);
 
   if (remaining <= 0.3) {
-    return { icon: '🏆', title: 'Right on your goal', tone: 'good', body: `You're essentially at your ${target.toFixed(1)} kg target. Incredible — now let's hold it.` };
+    return { icon: '🏆', title: 'Right on your goal', tone: 'good', body: `You're essentially at your ${target.toFixed(1)} kg target. Incredible. Now let's hold it.` };
   }
   if (plateau) {
     return { icon: '🪨', title: 'A small plateau', tone: 'warn',
       body: pick([
-        `The scale's been flat ${weekWord}${detail} — totally normal. Trust the process; ${remaining.toFixed(1)} kg to go.`,
+        `The scale's been flat ${weekWord}${detail}. Totally normal. Trust the process; ${remaining.toFixed(1)} kg to go.`,
         `Plateaus happen to everyone${detail}. Tighten one thing today and the trend usually resumes within a week.`,
       ], seed) };
   }
@@ -108,14 +108,14 @@ function weightLine(weights: WeighIn[], goal: Goal | null, seed: number): CoachL
     const etaStr = isFinite(weeksToGoal) && weeksToGoal < 104
       ? ` At this pace you'll hit ${target.toFixed(1)} kg around ${fmtDate(seed + Math.round(weeksToGoal * 7))}.`
       : '';
-    return { icon: '📉', title: `${absWk.toFixed(1)} kg ${losing ? 'down' : 'up'} ${weekWord} — on track`, tone: 'good',
-      body: `${hasWeek ? `${first.y.toFixed(1)} → ${last.y.toFixed(1)} kg since ${fmtDate(first.x)}.` : ''}${etaStr} ${remaining.toFixed(1)} kg to go — keep it steady.` };
+    return { icon: '📉', title: `${absWk.toFixed(1)} kg ${losing ? 'down' : 'up'} ${weekWord}, on track`, tone: 'good',
+      body: `${hasWeek ? `${first.y.toFixed(1)} → ${last.y.toFixed(1)} kg since ${fmtDate(first.x)}.` : ''}${etaStr} ${remaining.toFixed(1)} kg to go. Keep it steady.` };
   }
   // Moving the wrong way
   return { icon: '🧭', title: 'Drifting off course', tone: 'warn',
     body: pick([
-      `${absWk.toFixed(1)} kg the wrong way ${weekWord}${detail}. One solid day resets the momentum — you've got this.`,
-      `Slightly off target ${weekWord}${detail}. No drama — focus on today's basics and the line will turn.`,
+      `${absWk.toFixed(1)} kg the wrong way ${weekWord}${detail}. One solid day resets the momentum. You've got this.`,
+      `Slightly off target ${weekWord}${detail}. No drama. Focus on today's basics and the line will turn.`,
     ], seed) };
 }
 
@@ -163,16 +163,16 @@ function analyseHabit(name: string, startDate: string | null, map: Record<string
 }
 
 const TIPS: { match: RegExp; tip: string }[] = [
-  { match: /walk|steps|10\s?k/i, tip: 'Try a 10-minute walk straight after a meal — it compounds faster than you\'d think.' },
+  { match: /walk|steps|10\s?k/i, tip: 'Try a 10-minute walk straight after a meal. It compounds faster than you\'d think.' },
   { match: /water|hydrat/i, tip: 'Keep a filled bottle in sight and sip before every task.' },
-  { match: /read/i, tip: 'Read just one page tonight — momentum beats volume.' },
+  { match: /read/i, tip: 'Read just one page tonight. Momentum beats volume.' },
   { match: /gym|workout|exercise|train|lift/i, tip: 'Lay your kit out the night before to kill the friction.' },
-  { match: /smok|vape/i, tip: 'When the urge hits, set a 5-minute timer — it usually passes before it ends.' },
+  { match: /smok|vape/i, tip: 'When the urge hits, set a 5-minute timer. It usually passes before it ends.' },
   { match: /sugar|snack|junk|takeaway|take\s?away/i, tip: 'Swap one snack for fruit today. Small wins stack into big ones.' },
   { match: /sleep|bed/i, tip: 'Set a wind-down alarm 30 minutes before bed.' },
-  { match: /medit|mindful|breath/i, tip: 'Two minutes of breathing counts — start tiny.' },
-  { match: /porn|masturb|nofap/i, tip: 'Plan a replacement action for trigger moments — a walk, a call, anything that moves you.' },
-  { match: /duolingo|language|learn|study/i, tip: 'Do one lesson on your commute — stack it onto something you already do.' },
+  { match: /medit|mindful|breath/i, tip: 'Two minutes of breathing counts. Start tiny.' },
+  { match: /porn|masturb|nofap/i, tip: 'Plan a replacement action for trigger moments: a walk, a call, anything that moves you.' },
+  { match: /duolingo|language|learn|study/i, tip: 'Do one lesson on your commute. Stack it onto something you already do.' },
   { match: /journal|write/i, tip: 'One sentence is a full entry today. Just open the page.' },
 ];
 function tipFor(name: string): string {
@@ -182,11 +182,11 @@ function tipFor(name: string): string {
 
 /* ── Report assembly ──────────────────────────────────────────────────────── */
 const HEADLINES_GOOD = ['You\'re on a roll', 'Momentum looks great', 'This is working', 'Strong week so far'];
-const HEADLINES_MIXED = ['Solid effort — let\'s sharpen one thing', 'Good base, one tweak to go', 'You\'re in the game'];
+const HEADLINES_MIXED = ['Solid effort. Let\'s sharpen one thing', 'Good base, one tweak to go', 'You\'re in the game'];
 const HEADLINES_TOUGH = ['Every comeback starts with one day', 'Reset and go again', 'Today\'s a fresh line'];
 const CLOSING = [
   'Tiny, boring consistency wins. See you tomorrow. 💪',
-  'Show up again tomorrow — that\'s the whole secret.',
+  'Show up again tomorrow. That\'s the whole secret.',
   'You don\'t have to be perfect, just persistent. 🙌',
   'One honest day at a time. Proud of you.',
 ];
@@ -226,7 +226,7 @@ export function buildCoachReport(
   const streakWin = byStreak[0];
   if (streakWin && streakWin.streak >= 2) {
     wins.push({ icon: '🔥', title: `${streakWin.streak}-day ${streakWin.name} streak`, tone: 'good',
-      body: pick([`That streak is hard-earned — protect it today.`, `${streakWin.name} is becoming who you are. Keep the chain alive.`], seed) });
+      body: pick([`That streak is hard-earned. Protect it today.`, `${streakWin.name} is becoming who you are. Keep the chain alive.`], seed) });
   }
   const improved = [...analyses]
     .filter(a => a.done7 - a.donePrev7 >= 2 && a.elapsed >= 10)
@@ -278,7 +278,7 @@ export function buildCoachReport(
   if (wantsWalk) {
     lines.push({ icon: '🦴', title: 'Dub wants a walk', tone: 'warn',
       body: pick([
-        `Things have gone a bit quiet. Take me out — a short walk today is the easiest way to restart the momentum.`,
+        `Things have gone a bit quiet. Take me out. A short walk today is the easiest way to restart the momentum.`,
         `I'm getting restless! Let's go for a walk and knock out one easy win today.`,
       ], seed) });
   }

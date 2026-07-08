@@ -5078,7 +5078,7 @@ h1, h2, h3, h4, .sora {
   font-family: var(--font-data); font-size: 0.62rem; font-weight: 700;
   color: rgba(255,255,255,0.35);
 }
-.chm-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.chm-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .chm-slot {
   position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px;
   min-height: 72px; padding: 12px 6px; border-radius: var(--r-md, 12px); cursor: pointer;
@@ -6840,6 +6840,13 @@ h1, h2, h3, h4, .sora {
 .hcard-day.failed .hcard-day-circle {
   background: rgba(255,69,58,0.12);
   border-color: #ff453a;
+}
+
+/* Undeclared: a past due day you never marked. Muted grey ring — reads as
+   "unlogged", clearly not a red fail and not a green done. */
+.hcard-day.undeclared .hcard-day-circle {
+  background: rgba(255,255,255,0.04);
+  border-color: rgba(255,255,255,0.22);
 }
 
 .hcard-day-tick.hcard-day-fail {
@@ -11482,6 +11489,55 @@ h3, h4,
   font-weight: 700;
 }
 .update-banner-btn:active { transform: scale(0.96); }
+
+/* Day banner — "Superdub time" grace notice, anchored to the very top so it sits
+   above the per-page headers during the 00:00–02:00 window. */
+.day-banner {
+  position: fixed;
+  left: 50%;
+  top: calc(8px + env(safe-area-inset-top, 0px));
+  transform: translateX(-50%);
+  z-index: 9999;
+  width: calc(100% - 24px);
+  max-width: 520px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 10px 10px 16px;
+  background: rgba(18, 20, 28, 0.97);
+  border: 1px solid rgba(139, 92, 246, 0.5);
+  border-radius: 14px;
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+  animation: day-banner-in 0.3s ease;
+}
+@keyframes day-banner-in {
+  from { opacity: 0; transform: translate(-50%, -10px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+.day-banner-text {
+  flex: 1;
+  color: #E8ECF4;
+  font-family: 'Sora', sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.day-banner-btn {
+  flex-shrink: 0;
+  border: none;
+  cursor: pointer;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #8B5CF6;
+  color: #fff;
+  font-family: 'Sora', sans-serif;
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.day-banner-btn:active { transform: scale(0.96); }
+
 .calorie-chart-note {
   margin: 8px 4px 0;
   font-size: 10px;

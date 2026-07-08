@@ -8,13 +8,13 @@ import { ComposedChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveCon
 // Each night is a violet "I" (line capped top & bottom); mood shows in the tooltip.
 
 export interface SleepCandle {
-  day: string;          // 'DD/MM' x-axis label
-  bedVal: number;       // hours after 6pm (0..24)
-  wakeVal: number;      // hours after 6pm (0..24), > bedVal
-  hours: number;        // duration
-  mood: number | null;  // 1..5 that morning, or null
-  bedtime: string;      // 'HH:MM' for the tooltip
-  waketime: string;     // 'HH:MM'
+  day: string;              // 'DD/MM' x-axis label
+  bedVal: number | null;    // hours after 6pm (0..24); null = no candle that night
+  wakeVal: number | null;   // hours after 6pm (0..24), > bedVal
+  hours: number;            // duration
+  mood: number | null;      // 1..5 that morning, or null
+  bedtime: string;          // 'HH:MM' for the tooltip
+  waketime: string;         // 'HH:MM'
 }
 
 // 6pm→6pm axis: 0 = 18:00, 6 = 00:00, 12 = 06:00, 18 = 12:00.
@@ -33,6 +33,8 @@ const axisToClock = (v: number): string => {
 // with a short horizontal tick at the top (bedtime) and bottom (wake).
 const SleepIBar = (props: any) => {
   const { x, y, width, height } = props;
+  // Nights without both times come through as a null span → nothing to draw.
+  if (!Number.isFinite(y) || !Number.isFinite(height) || height <= 0) return null;
   const cx = x + width / 2;
   const tick = Math.max(width / 2, 4);
   const bottom = y + height;
@@ -45,14 +47,23 @@ const SleepIBar = (props: any) => {
   );
 };
 
-const SleepCandleChart: React.FC<{ data: SleepCandle[]; height?: number | `${number}%` }> = ({ data, height = 180 }) => (
+// `interval` and `xTick` come from the parent so this candle chart's x-axis matches
+// the mood chart stacked beneath it exactly (same ticks, same spacing) — the two
+// share one date axis. YAxis width is fixed at 34 (clock labels); the mood chart
+// below uses the same width so the plot areas line up pixel-for-pixel.
+const SleepCandleChart: React.FC<{
+  data: SleepCandle[];
+  height?: number | `${number}%`;
+  interval?: any;
+  xTick?: any;
+}> = ({ data, height = 180, interval = 'preserveStartEnd', xTick }) => (
   <ResponsiveContainer width="100%" height={height}>
     <ComposedChart data={data} margin={{ left: 0, right: 10, top: 10, bottom: 8 }}>
       <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
       <XAxis
         dataKey="day" stroke="rgba(255,255,255,0.1)"
-        tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }}
-        tickLine={false} height={28} interval="preserveStartEnd" padding={{ left: 8, right: 8 }}
+        tick={xTick ?? { fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }}
+        tickLine={false} height={36} interval={interval} padding={{ left: 6, right: 6 }}
       />
       <YAxis
         stroke="rgba(255,255,255,0.1)" width={34} axisLine={false} tickLine={false}
@@ -63,16 +74,19 @@ const SleepCandleChart: React.FC<{ data: SleepCandle[]; height?: number | `${num
         cursor={{ fill: 'rgba(255,255,255,0.05)' }}
         contentStyle={{ background: '#100E16', border: '1px solid #2c2440', borderRadius: 10, fontSize: 12 }}
         labelStyle={{ color: '#ac9' }}
+        itemStyle={{ color: '#E8ECF4' }}
         formatter={(_v: any, _n: any, p: any) => {
           const d = p?.payload as SleepCandle;
-          if (!d) return ['', ''];
+          if (!d || d.bedVal == null) return ['', ''];
           const moodTxt = d.mood != null ? ` · mood ${d.mood}/5` : '';
           return [`${d.bedtime} → ${d.waketime} (${d.hours.toFixed(1)}h)${moodTxt}`, 'Sleep'];
         }}
       />
       {/* Floating bar: a [start,end] array dataKey gives recharts the bed→wake span;
-          SleepIBar draws it as a capped vertical line instead of a solid body. */}
-      <Bar dataKey={(d: SleepCandle) => [d.bedVal, d.wakeVal]} barSize={12} shape={SleepIBar} isAnimationActive={false} />
+          SleepIBar draws it as a capped vertical line instead of a solid body. Nights
+          without both times return null so the day still occupies an x-slot but draws
+          no candle — keeping this axis aligned with the mood chart below. */}
+      <Bar dataKey={(d: SleepCandle) => (d.bedVal == null || d.wakeVal == null ? null : [d.bedVal, d.wakeVal])} barSize={12} shape={SleepIBar} isAnimationActive={false} />
     </ComposedChart>
   </ResponsiveContainer>
 );

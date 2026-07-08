@@ -176,7 +176,7 @@ const EnergyCheckIn: React.FC = () => {
     <div className="checkin-overlay">
       <div className="checkin-modal energy-checkin-modal">
         <h2 className="checkin-title">How's today feeling?</h2>
-        <p className="checkin-subtitle">Your daily ritual — thirty seconds, all of it optional but the taps.</p>
+        <p className="checkin-subtitle">Your daily ritual. Thirty seconds, all of it optional but the taps.</p>
 
         {/* Optional morning weigh-in — saves to the tracker with everything else */}
         <div className="energy-section">
@@ -197,7 +197,7 @@ const EnergyCheckIn: React.FC = () => {
           <p className="energy-label-row">
             Energy
             {energy !== null && (
-              <span className="energy-selected-label"> — {ENERGY_LABELS[energy]}</span>
+              <span className="energy-selected-label"> · {ENERGY_LABELS[energy]}</span>
             )}
           </p>
           <div className="energy-pips">
@@ -223,7 +223,7 @@ const EnergyCheckIn: React.FC = () => {
           <p className="energy-label-row">
             Mood
             {mood !== null && (
-              <span className="energy-selected-label"> — {MOOD_LABELS[mood]}</span>
+              <span className="energy-selected-label"> · {MOOD_LABELS[mood]}</span>
             )}
           </p>
           <div className="energy-pips">
@@ -249,7 +249,7 @@ const EnergyCheckIn: React.FC = () => {
           <p className="energy-label-row">
             Sleep last night
             {sleepHours != null && (
-              <span className="energy-selected-label"> — {sleepHours % 1 === 0 ? sleepHours : sleepHours.toFixed(1)} h</span>
+              <span className="energy-selected-label"> · {sleepHours % 1 === 0 ? sleepHours : sleepHours.toFixed(1)} h</span>
             )}
           </p>
           <div className="sleep-times">
@@ -270,7 +270,7 @@ const EnergyCheckIn: React.FC = () => {
           <p className="energy-label-row">
             Eating vs. your target today?
             {adherenceLevel !== null && (
-              <span className="energy-selected-label"> — {EATING_BLOCKS.find(b => b.level === adherenceLevel)?.label}</span>
+              <span className="energy-selected-label"> · {EATING_BLOCKS.find(b => b.level === adherenceLevel)?.label}</span>
             )}
           </p>
           <div className="eating-blocks">

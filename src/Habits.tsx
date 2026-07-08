@@ -4,6 +4,7 @@ import { flushSync } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import './App.css';
 import { api } from './api';
+import { loggingNow, getLoggingDay } from './day';
 import WeeklyRecap from './WeeklyRecap';
 import CadenceCarousel from './CadenceCarousel';
 import SuperdubHeader from './SuperdubHeader';
@@ -111,8 +112,7 @@ const ALL_DAYS = buildAllDays();
 
 
 function todayKey(): string {
-  const n = new Date();
-  return `${String(n.getDate()).padStart(2, '0')}/${String(n.getMonth() + 1).padStart(2, '0')}`;
+  return getLoggingDay(); // 2 AM boundary: before 2 AM this is still yesterday's key
 }
 
 function startDateToKey(startDate: string | null | undefined): string | null {
@@ -123,7 +123,7 @@ function startDateToKey(startDate: string | null | undefined): string | null {
 }
 
 function getWeekDays(): { key: string; label: string; isFuture: boolean; isToday: boolean }[] {
-  const now = new Date();
+  const now = loggingNow();
   const dow = now.getDay();
   const mon = new Date(now);
   mon.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1));
@@ -180,6 +180,9 @@ interface HabitStats {
 }
 
 type HabitState = 'done' | 'failed' | null;
+// Derived-only render state: a past due day left untouched shows grey ("undeclared"),
+// distinct from an explicit red fail. Never persisted.
+type DisplayState = HabitState | 'undeclared';
 type HabitTracker = Record<string, Record<string, HabitState>>;
 
 function computeHabitStats(
@@ -374,12 +377,12 @@ const CheckSVG: React.FC<{ size?: number; strokeWidth?: number }> = ({ size = 14
 // One weekday mini-circle. Single tap toggles done↔blank (the primary action);
 // double tap toggles failed↔blank. A short timer disambiguates the two, so the
 // first tap is deferred ~220ms — the standard cost of supporting double-tap.
-// `displayState` may differ from the stored state (past due days auto-fail), so
+// `displayState` may differ from the stored state (past due days show grey), so
 // the toggles are driven by `rawState` (what's actually persisted).
 const TAP_DELAY_MS = 220;
 const DayCircle: React.FC<{
   label: string;
-  displayState: HabitState;
+  displayState: DisplayState;
   rawState: HabitState;
   isFuture: boolean;
   isToday: boolean;
@@ -401,7 +404,7 @@ const DayCircle: React.FC<{
     }
   };
   return (
-    <div className={`hcard-day ${displayState === 'done' ? 'done' : ''} ${displayState === 'failed' ? 'failed' : ''} ${isFuture ? 'future' : ''} ${isToday ? 'is-today' : ''}`}>
+    <div className={`hcard-day ${displayState === 'done' ? 'done' : ''} ${displayState === 'failed' ? 'failed' : ''} ${displayState === 'undeclared' ? 'undeclared' : ''} ${isFuture ? 'future' : ''} ${isToday ? 'is-today' : ''}`}>
       <button
         className="hcard-day-circle"
         disabled={isFuture}
@@ -467,17 +470,17 @@ const HabitCard: React.FC<{
     return null;
   })();
 
-  // Auto-fail: a past due day (on/after the habit's start, before today) that was
-  // never marked done counts as failed — derived, not persisted.
+  // Undeclared: a past due day (on/after the habit's start, before today) that was
+  // never marked shows grey, not red. Explicit fails stay red. Derived, not persisted.
   const startKey = startDateToKey(startDate ?? null);
   const startIdx = startKey ? ALL_DAYS.indexOf(startKey) : 0;
   const todayIdx = ALL_DAYS.indexOf(today);
-  const dayState = (key: string): HabitState => {
+  const dayState = (key: string): DisplayState => {
     const raw = ht[key]?.[habit] ?? null;
     if (raw === 'done') return 'done';
     if (raw === 'failed') return 'failed';
     const idx = ALL_DAYS.indexOf(key);
-    if (idx >= startIdx && idx < todayIdx) return 'failed'; // missed a due day
+    if (idx >= startIdx && idx < todayIdx) return 'undeclared'; // missed a due day
     return null;
   };
 
@@ -1263,7 +1266,7 @@ const Habits: React.FC = () => {
         const total = displayHabits.length;
         const allDone = total > 0 && doneCount === total;
         const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
-        const now = new Date();
+        const now = loggingNow();
         const hour = now.getHours();
         const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
         const todayLabel = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });

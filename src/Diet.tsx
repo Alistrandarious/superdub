@@ -548,7 +548,7 @@ const SmartAdjustCard: React.FC<{
   const actualSigned = `${actualWeeklyKg > 0 ? '+' : ''}${actualWeeklyKg.toFixed(2)}`;
   const statusColor = isBehind ? '#FFD233' : '#2FD27E';
   const adjPhrase = cappedAdj < 0 ? `eat about ${Math.abs(cappedAdj)} fewer kcal a day` : `add about ${cappedAdj} kcal a day`;
-  const explain = `Your weight is ${dirWord} ${Math.abs(actualWeeklyKg).toFixed(2)} kg/wk, but your goal is to ${goal === 'cut' ? 'lose' : 'gain'} ${lossPerWeek} kg/wk. ${isBehind ? `To get on track, ${adjPhrase}.` : `You're ahead of pace — ${adjPhrase} to ease off.`}`;
+  const explain = `Your weight is ${dirWord} ${Math.abs(actualWeeklyKg).toFixed(2)} kg/wk, but your goal is to ${goal === 'cut' ? 'lose' : 'gain'} ${lossPerWeek} kg/wk. ${isBehind ? `To get on track, ${adjPhrase}.` : `You're ahead of pace, so ${adjPhrase} to ease off.`}`;
 
   const handleApply = () => {
     const newTarget = buildTarget();
@@ -564,8 +564,8 @@ const SmartAdjustCard: React.FC<{
           <span className="sa-icon">🤖</span>
         </div>
         <div className="sa-titles">
-          <span className="sa-title">Smart Adjust</span>
-          <span className="sa-subtitle">Based on your {histPts.length}-day weight trend</span>
+          <span className="sa-title">Adjust your target</span>
+          <span className="sa-subtitle">From your {histPts.length}-day weight trend</span>
         </div>
         <span className="sa-status-pill" style={{ color: statusColor, borderColor: statusColor + '40', background: statusColor + '12' }}>
           {isBehind ? 'Behind' : 'Ahead'}

@@ -242,7 +242,7 @@ const PlanPage: React.FC = () => {
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
-        <span className="plan-page-title">Weight Goal</span>
+        <span className="plan-page-title">Adaptive Weight Plan</span>
       </div>
 
       {loading ? (
@@ -332,9 +332,9 @@ const PlanPage: React.FC = () => {
             <details className="plan-explainer">
               <summary className="plan-explainer-summary">How does this work?</summary>
               <div className="plan-explainer-body">
-                <p>Every week, the engine looks at your actual weight trend (using an exponential moving average to filter noise) and compares it to the rate you need to hit your goal on time.</p>
-                <p>If you're off pace, it adjusts your prescribed calories up or down — proportionally to how far off you are, capped at 40% of your weekly caloric budget. The minimum floor is your calculated BMR, so it will never prescribe a deficit unsafe for your body size.</p>
-                <p>You don't need to log food for this to work. Weight trend is the observable output of your energy balance — whatever the cause.</p>
+                <p>Every week, Superdub looks at your real weight trend (smoothed to filter out daily noise) and compares it to the pace you need to hit your goal on time.</p>
+                <p>If you're off pace, it moves your daily calorie target up or down, by how far off you are, capped at 40% of your weekly budget. It never drops below what your body burns at rest, so the target stays safe for your size.</p>
+                <p>You don't need to log food for this to work. Your weight trend shows the result of your energy balance, whatever the cause.</p>
               </div>
             </details>
           )}

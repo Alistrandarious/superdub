@@ -48,7 +48,7 @@ const SECTIONS: MathSection[] = [
     ],
     explain: [
       `1 kg of body weight stores ≈ ${KCAL_PER_KG.toLocaleString()} kcal — the one constant behind almost everything here.`,
-      'The target never prescribes below 1,200 kcal, and the adaptive plan engine additionally floors at your BMR.',
+      'The target never goes below 1,200 kcal, and the Adaptive Weight Plan additionally floors at your BMR.',
     ],
     example: '0.5 kg/wk → 550 kcal/day deficit → 2,855 − 550 = 2,305 kcal target.',
   },
@@ -122,14 +122,14 @@ const SECTIONS: MathSection[] = [
       'You never log calories — this reverse-engineers them from energy balance: what you burned, plus or minus what your weight trend says you stored or released.',
       'TDEE(day) uses your smoothed weight that day, so it falls as you lose. Step deviation is measured against your own average, not a fixed 10k.',
       'It is an estimate: day-to-day it can be off by hundreds of kcal (water, sodium, timing); over 1–2 weeks the average is meaningful.',
-      'Values under 600 kcal are hidden as noise.',
+      'The weight-trend slope is capped at 0.3 kg/day, so one odd weigh-in cannot balloon a single day. Values under 600 kcal are hidden as noise.',
     ],
     example: 'Maintenance 2,855; walked 3,000 over your average (+99 kcal); smoothed weight falling 0.1 kg/day (−770 kcal) → estimated intake ≈ 2,184 kcal.',
   },
   {
     emoji: '⚙️',
-    title: 'Adaptive plan engine',
-    where: 'Weight Goal page (server-side, weekly)',
+    title: 'Adaptive Weight Plan',
+    where: 'Adaptive Weight Plan page (server-side, weekly)',
     formula: [
       'actual slope = weekly change of smoothed weight',
       'target slope = your chosen kg/week rate',
@@ -137,7 +137,7 @@ const SECTIONS: MathSection[] = [
       'new target = max(current ± correction, BMR)',
     ],
     explain: [
-      'Runs at most once every 7 days. If your smoothed trend is slower than plan, calories come down (and vice versa) — never below your BMR.',
+      'Runs at most once every 7 days. If your smoothed trend is slower than plan, calories come down (and vice versa), but never below your BMR.',
       'Your daily check-ins modulate it: if you consistently report eating "about right" but the trend is off, the engine trusts the data more (correction × 1.2). If your reports are mixed, it corrects gently (× 0.5).',
       'Outlier weigh-ins (sudden spikes) are flagged and down-weighted rather than deleted.',
     ],

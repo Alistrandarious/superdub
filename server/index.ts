@@ -294,11 +294,11 @@ const migrations = [
   console.log('[migrate] done');
 })();
 
-// ── Daily reminder pushes — runs every 30 min. Three independent nudges, each
+// ── Daily reminder pushes — runs every 30 min. Two independent nudges, each
 // fires once/day at the user's chosen local hour and self-suppresses if the
-// matching loop is already closed: morning weigh-in, evening nutrition, and an
-// optional post-workout check-in.
-// ponytail: food_logs.date / daily_checkins.date are stored as server-UTC
+// matching loop is already closed: morning weigh-in and an optional
+// post-workout check-in.
+// ponytail: daily_checkins.date is stored as server-UTC
 // CURRENT_DATE, so the "already logged today" skip is off by up to a tz-day at
 // the extremes — acceptable for a nudge (worst case: one redundant reminder).
 // Upgrade path: store the client's local date alongside those rows.
@@ -333,7 +333,7 @@ async function runReminders() {
         ).catch(() => ({ rows: [] as any[] }));
         if (w.rows.length === 0) {
           const ok = await sendPush(r.subscription, {
-            title: 'Morning — superdub 🌅',
+            title: 'Morning from superdub 🌅',
             body: 'Quick weigh-in + how are you feeling today?',
             url: '/?prompt=weight',
             tag: 'daily-reminder',
@@ -343,26 +343,7 @@ async function runReminders() {
         await stamp('last_reminded', r.id, localDate);
       }
 
-      // 2. Evening nutrition — skip if they've logged any food today (local)
-      const nutritionHour = Number.isInteger(r.nutrition_hour) ? r.nutrition_hour : 20;
-      if (reminderDue(nutritionHour, hour, r.last_nutrition, localDate)) {
-        const f = await pool.query(
-          'SELECT 1 FROM food_logs WHERE user_id = $1 AND date = $2 LIMIT 1',
-          [r.user_id, localDate]
-        ).catch(() => ({ rows: [] as any[] }));
-        if (f.rows.length === 0) {
-          const ok = await sendPush(r.subscription, {
-            title: 'Evening — superdub 🍽️',
-            body: 'How did eating land today? Log it against your target.',
-            url: '/?prompt=nutrition',
-            tag: 'nutrition-reminder',
-          });
-          if (!ok) { await prune(r.id); continue; }
-        }
-        await stamp('last_nutrition', r.id, localDate);
-      }
-
-      // 3. Post-workout check-in — opt-in (NULL = off); skip if already logged today
+      // 2. Post-workout check-in — opt-in (NULL = off); skip if already logged today
       if (reminderDue(r.workout_hour, hour, r.last_workout, localDate)) {
         const wo = await pool.query(
           'SELECT 1 FROM daily_checkins WHERE user_id = $1 AND date = $2 AND workout_done = true LIMIT 1',

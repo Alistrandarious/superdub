@@ -138,11 +138,11 @@ const DailyCheckIn: React.FC = () => {
       <div className="checkin-overlay">
         <div className="checkin-modal">
           <h2 className="checkin-title">Morning Check-in</h2>
-          <p className="checkin-subtitle">Did you weigh yourself this morning? Before breakfast, after using the bathroom — that's the most consistent reading.</p>
+          <p className="checkin-subtitle">Did you weigh yourself this morning? Before breakfast, after using the bathroom. That's the most consistent reading.</p>
           <div className="checkin-actions">
             <button className="checkin-save-btn" onClick={() => setGate('input')}>Yes, log it</button>
             <button className="checkin-later-btn" onClick={askLater}>Ask me later</button>
-            <button className="checkin-skip-btn" onClick={dismiss}>No — try tomorrow</button>
+            <button className="checkin-skip-btn" onClick={dismiss}>No, try tomorrow</button>
           </div>
         </div>
       </div>
@@ -153,7 +153,7 @@ const DailyCheckIn: React.FC = () => {
     <div className="checkin-overlay">
       <div className="checkin-modal">
         <h2 className="checkin-title">Morning Check-in</h2>
-        <p className="checkin-subtitle">Weigh yourself first thing in the morning, after using the bathroom and before eating — this gives you the most consistent reading.</p>
+        <p className="checkin-subtitle">Weigh yourself first thing in the morning, after using the bathroom and before eating. This gives you the most consistent reading.</p>
 
         {/* Tap-to-type weight — entered in the user's unit, stored as kg */}
         <div className="checkin-weight-input-wrap">

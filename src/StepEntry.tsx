@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import { api, StepEntry as StepEntryRow } from './api';
+import { getLoggingISO } from './day';
 
-// YYYY-MM-DD for the date <input> (local time).
+// YYYY-MM-DD for the date <input> (local time). Uses the logging day so a
+// pre-2 AM entry defaults to yesterday, matching where habits/weight land.
 function todayISO() {
-  const n = new Date();
-  return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
+  return getLoggingISO();
 }
 const pad = (n: number) => String(n).padStart(2, '0');
 

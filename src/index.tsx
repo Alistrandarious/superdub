@@ -5,11 +5,11 @@ import Habits from './Habits';
 import DailyCheckIn from './DailyCheckIn';
 import VitalsPrompt from './VitalsPrompt';
 import ExercisePrompt from './ExercisePrompt';
-import NutritionPrompt from './NutritionPrompt';
 import EnergyCheckIn from './EnergyCheckIn';
 import StepEntry from './StepEntry';
 import BottomNav from './BottomNav';
 import UpdateBanner from './UpdateBanner';
+import DayBanner from './DayBanner';
 import { Auth } from './Auth';
 import { isLoggedIn, clearToken, api } from './api';
 import { initStepSync } from './stepSync';
@@ -31,7 +31,6 @@ const MathsPage = lazy(() => import('./MathsPage'));
 const LevelPage = lazy(() => import('./LevelPage'));
 const ArchivedHabits = lazy(() => import('./ArchivedHabits'));
 const SuccessKit = lazy(() => import('./SuccessKit'));
-const FoodLog = lazy(() => import('./FoodLog'));
 const MealPlans = lazy(() => import('./MealPlans'));
 const PlanPage = lazy(() => import('./PlanPage'));
 
@@ -72,15 +71,14 @@ function AppRouter() {
   }, [authed]);
 
   // Deep-link from a push notification: ?prompt=weight|exercise opens the
-  // matching overlay (the SW lands us here; nutrition points straight at
-  // /food-log so it needs no handler). Strip the param so a refresh won't repeat.
+  // matching overlay (the SW lands us here). Strip the param so a refresh
+  // won't repeat.
   useEffect(() => {
     if (!authed) return;
     const params = new URLSearchParams(location.search);
     const prompt = params.get('prompt');
     if (!prompt) return;
     const evt = prompt === 'exercise' ? 'superdub:show-exercise'
-      : prompt === 'nutrition' ? 'superdub:show-nutrition'
       : prompt === 'weight' ? 'superdub:show-checkin' : null;
     window.history.replaceState({}, '', location.pathname);
     // Defer so the overlay listeners (siblings mounted this same tick) are attached.
@@ -109,7 +107,6 @@ function AppRouter() {
         <Route path="/level" element={<LevelPage />} />
         <Route path="/archived" element={<ArchivedHabits />} />
         <Route path="/success-kit" element={<SuccessKit />} />
-        <Route path="/food-log" element={<FoodLog />} />
         <Route path="/meal-plans" element={<MealPlans />} />
         <Route path="/plan" element={<PlanPage />} />
       </Routes>
@@ -117,7 +114,6 @@ function AppRouter() {
       <DailyCheckIn />
       <VitalsPrompt />
       <ExercisePrompt />
-      <NutritionPrompt />
       <EnergyCheckIn />
       <StepEntry />
       <BottomNav />
@@ -131,6 +127,7 @@ function Root() {
       <XPProvider>
         <BackgroundApplier />
         <UpdateBanner />
+        <DayBanner />
         <AppRouter />
         <LevelUpCelebration />
         <CoachReport />
