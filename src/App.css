@@ -2060,6 +2060,21 @@ h1, h2, h3, h4, .sora {
   font-family: var(--font-data); font-size: 0.54rem; font-weight: 700;
   letter-spacing: 0.16em; color: rgba(255,255,255,0.32);
 }
+/* Calories "i" — tap for the plain-language explainer overlay. */
+.ltm-info {
+  position: absolute; top: 5px; right: 6px; z-index: 2;
+  display: flex; padding: 4px; background: none; border: none; cursor: pointer;
+  color: rgba(255,255,255,0.3); transition: color 0.2s;
+}
+.ltm-info:active { color: rgba(255,255,255,0.7); }
+.ltm-explain {
+  position: absolute; inset: 0; z-index: 3;
+  display: flex; align-items: center; justify-content: center;
+  padding: 14px 12px; cursor: pointer; text-align: center;
+  background: rgba(12,12,18,0.96); border: none;
+  font-family: var(--font-ui); font-size: 0.62rem; line-height: 1.45;
+  color: rgba(255,255,255,0.82);
+}
 /* Ring */
 .ltm-ring { width: 82px; height: 82px; margin-top: 6px; }
 .ltm-ring-track { fill: none; stroke: rgba(255,255,255,0.07); stroke-width: 7; }
@@ -5083,53 +5098,33 @@ h1, h2, h3, h4, .sora {
   font-family: var(--font-data); font-size: 0.62rem; font-weight: 700;
   letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.35);
 }
-.daily-log-streak {
-  display: inline-flex; align-items: center; gap: 5px;
-  font-family: var(--font-data); font-size: 0.62rem; font-weight: 700;
-  color: #FF8A00;
-}
-/* Borderless hairline rows — icon · label · value · state dot, on hairline rules,
-   sitting straight on the page (no tiles). One accent per metric via --metric. */
-.daily-log-rows { border-top: 1px solid var(--line); }
+/* One slim line — three icon·value chips split by hairline dividers, sitting
+   straight on the page (no tiles). One accent per metric via --metric. */
+.daily-log-rows { display: flex; border-top: 1px solid var(--line); }
 .dl-row {
-  width: 100%; display: flex; align-items: center; gap: 12px;
-  padding: 11px 4px; text-align: left; cursor: pointer;
-  background: none; border: none; border-bottom: 1px solid var(--line);
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 11px 6px; cursor: pointer; min-width: 0;
+  background: none; border: none; border-right: 1px solid var(--line);
   transition: background 0.15s;
 }
+.dl-row:last-child { border-right: none; }
 .dl-row:active { background: rgba(255,255,255,0.03); }
+.dl-row-static { cursor: default; }
 .dl-row-ico {
   display: flex; flex-shrink: 0; color: rgba(255,255,255,0.38);
   transition: color 0.2s;
 }
-.dl-row-label {
-  font-family: var(--font-ui); font-size: 0.8rem; font-weight: 600;
-  color: rgba(255,255,255,0.6); white-space: nowrap;
-}
 .dl-row-val {
-  margin-left: auto;
   font-family: var(--font-data); font-size: 0.82rem; font-weight: 700;
   color: rgba(255,255,255,0.32); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
 }
-.dl-row-dot {
-  flex-shrink: 0; width: 11px; height: 11px; border-radius: 50%;
-  border: 1.5px solid rgba(255,255,255,0.22); background: transparent;
-  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
-}
-/* Logged — the row takes its semantic accent */
+/* Logged — the chip takes its semantic accent */
 .dl-row.done .dl-row-ico { color: var(--metric); }
 .dl-row.done .dl-row-val { color: #EAF2EE; }
-.dl-row.done .dl-row-dot {
-  background: var(--metric); border-color: transparent;
-  box-shadow: 0 0 8px color-mix(in srgb, var(--metric) 45%, transparent);
-}
 /* Everything logged today — the strip ascends to gold */
 .dl-row.all-done .dl-row-ico { color: #FFD233; }
 .dl-row.all-done .dl-row-val { color: #FFE08A; }
-.dl-row.all-done .dl-row-dot {
-  background: linear-gradient(135deg, #FFE08A, #FFB020); border-color: transparent;
-  box-shadow: 0 0 10px rgba(255,185,40,0.5);
-}
 .daily-log.all-done .daily-log-title { color: rgba(255,224,138,0.6); }
 
 /* (Core Habits Matrix removed — the home Today's Log is the single status strip.) */
@@ -6314,42 +6309,28 @@ h1, h2, h3, h4, .sora {
 .dub--concerned .dub-antenna-tip { fill: #FFB928; filter: drop-shadow(0 0 4px #FFB928); }
 .dub--neutral .dub-tail { animation-duration: 0.7s; }
 
-/* Dub sitting in his own circle, beside the ring (not overlapping it) */
 .hb-ring-wrap { position: relative; display: inline-flex; }
-.hb-dub-by-ring {
-  position: absolute; right: -30px; bottom: 4px;
-  width: 56px; height: 56px; padding: 0;
-  display: flex; align-items: center; justify-content: center;
-  border-radius: 50%;
-  background: radial-gradient(circle at 50% 35%, rgba(47,210,126,0.18), rgba(14,14,20,0.92));
-  border: 1.5px solid rgba(47,210,126,0.35);
-  box-shadow: 0 4px 14px rgba(0,0,0,0.45), 0 0 0 4px rgba(14,14,20,0.6);
-  cursor: pointer;
-  transition: transform 0.15s, border-color 0.2s;
-  animation: dub-peek-in 0.5s cubic-bezier(0.22,1,0.36,1) both;
-}
-.hb-dub-by-ring .dub { pointer-events: none; }
-.hb-dub-by-ring:hover { transform: scale(1.08) rotate(-3deg); border-color: rgba(47,210,126,0.6); }
-.hb-dub-by-ring:active { transform: scale(0.94); }
-@keyframes dub-peek-in { from { opacity: 0; transform: translateY(10px) scale(0.8); } to { opacity: 1; transform: none; } }
 
-/* The Global habit planet — upper-left of the ring, a diagonal mirror of the dub
-   circle (dub = right:-30px bottom:4px → planet = left:-30px top:4px). Same 56px
-   shell/box-shadow/entrance/press; blue accent kept (Growth + ocean). */
-.hb-planet-by-ring {
-  position: absolute; left: -30px; top: 4px;
-  width: 56px; height: 56px; padding: 0;
-  display: flex; align-items: center; justify-content: center;
-  border-radius: 50%;
-  background: radial-gradient(circle at 50% 35%, rgba(46,139,255,0.20), rgba(14,14,20,0.92));
-  border: 1.5px solid rgba(111,195,255,0.4);
-  box-shadow: 0 4px 14px rgba(0,0,0,0.45), 0 0 0 4px rgba(14,14,20,0.6);
-  cursor: pointer;
-  transition: transform 0.15s, border-color 0.2s;
-  animation: dub-peek-in 0.5s cubic-bezier(0.22,1,0.36,1) both;
+/* Coach + Global — two labeled shortcut chips under the ring/XP, replacing the
+   circles that used to overlap the ring. Kept to one slim row (no added height). */
+.hb-shortcuts {
+  display: flex; gap: 10px; justify-content: center;
+  margin: 10px 16px 0;
 }
-.hb-planet-by-ring:hover { transform: scale(1.08); border-color: rgba(111,195,255,0.7); }
-.hb-planet-by-ring:active { transform: scale(0.94); }
+.hb-shortcut {
+  flex: 1; max-width: 180px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 8px 12px; cursor: pointer;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--line); border-radius: 12px;
+  transition: transform 0.15s, border-color 0.2s, background 0.2s;
+}
+.hb-shortcut .dub, .hb-shortcut .gp-svg { pointer-events: none; flex-shrink: 0; }
+.hb-shortcut:active { transform: scale(0.97); }
+.hb-shortcut-label {
+  font-family: var(--font-data); font-size: 0.66rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.62);
+}
 .gp-svg { display: block; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.4)); }
 /* The globe's axial spin is done with SVG <animateTransform> in GlobalPlanet.tsx
    (user-unit precise, size-independent) and JS-gated for reduced motion. */

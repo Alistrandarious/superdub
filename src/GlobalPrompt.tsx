@@ -45,6 +45,8 @@ const GlobalPrompt: React.FC = () => {
       if (data.doneToday) {
         await api.uncontributeGlobal();
       } else {
+        // Same completion haptic as every other habit (Habits handleToggleDay).
+        if ('vibrate' in navigator) navigator.vibrate([0, 45, 40, 55]);
         // Today's deed is the (myDays+1)th completion — pay that level's rate, matching
         // habitXPForDoneDays. Idempotent per day, so this can't double-count.
         await api.contributeGlobal(rateFor(data.myDays + 1));

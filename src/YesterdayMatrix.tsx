@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 // ── Yesterday Matrix — yesterday's actual KPIs at a glance, in the same fixed
 // 2×2 grid that fills the locked visualization height. Retrospective, not a
@@ -52,6 +52,7 @@ const Ring: React.FC<{ pct: number; over: boolean; children: React.ReactNode }> 
 const YesterdayMatrix: React.FC<YesterdayMatrixProps> = ({
   intake, targetCalories, delta, steps, stepTarget, sleepHours, mood, habitsDone, habitsTotal,
 }) => {
+  const [explain, setExplain] = useState(false);
   const over = delta != null && delta > 0;
   const intakePct = intake != null && targetCalories > 0 ? intake / targetCalories : 0;
   const stepsHit = steps >= stepTarget && steps > 0;
@@ -65,6 +66,13 @@ const YesterdayMatrix: React.FC<YesterdayMatrixProps> = ({
       {/* Calories eaten */}
       <div className="ltm-cell">
         <span className="ltm-eyebrow">CALORIES</span>
+        {/* Tap-to-explain — the number is an estimate from weight + steps, not
+            logged food; nothing else on screen says so. */}
+        <button className="ltm-info" onClick={() => setExplain(v => !v)} aria-label="How is this worked out?">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" /><line x1="12" y1="11" x2="12" y2="16" /><line x1="12" y1="8" x2="12.01" y2="8" />
+          </svg>
+        </button>
         {intake != null ? (
           <>
             <Ring pct={intakePct} over={over}>
@@ -72,7 +80,7 @@ const YesterdayMatrix: React.FC<YesterdayMatrixProps> = ({
               <span className="ltm-ring-unit">kcal</span>
             </Ring>
             {delta != null
-              ? <span className={over ? 'ltm-alert' : 'ltm-sub good'}>est. {Math.abs(delta).toLocaleString()} {over ? 'over' : 'under'} target</span>
+              ? <span className={over ? 'ltm-alert' : 'ltm-sub good'}>est. {Math.abs(delta).toLocaleString()} {over ? 'over' : 'under'} your target</span>
               : <span className="ltm-sub">vs {targetCalories.toLocaleString()} target</span>}
           </>
         ) : targetCalories > 0 ? (
@@ -82,6 +90,12 @@ const YesterdayMatrix: React.FC<YesterdayMatrixProps> = ({
         ) : (
           <><div className="ltm-metric ltm-empty">—<span className="ltm-metric-unit">no goal set</span></div>
             <span className="ltm-sub ltm-empty">set your plan to see a goal</span></>
+        )}
+        {explain && (
+          <button className="ltm-explain" onClick={() => setExplain(false)}>
+            An estimate from your weight trend and steps, not the food you logged.
+            “Over” means it’s above your {targetCalories > 0 ? `${targetCalories.toLocaleString()} kcal ` : ''}daily target.
+          </button>
         )}
       </div>
 

@@ -895,7 +895,7 @@ const Habits: React.FC = () => {
     // A soft haptic tick on completion only (not on clear/fail). Single choke point
     // for every completion surface: weekday dots, the big done button, the check-in
     // overlay, past-day backfill, and weekly/monthly unit toggles.
-    if (state === 'done' && 'vibrate' in navigator) navigator.vibrate(40);
+    if (state === 'done' && 'vibrate' in navigator) navigator.vibrate([0, 45, 40, 55]);
     setHt(prev => ({ ...prev, [dayKey]: { ...prev[dayKey], [habit]: state } }));
     // Refresh global XP/level once the write commits so the top-of-page level ring
     // updates on the same tap. (Deliberately NOT superdub:tracker-updated — that
@@ -1210,12 +1210,6 @@ const Habits: React.FC = () => {
         <div className="hb-level">
           <div className="hb-ring-wrap">
             <LevelRing level={playerLevel.level} title={playerLevel.title} progress={playerLevel.progress} theme={ringTheme} onClick={() => navigateWithTransition(navigate, '/level')} />
-            <button className="hb-planet-by-ring" onClick={() => window.dispatchEvent(new CustomEvent('superdub:show-global'))} aria-label="The Global habit" title="The Global habit">
-              <GlobalPlanet size={40} />
-            </button>
-            <button className="hb-dub-by-ring" onClick={() => window.dispatchEvent(new CustomEvent('superdub:show-coach'))} aria-label="Talk to Dub" title="Talk to Dub">
-              <DubMascot size={46} mood="happy" species={mascotSpecies} />
-            </button>
           </div>
           <div className="hb-xp">
             <div className="hb-xp-scale">
@@ -1231,6 +1225,19 @@ const Habits: React.FC = () => {
               <p className="hb-xp-to">Max level, you legend.</p>
             )}
           </div>
+        </div>
+
+        {/* Coach + the Global habit — labeled shortcuts, not circles overlapping
+            the ring. Same events as before. */}
+        <div className="hb-shortcuts">
+          <button className="hb-shortcut" onClick={() => window.dispatchEvent(new CustomEvent('superdub:show-coach'))} aria-label="Talk to Dub, your coach">
+            <DubMascot size={24} mood="happy" species={mascotSpecies} />
+            <span className="hb-shortcut-label">Coach</span>
+          </button>
+          <button className="hb-shortcut" onClick={() => window.dispatchEvent(new CustomEvent('superdub:show-global'))} aria-label="The Global habit">
+            <GlobalPlanet size={22} />
+            <span className="hb-shortcut-label">Global</span>
+          </button>
         </div>
 
         {/* Weekly strip, the simplified "Logging into Superdub" habit */}
@@ -1266,8 +1273,9 @@ const Habits: React.FC = () => {
         </div>
         <p className="hb-week-caption">{mandatoryStats.streak}-day check-in streak · keep it alive</p>
 
-        {/* Daily Log, the app's own inputs (weigh-in / steps / check-in) */}
-        <DailyLog />
+        {/* Daily Log, the app's own inputs (weigh-in / steps / check-in) — follows
+            the week strip's selected day; check-in reuses the mandatory-habit signal. */}
+        <DailyLog day={rewindDay} checkedInDay={rewindDay ? ht[rewindDay]?.[MANDATORY_HABIT] === 'done' : undefined} />
 
         {/* Weekly Recap, Sunday only, right under the gold circles */}
         {isSunday && <WeeklyRecap />}
