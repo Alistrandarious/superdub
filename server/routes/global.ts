@@ -93,4 +93,19 @@ router.post('/contribute', requireAuth as any, async (req: AuthRequest, res: Res
   }
 });
 
+// POST /uncontribute — undo TODAY's deed for this user (the toggle-off path).
+// Removes today's row so the shared total, myDays and doneToday all reflect it.
+router.post('/uncontribute', requireAuth as any, async (req: AuthRequest, res: Response) => {
+  try {
+    await pool.query(
+      `DELETE FROM global_contributions WHERE user_id = $1 AND day = CURRENT_DATE`,
+      [req.userId]
+    );
+    res.json({ ok: true });
+  } catch (err: any) {
+    console.error('[global uncontribute]', err?.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 export default router;

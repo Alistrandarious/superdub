@@ -1058,11 +1058,14 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       const w = parseFloat(tracker[ddmm]?.weight ?? '') || null;
       if (w != null) ema = ema == null ? w : EMA_A * w + (1 - EMA_A) * ema;
       const steps = parseInt(tracker[ddmm]?.steps ?? '') || 0;
-      return { ddmm, ema, steps };
+      return { ddmm, w, ema, steps };
     });
     const WIN = 7;
     return rows.map((r, i) => {
-      if (r.ema == null && r.steps === 0) return { day: r.ddmm, intake: null, target: targetCalories };
+      // Only estimate when there's a REAL weigh-in within the last 3 days — a stale
+      // carried-forward EMA (or steps alone) isn't enough to know intake.
+      const recentWeighIn = rows.slice(Math.max(0, i - 3), i + 1).some(x => x.w != null);
+      if (!recentWeighIn) return { day: r.ddmm, intake: null, target: targetCalories };
       // smooth daily slope over up to WIN days
       const j = Math.max(0, i - WIN);
       const wForBmr = r.ema ?? startWeight;
@@ -1104,9 +1107,13 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     const yi = rows.length - 2;
     const r = rows[yi];
     let intake: number | null = null;
-    // Require a weight signal — with no weigh-in the estimate collapses to ≈maintenance,
-    // which always reads as "over" the deficit target. Steps alone can't tell us intake.
-    if (r && r.ema != null) {
+    // Require a RECENT real weigh-in (within 3 days of the estimated day). The EMA
+    // carries the last weight forward indefinitely, so a stale weigh-in would keep
+    // "estimating" ≈maintenance and read as "over" — misleading when you haven't
+    // weighed in lately. No recent weigh-in ⇒ no estimate.
+    const RECENCY = 3;
+    const recentWeighIn = rows.slice(Math.max(0, yi - RECENCY), yi + 1).some(x => x.w != null);
+    if (r && r.ema != null && recentWeighIn) {
       const j = Math.max(0, yi - WIN);
       const wForBmr = r.ema ?? startWeight;
       const dayBmr = (10 * wForBmr) + (6.25 * ht) - (5 * ag) + sexConst;
@@ -1984,7 +1991,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             <div className="step-chart-header">
               <div className="chart-title-row">
                 <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#FF8A00' }} />Estimated Intake</h3>
-                {calorieHasData && <span className="chart-title-target">{targetCalories.toLocaleString()} kcal target</span>}
+                {targetCalories > 0 && <span className="chart-title-target">{targetCalories.toLocaleString()} kcal target</span>}
               </div>
               {renderChartPager()}
               {calorieHasData && (

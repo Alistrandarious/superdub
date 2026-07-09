@@ -35,14 +35,19 @@ const GlobalPrompt: React.FC = () => {
     return () => window.removeEventListener('superdub:show-global', open);
   }, [load]);
 
-  const logDeed = async () => {
-    if (!data || data.doneToday || saving) return;
+  // Tap the deed circle to log it, tap again to un-log — same fill/unfill toggle as
+  // every other habit's completion circle.
+  const toggleDeed = async () => {
+    if (!data || saving) return;
     setSaving(true); setError(null);
     try {
-      // Today's deed is the (myDays+1)th completion — pay that level's rate, matching
-      // habitXPForDoneDays. Idempotent per day, so this can't double-count.
-      const xp = rateFor(data.myDays + 1);
-      await api.contributeGlobal(xp);
+      if (data.doneToday) {
+        await api.uncontributeGlobal();
+      } else {
+        // Today's deed is the (myDays+1)th completion — pay that level's rate, matching
+        // habitXPForDoneDays. Idempotent per day, so this can't double-count.
+        await api.contributeGlobal(rateFor(data.myDays + 1));
+      }
       const fresh = await api.getGlobalHabit();
       setData(fresh);
       if (whiteUnlocked(fresh.total, fresh.mine) && localStorage.getItem(DUB_WHITE_KEY) !== '1') {
@@ -51,7 +56,7 @@ const GlobalPrompt: React.FC = () => {
       }
       window.dispatchEvent(new CustomEvent('superdub:tracker-updated'));
     } catch (e: any) {
-      setError(e?.message ?? 'Could not log. Tap to retry.');
+      setError(e?.message ?? 'Could not save. Tap to retry.');
     } finally {
       setSaving(false);
     }
@@ -109,16 +114,20 @@ const GlobalPrompt: React.FC = () => {
             )}
 
             <div className="checkin-actions">
-              {d.doneToday ? (
-                <div className="checkin-done">✓ Good deed logged today</div>
-              ) : (
-                <>
-                  {error && <p className="checkin-error">{error}</p>}
-                  <button className="checkin-save-btn gp-save" onClick={logDeed} disabled={saving}>
-                    {saving ? 'Logging…' : error ? 'Retry' : 'I did a good deed'}
-                  </button>
-                </>
-              )}
+              {error && <p className="checkin-error">{error}</p>}
+              {/* Habit-style toggle circle: tap fills (deed done), tap again clears it. */}
+              <button
+                type="button"
+                className={`checkin-habit gp-deed ${d.doneToday ? 'done' : ''}`}
+                onClick={toggleDeed}
+                disabled={saving}
+                aria-pressed={d.doneToday}
+              >
+                <span className="checkin-tick">{d.doneToday ? '✓' : '+'}</span>
+                <span className="checkin-habit-name">
+                  {saving ? 'Saving…' : d.doneToday ? 'Good deed done today' : d.habit}
+                </span>
+              </button>
               <button className="checkin-skip-btn" onClick={() => setShow(false)}>Close</button>
             </div>
           </>

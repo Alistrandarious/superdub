@@ -75,9 +75,13 @@ const YesterdayMatrix: React.FC<YesterdayMatrixProps> = ({
               ? <span className={over ? 'ltm-alert' : 'ltm-sub good'}>est. {Math.abs(delta).toLocaleString()} {over ? 'over' : 'under'} target</span>
               : <span className="ltm-sub">vs {targetCalories.toLocaleString()} target</span>}
           </>
+        ) : targetCalories > 0 ? (
+          // No estimate yet — still surface the daily goal so it's always visible.
+          <><div className="ltm-metric">{targetCalories.toLocaleString()}<span className="ltm-metric-unit">kcal goal</span></div>
+            <span className="ltm-sub ltm-empty">log weight for today's estimate</span></>
         ) : (
-          <><div className="ltm-metric ltm-empty">—<span className="ltm-metric-unit">no estimate</span></div>
-            <span className="ltm-sub ltm-empty">log weight to unlock</span></>
+          <><div className="ltm-metric ltm-empty">—<span className="ltm-metric-unit">no goal set</span></div>
+            <span className="ltm-sub ltm-empty">set your plan to see a goal</span></>
         )}
       </div>
 

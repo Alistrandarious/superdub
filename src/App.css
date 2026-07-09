@@ -6343,6 +6343,8 @@ h1, h2, h3, h4, .sora {
   font-family: var(--font-ui); font-size: 0.8rem; color: #FFE08A; text-align: center;
 }
 .gp-save { background: var(--grad-ascension); color: #2A1B00; }
+/* The deed toggle reuses .checkin-habit but pinned to ascension gold, full width */
+.gp-deed { --theme: #FFB928; --theme-glow: rgba(255,185,40,0.18); display: flex; width: 100%; justify-content: center; }
 
 /* ── Level page: hero stage ─────────────────────────────────── */
 .lvl-hero {

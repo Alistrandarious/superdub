@@ -175,4 +175,6 @@ export const api = {
     request('/global'),
   contributeGlobal: (xp: number) =>
     request('/global/contribute', { method: 'POST', body: JSON.stringify({ xp }) }),
+  uncontributeGlobal: () =>
+    request('/global/uncontribute', { method: 'POST' }),
 };
