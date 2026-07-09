@@ -895,7 +895,7 @@ const Habits: React.FC = () => {
     // A soft haptic tick on completion only (not on clear/fail). Single choke point
     // for every completion surface: weekday dots, the big done button, the check-in
     // overlay, past-day backfill, and weekly/monthly unit toggles.
-    if (state === 'done' && 'vibrate' in navigator) navigator.vibrate(15);
+    if (state === 'done' && 'vibrate' in navigator) navigator.vibrate(40);
     setHt(prev => ({ ...prev, [dayKey]: { ...prev[dayKey], [habit]: state } }));
     // Refresh global XP/level once the write commits so the top-of-page level ring
     // updates on the same tap. (Deliberately NOT superdub:tracker-updated — that

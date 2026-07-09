@@ -6304,10 +6304,11 @@ h1, h2, h3, h4, .sora {
 .hb-dub-by-ring:active { transform: scale(0.94); }
 @keyframes dub-peek-in { from { opacity: 0; transform: translateY(10px) scale(0.8); } to { opacity: 1; transform: none; } }
 
-/* The Global habit planet — top-left of the ring, matching the dub circle
-   (same 56px shell/box-shadow/entrance/press); blue accent kept (Growth + ocean). */
+/* The Global habit planet — upper-left of the ring, a diagonal mirror of the dub
+   circle (dub = right:-30px bottom:4px → planet = left:-30px top:4px). Same 56px
+   shell/box-shadow/entrance/press; blue accent kept (Growth + ocean). */
 .hb-planet-by-ring {
-  position: absolute; left: -30px; top: -8px;
+  position: absolute; left: -30px; top: 4px;
   width: 56px; height: 56px; padding: 0;
   display: flex; align-items: center; justify-content: center;
   border-radius: 50%;
@@ -6321,9 +6322,8 @@ h1, h2, h3, h4, .sora {
 .hb-planet-by-ring:hover { transform: scale(1.08); border-color: rgba(111,195,255,0.7); }
 .hb-planet-by-ring:active { transform: scale(0.94); }
 .gp-svg { display: block; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.4)); }
-.gp-land { transform-box: fill-box; transform-origin: center; animation: planet-spin 24s linear infinite; }
-@keyframes planet-spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .gp-land { animation: none; } }
+/* The globe's axial spin is done with SVG <animateTransform> in GlobalPlanet.tsx
+   (user-unit precise, size-independent) and JS-gated for reduced motion. */
 
 /* Global habit overlay (GlobalPrompt) — ascension gold, reuses .global-habit-* */
 .gp-modal { border-top: 2px solid rgba(255,185,40,0.4); }
