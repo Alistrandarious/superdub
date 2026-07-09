@@ -4837,8 +4837,10 @@ h1, h2, h3, h4, .sora {
   font-size: 0.6rem;
   font-weight: 600;
   letter-spacing: 0.22em;
-  color: #777;
+  color: #C2C2CC;
   margin-bottom: 2px;
+  /* Dark halo so "LEVEL" stays legible over a liquid-fill theme (e.g. Freer). */
+  text-shadow: 0 1px 3px rgba(0,0,0,0.65);
 }
 .lvl-ring-num {
   font-family: 'Sora', sans-serif;
@@ -4846,7 +4848,9 @@ h1, h2, h3, h4, .sora {
   font-weight: 800;
   line-height: 0.95;
   color: #FFD233;
-  text-shadow: 0 0 22px rgba(255,210,51,0.35);
+  /* Dark outline for contrast on ANY fill — the number is tinted with the theme
+     accent (theme.to), which can match the water colour on liquid themes. */
+  text-shadow: 0 2px 6px rgba(0,0,0,0.6), 0 0 14px rgba(0,0,0,0.4);
 }
 .lvl-ring-title {
   font-family: 'Sora', sans-serif;
@@ -4854,6 +4858,7 @@ h1, h2, h3, h4, .sora {
   font-weight: 700;
   color: #FFC82E;
   margin-top: 4px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.65);
 }
 
 .hb-xp {
