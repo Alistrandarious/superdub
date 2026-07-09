@@ -2593,6 +2593,15 @@ h1, h2, h3, h4, .sora {
 }
 .chart-range-btn--locked:hover { border-color: rgba(255,255,255,0.08); }
 
+/* Cadence toggle under the Habits chart title — daily/weekly/monthly/yearly */
+.chart-cadence-row {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 0 14px 6px;
+}
+
 .chart-section-inner {
   display: flex;
   align-items: stretch;
@@ -4628,6 +4637,13 @@ h1, h2, h3, h4, .sora {
 }
 ::view-transition-old(level-ring) { animation: none; opacity: 0; }
 ::view-transition-new(level-ring) { animation: none; opacity: 1; }
+/* XP bar rides the same morph/timing as the ring so the pair moves as one. */
+::view-transition-group(level-xp) {
+  animation-duration: 0.52s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+::view-transition-old(level-xp) { animation: none; opacity: 0; }
+::view-transition-new(level-xp) { animation: none; opacity: 1; }
 .lvl-ring-svg {
   display: block;
 }
@@ -4843,6 +4859,9 @@ h1, h2, h3, h4, .sora {
 .hb-xp {
   width: 100%;
   max-width: 380px;
+  /* Shared element so the XP bar morphs WITH the ring on the Habits⇄Level
+     transition instead of cross-fading/popping out of step with it. */
+  view-transition-name: level-xp;
 }
 /* Level page already has 20px page padding — cancel hb-level's inner padding
    so the XP bar is the same width as on the Habits page */
@@ -4941,6 +4960,11 @@ h1, h2, h3, h4, .sora {
 .hb-week-circle.today.done {
   border-style: solid;
 }
+/* The past day the cards are currently rewound to (Growth blue, distinct from today's gold) */
+.hb-week-circle.viewing {
+  border-color: #2E8BFF;
+  box-shadow: 0 0 0 3px rgba(46,139,255,0.22);
+}
 .hb-week-circle.future {
   opacity: 0.4;
   cursor: default;
@@ -4985,6 +5009,40 @@ h1, h2, h3, h4, .sora {
   color: #777;
   margin: 12px 0 4px;
 }
+
+/* Rewind banner — shown when the habit cards are viewing a past day */
+.hb-rewind-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 4px 14px 10px;
+  padding: 8px 12px;
+  border-radius: var(--r-md, 12px);
+  background: rgba(46,139,255,0.10);
+  border: 1px solid rgba(46,139,255,0.3);
+}
+.hb-rewind-label {
+  font-family: var(--font-data, 'Space Mono'), monospace;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #8FC0FF;
+}
+.hb-rewind-back {
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid rgba(46,139,255,0.5);
+  color: #8FC0FF;
+  border-radius: var(--r-pill, 999px);
+  padding: 4px 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.hb-rewind-back:hover { background: rgba(46,139,255,0.18); border-color: #2E8BFF; }
+.hb-rewind-back:active { transform: scale(0.96); }
 
 /* ── Daily Log — the "Daily Superdub" vitals strip ──────────── */
 .daily-log { margin: 16px 16px 4px; }
@@ -6246,10 +6304,11 @@ h1, h2, h3, h4, .sora {
 .hb-dub-by-ring:active { transform: scale(0.94); }
 @keyframes dub-peek-in { from { opacity: 0; transform: translateY(10px) scale(0.8); } to { opacity: 1; transform: none; } }
 
-/* The Global habit planet — top-left of the ring, mirroring the dub button */
+/* The Global habit planet — top-left of the ring, matching the dub circle
+   (same 56px shell/box-shadow/entrance/press); blue accent kept (Growth + ocean). */
 .hb-planet-by-ring {
-  position: absolute; left: -26px; top: -6px;
-  width: 46px; height: 46px; padding: 0;
+  position: absolute; left: -30px; top: -8px;
+  width: 56px; height: 56px; padding: 0;
   display: flex; align-items: center; justify-content: center;
   border-radius: 50%;
   background: radial-gradient(circle at 50% 35%, rgba(46,139,255,0.20), rgba(14,14,20,0.92));
@@ -6259,7 +6318,7 @@ h1, h2, h3, h4, .sora {
   transition: transform 0.15s, border-color 0.2s;
   animation: dub-peek-in 0.5s cubic-bezier(0.22,1,0.36,1) both;
 }
-.hb-planet-by-ring:hover { transform: scale(1.1); border-color: rgba(111,195,255,0.7); }
+.hb-planet-by-ring:hover { transform: scale(1.08); border-color: rgba(111,195,255,0.7); }
 .hb-planet-by-ring:active { transform: scale(0.94); }
 .gp-svg { display: block; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.4)); }
 .gp-land { transform-box: fill-box; transform-origin: center; animation: planet-spin 24s linear infinite; }
@@ -6310,7 +6369,7 @@ h1, h2, h3, h4, .sora {
   0%, 100% { transform: translateY(0); }
   50%       { transform: translateY(-6px); }
 }
-.lvl-hero-xp { width: 100%; max-width: 340px; margin-top: 16px; position: relative; z-index: 1; }
+.lvl-hero-xp { width: 100%; max-width: 380px; margin-top: 16px; position: relative; z-index: 1; view-transition-name: level-xp; }
 .lvl-hero-scale {
   display: flex; justify-content: space-between; margin-top: 7px;
   font-family: 'Space Mono', monospace; font-size: 0.68rem; color: rgba(255,255,255,0.45);

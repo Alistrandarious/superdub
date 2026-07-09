@@ -29,6 +29,7 @@ import ChartCarousel from './ChartCarousel';
 import YesterdayMatrix from './YesterdayMatrix';
 import GoalSheet from './GoalSheet';
 import SleepCandleChart, { hhmmToAxis, type SleepCandle } from './SleepCandleChart';
+import { CADENCE_ORDER, CADENCE_META, type Cadence } from './Habits';
 
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -341,6 +342,10 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   useEffect(() => { setChartOffset(0); }, [chartRange]);
   const [chartCogOpen, setChartCogOpen] = useState(false);
   const [hiddenHabits, setHiddenHabits] = useState<Set<string>>(new Set());
+  // Habit cadence (daily/weekly/monthly/yearly), loaded from the API. Lets the
+  // Progress page tell a daily habit from a yearly one (chart filter + Yesterday).
+  const [habitCadence, setHabitCadence] = useState<Record<string, Cadence>>({});
+  const [chartCadence, setChartCadence] = useState<Cadence>('daily');
 
   // Coaching message state (includes today's energy score, advisable steps, workout calories)
   const [coachingMsg, setCoachingMsg] = useState<{
@@ -405,9 +410,13 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       if (profile.accountCreatedAt) setAccountCreatedAt(profile.accountCreatedAt);
       setStepTarget(parseInt(profile.stepTarget) || 10000);
 
-      const habitObjs = loadedHabits as { name: string }[];
+      const habitObjs = loadedHabits as { name: string; cadence?: string }[];
       const activeHabits = habitObjs.length > 0 ? habitObjs.map(h => h.name) : (currentHabits ?? DEFAULT_HABITS);
       setHabits(activeHabits);
+      // Keep each habit's cadence so the Progress page can filter by period.
+      const cad: Record<string, Cadence> = {};
+      habitObjs.forEach(h => { cad[h.name] = (h.cadence as Cadence) || 'daily'; });
+      setHabitCadence(cad);
 
       // Merge DB data into full-year tracker structure
       const merged = initData(activeHabits);
@@ -828,7 +837,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const todayStartMs = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const dailyChartData = chartDayRange.map(({ ddmm, date }, i) => {
     const d = tracker[ddmm] ?? { weight: '', habits: {}, calories: '', protein: '', carbs: '', fats: '', steps: '' };
-    const visible = habits.filter(h => !hiddenHabits.has(h));
+    const visible = habits.filter(h => !hiddenHabits.has(h) && (habitCadence[h] ?? 'daily') === chartCadence);
     const completed = visible.filter(h => d.habits[h] === true).length;
     const failed = visible.filter(h => d.habits[h] === 'failed').length;
     const undeclared = date.getTime() < todayStartMs ? visible.length - completed - failed : 0;
@@ -882,8 +891,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       if (wt > 0) w.weights.push(wt);
       const d = tracker[ddmm];
       if (d) {
-        w.done += habits.filter(h => d.habits[h] === true).length;
-        w.failed += habits.filter(h => d.habits[h] === 'failed').length;
+        w.done += habits.filter(h => d.habits[h] === true && (habitCadence[h] ?? 'daily') === chartCadence).length;
+        w.failed += habits.filter(h => d.habits[h] === 'failed' && (habitCadence[h] ?? 'daily') === chartCadence).length;
       }
     });
     weeklyChartData = Array.from(weekMap.entries())
@@ -907,7 +916,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
   // Habits Y-axis: pin ticks to the real habit count so recharts doesn't "nice" the
   // max up to 16 when you only track ~12 (which left a big dead band up top).
-  const habitAxisMax = Math.max(1, habits.length - hiddenHabits.size);
+  // Count only the selected cadence's visible habits — the chart is filtered to it.
+  const cadenceHabitCount = habits.filter(h => (habitCadence[h] ?? 'daily') === chartCadence && !hiddenHabits.has(h)).length;
+  const habitAxisMax = Math.max(1, cadenceHabitCount);
   const habitTicks = (() => {
     const step = Math.max(1, Math.ceil(habitAxisMax / 4));
     const t: number[] = [];
@@ -1093,7 +1104,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     const yi = rows.length - 2;
     const r = rows[yi];
     let intake: number | null = null;
-    if (r && (r.ema != null || r.steps > 0)) {
+    // Require a weight signal — with no weigh-in the estimate collapses to ≈maintenance,
+    // which always reads as "over" the deficit target. Steps alone can't tell us intake.
+    if (r && r.ema != null) {
       const j = Math.max(0, yi - WIN);
       const wForBmr = r.ema ?? startWeight;
       const dayBmr = (10 * wForBmr) + (6.25 * ht) - (5 * ag) + sexConst;
@@ -1343,7 +1356,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const ySteps = parseInt(yData?.steps ?? '') || 0;
   const ySleep = sleepByDate[yesterdayISO] ?? null;
   const yMood = moodByDate[yesterdayISO] ?? null;
-  const realHabits = habits.filter(h => h !== 'Logging into Superdub');
+  // Yesterday's habit tally counts only daily habits — weekly/monthly/yearly are
+  // closed on their own cadence, not "yesterday" (matches the Habits check-in popup).
+  const realHabits = habits.filter(h => h !== 'Logging into Superdub' && (habitCadence[h] ?? 'daily') === 'daily');
   const yHabitsDone = realHabits.filter(h => yData?.habits[h] === true).length;
   // Retrospective verdict — a clean prose read on YESTERDAY's closing metrics
   // (estimated intake vs target, safe-zone status, the week's actual change).
@@ -1844,6 +1859,19 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 );
               })}
             </div>
+          </div>
+          <div className="chart-cadence-row" role="tablist" aria-label="Habit cadence">
+            {CADENCE_ORDER.map(c => (
+              <button
+                key={c}
+                role="tab"
+                aria-selected={chartCadence === c}
+                className={`chart-range-btn ${chartCadence === c ? 'active' : ''}`}
+                onClick={() => setChartCadence(c)}
+              >
+                {CADENCE_META[c].label}
+              </button>
+            ))}
           </div>
           {renderChartPager()}
           <div className="chart-section-inner">

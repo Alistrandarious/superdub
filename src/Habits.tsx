@@ -721,6 +721,7 @@ const Habits: React.FC = () => {
   const [featuredOpen, setFeaturedOpen] = useState(false);
   const [showDayOverlay, setShowDayOverlay] = useState(false);
   const [overlayDay, setOverlayDay] = useState<string | null>(null); // null = today; else a DD/MM key
+  const [rewindDay, setRewindDay] = useState<string | null>(null); // null = today; else rewind cards to this DD/MM
 
   // Week gold — purely derived: gold ONLY on Sunday when all 7 days are logged.
   // Resets to original colour automatically on Monday (no persisted state, no veteran ring).
@@ -769,6 +770,9 @@ const Habits: React.FC = () => {
   };
 
   const today = todayKey();
+  // Day the habit cards are "rewound" to (tap a past day in the week strip). Stats
+  // stay as-of-today; only the completion pointer/checkmarks follow activeDay.
+  const activeDay = rewindDay ?? today;
   const weekDays = getWeekDays();
   const { totalXP: totalXPAll, playerLevel, refresh: refreshXP } = useXP();
   const ringTheme = useRingTheme();
@@ -888,6 +892,10 @@ const Habits: React.FC = () => {
   }, []);
 
   const handleToggleDay = useCallback((habit: string, dayKey: string, state: HabitState) => {
+    // A soft haptic tick on completion only (not on clear/fail). Single choke point
+    // for every completion surface: weekday dots, the big done button, the check-in
+    // overlay, past-day backfill, and weekly/monthly unit toggles.
+    if (state === 'done' && 'vibrate' in navigator) navigator.vibrate(15);
     setHt(prev => ({ ...prev, [dayKey]: { ...prev[dayKey], [habit]: state } }));
     // Refresh global XP/level once the write commits so the top-of-page level ring
     // updates on the same tap. (Deliberately NOT superdub:tracker-updated — that
@@ -1030,7 +1038,7 @@ const Habits: React.FC = () => {
             stats={computeHabitStats(habit, ht, today, startDates[habit], xpCarry[habit] ?? 0)}
             weekDays={weekDays}
             ht={ht}
-            today={today}
+            today={activeDay}
             cadence={cad}
             onToggleDay={handleToggleDay}
             onEditDay={editPast}
@@ -1203,7 +1211,7 @@ const Habits: React.FC = () => {
           <div className="hb-ring-wrap">
             <LevelRing level={playerLevel.level} title={playerLevel.title} progress={playerLevel.progress} theme={ringTheme} onClick={() => navigateWithTransition(navigate, '/level')} />
             <button className="hb-planet-by-ring" onClick={() => window.dispatchEvent(new CustomEvent('superdub:show-global'))} aria-label="The Global habit" title="The Global habit">
-              <GlobalPlanet size={34} />
+              <GlobalPlanet size={40} />
             </button>
             <button className="hb-dub-by-ring" onClick={() => window.dispatchEvent(new CustomEvent('superdub:show-coach'))} aria-label="Talk to Dub" title="Talk to Dub">
               <DubMascot size={46} mood="happy" species={mascotSpecies} />
@@ -1236,12 +1244,17 @@ const Habits: React.FC = () => {
                 type="button"
                 className="hb-week-col hb-week-col-btn"
                 disabled={isFuture}
-                onClick={() => !isFuture && openDayOverlay(key)}
-                aria-label={`${label}: ${state ?? 'not logged'}, view this day`}
+                onClick={() => {
+                  if (isFuture) return;
+                  // Today reopens the check-in popup; a past day rewinds the cards to it.
+                  if (isToday) { setRewindDay(null); openDayOverlay(); }
+                  else setRewindDay(key);
+                }}
+                aria-label={`${label}: ${state ?? 'not logged'}, ${isToday ? 'view this day' : 'rewind to this day'}`}
               >
                 <span className="hb-week-dow">{label}</span>
                 <div
-                  className={`hb-week-circle ${state === 'done' ? 'done' : ''} ${state === 'failed' ? 'failed' : ''} ${isToday ? 'today' : ''} ${isFuture ? 'future' : ''}`}
+                  className={`hb-week-circle ${state === 'done' ? 'done' : ''} ${state === 'failed' ? 'failed' : ''} ${isToday ? 'today' : ''} ${key === rewindDay ? 'viewing' : ''} ${isFuture ? 'future' : ''}`}
                   aria-hidden="true"
                 >
                   {state === 'done' && <span className="hb-week-tick"><CheckSVG size={18} strokeWidth={2} /></span>}
@@ -1258,6 +1271,19 @@ const Habits: React.FC = () => {
 
         {/* Weekly Recap, Sunday only, right under the gold circles */}
         {isSunday && <WeeklyRecap />}
+
+        {/* Rewind banner — cards are showing a past day; tap to return to today */}
+        {rewindDay && (
+          <div className="hb-rewind-banner">
+            <span className="hb-rewind-label">
+              Viewing {(() => {
+                const d = new Date(loggingNow().getFullYear(), parseInt(rewindDay.slice(3), 10) - 1, parseInt(rewindDay.slice(0, 2), 10));
+                return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+              })()}
+            </span>
+            <button className="hb-rewind-back" onClick={() => setRewindDay(null)}>Back to today</button>
+          </div>
+        )}
 
         {/* Your habits, cadence carousel (Daily · Weekly · Monthly · Yearly) */}
         <CadenceCarousel panels={cadencePanels} startIndex={0} compact={scrolled} />

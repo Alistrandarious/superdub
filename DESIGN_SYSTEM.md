@@ -83,4 +83,25 @@ Section header pattern: Space Mono 700 caps eyebrow + hairline rule.
 - Overlays (`DailyCheckIn`, `EnergyCheckIn`, `StepEntry`, `CoachReport`,
   `LevelUpCelebration`, `UpdateBanner`) mount above the router, outside `<Routes>`.
 
+## Components
+
+### Ring-flanking circle buttons (the "Dub circle" pattern)
+
+The two round buttons that flank the level ring on the Habits page — the **Dub**
+button (`.hb-dub-by-ring`, right) and the **Global habit** planet
+(`.hb-planet-by-ring`, left) — share one shell so they read as a matched pair:
+
+- **56px** circle, `border-radius: 50%`, absolutely positioned to peek out beside
+  the ring (`.hb-ring-wrap` is the `position: relative` anchor).
+- Fill: `radial-gradient(circle at 50% 35%, <accent-dim>, var(--void))` where the
+  accent is the button's semantic colour (Dub = `HEALTH` green; planet = `GROWTH`
+  blue, matching the ocean SVG).
+- Border: `1.5px solid <accent>`; box-shadow `0 4px 14px rgba(0,0,0,0.45)` **+**
+  a `0 0 0 4px var(--void)` halo that cuts the button out from the ring behind it.
+- Entrance: `dub-peek-in` (0.5s). Press: `:hover` `scale(1.08)` + brighter border,
+  `:active` `scale(0.94)`.
+
+New ring-adjacent circle buttons should conform to this shell and only swap the
+semantic accent — don't invent a new size or shadow.
+
 See also: [APP_OVERVIEW.md](APP_OVERVIEW.md) · [PAGES.md](PAGES.md)

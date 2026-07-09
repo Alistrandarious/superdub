@@ -77,7 +77,7 @@ const YesterdayMatrix: React.FC<YesterdayMatrixProps> = ({
           </>
         ) : (
           <><div className="ltm-metric ltm-empty">—<span className="ltm-metric-unit">no estimate</span></div>
-            <span className="ltm-sub ltm-empty">log weight + steps to unlock</span></>
+            <span className="ltm-sub ltm-empty">log weight to unlock</span></>
         )}
       </div>
 
