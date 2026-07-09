@@ -92,24 +92,50 @@ const LevelRing: React.FC<{
   // Surface = a densely-sampled line (smooth, no facets) that (a) ripples with a
   // sine wave and (b) TILTS with device roll so the water finds its level like
   // real liquid as you move the phone.
-  const waveAmp = clampedP > 0.02 && clampedP < 0.98 ? 3.2 : 0;
+  const waveAmp = clampedP > 0.02 && clampedP < 0.98 ? 3.5 : 0;
   const WAVE_EXT = 16;
   const wx0 = cx - fillR - WAVE_EXT;
   const wx1 = cx + fillR + WAVE_EXT;
   // Negative: water pools toward the LOW edge, so the surface rises (smaller y)
   // on the side the phone tilts down — real liquid finds its level opposite the roll.
   const slope = -Math.max(-1, Math.min(1, tilt.y)) * fillR * 0.5; // height delta centre→edge
-  const N = 40;
-  let waveD = '';
-  for (let i = 0; i <= N; i++) {
-    const t = i / N;
-    const px = wx0 + (wx1 - wx0) * t;
-    const level = liquidTopY + ((px - cx) / fillR) * slope;
-    const py = level + Math.sin(t * Math.PI * 3) * waveAmp;
-    waveD += `${i === 0 ? 'M' : 'L'}${px.toFixed(2)},${py.toFixed(2)} `;
-  }
+  const N = 44;
   const bottomY = cy + fillR + 2;
-  const liquidPath = `${waveD}L${wx1.toFixed(2)},${bottomY.toFixed(2)} L${wx0.toFixed(2)},${bottomY.toFixed(2)} Z`;
+  // Surface height at t (0..1) — TWO summed sines of different frequency give a
+  // richer, non-uniform crest that doesn't read as one plain wave. `phase`,
+  // `ampScale` and `levelShift` let the front + back layers differ. The two
+  // layers are then slid at different speeds in CSS so the composite morphs.
+  const surfaceY = (t: number, phase: number, ampScale: number, levelShift: number) => {
+    const px = wx0 + (wx1 - wx0) * t;
+    const base = liquidTopY + levelShift + ((px - cx) / fillR) * slope;
+    const ripple = (Math.sin(t * Math.PI * 3 + phase) * 2.4 + Math.sin(t * Math.PI * 5 + 0.9 + phase) * 1.1)
+      * (waveAmp / 3.5) * ampScale;
+    return base + ripple;
+  };
+  const surfaceLine = (phase: number, ampScale: number, levelShift: number) => {
+    let d = '';
+    for (let i = 0; i <= N; i++) {
+      const t = i / N;
+      const px = wx0 + (wx1 - wx0) * t;
+      d += `${i === 0 ? 'M' : 'L'}${px.toFixed(2)},${surfaceY(t, phase, ampScale, levelShift).toFixed(2)} `;
+    }
+    return d;
+  };
+  const fillFrom = (phase: number, ampScale: number, levelShift: number) =>
+    `${surfaceLine(phase, ampScale, levelShift)}L${wx1.toFixed(2)},${bottomY.toFixed(2)} L${wx0.toFixed(2)},${bottomY.toFixed(2)} Z`;
+  const liquidPath = fillFrom(0, 1, 0);
+  const liquidPathBack = fillFrom(1.9, 1.15, -2.5); // offset phase + slightly higher so it peeks above the front
+  const liquidSurfaceLine = surfaceLine(0, 1, 0);
+  // Rising bubbles (subtle), placed within the water column. Clipped to the water
+  // body so they dissolve at the surface. Only when the vessel is actually rippling.
+  const bubbles = (useLiquid && waveAmp > 0) ? [
+    { x: cx - fillR * 0.50, r: 1.6, delay: 0.0, dur: 5.6 },
+    { x: cx - fillR * 0.18, r: 1.1, delay: 1.9, dur: 6.6 },
+    { x: cx + fillR * 0.10, r: 2.0, delay: 0.8, dur: 5.0 },
+    { x: cx + fillR * 0.34, r: 1.3, delay: 2.7, dur: 6.1 },
+    { x: cx + fillR * 0.55, r: 0.9, delay: 1.3, dur: 7.0 },
+    { x: cx - fillR * 0.62, r: 1.0, delay: 3.5, dur: 6.3 },
+  ] : [];
 
   const tiltTransform = `perspective(320px) rotateY(${tilt.y * TILT_MAX_DEG}deg) rotateX(${-tilt.x * TILT_MAX_DEG * 0.85}deg)`;
 
@@ -144,6 +170,14 @@ const LevelRing: React.FC<{
             </clipPath>
           )}
 
+          {/* Water-body clip: everything below the surface line (bubbles use it,
+              nested inside the disc clip, so they only show inside the water). */}
+          {useLiquid && (
+            <clipPath id={`${gid}water`}>
+              <rect x={cx - fillR} y={liquidTopY} width={fillR * 2} height={bottomY - liquidTopY} />
+            </clipPath>
+          )}
+
           {/* Glare radial gradient */}
           <radialGradient id={`${gid}glare`} cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor="#fff" stopOpacity={GLARE_STRENGTH} />
@@ -158,7 +192,31 @@ const LevelRing: React.FC<{
             <circle cx={cx} cy={cy} r={fillR} fill="#0B0B11" />
             {clampedP > 0 && (
               <g clipPath={`url(#${gid}clip)`}>
-                <path d={liquidPath} fill={`url(#${gid}liq)`} className="lvl-liquid-fill" shapeRendering="geometricPrecision" />
+                {/* Back swell — lighter, slid the other way so the surface morphs */}
+                <path d={liquidPathBack} fill={theme.from} fillOpacity={0.28} className="lvl-liquid-back" shapeRendering="geometricPrecision" />
+                {/* Front body — the main themed water */}
+                <path d={liquidPath} fill={`url(#${gid}liq)`} className="lvl-liquid-front" shapeRendering="geometricPrecision" />
+                {/* Waterline highlight — catches the light, rides with the front */}
+                {waveAmp > 0 && (
+                  <path d={liquidSurfaceLine} fill="none" stroke="#fff" strokeOpacity={0.32} strokeWidth={1.2} className="lvl-liquid-front" shapeRendering="geometricPrecision" />
+                )}
+                {/* Rising bubbles, clipped to the water body (disc ∩ water rect) */}
+                {bubbles.length > 0 && (
+                  <g clipPath={`url(#${gid}water)`}>
+                    {bubbles.map((b, i) => (
+                      <circle
+                        key={i}
+                        className="lvl-bubble"
+                        cx={b.x}
+                        cy={bottomY - 3}
+                        r={b.r}
+                        fill={theme.from}
+                        fillOpacity={0.55}
+                        style={{ animationDelay: `${b.delay}s`, animationDuration: `${b.dur}s` }}
+                      />
+                    ))}
+                  </g>
+                )}
               </g>
             )}
             {/* Rim, two crisp strokes (no drop-shadow filter; filters rasterise
