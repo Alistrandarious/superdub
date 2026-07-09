@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { api } from './api';
 import { loggingNow } from './day';
 import { useWeightUnit, formatWeightKg } from './weightUnit';
+import { HEALTH, GROWTH, TEAL } from './theme';
 
 // ── Daily Log — the "Daily Superdub" vitals strip ───────────────────────────
 // These are the app's OWN inputs (weigh-in, steps, check-in) that feed the
@@ -44,11 +45,6 @@ const MoodIc = () => (
     <circle cx="12" cy="12" r="10" /><path d="M8 14s1.5 2 4 2 4-2 4-2" /><line x1="9" y1="9" x2="9.01" y2="9" /><line x1="15" y1="9" x2="15.01" y2="9" />
   </svg>
 );
-const TickIc = () => (
-  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
-);
 const FlameIc = () => (
   <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
     <path d="M12 2s5 4.5 5 9a5 5 0 0 1-10 0c0-1.4.6-2.7 1.3-3.7C8.7 8.9 9 10 10 10c0-2.5 2-4.5 2-8z" />
@@ -79,11 +75,11 @@ const DailyLog: React.FC = () => {
       }
       setWeight(tW); setSteps(tS);
       setStreak(loggingStreak(logged));
-      // check-in done today: recent endpoint's `today`, or either ritual's stamp
-      // (vitals prompt or the older combined energy check-in)
+      // check-in done today: recent endpoint's `today`, or either prompt's stamp
+      // (morning vitals or the evening reflection)
       setCheckedIn(!!recent?.today
         || localStorage.getItem('superdub.vitals.checkin') === todayISO()
-        || localStorage.getItem('superdub.energy.checkin') === todayISO());
+        || localStorage.getItem('superdub.evening.checkin') === todayISO());
     } catch { /* non-critical */ }
   }, []);
 
@@ -110,14 +106,18 @@ const DailyLog: React.FC = () => {
     return () => clearTimeout(t);
   }, [allDone]);
 
-  const chip = (done: boolean, ico: React.ReactNode, label: string, val: string | null, evt: string) => (
-    <button className={`dl-chip${done ? ' done' : ''}${allDone ? ' all-done' : ''}`} onClick={() => fire(evt)}>
-      <span className="dl-chip-ico">{ico}</span>
-      <span className="dl-chip-body">
-        <span className="dl-chip-label">{label}</span>
-        {done && val && <span className="dl-chip-val">{val}</span>}
-      </span>
-      <span className={`dl-chip-tick${done ? ' on' : ''}`}>{done && <TickIc />}</span>
+  // Borderless hairline row: icon · label · value · state dot. `metric` is the
+  // semantic accent (theme.ts) the row takes once logged.
+  const row = (done: boolean, ico: React.ReactNode, label: string, val: string | null, evt: string, metric: string) => (
+    <button
+      className={`dl-row${done ? ' done' : ''}${allDone ? ' all-done' : ''}`}
+      style={{ '--metric': metric } as React.CSSProperties}
+      onClick={() => fire(evt)}
+    >
+      <span className="dl-row-ico">{ico}</span>
+      <span className="dl-row-label">{label}</span>
+      <span className="dl-row-val">{done && val ? val : '–'}</span>
+      <span className={`dl-row-dot${done ? ' on' : ''}`} />
     </button>
   );
 
@@ -133,15 +133,15 @@ const DailyLog: React.FC = () => {
         <button
           className="daily-log-line"
           onClick={() => setCollapsed(false)}
-          aria-label="All logged today — tap to expand"
+          aria-label="All logged today, tap to expand"
         >
           <span className="daily-log-line-bar" />
         </button>
       ) : (
-        <div className="daily-log-chips">
-          {chip(weight != null, <ScaleIc />, 'Weigh-in', weight != null ? formatWeightKg(parseFloat(weight), unit) : null, 'superdub:show-checkin')}
-          {chip(steps != null, <StepIc />, 'Steps', steps != null ? steps.toLocaleString() : null, 'superdub:show-step-entry')}
-          {chip(checkedIn, <MoodIc />, 'Check-in', 'Logged', 'superdub:show-vitals')}
+        <div className="daily-log-rows">
+          {row(weight != null, <ScaleIc />, 'Weight', weight != null ? formatWeightKg(parseFloat(weight), unit) : null, 'superdub:show-checkin', HEALTH)}
+          {row(steps != null, <StepIc />, 'Steps', steps != null ? steps.toLocaleString() : null, 'superdub:show-step-entry', GROWTH)}
+          {row(checkedIn, <MoodIc />, 'Check-in', 'Logged', 'superdub:show-vitals', TEAL)}
         </div>
       )}
     </div>

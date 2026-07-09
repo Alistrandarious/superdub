@@ -386,14 +386,14 @@ const WeightSparkline: React.FC<{
   } else if (histPts.length >= 3 && weeklyRate !== null) {
     if (isBulk) {
       const g = weeklyRate;
-      if (g >= lossPerWeek + 0.1) { insightLevel = 'behind'; insightMsg = `Gaining ${g.toFixed(2)} kg/week — faster than your ${lossPerWeek} kg target. Slow bulk means more muscle, less fat. Check your surplus.`; }
-      else if (g >= lossPerWeek - 0.1) { insightLevel = 'great'; insightMsg = `Right on track — gaining ${g.toFixed(2)} kg/week matches your ${lossPerWeek} kg bulk target.`; }
+      if (g >= lossPerWeek + 0.1) { insightLevel = 'behind'; insightMsg = `Gaining ${g.toFixed(2)} kg/week, faster than your ${lossPerWeek} kg target. Slow bulk means more muscle, less fat. Check your surplus.`; }
+      else if (g >= lossPerWeek - 0.1) { insightLevel = 'great'; insightMsg = `Right on track, gaining ${g.toFixed(2)} kg/week matches your ${lossPerWeek} kg bulk target.`; }
       else if (g >= 0.05) { insightLevel = 'good'; insightMsg = `Gaining ${g.toFixed(2)} kg/week vs your ${lossPerWeek} kg target. A little more food or one extra gym session could close the gap.`; }
       else { insightLevel = 'behind'; insightMsg = `Minimal weight change. To bulk, you need a consistent calorie surplus every day.`; }
     } else {
       const l = -weeklyRate;
-      if (l >= lossPerWeek + 0.15) { insightLevel = 'great'; insightMsg = `Losing ${l.toFixed(2)} kg/week — ahead of your ${lossPerWeek} kg target. Keep meals protein-forward to protect muscle.`; }
-      else if (l >= lossPerWeek - 0.1) { insightLevel = 'good'; insightMsg = `Right on track — ${l.toFixed(2)} kg/week matches your ${lossPerWeek} kg target. Keep the routine going.`; }
+      if (l >= lossPerWeek + 0.15) { insightLevel = 'great'; insightMsg = `Losing ${l.toFixed(2)} kg/week, ahead of your ${lossPerWeek} kg target. Keep meals protein-forward to protect muscle.`; }
+      else if (l >= lossPerWeek - 0.1) { insightLevel = 'good'; insightMsg = `Right on track, ${l.toFixed(2)} kg/week matches your ${lossPerWeek} kg target. Keep the routine going.`; }
       else if (l >= 0.05) { insightLevel = 'behind'; const gap = Math.round((lossPerWeek - l) * 7700 / 7); insightMsg = `Losing ${l.toFixed(2)} kg/week vs your ${lossPerWeek} kg target. Tighten up ~${gap} kcal/day to close the gap.`; }
       else { insightLevel = 'behind'; insightMsg = `Minimal change recently. Focus on hitting your calorie target this week.`; }
     }
@@ -459,19 +459,19 @@ const WeightSparkline: React.FC<{
             <Area type="linear" dataKey="zoneBand" stackId="zone" stroke="none" fill="rgba(255,190,30,0.16)" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} />
             <Line type="linear" dataKey="zoneLow" stroke="rgba(255,200,60,0.8)" strokeWidth={1.5} dot={false} activeDot={false} connectNulls isAnimationActive={false} />
             <Line type="linear" dataKey="zoneHigh" stroke="rgba(255,200,60,0.8)" strokeWidth={1.5} dot={false} activeDot={false} connectNulls isAnimationActive={false} />
-            {/* Expected/ideal path — faint blue dashed */}
+            {/* Expected/ideal path, faint blue dashed */}
             <Line type="linear" dataKey="expected" stroke="#2E8BFF55" strokeWidth={1.5} strokeDasharray="4 3" dot={false} connectNulls name="expected" isAnimationActive={false} />
-            {/* Trendline — amber regression of your last 28 days */}
+            {/* Trendline, amber regression of your last 28 days */}
             <Line type="linear" dataKey="trend" stroke="#FF8A00" strokeWidth={2} strokeDasharray="6 4" dot={false} connectNulls name="trend" isAnimationActive={false} />
-            {/* EMA smoothed — black line with a white halo */}
+            {/* EMA smoothed, black line with a white halo */}
             <Line type="monotone" dataKey="emaHalo" stroke="rgba(255,255,255,0.6)" strokeWidth={5} dot={false} connectNulls isAnimationActive={false} />
             <Line type="monotone" dataKey="ema" stroke="#000000" strokeWidth={2.5} dot={false} connectNulls isAnimationActive={false} name="ema" />
-            {/* Actual logged weight — white line with hollow dots */}
+            {/* Actual logged weight, white line with hollow dots */}
             <Line type="monotone" dataKey="actual" stroke="#FFFFFF" strokeWidth={2.5} dot={{ r: 4, fill: '#0E0E14', stroke: '#FFFFFF', strokeWidth: 2 }} activeDot={{ r: 6 }} connectNulls={false} name="actual" />
           </ComposedChart>
         </ResponsiveContainer>
       ) : (
-        <p className="diet-hint" style={{ marginTop: 8 }}>No weight data this week — log your morning weight via the daily check-in.</p>
+        <p className="diet-hint" style={{ marginTop: 8 }}>No weight data this week, log your morning weight via the daily check-in.</p>
       )}
 
       <div className={`insight-box insight-${insightLevel}`}>{insightMsg}</div>
@@ -719,7 +719,7 @@ const ActivityTargetsCard: React.FC<{
           <p className="diet-hint">Complete your biographics in Profile to see personalised step targets.</p>
         ) : (
           <>
-            {/* Always headline the health-based step goal — never the tiny
+            {/* Always headline the health-based step goal, never the tiny
                 "steps left to close today's calorie gap" figure, which made the
                 target look absurdly low when food + training already covered it. */}
             <div className="atc-steps-needed">
@@ -728,8 +728,8 @@ const ActivityTargetsCard: React.FC<{
             </div>
             <div className="atc-step-context">
               {alreadyCovered
-                ? `Food${hasTraining ? ' + training' : ''} already covers your ${goal} target — these steps are bonus burn. 💪`
-                : `You're ~${Math.round(Math.abs(gapKcal)).toLocaleString()} kcal short of today's ${goal} target — moving more helps close the gap.`}
+                ? `Food${hasTraining ? ' + training' : ''} already covers your ${goal} target, these steps are bonus burn. 💪`
+                : `You're ~${Math.round(Math.abs(gapKcal)).toLocaleString()} kcal short of today's ${goal} target, moving more helps close the gap.`}
             </div>
           </>
         )}
@@ -1007,7 +1007,7 @@ const Diet: React.FC = () => {
           </div>
         </div>
 
-        {/* Time pacing — small caption under the gauge */}
+        {/* Time pacing, small caption under the gauge */}
         {timePct !== null && (
           <div className="plan-gauge-time">
             <span className="plan-gauge-time-bar"><span className="plan-gauge-time-fill" style={{ width: `${Math.round(timePct * 100)}%` }} /></span>
@@ -1017,7 +1017,7 @@ const Diet: React.FC = () => {
 
       </section>
 
-        {/* Adaptive Weight Plan — engine reasoning (moved here from Progress) */}
+        {/* Adaptive Weight Plan, engine reasoning (moved here from Progress) */}
         <AdaptiveWeightPlanCard
           planStatus={planStatusFull}
           planCycle={planCycle}
@@ -1025,7 +1025,7 @@ const Diet: React.FC = () => {
           lastEMAValue={lastEMAValue}
         />
 
-        {/* Weight This Week — prominent, with corridor + trend */}
+        {/* Weight This Week, prominent, with corridor + trend */}
         <WeightSparkline
           allTrackerDays={allTrackerDays}
           currentWeight={todayWeight ?? kg}
@@ -1033,7 +1033,7 @@ const Diet: React.FC = () => {
           lossPerWeek={lossPerWeek}
         />
 
-        {/* Steps & activity — moved up; adaptive targets */}
+        {/* Steps & activity, moved up; adaptive targets */}
         <ActivityTargetsCard
           currentWeight={todayWeight ?? kg}
           maintenance={maintenance}

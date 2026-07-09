@@ -72,7 +72,7 @@ const BottomNav: React.FC = () => {
         <span className="bottom-nav-label">Plan</span>
       </button>
 
-      {/* Habits — centre circle */}
+      {/* Habits, centre circle */}
       <button
         className={`bottom-nav-item bottom-nav-center${isActive('/') ? ' active' : ''}`}
         onClick={() => goTo('/')}

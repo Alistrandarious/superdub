@@ -85,7 +85,7 @@ const SleepCandleChart: React.FC<{
       {/* Floating bar: a [start,end] array dataKey gives recharts the bed→wake span;
           SleepIBar draws it as a capped vertical line instead of a solid body. Nights
           without both times return null so the day still occupies an x-slot but draws
-          no candle — keeping this axis aligned with the mood chart below. */}
+          no candle, keeping this axis aligned with the mood chart below. */}
       <Bar dataKey={(d: SleepCandle) => (d.bedVal == null || d.wakeVal == null ? null : [d.bedVal, d.wakeVal])} barSize={12} shape={SleepIBar} isAnimationActive={false} />
     </ComposedChart>
   </ResponsiveContainer>

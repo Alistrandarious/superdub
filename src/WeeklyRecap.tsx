@@ -207,10 +207,10 @@ const WeeklyRecap: React.FC = () => {
       if (cons > bestCons) { bestCons = cons; bestConsDay = i; }
     });
     if (bestSteps > 0 && bestStepsDay >= 0) {
-      return `${DAY_NAMES[bestStepsDay]} — ${bestSteps.toLocaleString()} steps`;
+      return `${DAY_NAMES[bestStepsDay]}, ${bestSteps.toLocaleString()} steps`;
     }
     if (bestCons > 0 && bestConsDay >= 0) {
-      return `${DAY_NAMES[bestConsDay]} — ${Math.round(bestCons * 100)}% habit consistency`;
+      return `${DAY_NAMES[bestConsDay]}, ${Math.round(bestCons * 100)}% habit consistency`;
     }
     return null;
   }, [weekKeys, tracker, habits]);
@@ -230,7 +230,7 @@ const WeeklyRecap: React.FC = () => {
       }
     });
     if (worstConsDay >= 0 && worstCons < 1) {
-      return `${DAY_NAMES[worstConsDay]} was the toughest — ${Math.round(worstCons * 100)}% consistency`;
+      return `${DAY_NAMES[worstConsDay]} was the toughest, ${Math.round(worstCons * 100)}% consistency`;
     }
     return null;
   }, [weekKeys, tracker, habits]);

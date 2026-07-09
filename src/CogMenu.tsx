@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { enablePush, disablePush, pushIsEnabled, pushSupported, getReminderHour, setReminderHour, getWorkoutHour, setWorkoutHour } from './push';
+import { enablePush, disablePush, pushIsEnabled, pushSupported, getReminderHour, setReminderHour, getEveningHour, setEveningHour, getWorkoutHour, setWorkoutHour } from './push';
 import { clearToken } from './api';
 import { BUILD_TAG } from './version';
 
@@ -35,6 +35,7 @@ const CogMenu: React.FC = () => {
   const [pushOn, setPushOn] = useState(pushIsEnabled);
   const [pushBusy, setPushBusy] = useState(false);
   const [reminderHour, setReminderHourState] = useState(getReminderHour);
+  const [eveningHour, setEveningHourState] = useState(getEveningHour);
   const [workoutHour, setWorkoutHourState] = useState<number | null>(getWorkoutHour);
   const planBadge = readPlanBadge();
 
@@ -47,6 +48,15 @@ const CogMenu: React.FC = () => {
     close();
     navigate('/');
     setTimeout(() => window.dispatchEvent(new CustomEvent('superdub:open-add-habit')), 60);
+  };
+  // The full data-table modal lives on the (lazily-loaded) Progress page. A one-shot
+  // event can fire before that chunk mounts its listener, so set a flag that survives
+  // the navigation; the event also covers the already-on-Progress case.
+  const openTracker = () => {
+    close();
+    sessionStorage.setItem('superdub.openTracker', '1');
+    navigate('/dashboard');
+    window.dispatchEvent(new CustomEvent('superdub:open-tracker'));
   };
 
   const togglePush = async () => {
@@ -61,6 +71,7 @@ const CogMenu: React.FC = () => {
     setPushBusy(false);
   };
   const changeReminderHour = (hour: number) => { setReminderHourState(hour); setReminderHour(hour); };
+  const changeEveningHour = (hour: number) => { setEveningHourState(hour); setEveningHour(hour); };
   const changeWorkoutHour = (v: string) => {
     const hour = v === 'off' ? null : parseInt(v, 10);
     setWorkoutHourState(hour); setWorkoutHour(hour);
@@ -87,14 +98,15 @@ const CogMenu: React.FC = () => {
             <div className="cog-menu-label">Quick log</div>
             <button className="cog-menu-item" onClick={() => fire('superdub:show-coach')}><span className="cog-mi-ico"><Ic><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" /></Ic></span> Talk to Dub</button>
             <button className="cog-menu-item" onClick={addHabit}><span className="cog-mi-ico"><Ic><path d="M12 5v14M5 12h14" /></Ic></span> Add Habit</button>
-            <button className="cog-menu-item" onClick={() => fire('superdub:show-checkin')}>
+            <button className="cog-menu-item" onClick={() => fire('superdub:show-weight')}>
               <span className="cog-mi-ico"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2v6M18 2v6M3 10h18M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span> Log Weight
             </button>
             <button className="cog-menu-item" onClick={() => fire('superdub:show-step-entry')}><span className="cog-mi-ico"><Ic><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></Ic></span> Log Steps</button>
-            <button className="cog-menu-item" onClick={() => fire('superdub:show-energy-checkin')}><span className="cog-mi-ico"><Ic><circle cx="12" cy="12" r="10" /><path d="M8 14s1.5 2 4 2 4-2 4-2" /><line x1="9" y1="9" x2="9.01" y2="9" /><line x1="15" y1="9" x2="15.01" y2="9" /></Ic></span> Log Check-in</button>
+            <button className="cog-menu-item" onClick={() => fire('superdub:show-vitals')}><span className="cog-mi-ico"><Ic><circle cx="12" cy="12" r="10" /><path d="M8 14s1.5 2 4 2 4-2 4-2" /><line x1="9" y1="9" x2="9.01" y2="9" /><line x1="15" y1="9" x2="15.01" y2="9" /></Ic></span> Log Check-in</button>
 
             <div className="cog-menu-sep" />
             <div className="cog-menu-label">Go to</div>
+            <button className="cog-menu-item" onClick={openTracker}><span className="cog-mi-ico"><Ic><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M3 15h18M9 3v18M15 3v18" /></Ic></span> Data Table</button>
             <button className="cog-menu-item" onClick={() => go('/plan')}>
               <span className="cog-mi-ico"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>
               Adaptive Weight Plan
@@ -124,6 +136,12 @@ const CogMenu: React.FC = () => {
                 <div className="cog-menu-item" style={{ cursor: 'default' }}>
                   <span className="cog-mi-ico"><Ic><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></Ic></span> Morning
                   <select className="reminder-time-select" style={{ marginLeft: 'auto' }} value={reminderHour} onChange={e => changeReminderHour(parseInt(e.target.value, 10))}>
+                    {HOUR_OPTIONS}
+                  </select>
+                </div>
+                <div className="cog-menu-item" style={{ cursor: 'default' }}>
+                  <span className="cog-mi-ico"><Ic><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.6 6.6 0 0 0 9.8 9.8z" /></Ic></span> Evening
+                  <select className="reminder-time-select" style={{ marginLeft: 'auto' }} value={eveningHour} onChange={e => changeEveningHour(parseInt(e.target.value, 10))}>
                     {HOUR_OPTIONS}
                   </select>
                 </div>

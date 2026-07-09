@@ -56,7 +56,7 @@ const ChartCarousel: React.FC<{
                 <span className="cc-dubbar-more" aria-hidden>›</span>
               </button>
             )}
-            {/* Height-locked visualization — fills the rest; swipe here pages. */}
+            {/* Height-locked visualization, fills the rest; swipe here pages. */}
             <div className="cc-slide-viz">{child}</div>
           </div>
         ))}

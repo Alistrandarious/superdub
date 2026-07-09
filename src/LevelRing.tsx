@@ -119,7 +119,7 @@ const LevelRing: React.FC<{
       className="lvl-ring"
       style={{ width: size, height: size, transform: tiltTransform, transition: 'transform 0.12s ease-out', willChange: 'transform' }}
       onClick={onClick}
-      aria-label={`Level ${level} — ${title}`}
+      aria-label={`Level ${level}, ${title}`}
     >
       <svg width={size} height={size} className="lvl-ring-svg" style={{ overflow: 'visible' }}>
         <defs>
@@ -153,7 +153,7 @@ const LevelRing: React.FC<{
 
         {useLiquid ? (
           <>
-            {/* LIQUID THEME — a filled vessel, no arc. Dark empty vessel, water
+            {/* LIQUID THEME, a filled vessel, no arc. Dark empty vessel, water
                 on top clipped to the full disc, then a thin themed rim. */}
             <circle cx={cx} cy={cy} r={fillR} fill="#0B0B11" />
             {clampedP > 0 && (
@@ -161,14 +161,14 @@ const LevelRing: React.FC<{
                 <path d={liquidPath} fill={`url(#${gid}liq)`} className="lvl-liquid-fill" shapeRendering="geometricPrecision" />
               </g>
             )}
-            {/* Rim — two crisp strokes (no drop-shadow filter; filters rasterise
+            {/* Rim, two crisp strokes (no drop-shadow filter; filters rasterise
                 blurrily under the ring's 3D tilt and look pixelated). */}
             <circle cx={cx} cy={cy} r={fillR} fill="none" stroke={theme.glow} strokeWidth={5} />
             <circle cx={cx} cy={cy} r={fillR} fill="none" stroke={theme.to} strokeOpacity={0.65} strokeWidth={2.5} />
           </>
         ) : (
           <>
-            {/* ARC THEME — track + progress arc around a dark inner disc */}
+            {/* ARC THEME, track + progress arc around a dark inner disc */}
             <circle cx={cx} cy={cy} r={r} fill="none" stroke="#33333D" strokeWidth={stroke} />
             <circle
               className={`lvl-ring-arc${theme.animated ? ' animated' : ''}`}
@@ -182,7 +182,7 @@ const LevelRing: React.FC<{
           </>
         )}
 
-        {/* Glare highlight — shifts with tilt */}
+        {/* Glare highlight, shifts with tilt */}
         <circle cx={glareX} cy={glareY} r={size * 0.36} fill={`url(#${gid}glare)`} style={{ pointerEvents: 'none' }} />
       </svg>
 

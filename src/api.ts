@@ -135,17 +135,7 @@ export const api = {
     request('/plan/resolve-reached', { method: 'POST', body: JSON.stringify({ action }) }),
 
   // AI key
-  getAiKeyStatus: () => request('/profile/ai-key'),
-  saveAiKey: (key: string) => request('/profile/ai-key', { method: 'PUT', body: JSON.stringify({ key }) }),
 
-  // meal plans
-  getMealPlanRecipeCount: () => request('/meal-plans/recipe-count'),
-  seedMealPlanRecipes: () => request('/meal-plans/seed', { method: 'POST' }),
-  getRecipeIngredients: (recipeId: number) => request(`/meal-plans/recipe/${recipeId}/ingredients`),
-  generateMealPlan: (body: { mealCount: number; days: number; diets: string[]; excludeIds: number[]; includeShake: boolean; halal: boolean }) =>
-    request('/meal-plans/generate', { method: 'POST', body: JSON.stringify(body) }),
-  swapMeal: (body: { slotName: string; targetCal: number; diets: string[]; excludeIds: number[]; halal: boolean }) =>
-    request('/meal-plans/swap', { method: 'POST', body: JSON.stringify(body) }),
 
   // daily check-in (energy + adherence + optional workout + sleep)
   submitCheckIn: (data: {
@@ -171,12 +161,18 @@ export const api = {
 
   // push notifications
   getVapidKey: (): Promise<{ key: string }> => request('/push/vapid-public-key'),
-  pushSubscribe: (subscription: any, tzOffsetMinutes: number, reminderHour?: number, workoutHour?: number | null) =>
-    request('/push/subscribe', { method: 'POST', body: JSON.stringify({ subscription, tzOffsetMinutes, reminderHour, workoutHour }) }),
+  pushSubscribe: (subscription: any, tzOffsetMinutes: number, reminderHour?: number, workoutHour?: number | null, eveningHour?: number) =>
+    request('/push/subscribe', { method: 'POST', body: JSON.stringify({ subscription, tzOffsetMinutes, reminderHour, workoutHour, eveningHour }) }),
   pushUnsubscribe: (endpoint?: string) =>
     request('/push/unsubscribe', { method: 'POST', body: JSON.stringify({ endpoint }) }),
   pushSetReminderTime: (hour: number) =>
     request('/push/reminder-time', { method: 'POST', body: JSON.stringify({ hour }) }),
-  pushSetPromptTimes: (times: { workoutHour?: number | null }) =>
+  pushSetPromptTimes: (times: { workoutHour?: number | null; eveningHour?: number }) =>
     request('/push/prompt-times', { method: 'POST', body: JSON.stringify(times) }),
+
+  // community global habit (this month's shared XP goal)
+  getGlobalHabit: (): Promise<{ month: string; title: string; goal: number; total: number; contributors: number; mine: number }> =>
+    request('/global'),
+  contributeGlobal: (xp: number) =>
+    request('/global/contribute', { method: 'POST', body: JSON.stringify({ xp }) }),
 };

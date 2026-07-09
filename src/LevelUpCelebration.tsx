@@ -68,7 +68,7 @@ const LevelUpCelebration: React.FC = () => {
         </div>
 
         <button className="lvlup-btn" onClick={close}>
-          {playerLevel.reward.kind === 'theme' ? 'Equipped — nice!' : 'Keep going 🚀'}
+          {playerLevel.reward.kind === 'theme' ? 'Equipped, nice!' : 'Keep going 🚀'}
         </button>
       </div>
     </div>

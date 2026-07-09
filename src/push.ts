@@ -3,6 +3,7 @@ import { api } from './api';
 
 const ENABLED_KEY = 'superdub.push.enabled';
 const REMINDER_HOUR_KEY = 'superdub.push.reminderHour';
+const EVENING_HOUR_KEY = 'superdub.push.eveningHour';   // evening reflection nudge
 const WORKOUT_HOUR_KEY = 'superdub.push.workoutHour';   // 'off' or 0–23
 
 function hourOr(key: string, dflt: number): number {
@@ -11,6 +12,7 @@ function hourOr(key: string, dflt: number): number {
 }
 
 export function getReminderHour(): number { return hourOr(REMINDER_HOUR_KEY, 8); }
+export function getEveningHour(): number { return hourOr(EVENING_HOUR_KEY, 20); }
 
 // Exercise prompt is opt-in: null = off.
 export function getWorkoutHour(): number | null {
@@ -23,6 +25,11 @@ export function getWorkoutHour(): number | null {
 export async function setReminderHour(hour: number): Promise<void> {
   localStorage.setItem(REMINDER_HOUR_KEY, String(hour));
   try { await api.pushSetReminderTime(hour); } catch { /* will apply on next subscribe */ }
+}
+
+export async function setEveningHour(hour: number): Promise<void> {
+  localStorage.setItem(EVENING_HOUR_KEY, String(hour));
+  try { await api.pushSetPromptTimes({ eveningHour: hour }); } catch { /* applies on next subscribe */ }
 }
 
 export async function setWorkoutHour(hour: number | null): Promise<void> {
@@ -65,7 +72,7 @@ export async function enablePush(): Promise<{ ok: boolean; reason?: string }> {
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(key) as BufferSource,
     });
-    await api.pushSubscribe(sub.toJSON(), new Date().getTimezoneOffset(), getReminderHour(), getWorkoutHour());
+    await api.pushSubscribe(sub.toJSON(), new Date().getTimezoneOffset(), getReminderHour(), getWorkoutHour(), getEveningHour());
     localStorage.setItem(ENABLED_KEY, '1');
     return { ok: true };
   } catch (e: any) {

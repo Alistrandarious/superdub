@@ -438,7 +438,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
             ))}
           </div>
 
-          {/* Step 1 — Account */}
+          {/* Step 1, Account */}
           {step === 1 && (
             <>
               <h2 className="auth-step-title">Create your account</h2>
@@ -469,11 +469,11 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
             </>
           )}
 
-          {/* Step 2 — About You */}
+          {/* Step 2, About You */}
           {step === 2 && (
             <>
               <h2 className="auth-step-title">About you</h2>
-              <p className="auth-step-sub">Used to personalise your targets — you can edit these later.</p>
+              <p className="auth-step-sub">Used to personalise your targets, you can edit these later.</p>
               <div className="auth-form">
                 <div className="auth-row">
                   <div className="auth-field">
@@ -536,7 +536,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
             </>
           )}
 
-          {/* Step 3 — Goals */}
+          {/* Step 3, Goals */}
           {step === 3 && (() => {
             const w = parseFloat(weightKg) || 0;
             const h = parseFloat(heightCm) || 0;
@@ -563,7 +563,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
             return (
               <>
                 <h2 className="auth-step-title">What's your goal?</h2>
-                <p className="auth-step-sub">This sets your starting calorie target — you can change it any time.</p>
+                <p className="auth-step-sub">This sets your starting calorie target, you can change it any time.</p>
                 <div className="auth-goal-picker">
                   {GOAL_OPTIONS.map(g => (
                     <button
@@ -590,10 +590,10 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
                       <div className="auth-field">
                         <label>Loss per week</label>
                         <select value={lossPerWeek} onChange={e => setLossPerWeek(e.target.value)}>
-                          <option value="0.25">0.25 kg/wk — gentle</option>
-                          <option value="0.5">0.5 kg/wk — steady</option>
-                          <option value="0.75">0.75 kg/wk — fast</option>
-                          <option value="1.0">1.0 kg/wk — aggressive</option>
+                          <option value="0.25">0.25 kg/wk, gentle</option>
+                          <option value="0.5">0.5 kg/wk, steady</option>
+                          <option value="0.75">0.75 kg/wk, fast</option>
+                          <option value="1.0">1.0 kg/wk, aggressive</option>
                         </select>
                       </div>
                     </div>
@@ -609,9 +609,9 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
                       <div className="auth-field">
                         <label>Gain per week</label>
                         <select value={gainPerWeek} onChange={e => setGainPerWeek(e.target.value)}>
-                          <option value="0.125">0.1 kg/wk — lean</option>
-                          <option value="0.25">0.25 kg/wk — steady</option>
-                          <option value="0.5">0.5 kg/wk — fast</option>
+                          <option value="0.125">0.1 kg/wk, lean</option>
+                          <option value="0.25">0.25 kg/wk, steady</option>
+                          <option value="0.5">0.5 kg/wk, fast</option>
                         </select>
                       </div>
                     </div>
@@ -681,7 +681,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
             );
           })()}
 
-          {/* Step 4 — Habits */}
+          {/* Step 4, Habits */}
           {step === 4 && (
             <>
               <h2 className="auth-step-title">Starting habits</h2>
@@ -723,11 +723,11 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
             </>
           )}
 
-          {/* Step 5 — About you (optional demographics) */}
+          {/* Step 5, About you (optional demographics) */}
           {step === 5 && (
             <>
               <h2 className="auth-step-title">A little about you</h2>
-              <p className="auth-step-sub">All optional — it helps us tailor superdub. You can edit or skip any of these.</p>
+              <p className="auth-step-sub">All optional, it helps us tailor superdub. You can edit or skip any of these.</p>
               <div className="auth-form">
                 {([
                   { label: 'Occupation', value: occupation, set: setOccupation, opts: OCCUPATIONS },

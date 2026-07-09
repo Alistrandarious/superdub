@@ -19,8 +19,6 @@ const VitalsPrompt: React.FC = () => {
   const [bed, setBed] = useState(DEFAULT_BED);   // axis: hours after 6pm
   const [wake, setWake] = useState(DEFAULT_WAKE);
   const [sleepTouched, setSleepTouched] = useState(false);
-  const [mood, setMood] = useState(6);
-  const [moodTouched, setMoodTouched] = useState(false);
   const [energy, setEnergy] = useState(6);
   const [energyTouched, setEnergyTouched] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -29,7 +27,6 @@ const VitalsPrompt: React.FC = () => {
 
   const reset = () => {
     setBed(DEFAULT_BED); setWake(DEFAULT_WAKE); setSleepTouched(false);
-    setMood(6); setMoodTouched(false);
     setEnergy(6); setEnergyTouched(false);
     setDone(false); setError(null);
   };
@@ -58,13 +55,13 @@ const VitalsPrompt: React.FC = () => {
 
   const dismiss = () => { localStorage.setItem(VITALS_KEY, todayISO()); setShow(false); };
 
-  const canSave = sleepTouched && moodTouched && energyTouched;
+  const canSave = sleepTouched && energyTouched;
   const save = async () => {
     if (!canSave) return;
     setSaving(true); setError(null);
     try {
       await api.submitCheckIn({
-        energy: to5(energy), mood: to5(mood),
+        energy: to5(energy),
         sleepHours: +(wake - bed).toFixed(1),
         sleepBedtime: axisToHHMM(bed), sleepWaketime: axisToHHMM(wake),
       });
@@ -86,9 +83,9 @@ const VitalsPrompt: React.FC = () => {
     <div className="checkin-overlay">
       <div className="checkin-modal vitals-modal">
         <h2 className="checkin-title">Morning vitals</h2>
-        <p className="checkin-subtitle">A few taps. How you slept, then how you feel.</p>
+        <p className="checkin-subtitle">A few taps. How you slept, then your energy.</p>
 
-        {/* Sleep — a two-thumb "between" slider: drag bedtime and wake time */}
+        {/* Sleep, a two-thumb "between" slider: drag bedtime and wake time */}
         <div className="vitals-step">
           <div className="vitals-label"><span>Sleep last night</span></div>
           <SleepRangeSlider
@@ -97,19 +94,8 @@ const VitalsPrompt: React.FC = () => {
           />
         </div>
 
-        {/* Mood — 1–10, slides in once sleep is set */}
+        {/* Energy, 1–10, slides in once sleep is set */}
         <div className={`vitals-step vitals-reveal${sleepTouched ? ' in' : ''}`}>
-          <div className="vitals-label"><span>Mood</span><span className="vitals-value">{mood}<span className="vitals-of">/10</span></span></div>
-          <input
-            type="range" min={1} max={10} step={1} value={mood} className="vitals-slider mood"
-            onChange={e => { setMood(parseInt(e.target.value, 10)); setMoodTouched(true); }}
-            aria-label="Mood"
-          />
-          <div className="vitals-scale"><span>rough</span><span>great</span></div>
-        </div>
-
-        {/* Energy — 1–10, slides in once mood is set */}
-        <div className={`vitals-step vitals-reveal${moodTouched ? ' in' : ''}`}>
           <div className="vitals-label"><span>Energy</span><span className="vitals-value">{energy}<span className="vitals-of">/10</span></span></div>
           <input
             type="range" min={1} max={10} step={1} value={energy} className="vitals-slider"
@@ -126,7 +112,7 @@ const VitalsPrompt: React.FC = () => {
             <>
               {error && <p className="checkin-error">{error}</p>}
               <button className="checkin-save-btn" onClick={save} disabled={saving || !canSave}>
-                {saving ? 'Saving…' : error ? 'Retry' : canSave ? 'Log it' : 'Slide all three'}
+                {saving ? 'Saving…' : error ? 'Retry' : canSave ? 'Log it' : 'Slide both'}
               </button>
               <button className="checkin-skip-btn" onClick={dismiss} disabled={saving}>Skip today</button>
             </>

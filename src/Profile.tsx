@@ -122,10 +122,6 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
   const [lastLoginAt, setLastLoginAt] = useState<string | null>(null);
   const [lastActiveAt, setLastActiveAt] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
-  const [aiKeyInput, setAiKeyInput] = useState('');
-  const [aiKeyMasked, setAiKeyMasked] = useState<string | null>(null);
-  const [aiKeySaving, setAiKeySaving] = useState(false);
-  const [aiKeyDone, setAiKeyDone] = useState(false);
 
   // Quick weight log
 
@@ -202,7 +198,6 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
       setHabits(habitObjs.length > 0 ? habitObjs.map(h => h.name) : DEFAULT_HABITS);
       setLoaded(true);
     }).catch(() => setLoaded(true));
-    api.getAiKeyStatus().then((d: any) => { if (d.masked) setAiKeyMasked(d.masked); }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -491,7 +486,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
         {/* ── Background (optional demographics / job / religion) ── */}
         <div className="diet-section">
           <h2 className="diet-heading">Background</h2>
-          <p className="diet-hint" style={{ marginTop: -6, marginBottom: 14 }}>All optional — helps us tailor superdub.</p>
+          <p className="diet-hint" style={{ marginTop: -6, marginBottom: 14 }}>All optional, helps us tailor superdub.</p>
           <div className="bg-fields">
             {DEMOGRAPHIC_FIELDS.map(f => (
               <div className="bio-field" key={f.key}>
@@ -862,29 +857,6 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
               onKeyDown={e => e.key === 'Enter' && addHabit()} placeholder="New habit name" className="habit-add-input" />
             <button className="habit-add-btn" onClick={addHabit}>+</button>
           </div>
-        </div>
-
-        {/* ── Settings ── */}
-        <div id="ai-key" className="diet-section">
-          <h2 className="diet-heading">Settings</h2>
-          <p className="diet-hint" style={{ marginBottom: 12 }}>Your Anthropic API key powers AI food logging. Stored encrypted — never logged in plaintext.</p>
-          {aiKeyMasked && !aiKeyInput && (
-            <div className="ai-key-connected">
-              <span className="ai-key-badge">Connected: {aiKeyMasked}</span>
-              <button className="ai-key-remove-btn" onClick={async () => { await api.saveAiKey('').catch(() => {}); setAiKeyMasked(null); }}>Remove</button>
-            </div>
-          )}
-          <div className="ai-key-row">
-            <input className="ai-key-input" type="password" placeholder={aiKeyMasked ? 'Enter new key to replace…' : 'sk-ant-…'}
-              value={aiKeyInput} onChange={e => { setAiKeyInput(e.target.value); setAiKeyDone(false); }} autoComplete="off" />
-            <button className="ai-key-save-btn" disabled={!aiKeyInput.trim() || aiKeySaving}
-              onClick={async () => {
-                setAiKeySaving(true);
-                try { await api.saveAiKey(aiKeyInput.trim()); const d = await api.getAiKeyStatus() as any; setAiKeyMasked(d.masked ?? null); setAiKeyInput(''); setAiKeyDone(true); }
-                catch { } finally { setAiKeySaving(false); }
-              }}>{aiKeySaving ? '…' : aiKeyDone ? '✓' : 'Save'}</button>
-          </div>
-          <p className="diet-hint" style={{ marginTop: 6 }}>Get your key at <span style={{ color: '#2E8BFF' }}>console.anthropic.com</span></p>
         </div>
 
         {/* ── More menu ── */}

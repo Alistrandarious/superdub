@@ -34,7 +34,7 @@ const About: React.FC = () => {
         <div className="diet-section" style={{ marginBottom: 20 }}>
           <h2 className="diet-heading">Who made this?</h2>
           <p className="about-text">
-            Superdub was built by <a href="https://linkedin.com/in/alis" target="_blank" rel="noreferrer" className="about-name-link">Ali Shah</a> — a builder who wanted one clean place to track habits, nutrition, and weight without subscriptions, dark patterns, or bloat.
+            Superdub was built by <a href="https://linkedin.com/in/alis" target="_blank" rel="noreferrer" className="about-name-link">Ali Shah</a>, a builder who wanted one clean place to track habits, nutrition, and weight without subscriptions, dark patterns, or bloat.
           </p>
           <p className="about-text">
             Everything runs on your data. No ads. No algorithms trying to keep you addicted. Just the tools you need.
@@ -48,11 +48,11 @@ const About: React.FC = () => {
             Most habit apps feel like a chore. They nag you with notifications, gate features behind paywalls, or bury the information you actually care about.
           </p>
           <p className="about-text">
-            Superdub is designed to feel good to open. The XP system rewards consistency rather than perfection — one grace miss per streak means life happens, and that's okay.
+            Superdub is designed to feel good to open. The XP system rewards consistency rather than perfection, one grace miss per streak means life happens, and that's okay.
           </p>
         </div>
 
-        {/* The math — XP */}
+        {/* The math, XP */}
         <div className="diet-section" style={{ marginBottom: 20 }}>
           <h2 className="diet-heading">The XP System</h2>
           <p className="about-text">
@@ -75,15 +75,15 @@ const About: React.FC = () => {
             </table>
           </div>
           <p className="about-text" style={{ marginTop: 12 }}>
-            One grace miss is allowed per streak — miss a day and your streak holds. Miss two in a row and it resets. Misses in the first week of a new habit don't count against you.
+            One grace miss is allowed per streak, miss a day and your streak holds. Miss two in a row and it resets. Misses in the first week of a new habit don't count against you.
           </p>
         </div>
 
-        {/* The math — Levels */}
+        {/* The math, Levels */}
         <div className="diet-section" style={{ marginBottom: 20 }}>
           <h2 className="diet-heading">Levels</h2>
           <p className="about-text">
-            Your total XP across all habits determines your account level. XP accumulates forever — it never resets.
+            Your total XP across all habits determines your account level. XP accumulates forever, it never resets.
           </p>
           <div className="about-table-wrap">
             <table className="about-table">

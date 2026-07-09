@@ -24,24 +24,43 @@ const StepEntry: React.FC = () => {
   const [date, setDate] = useState(todayISO());
   const [steps, setSteps] = useState('');
   const [existing, setExisting] = useState<StepEntryRow[]>([]);
-  // Every day that has steps logged (YYYY-MM-DD) — drives the calendar's green cells.
-  const [filledDays, setFilledDays] = useState<Set<string>>(new Set());
+  // Active step count per logged day, keyed by DD/MM (the format the server stores and
+  // returns) — drives the calendar's hit / miss / unlogged colouring.
+  const [stepsByDay, setStepsByDay] = useState<Map<string, number>>(new Map());
+  const [stepTarget, setStepTarget] = useState(10000);
   const [monthOffset, setMonthOffset] = useState(0); // 0 = this month, -1 = last …
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Load a day's entries AND recall its logged value into the input, so tapping a
+  // day in the calendar shows what you logged (not a blank box).
   const loadExisting = useCallback((d: string) => {
     api.getSteps(d)
-      .then(res => setExisting(res.entries ?? []))
+      .then(res => {
+        const entries = res.entries ?? [];
+        setExisting(entries);
+        const winner = entries.find(e => e.active && e.steps > 0) ?? entries.find(e => e.steps > 0);
+        setSteps(winner ? String(winner.steps) : '');
+      })
       .catch(() => setExisting([]));
   }, []);
 
-  // All logged days for the calendar. ponytail: step rows are keyed by the same
-  // YYYY-MM-DD we send from addSteps, so no format juggling needed.
+  // Active step count per day for the calendar. The server keys step rows by DD/MM
+  // (dayToDDMM), and returns them that way, so we match calendar cells on DD/MM too —
+  // NOT the YYYY-MM-DD we post in (the old bug: DD/MM never matched an ISO key).
+  // Prefer each day's active entry; fall back to the most recent one so a missing
+  // `active` flag never leaves a logged day uncoloured.
   const loadFilled = useCallback(() => {
     api.getSteps()
-      .then(res => setFilledDays(new Set((res.entries ?? []).filter(e => e.steps > 0).map(e => e.day))))
+      .then(res => {
+        const byDay = new Map<string, number>();
+        for (const e of (res.entries ?? [])) {
+          if (!(e.steps > 0)) continue;
+          if (e.active || !byDay.has(e.day)) byDay.set(e.day, e.steps);
+        }
+        setStepsByDay(byDay);
+      })
       .catch(() => {});
   }, []);
 
@@ -55,6 +74,7 @@ const StepEntry: React.FC = () => {
       setMonthOffset(0);
       loadExisting(d);
       loadFilled();
+      api.getProfile().then((p: any) => setStepTarget(parseInt(p?.stepTarget) || 10000)).catch(() => {});
       setShow(true);
     };
     window.addEventListener('superdub:show-step-entry', handler);
@@ -102,12 +122,13 @@ const StepEntry: React.FC = () => {
   const daysInMonth = new Date(y, m + 1, 0).getDate();
   const firstDow = (new Date(y, m, 1).getDay() + 6) % 7; // Mon = 0
   const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
-  const cells: ({ d: number; iso: string; filled: boolean; future: boolean } | null)[] = [];
+  const cells: ({ d: number; iso: string; steps: number; future: boolean } | null)[] = [];
   for (let i = 0; i < firstDow; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) {
     const iso = `${y}-${pad(m + 1)}-${pad(d)}`;
+    const ddmm = `${pad(d)}/${pad(m + 1)}`;
     const future = new Date(y, m, d).getTime() > todayStart.getTime();
-    cells.push({ d, iso, filled: filledDays.has(iso), future });
+    cells.push({ d, iso, steps: stepsByDay.get(ddmm) ?? 0, future });
   }
 
   if (!show) return null;
@@ -123,11 +144,11 @@ const StepEntry: React.FC = () => {
           <button className="modal-close" onClick={dismiss}>✕</button>
         </div>
         <p className="step-entry-sub">
-          Tap a day to log or override it — green means logged, red means missed.
-          The window stays open so you can fill several days at once.
+          Tap a day to log or override it. Green means you hit your goal, orange means under it,
+          grey means nothing logged. The window stays open so you can fill several days at once.
         </p>
 
-        {/* Month calendar — green = has steps, red = past day with none */}
+        {/* Month calendar, green = hit goal, orange = under goal, grey = unlogged */}
         <div className="hcard-month-nav">
           <button className="hcard-month-arrow" onClick={() => setMonthOffset(o => o - 1)} aria-label="Previous month">‹</button>
           <span className="hcard-month-label">{MONTHS[m]} {y}</span>
@@ -136,19 +157,26 @@ const StepEntry: React.FC = () => {
         <div className="mini-hm">
           <div className="mini-hm-grid">
             {DOW.map((l, i) => <span key={`h${i}`} className="mini-hm-dow">{l}</span>)}
-            {cells.map((c, i) => c === null
-              ? <span key={`p${i}`} className="mini-hm-cell mini-hm-pad" />
-              : (
+            {cells.map((c, i) => {
+              if (c === null) return <span key={`p${i}`} className="mini-hm-cell mini-hm-pad" />;
+              const hit = c.steps > 0 && c.steps >= stepTarget;
+              // '' (base cell) = unlogged grey; miss = orange; done = green.
+              const state = c.future ? 'future' : hit ? 'done' : c.steps > 0 ? 'miss' : '';
+              const label = c.future ? '—'
+                : hit ? `${c.steps.toLocaleString()} · hit goal`
+                : c.steps > 0 ? `${c.steps.toLocaleString()} · under goal`
+                : 'not logged';
+              return (
                 <button
                   key={c.iso}
-                  className={`mini-hm-cell ${c.filled ? 'done' : c.future ? 'future' : 'failed'}`}
+                  className={`mini-hm-cell ${state}`}
                   disabled={c.future}
                   onClick={() => !c.future && setDate(c.iso)}
                   style={c.iso === date ? { outline: '2px solid #fff', outlineOffset: 1 } : undefined}
-                  title={`${c.iso}: ${c.filled ? 'logged' : c.future ? '—' : 'no steps'}`}
+                  title={`${c.iso}: ${label}`}
                 >{c.d}</button>
-              )
-            )}
+              );
+            })}
           </div>
         </div>
 

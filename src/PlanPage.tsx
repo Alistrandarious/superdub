@@ -119,7 +119,7 @@ const PlanPage: React.FC = () => {
       setLatestWeight(lw);
 
     } catch {
-      setError('Could not load plan data — check your connection and try again.');
+      setError('Could not load plan data, check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -186,7 +186,7 @@ const PlanPage: React.FC = () => {
   const handleSave = async () => {
     const tw = parseFloat(targetWeight);
     if (!tw || !targetDate) { setError('Enter a target weight and date'); return; }
-    if (!latestWeight) { setError('No weigh-in found — log your weight first'); return; }
+    if (!latestWeight) { setError('No weigh-in found, log your weight first'); return; }
     setSaving(true);
     setError('');
     try {
@@ -321,7 +321,7 @@ const PlanPage: React.FC = () => {
 
               {cycle?.flaggedDays && cycle.flaggedDays.length > 0 && (
                 <div className="plan-status-flagged">
-                  {cycle.flaggedDays.length} weigh-in{cycle.flaggedDays.length > 1 ? 's' : ''} flagged as outliers ({cycle.flaggedDays.join(', ')}) — included with reduced EMA weight.
+                  {cycle.flaggedDays.length} weigh-in{cycle.flaggedDays.length > 1 ? 's' : ''} flagged as outliers ({cycle.flaggedDays.join(', ')}), included with reduced EMA weight.
                 </div>
               )}
             </div>
@@ -364,7 +364,7 @@ const PlanPage: React.FC = () => {
             <div className="goal-field">
               <span className="goal-field-label">Current weight</span>
               <span className="goal-field-readonly">
-                {latestWeight != null ? formatWeightKg(latestWeight, unit) : '— no weigh-in yet'}
+                {latestWeight != null ? formatWeightKg(latestWeight, unit) : 'No weigh-in yet'}
               </span>
             </div>
 
@@ -428,12 +428,12 @@ const PlanPage: React.FC = () => {
                 </div>
 
                 <div className="goal-zone-badge" style={{ background: zone?.color + '20', borderColor: zone?.color + '50', color: zone?.color }}>
-                  {zone?.label}{overWarning && ' — consider a longer timeline'}
+                  {zone?.label}{overWarning && ', consider a longer timeline'}
                 </div>
 
                 {overWarning && (
                   <div className="goal-warning">
-                    This implies {impliedRate.kgPerWk.toFixed(2)} kg/week — above 1% of your body weight per week,
+                    This implies {impliedRate.kgPerWk.toFixed(2)} kg/week, above 1% of your body weight per week,
                     where research suggests a higher proportion of weight lost comes from lean mass rather than fat.
                     You can still proceed, but a longer timeline is generally safer.
                   </div>

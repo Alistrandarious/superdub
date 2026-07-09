@@ -36,8 +36,8 @@ export interface LevelReward {
   icon: string;
   label: string;
   kind: RewardKind;
-  themeId?: string;   // for kind 'theme' — the ring theme this level unlocks
-  flairId?: string;   // for kind 'flair' — a cosmetic flag (e.g. gold wordmark)
+  themeId?: string;   // for kind 'theme', the ring theme this level unlocks
+  flairId?: string;   // for kind 'flair', a cosmetic flag (e.g. gold wordmark)
   blurb: string;      // one-line description of the reward
 }
 
@@ -188,7 +188,7 @@ export const PLAYER_LEVELS: PlayerLevelDef[] = [
   { xp: 100,    title: 'Getting Going', reward: { icon: '🌊', kind: 'theme', themeId: 'ocean', label: 'Ocean ring theme', blurb: 'Unlocks the Ocean level-ring theme.' } },
   { xp: 300,    title: 'Finding Rhythm',reward: { icon: '🪸', kind: 'theme', themeId: 'coral', label: 'Coral ring theme', blurb: 'Unlocks the Coral level-ring theme.' } },
   { xp: 700,    title: 'In the Groove', reward: { icon: '🌅', kind: 'theme', themeId: 'sunset', label: 'Sunset ring theme', blurb: 'Unlocks the Sunset level-ring theme.' } },
-  { xp: 1500,   title: 'Consistent',    reward: { icon: '💧', kind: 'theme', themeId: 'liquid', label: 'Liquid ring (water fill)', blurb: 'Your first liquid ring — the water rises with your XP and sloshes when you tilt your phone.' } },
+  { xp: 1500,   title: 'Consistent',    reward: { icon: '💧', kind: 'theme', themeId: 'liquid', label: 'Liquid ring (water fill)', blurb: 'Your first liquid ring, the water rises with your XP and sloshes when you tilt your phone.' } },
   { xp: 3000,   title: 'Committed',     reward: { icon: '🌲', kind: 'theme', themeId: 'forest', label: 'Forest ring theme', blurb: 'Unlocks the Forest level-ring theme.' } },
   { xp: 5000,   title: 'Disciplined',   reward: { icon: '✨', kind: 'flair', flairId: 'gold-wordmark', label: 'Gold wordmark', blurb: 'Your superdub logo turns gold, app-wide.' } },
   { xp: 8000,   title: 'Locked In',     reward: { icon: '🌌', kind: 'theme', themeId: 'aurora', label: 'Aurora ring theme', blurb: 'Unlocks the Aurora level-ring theme.' } },

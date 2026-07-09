@@ -7,15 +7,15 @@
 // =====================================================================
 import type React from 'react';
 
-export const HEALTH = '#2FD27E';        // primary green — habits, food, the body
+export const HEALTH = '#2FD27E';        // primary green, habits, food, the body
 export const HEALTH_DEEP = '#1FB463';
 export const HEALTH_BRIGHT = '#3CF08E';
-export const TEAL = '#19C5B0';          // bridge — mood/check-in surfaces
-export const GROWTH = '#2E8BFF';        // blue — trends, plans, progress, profile
-export const GROWTH_BRIGHT = '#46C2FF'; // tint — reference/data pages
-export const GOLD = '#FFB928';          // ascension — XP, levels, rewards ONLY
+export const TEAL = '#19C5B0';          // bridge, mood/check-in surfaces
+export const GROWTH = '#2E8BFF';        // blue, trends, plans, progress, profile
+export const GROWTH_BRIGHT = '#46C2FF'; // tint, reference/data pages
+export const GOLD = '#FFB928';          // ascension, XP, levels, rewards ONLY
 export const GOLD_TINT = '#FFD233';
-export const VIOLET = '#8B5CF6';        // rare rank accent — goals, milestones
+export const VIOLET = '#8B5CF6';        // rare rank accent, goals, milestones
 export const FLAME = '#FF8A00';         // streak / energy
 export const DANGER = '#FF5470';        // over target / off pace
 

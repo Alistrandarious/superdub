@@ -89,7 +89,7 @@ const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number; 
             const offset = i - current;
             const nearest = i === Math.round(current);
             const off = Math.abs(offset);
-            if (off > 1.5) return null; // off-screen — don't render
+            if (off > 1.5) return null; // off-screen, don't render
             return (
               <div
                 key={p.key}

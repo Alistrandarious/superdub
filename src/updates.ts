@@ -10,6 +10,22 @@ export interface UpdateEntry {
 
 export const UPDATE_LOG: UpdateEntry[] = [
   {
+    date: '2026-07-08',
+    emoji: '✨',
+    title: 'A big polish pass, and your Data Table is back',
+    summary: 'A sweep of fixes and a cleaner feel across the app. Your full data table returns to the menu, the home logging strip is redesigned, and late nights get their own look.',
+    points: [
+      'Your Data Table is back. Open the menu (the cog), tap Data Table, and see or edit every day of weight, steps and habits in one grid.',
+      "Today's Log on the home screen is redesigned into clean rows, each lighting up in its own colour as you log it.",
+      'The daily check-in is now a calm evening reflection: rate your mood and how eating went once the day is actually over. Mornings just ask about sleep and energy.',
+      'After midnight the app stays on the previous day until 2 AM, so a late night logs where you expect. The screen turns to a starlit night with a banner you can dismiss or tap to jump ahead.',
+      'Your streak now burns as a live flame that grows hotter the longer you keep it going.',
+      'Big number fixes: estimated calories no longer spike into the tens of thousands, your steps calendar fills in correctly (green for goal hit, orange for under), and sleep reads in clean half hours.',
+      'Sleep and mood now share one timeline so you can read them together, and going over your target shows in red instead of purple.',
+      'Food logging has been retired. Superdub estimates your intake from your weight trend, steps and activity, so there is nothing to type in.',
+    ],
+  },
+  {
     date: '2026-07-07',
     emoji: '📊',
     title: 'Progress charts actually draw again',
@@ -153,9 +169,9 @@ export const UPDATE_LOG: UpdateEntry[] = [
     summary: 'A vitals strip that reinforces your daily logging, a swipe-through chart carousel with Dub\'s read on each, and a liquid ring that fills the whole disc.',
     points: [
       'New "Daily Log" strip at the top of Habits: weigh-in, steps and check-in chips that tick green as you log, plus a logging streak to keep the data flowing.',
-      'Progress charts are now a swipeable carousel — one full-width chart at a time with Dub\'s interpretation underneath, instead of an endless scroll.',
-      'Liquid ring themes now fill the entire disc (no separate ring) — the water level alone shows your progress.',
-      'Fixed the daily check-in running off the top of the screen — it scrolls neatly within the sheet now.',
+      'Progress charts are now a swipeable carousel, one full-width chart at a time with Dub\'s interpretation underneath, instead of an endless scroll.',
+      'Liquid ring themes now fill the entire disc (no separate ring), the water level alone shows your progress.',
+      'Fixed the daily check-in running off the top of the screen, it scrolls neatly within the sheet now.',
     ],
   },
   {
@@ -165,9 +181,9 @@ export const UPDATE_LOG: UpdateEntry[] = [
     summary: 'A morning ritual with a sleep slider, a new Progress hero that leads with the number that matters, and a top-to-bottom design pass.',
     points: [
       'New "Yesterday\'s Verdict" hero at the top of Progress: your estimated intake vs target at a glance, with an under/over chip, safe-zone status, and this week\'s weight change.',
-      'The daily check-in is now a proper ritual — add a sleep slider and an optional morning weigh-in without leaving the screen.',
+      'The daily check-in is now a proper ritual, add a sleep slider and an optional morning weigh-in without leaving the screen.',
       'Sleep is saved and charted: a new graph on Progress with an 8-hour reference line, so you can see rest against everything else.',
-      'One consistent colour language app-wide — green for the body, blue for growth, gold reserved for XP — no more mismatched accents.',
+      'One consistent colour language app-wide, green for the body, blue for growth, gold reserved for XP, no more mismatched accents.',
       'The Level page was rebuilt into "The Ascension": a gold identity, a level ladder, and a cleaner cosmetics shelf, with emoji removed from the app\'s chrome.',
       'Fixed the weight axis (now on the left), the personalise header, and smoothed the liquid ring fill.',
     ],
@@ -178,23 +194,23 @@ export const UPDATE_LOG: UpdateEntry[] = [
     title: 'Honest maths & the Liquid ring',
     summary: 'A full audit of every calculation in the app, a new page that shows you the formulas, and a liquid ring theme that moves when you do.',
     points: [
-      'Dub now quotes your real weekly change — first and last weigh-in of the week, both numbers shown, so you can check him against the chart.',
+      'Dub now quotes your real weekly change, first and last weigh-in of the week, both numbers shown, so you can check him against the chart.',
       'New "The Maths" page in the cog menu: every formula written out with worked examples, straight from the code.',
       'One unified step-burn formula everywhere (three pages used to disagree), sex-aware calorie maths, and the safe-zone corridor no longer skips its first day.',
-      'Editing your Weight Plan no longer resets your start date — your corridor progress is safe.',
+      'Editing your Weight Plan no longer resets your start date, your corridor progress is safe.',
       'New Liquid ring theme at level 5: a water fill that rises with your XP and sloshes when you tilt your phone.',
-      'Macros are gone — Superdub is calories-first now. Simpler logging, same results.',
+      'Macros are gone, Superdub is calories-first now. Simpler logging, same results.',
     ],
   },
   {
     date: '2026-06-29',
     emoji: '🐶',
     title: 'Meet Dub, your coach',
-    summary: 'Superdub got a companion — a little robotic Yorkie who reads your data and coaches you in plain English.',
+    summary: 'Superdub got a companion, a little robotic Yorkie who reads your data and coaches you in plain English.',
     points: [
       'Dub gives you an honest read after every weigh-in: a win to protect, what\'s slipping, and one tiny next step.',
       'He sits by your level ring and at the top of Progress, rating how you\'re trending over time.',
-      'When momentum stalls, Dub asks to be taken for a walk — a nudge to just move today.',
+      'When momentum stalls, Dub asks to be taken for a walk, a nudge to just move today.',
       'Reach level 2 and you can switch Dub from a dog to a cat. More to unlock as you climb.',
     ],
   },
@@ -202,7 +218,7 @@ export const UPDATE_LOG: UpdateEntry[] = [
     date: '2026-06-28',
     emoji: '🔐',
     title: 'Sign in with Google',
-    summary: 'Create your account or log in with one tap using Google — no password to remember.',
+    summary: 'Create your account or log in with one tap using Google, no password to remember.',
     points: [
       'New Google users still get the full onboarding so your targets stay personalised.',
       'Your identity is always verified securely on our server.',
@@ -216,7 +232,7 @@ export const UPDATE_LOG: UpdateEntry[] = [
     points: [
       'Original reads on habits, habit tracking, goal setting and daily weighing.',
       'Hand-picked book recommendations across focus, discipline, weight and health.',
-      'Every page now has one unified menu (the cog) — settings, navigation and quick-logging in one place.',
+      'Every page now has one unified menu (the cog), settings, navigation and quick-logging in one place.',
     ],
   },
   {
@@ -226,7 +242,7 @@ export const UPDATE_LOG: UpdateEntry[] = [
     summary: 'Your XP now means something. A proper level system with meaningful titles, a reward at every level, and unlockable cosmetics.',
     points: [
       'Fifteen levels from "First Day" to "Transcendent", each granting a named reward.',
-      'Unlockable level-ring themes — equip the one you\'ve earned.',
+      'Unlockable level-ring themes, equip the one you\'ve earned.',
       'A full-screen celebration when you level up.',
       'A Duolingo-style day-streak flame in the header to keep your run alive.',
     ],
@@ -235,10 +251,10 @@ export const UPDATE_LOG: UpdateEntry[] = [
     date: '2026-06-28',
     emoji: '✅',
     title: 'Habit cards, reimagined',
-    summary: 'The whole habit experience was rebuilt — cleaner, more informative, and more satisfying to tick.',
+    summary: 'The whole habit experience was rebuilt, cleaner, more informative, and more satisfying to tick.',
     points: [
       'Collapsible cards: a clean summary that expands into stats, streaks and history.',
-      'A persistent habit level that grows with total days — it never resets on a miss.',
+      'A persistent habit level that grows with total days, it never resets on a miss.',
       'Missed due days now auto-mark as failed so your week tells the truth.',
       'A redesigned stat panel with your earned title, level, streak and XP.',
     ],
@@ -247,7 +263,7 @@ export const UPDATE_LOG: UpdateEntry[] = [
     date: '2026-06-28',
     emoji: '🗂️',
     title: 'Archived habits & easier weigh-ins',
-    summary: 'Archive habits to a dedicated screen, restore them any time, or delete them for good — plus a faster way to log your weight.',
+    summary: 'Archive habits to a dedicated screen, restore them any time, or delete them for good, plus a faster way to log your weight.',
     points: [
       'A proper Archived Habits screen with restore and permanent-delete.',
       'Weigh-ins are now tap-to-type, pre-filled with your last weight.',

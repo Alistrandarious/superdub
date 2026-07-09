@@ -54,3 +54,14 @@ export function advanceToToday(now: Date = new Date()): void {
   try { localStorage.setItem(ADVANCED_KEY, isoOf(now)); } catch { /* ignore */ }
   window.dispatchEvent(new CustomEvent('superdub:day-advanced'));
 }
+
+// The night banner can be dismissed for the night without advancing the day: the
+// starlit night stays as the ambient cue, we just hide the banner. Keyed to the
+// real calendar date so it re-appears the next night.
+const BANNER_DISMISSED_KEY = 'superdub.day.bannerDismissed';
+export function nightBannerDismissed(now: Date = new Date()): boolean {
+  try { return localStorage.getItem(BANNER_DISMISSED_KEY) === isoOf(now); } catch { return false; }
+}
+export function dismissNightBanner(now: Date = new Date()): void {
+  try { localStorage.setItem(BANNER_DISMISSED_KEY, isoOf(now)); } catch { /* ignore */ }
+}

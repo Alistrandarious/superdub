@@ -83,7 +83,7 @@ const DailyCheckIn: React.FC = () => {
     const handler = () => {
       setDone(false);
       setError(null);
-      setGate('input');   // explicit "Log Weight" — skip the Yes/No gate
+      setGate('input');   // explicit "Log Weight", skip the Yes/No gate
       prefillWeight();
       setShow(true);
     };
@@ -155,7 +155,7 @@ const DailyCheckIn: React.FC = () => {
         <h2 className="checkin-title">Morning Check-in</h2>
         <p className="checkin-subtitle">Weigh yourself first thing in the morning, after using the bathroom and before eating. This gives you the most consistent reading.</p>
 
-        {/* Tap-to-type weight — entered in the user's unit, stored as kg */}
+        {/* Tap-to-type weight, entered in the user's unit, stored as kg */}
         <div className="checkin-weight-input-wrap">
           <WeightInput
             valueKg={weight}

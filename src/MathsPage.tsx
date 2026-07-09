@@ -34,7 +34,7 @@ const SECTIONS: MathSection[] = [
     ],
     explain: [
       'Mifflin–St Jeor equation. Weight, height and age come from your Profile; sex picks the constant.',
-      'TDEE ("maintenance") is what you burn in a normal day at your activity level — eat exactly this and your weight holds.',
+      'TDEE ("maintenance") is what you burn in a normal day at your activity level, eat exactly this and your weight holds.',
     ],
     example: `88 kg, 178 cm, 30y male, 1.55 activity → BMR ≈ 1,842 kcal → TDEE ≈ 2,855 kcal.`,
   },
@@ -47,7 +47,7 @@ const SECTIONS: MathSection[] = [
       'target = max(TDEE − dailyDeficit, 1200)',
     ],
     explain: [
-      `1 kg of body weight stores ≈ ${KCAL_PER_KG.toLocaleString()} kcal — the one constant behind almost everything here.`,
+      `1 kg of body weight stores ≈ ${KCAL_PER_KG.toLocaleString()} kcal, the one constant behind almost everything here.`,
       'The target never goes below 1,200 kcal, and the Adaptive Weight Plan additionally floors at your BMR.',
     ],
     example: '0.5 kg/wk → 550 kcal/day deficit → 2,855 − 550 = 2,305 kcal target.',
@@ -55,7 +55,7 @@ const SECTIONS: MathSection[] = [
   {
     emoji: '👟',
     title: 'Steps & walking burn',
-    where: 'Progress · Diet · Weekly recap — same constants everywhere',
+    where: 'Progress · Diet · Weekly recap, same constants everywhere',
     formula: [
       `stride = ${STRIDE_M} m   →   km = steps × ${STRIDE_M} ÷ 1000`,
       `burn = ${KCAL_PER_KG_KM} kcal per kg per km`,
@@ -92,7 +92,7 @@ const SECTIONS: MathSection[] = [
       'Projection: trend line extended forward from today',
     ],
     explain: [
-      'The EMA damps daily water-weight noise — the same α = 0.25 the server engine uses.',
+      'The EMA damps daily water-weight noise, the same α = 0.25 the server engine uses.',
       'The dashed trend is fitted to whichever date range you have selected, so switching ranges changes its slope. That is expected.',
     ],
   },
@@ -119,7 +119,7 @@ const SECTIONS: MathSection[] = [
       'intake ≈ TDEE(day) + (steps − your avg steps) × kcal/step + slope × 7700',
     ],
     explain: [
-      'You never log calories — this reverse-engineers them from energy balance: what you burned, plus or minus what your weight trend says you stored or released.',
+      'You never log calories, this reverse-engineers them from energy balance: what you burned, plus or minus what your weight trend says you stored or released.',
       'TDEE(day) uses your smoothed weight that day, so it falls as you lose. Step deviation is measured against your own average, not a fixed 10k.',
       'It is an estimate: day-to-day it can be off by hundreds of kcal (water, sodium, timing); over 1–2 weeks the average is meaningful.',
       'The weight-trend slope is capped at 0.3 kg/day, so one odd weigh-in cannot balloon a single day. Values under 600 kcal are hidden as noise.',
@@ -151,7 +151,7 @@ const SECTIONS: MathSection[] = [
       'level = total XP measured against the level gates (100, 300, 700, 1,500, …)',
     ],
     explain: [
-      'Longer streaks earn more per tick — consistency compounds, literally.',
+      'Longer streaks earn more per tick, consistency compounds, literally.',
       'One grace miss per streak: a single missed day doesn\'t reset the chain.',
     ],
   },
@@ -166,7 +166,7 @@ const SECTIONS: MathSection[] = [
     ],
     explain: [
       'The win line used to always pick your longest streak (hence weeks of "17-day Iggy streak"). It now rotates through every kind of win you have, seeded by the date.',
-      'The walk nudge no longer fires just because one habit slipped — that\'s the rescue line\'s job. Dub asks for a walk only when everything has genuinely stalled, and then leaves you alone for 3 days.',
+      'The walk nudge no longer fires just because one habit slipped, that\'s the rescue line\'s job. Dub asks for a walk only when everything has genuinely stalled, and then leaves you alone for 3 days.',
     ],
   },
 ];
@@ -183,7 +183,7 @@ const MathsPage: React.FC = () => {
         </div>
         <p className="about-text" style={{ marginBottom: 18 }}>
           Every number Superdub shows, written out so you can cross-reference it.
-          This documents what the code <em>actually does</em> — if something on
+          This documents what the code <em>actually does</em>, if something on
           screen disagrees with this page, that's a bug: tell us in About.
         </p>
 

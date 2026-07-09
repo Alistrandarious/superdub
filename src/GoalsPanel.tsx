@@ -80,7 +80,7 @@ const GoalsPanel: React.FC<{ accent: string }> = ({ accent }) => {
             value={form.title}
             autoFocus
             onChange={e => set('title', e.target.value)}
-            placeholder="Your goal — e.g. Run a 10k"
+            placeholder="Your goal, e.g. Run a 10k"
           />
           {SMART.map(s => (
             <div className="goals-field" key={s.key}>
@@ -120,7 +120,7 @@ const GoalsPanel: React.FC<{ accent: string }> = ({ accent }) => {
         <div className="lists-empty">
           <div className="lists-empty-icon">🎯</div>
           <div className="lists-empty-title">No goals yet</div>
-          <div className="lists-empty-sub">Set a SMART goal — Specific, Measurable, Achievable, Relevant, Time-bound.</div>
+          <div className="lists-empty-sub">Set a SMART goal, Specific, Measurable, Achievable, Relevant, Time-bound.</div>
         </div>
       ) : (
         <div className="goals-list">

@@ -124,7 +124,7 @@ const GoalSheet: React.FC<GoalSheetProps> = ({ open, onClose, latestWeight, onGo
   const handleSave = async () => {
     const tw = parseFloat(targetWeight);
     if (!tw || !targetDate) { setError('Enter a target weight and date'); return; }
-    if (!currentWeight) { setError('No weigh-in found — log your weight first'); return; }
+    if (!currentWeight) { setError('No weigh-in found, log your weight first'); return; }
     setSaving(true);
     setError('');
     try {
@@ -175,7 +175,7 @@ const GoalSheet: React.FC<GoalSheetProps> = ({ open, onClose, latestWeight, onGo
             <div className="goal-field">
               <span className="goal-field-label">Current weight</span>
               <span className="goal-field-readonly">
-                {currentWeight != null ? formatWeightKg(currentWeight, unit) : '— no weigh-in yet'}
+                {currentWeight != null ? formatWeightKg(currentWeight, unit) : 'No weigh-in yet'}
               </span>
             </div>
 
@@ -245,13 +245,13 @@ const GoalSheet: React.FC<GoalSheetProps> = ({ open, onClose, latestWeight, onGo
                 {/* ── Zone badge ── */}
                 <div className="goal-zone-badge" style={{ background: zone?.color + '20', borderColor: zone?.color + '50', color: zone?.color }}>
                   {zone?.label}
-                  {overWarning && ' — consider a longer timeline'}
+                  {overWarning && ', consider a longer timeline'}
                 </div>
 
                 {/* ── Warning ── */}
                 {overWarning && (
                   <div className="goal-warning">
-                    This implies {impliedRate.kgPerWk.toFixed(2)} kg/week — above 1% of your body weight per week,
+                    This implies {impliedRate.kgPerWk.toFixed(2)} kg/week, above 1% of your body weight per week,
                     where research suggests a higher proportion of weight lost comes from lean mass rather than fat.
                     You can still proceed, but a longer timeline is generally safer.
                   </div>

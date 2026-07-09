@@ -33,14 +33,14 @@ const PrivacyPolicy: React.FC = () => {
             <ul style={{ marginTop: 10, paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 6 }}>
               <li><strong style={{ color: '#fff' }}>Account data:</strong> email address, hashed password</li>
               <li><strong style={{ color: '#fff' }}>Profile data:</strong> first name, last name, date of birth, sex, height, weight</li>
-              <li><strong style={{ color: '#fff' }}>Optional background data:</strong> occupation, country, ethnicity, gender identity, relationship status, and religion. These are entirely optional — you may leave any of them blank or set them to "Prefer not to say" — and are used only to understand our user base and tailor the experience. <strong style={{ color: '#fff' }}>Ethnicity and religion are special category data</strong> (see Section 3).</li>
+              <li><strong style={{ color: '#fff' }}>Optional background data:</strong> occupation, country, ethnicity, gender identity, relationship status, and religion. These are entirely optional, you may leave any of them blank or set them to "Prefer not to say", and are used only to understand our user base and tailor the experience. <strong style={{ color: '#fff' }}>Ethnicity and religion are special category data</strong> (see Section 3).</li>
               <li><strong style={{ color: '#fff' }}>Health & activity data:</strong> daily weight logs, calorie and macro entries, step counts, habit completions, and optional energy / mood check-ins</li>
               <li><strong style={{ color: '#fff' }}>Goal data:</strong> goal weight, loss targets, activity level, calorie targets</li>
               <li><strong style={{ color: '#fff' }}>Meal plans:</strong> any meal plans you create within the app</li>
               <li><strong style={{ color: '#fff' }}>Tasks:</strong> to-do items you add</li>
               <li><strong style={{ color: '#fff' }}>Push notification data:</strong> if you enable notifications, we store your browser's push subscription (a device-specific endpoint), your time-zone offset, and your chosen reminder time, solely to send the reminders you requested. You can disable this at any time, which deletes the subscription.</li>
             </ul>
-            <p style={{ marginTop: 12 }}>Your country is <strong style={{ color: '#fff' }}>self-reported</strong> — we do not track your location, GPS, IP-based geolocation, or browsing history. Aside from the push subscription described above (only if you opt in), we do not collect device identifiers or any data beyond what you directly enter.</p>
+            <p style={{ marginTop: 12 }}>Your country is <strong style={{ color: '#fff' }}>self-reported</strong>, we do not track your location, GPS, IP-based geolocation, or browsing history. Aside from the push subscription described above (only if you opt in), we do not collect device identifiers or any data beyond what you directly enter.</p>
           </Section>
 
           <Section title="3. Legal Basis for Processing">
@@ -50,7 +50,7 @@ const PrivacyPolicy: React.FC = () => {
               <li><strong style={{ color: '#fff' }}>Contract (Article 6(1)(b)):</strong> Processing is necessary to provide you with the Superdub service.</li>
               <li><strong style={{ color: '#fff' }}>Legitimate interests (Article 6(1)(f)):</strong> For security and fraud prevention.</li>
             </ul>
-            <p style={{ marginTop: 12 }}>Some of the data we process is <strong style={{ color: '#fff' }}>special category data</strong> under Article 9 UK GDPR — namely health-related data (weight, calories, mood, etc.) and the optional <strong style={{ color: '#fff' }}>ethnicity</strong> and <strong style={{ color: '#fff' }}>religion</strong> fields. We process special category data <strong style={{ color: '#fff' }}>solely on the basis of your explicit consent</strong> (Article 9(2)(a)). The ethnicity and religion fields are optional — leaving them blank means we hold no such data for you, and you can clear them at any time from your Profile.</p>
+            <p style={{ marginTop: 12 }}>Some of the data we process is <strong style={{ color: '#fff' }}>special category data</strong> under Article 9 UK GDPR, namely health-related data (weight, calories, mood, etc.) and the optional <strong style={{ color: '#fff' }}>ethnicity</strong> and <strong style={{ color: '#fff' }}>religion</strong> fields. We process special category data <strong style={{ color: '#fff' }}>solely on the basis of your explicit consent</strong> (Article 9(2)(a)). The ethnicity and religion fields are optional, leaving them blank means we hold no such data for you, and you can clear them at any time from your Profile.</p>
           </Section>
 
           <Section title="4. How We Use Your Data">
@@ -67,7 +67,7 @@ const PrivacyPolicy: React.FC = () => {
           </Section>
 
           <Section title="5. Data Storage & Security">
-            <p>Your data is stored in a secure PostgreSQL database hosted on Neon (EU West region). Passwords are never stored in plain text — they are hashed using bcrypt with a work factor of 10 before storage. All connections use TLS encryption in transit.</p>
+            <p>Your data is stored in a secure PostgreSQL database hosted on Neon (EU West region). Passwords are never stored in plain text, they are hashed using bcrypt with a work factor of 10 before storage. All connections use TLS encryption in transit.</p>
             <p style={{ marginTop: 10 }}>We retain your data for as long as your account exists. When you delete your account, all your personal data is permanently and irreversibly deleted within 30 days.</p>
           </Section>
 

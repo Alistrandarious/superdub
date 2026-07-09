@@ -1,14 +1,14 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import './App.css';
-import { inGracePeriod, loggingNow, advanceToToday } from './day';
+import { inGracePeriod, loggingNow, advanceToToday, nightBannerDismissed, dismissNightBanner } from './day';
 
 // Superdub time: after midnight the app keeps logging to the previous day until
 // 2 AM. This top banner makes that explicit and lets the user jump ahead early.
 // It clears itself at 2 AM (minute re-check) or when "Move to today" is tapped.
 const DayBanner: React.FC = () => {
-  const [show, setShow] = useState(() => inGracePeriod());
+  const [show, setShow] = useState(() => inGracePeriod() && !nightBannerDismissed());
 
-  const refresh = useCallback(() => setShow(inGracePeriod()), []);
+  const refresh = useCallback(() => setShow(inGracePeriod() && !nightBannerDismissed()), []);
 
   useEffect(() => {
     refresh();
@@ -27,11 +27,13 @@ const DayBanner: React.FC = () => {
 
   const label = loggingNow().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
   const advance = () => { advanceToToday(); setShow(false); };
+  const dismiss = () => { dismissNightBanner(); setShow(false); };
 
   return (
     <div className="day-banner">
       <span className="day-banner-text">Still logging {label}. New entries land here until 2 AM.</span>
       <button className="day-banner-btn" onClick={advance}>Move to today</button>
+      <button className="day-banner-close" onClick={dismiss} aria-label="Dismiss for now">✕</button>
     </div>
   );
 };

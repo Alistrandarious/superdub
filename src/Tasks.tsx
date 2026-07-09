@@ -164,7 +164,7 @@ const Tasks: React.FC = () => {
         ) : (
         <>
         {/* Add block: task text + add. A due date lives in a dropdown below the
-            row, not as a raw date box inline — so it's part of the UI, not stuck
+            row, not as a raw date box inline, so it's part of the UI, not stuck
             on the side. Once picked it rides on the task itself (lists-due). */}
         <div className="lists-input-block">
           <div className="lists-input-row">
@@ -180,7 +180,7 @@ const Tasks: React.FC = () => {
               <button
                 className={`lists-date-toggle${due ? ' has-date' : ''}${showDate ? ' open' : ''}`}
                 onClick={() => setShowDate(s => !s)}
-                aria-label={due ? `Due ${shortDue(due)} — change` : 'Add a due date'}
+                aria-label={due ? `Due ${shortDue(due)}, change` : 'Add a due date'}
                 title="Add a due date"
               >
                 <CalendarIcon />

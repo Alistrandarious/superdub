@@ -537,10 +537,15 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     return () => window.removeEventListener('superdub:tracker-updated', handler);
   }, []);
 
-  // Open tracker modal from cog menu (on any page)
+  // Open tracker modal from cog menu (on any page). The cog may fire the event before
+  // this lazy page mounts, so it also leaves a sessionStorage flag we honor on mount.
   useEffect(() => {
     const handler = () => setTrackerModalOpen(true);
     window.addEventListener('superdub:open-tracker', handler);
+    if (sessionStorage.getItem('superdub.openTracker') === '1') {
+      sessionStorage.removeItem('superdub.openTracker');
+      setTrackerModalOpen(true);
+    }
     return () => window.removeEventListener('superdub:open-tracker', handler);
   }, []);
 
@@ -1019,7 +1024,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   let walkStreak = 0;
   const todayDDMM = `${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}`;
   const startFrom = walkAll.length > 0 && walkAll[walkAll.length - 1].ddmm === todayDDMM && walkAll[walkAll.length - 1].steps === 0
-    ? walkAll.length - 2   // today has no data yet — start from yesterday
+    ? walkAll.length - 2   // today has no data yet, start from yesterday
     : walkAll.length - 1;
   for (let i = startFrom; i >= 0; i--) {
     if (walkAll[i].steps > 0 && walkAll[i].steps >= effectiveStepTarget) walkStreak++;
@@ -1373,7 +1378,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">{BUILD_TAG}</span>
         </div>
 
-        {/* Unified header actions — same on every page */}
+        {/* Unified header actions, same on every page */}
         <div className="hb-topbar-actions">
           <StreakFlame />
           <CogMenu />
@@ -1473,7 +1478,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             <div className="goal-reached-burst">🎉</div>
             <h3 className="goal-reached-title">You hit your goal weight!</h3>
             <p className="goal-reached-sub">
-              You're at <strong>{formatWeightKg(goalReached.latestWeight, unit)}</strong> — your target was{' '}
+              You're at <strong>{formatWeightKg(goalReached.latestWeight, unit)}</strong>, your target was{' '}
               <strong>{formatWeightKg(goalReached.targetWeight, unit)}</strong>. However you got here, that's real work. What now?
             </p>
             <div className="goal-reached-actions">
@@ -1565,7 +1570,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="dashboard-story">
       <ChartCarousel tabs={storyTabs} notes={storyNotes}>
 
-      {/* ── Panel 0 · Yesterday — retrospective KPIs fill the locked height.
+      {/* ── Panel 0 · Yesterday, retrospective KPIs fill the locked height.
              Dub's yesterday-verdict rides in the carousel's top bar (note 0). ── */}
       <div className="story-panel story-panel--intro">
 
@@ -1601,7 +1606,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
       </div>{/* /Yesterday panel */}
 
-      {/* ── Panel 1 · Today — placeholder until the live plan ships ── */}
+      {/* ── Panel 1 · Today, placeholder until the live plan ships ── */}
       <div className="story-panel story-panel--intro today-soon">
         <div className="today-soon-card">
           <span className="today-soon-eyebrow">TODAY</span>
@@ -1632,7 +1637,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           </div>
         </div>
         {renderChartPager()}
-        {/* Inline legend — always visible so users know what each line is */}
+        {/* Inline legend, always visible so users know what each line is */}
         <div className="chart-inline-legend">
           <span className="cil-item"><span className="cil-line" style={{ background: '#fff' }} />Weight</span>
           <span className="cil-item"><span className="cil-line cil-line--dash" style={{ background: 'rgba(255,255,255,0.55)' }} />Smoothed</span>
@@ -1653,7 +1658,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               </linearGradient>
             </defs>
             <CartesianGrid stroke={themeColor + '1a'} strokeDasharray="3 3" />
-            {/* Month boundary markers — distinct periwinkle divider + month name */}
+            {/* Month boundary markers, distinct periwinkle divider + month name */}
             {monthBoundaryDays.map(mb => (
               <ReferenceLine
                 key={`mb-${mb.day}`}
@@ -1712,18 +1717,18 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             {/* ── Golden safe-zone corridor: light fill (Area) + diagonal edge lines (Lines, no vertical cap) ── */}
             {zoneActive && (
               <>
-                {/* Stacked fill only — no stroke, so no vertical closing edge on the left */}
+                {/* Stacked fill only, no stroke, so no vertical closing edge on the left */}
                 <Area yAxisId="right" type="linear" dataKey="zoneLow" stroke="none" fill="none" legendType="none" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} stackId="zone" />
                 <Area yAxisId="right" type="linear" dataKey="zoneBand" stroke="none" fill="rgba(255,190,30,0.16)" legendType="none" connectNulls={false} dot={false} activeDot={false} isAnimationActive={false} stackId="zone" />
-                {/* Edges drawn as plain lines — they don't close vertically */}
+                {/* Edges drawn as plain lines, they don't close vertically */}
                 <Line yAxisId="right" type="linear" dataKey="zoneLow" stroke="rgba(255,200,60,0.85)" strokeWidth={1.5} dot={false} activeDot={false} legendType="none" connectNulls={false} isAnimationActive={false} />
                 <Line yAxisId="right" type="linear" dataKey="zoneHigh" stroke="rgba(255,200,60,0.85)" strokeWidth={1.5} dot={false} activeDot={false} legendType="none" connectNulls={false} isAnimationActive={false} />
               </>
             )}
-            {/* ── Forward projection — dark outline + bright dashed ── */}
+            {/* ── Forward projection, dark outline + bright dashed ── */}
             <Line yAxisId="right" type="monotone" dataKey="projection" stroke="rgba(8,10,16,0.8)" strokeWidth={4.5} strokeDasharray="6 4" dot={false} connectNulls isAnimationActive={false} legendType="none" />
             <Line yAxisId="right" type="monotone" dataKey="projection" stroke="#4DA3FF" strokeWidth={2.5} strokeDasharray="6 4" dot={false} name="Projection" connectNulls isAnimationActive={false} />
-            {/* ── Trend line — violet dashed with a dark outline so it stays crisp over the bars ── */}
+            {/* ── Trend line, violet dashed with a dark outline so it stays crisp over the bars ── */}
             {hasTrend && (
               <Line yAxisId="right" type="linear" dataKey="trend" stroke="rgba(8,10,16,0.8)" strokeWidth={4.5} strokeDasharray="7 3" dot={false} connectNulls isAnimationActive={false} legendType="none" />
             )}
@@ -1747,7 +1752,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               isAnimationActive={false}
               legendType="plainline"
             />
-            {/* ── EMA smoothed trend — black line with a white halo so it stays visible on dark ── */}
+            {/* ── EMA smoothed trend, black line with a white halo so it stays visible on dark ── */}
             {hasTrend && (
               <Line
                 yAxisId="right"
@@ -1793,7 +1798,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </div>{/* /chart-section-inner */}
       </section>
 
-      {/* ── Habits Chart — completion bars, split out from the weight chart ── */}
+      {/* ── Habits Chart, completion bars, split out from the weight chart ── */}
       {habits.length > 0 && (
         <section className="chart-section">
           <div className="chart-title-row">
@@ -1938,7 +1943,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               </ResponsiveContainer>
               </DraggableChart>
             ) : (
-              <p className="walk-empty" style={{ margin: '16px 0' }}>No step data yet — steps will appear once they sync from your phone or you add them manually.</p>
+              <p className="walk-empty" style={{ margin: '16px 0' }}>No step data yet, steps will appear once they sync from your phone or you add them manually.</p>
             )}
           </div>
         </div>
@@ -1991,16 +1996,16 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             ) : (
               <p className="walk-empty" style={{ margin: '16px 0' }}>
                 {!(bmr > 0)
-                  ? <>Add your <strong>height, age and current weight</strong> in your profile to unlock this — the estimate needs them to calculate your maintenance calories.</>
+                  ? <>Add your <strong>height, age and current weight</strong> in your profile to unlock this, the estimate needs them to calculate your maintenance calories.</>
                   : <>Log your weight for a few days (steps help too) and we'll estimate your probable daily calorie intake here.</>}
               </p>
             )}
-            <p className="calorie-chart-note">Back-calculated from energy balance (weight trend + steps + activity), assuming ~7,700 kcal/kg. An estimate — not a substitute for food logging.</p>
+            <p className="calorie-chart-note">Back-calculated from energy balance (weight trend + steps + activity), assuming ~7,700 kcal/kg. It's an estimate, not a measurement.</p>
           </div>
         </div>
       </section>
 
-      {/* ── Sleep & Mood — the two on one panel, sharing the date axis so you
+      {/* ── Sleep & Mood, the two on one panel, sharing the date axis so you
              can eyeball how rest and mood move together. Sleep on top (bed→wake
              candles, or an hours line for older duration-only entries), mood
              below. Together they fill the uniform canvas height. ── */}
@@ -2073,13 +2078,13 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </section>
       )}
 
-      {/* ── Last panel · Stats — scrolls internally ── */}
+      {/* ── Last panel · Stats, scrolls internally ── */}
       <div className="story-panel story-panel--stats">
 
       {/* ── Day-of-week patterns + correlations across steps/habits/mood ── */}
       <PatternsCard days={patternDays} />
 
-      {/* ── Consistency heatmap — shown above the engagement stats ── */}
+      {/* ── Consistency heatmap, shown above the engagement stats ── */}
       <section className="report-card consistency-section">
         <p className="report-eyebrow">Consistency · since {MONTH_SHORT[joinMonth]} {YEAR}</p>
         <div className="heatmap">
@@ -2103,7 +2108,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </div>
       </section>
 
-      {/* ── KPI cards — Engagement first, then Weight, then Activity ── */}
+      {/* ── KPI cards, Engagement first, then Weight, then Activity ── */}
       <div className="kpi-section">
         <p className="kpi-group-label">Engagement</p>
         <div className="kpi-group">
@@ -2126,7 +2131,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         <div className="kpi-group">
           <div className="kpi-card kpi-row-layout">
             <span className="kpi-label">Change</span>
-            {/* Positive = gain = red; negative = loss = green — sign-agnostic */}
+            {/* Positive = gain = red; negative = loss = green, sign-agnostic */}
             <span className={`kpi-value ${weightLoss !== null ? (weightLoss < 0 ? 'kpi-good' : weightLoss > 0 ? 'kpi-bad' : '') : ''}`}>
               {weightLoss !== null ? `${weightLoss > 0 ? '+' : ''}${kgToUnitValue(weightLoss, unit).toFixed(1)} ${unitLabel(unit)}` : '—'}
             </span>
@@ -2181,7 +2186,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
       {/* Weekly Recap moved to the Habits page (Sunday only, under the gold circles) */}
 
-      {/* Habits & Nutrition tracker — moved into the cog (opens as a modal) */}
+      {/* Habits & Nutrition tracker, moved into the cog (opens as a modal) */}
       {trackerModalOpen && (
       <div className="modal-overlay" onClick={() => setTrackerModalOpen(false)}>
       <div className="modal tracker-modal" onClick={e => e.stopPropagation()}>
@@ -2189,7 +2194,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           <span className="modal-title">Habits &amp; Nutrition</span>
           <button className="modal-close" onClick={() => setTrackerModalOpen(false)}>✕</button>
         </div>
-      {/* Week selector — filters the tracker below */}
+      {/* Week selector, filters the tracker below */}
       <div className="week-bar">
         <button
           className="week-btn today-jump-btn"
@@ -2228,7 +2233,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           {visibleDays.map(day => (
             <div key={day} className={`tracker-header-cell ${day === todayKey ? 'today-col' : ''}`}>{day}</div>
           ))}
-          {/* Weight row (always visible) — entered in the user's unit, stored as kg */}
+          {/* Weight row (always visible), entered in the user's unit, stored as kg */}
           <div className="tracker-label">Weight ({unitLabel(unit)})</div>
           {visibleDays.map(day => (
             <div key={`w-${day}`} className="tracker-cell">
@@ -2306,7 +2311,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       </div>{/* /story-panel--stats */}
       </ChartCarousel>
 
-      {/* Honesty declaration — shown once per device before backfilling past tracker days */}
+      {/* Honesty declaration, shown once per device before backfilling past tracker days */}
       {honestyPending && (
         <div className="honesty-overlay" onClick={() => setHonestyPending(null)}>
           <div className="honesty-modal" onClick={e => e.stopPropagation()}>
@@ -2316,7 +2321,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               You're editing a past day. Only log what you <strong>genuinely did</strong> —
               your streaks, XP and trends are only worth something if they're real. No one's watching but you.
             </p>
-            <button className="honesty-confirm" onClick={confirmHonesty}>I'll be honest — let me edit</button>
+            <button className="honesty-confirm" onClick={confirmHonesty}>I'll be honest, let me edit</button>
             <button className="honesty-cancel" onClick={() => setHonestyPending(null)}>Cancel</button>
           </div>
         </div>

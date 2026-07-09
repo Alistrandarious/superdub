@@ -5,7 +5,7 @@ import React, { useRef } from 'react';
 // 24 = 6pm), matching the candlestick chart, so a normal night reads left→right
 // with no midnight wrap. Emits bedtime/waketime (HH:MM) so we get the wake data.
 
-const MIN = 0, MAX = 24, GAP = 0.5, STEP = 0.25; // 15-min granularity, ≥30min asleep
+const MIN = 0, MAX = 24, GAP = 0.5, STEP = 0.5; // 30-min granularity, ≥30min asleep
 
 const pad = (n: number) => String(n).padStart(2, '0');
 

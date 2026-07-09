@@ -17,7 +17,7 @@ export interface CoachReport {
   headline: string;
   lines: CoachLine[];
   closing: string;
-  wantsWalk?: boolean;  // Dub is restless — nudge the user to get moving
+  wantsWalk?: boolean;  // Dub is restless, nudge the user to get moving
 }
 
 const YEAR = new Date().getFullYear();

@@ -44,12 +44,13 @@ router.get('/vapid-public-key', (_req, res) => {
 // Save / refresh a subscription for this user
 router.post('/subscribe', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
-    const { subscription, tzOffsetMinutes, reminderHour, nutritionHour, workoutHour } =
-      req.body as { subscription: any; tzOffsetMinutes?: number; reminderHour?: number; nutritionHour?: number; workoutHour?: number | null };
+    const { subscription, tzOffsetMinutes, reminderHour, eveningHour, workoutHour } =
+      req.body as { subscription: any; tzOffsetMinutes?: number; reminderHour?: number; eveningHour?: number; workoutHour?: number | null };
     if (!subscription?.endpoint) return res.status(400).json({ error: 'invalid subscription' });
     const clampHour = (h: any, dflt: number) => Number.isInteger(h) ? Math.max(0, Math.min(23, h)) : dflt;
     const hour = clampHour(reminderHour, 8);
-    const nutrition = clampHour(nutritionHour, 20);
+    // The evening reflection nudge reuses the (renamed) nutrition_hour column.
+    const evening = clampHour(eveningHour, 20);
     // workoutHour is opt-in: a valid 0–23 turns it on, anything else leaves it off (NULL).
     const workout = Number.isInteger(workoutHour) ? Math.max(0, Math.min(23, workoutHour as number)) : null;
     await pool.query(
@@ -59,7 +60,7 @@ router.post('/subscribe', requireAuth as any, async (req: AuthRequest, res: Resp
          SET user_id = EXCLUDED.user_id, subscription = EXCLUDED.subscription,
              tz_offset = EXCLUDED.tz_offset, reminder_hour = EXCLUDED.reminder_hour,
              nutrition_hour = EXCLUDED.nutrition_hour, workout_hour = EXCLUDED.workout_hour`,
-      [req.userId, subscription.endpoint, JSON.stringify(subscription), tzOffsetMinutes ?? 0, hour, nutrition, workout]
+      [req.userId, subscription.endpoint, JSON.stringify(subscription), tzOffsetMinutes ?? 0, hour, evening, workout]
     );
     res.json({ ok: true });
   } catch (err: any) {
@@ -99,18 +100,19 @@ router.post('/reminder-time', requireAuth as any, async (req: AuthRequest, res: 
   }
 });
 
-// Update the evening nutrition nudge hour and/or the opt-in post-workout
-// check-in hour (send workoutHour: null to turn the exercise prompt off).
+// Update the evening reflection nudge hour (stored in the nutrition_hour column)
+// and/or the opt-in post-workout check-in hour (send workoutHour: null to turn the
+// exercise prompt off).
 router.post('/prompt-times', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
-    const { nutritionHour, workoutHour } = req.body as { nutritionHour?: number; workoutHour?: number | null };
+    const { eveningHour, workoutHour } = req.body as { eveningHour?: number; workoutHour?: number | null };
     const sets: string[] = [];
     const vals: any[] = [req.userId];
-    if (nutritionHour !== undefined) {
-      if (!Number.isInteger(nutritionHour) || nutritionHour < 0 || nutritionHour > 23) {
-        return res.status(400).json({ error: 'nutritionHour must be 0–23' });
+    if (eveningHour !== undefined) {
+      if (!Number.isInteger(eveningHour) || eveningHour < 0 || eveningHour > 23) {
+        return res.status(400).json({ error: 'eveningHour must be 0–23' });
       }
-      vals.push(nutritionHour);
+      vals.push(eveningHour);
       sets.push(`nutrition_hour = $${vals.length}`);
     }
     if (workoutHour !== undefined) {

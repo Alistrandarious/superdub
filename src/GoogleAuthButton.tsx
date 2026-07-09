@@ -25,7 +25,7 @@ const GoogleAuthButton: React.FC<{ onCredential: (idToken: string) => void; text
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!CLIENT_ID) return; // not configured — render nothing
+    if (!CLIENT_ID) return; // not configured, render nothing
     let cancelled = false;
     loadGis().then(() => {
       if (cancelled || !ref.current) return;

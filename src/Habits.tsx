@@ -282,7 +282,7 @@ const FEATURED: { id: string; name: string; tagline: string; icon: string; accen
   // 1 weekly
   {
     id: 'meal-prep', name: 'Meal Prep', cadence: 'weekly',
-    tagline: 'Cook ahead once a week — eat well all week.',
+    tagline: 'Cook ahead once a week, eat well all week.',
     icon: '🥘', accent: '#2E8BFF', bgClass: 'featured-bg-walk',
   },
   // 1 monthly
@@ -294,7 +294,7 @@ const FEATURED: { id: string; name: string; tagline: string; icon: string; accen
   // 1 yearly
   {
     id: 'health-checkup', name: 'Health Check-up', cadence: 'yearly',
-    tagline: 'Book your annual check-up — future you will thank you.',
+    tagline: 'Book your annual check-up, future you will thank you.',
     icon: '🩺', accent: '#FF8A00', bgClass: 'featured-bg-yoga',
   },
 ];
@@ -409,7 +409,7 @@ const DayCircle: React.FC<{
         className="hcard-day-circle"
         disabled={isFuture}
         onClick={handleTap}
-        aria-label={`${label}: ${displayState ?? 'blank'} — tap to mark done, double-tap to mark failed`}
+        aria-label={`${label}: ${displayState ?? 'blank'}, tap to mark done, double-tap to mark failed`}
       >
         {displayState === 'done' && <span className="hcard-day-tick"><CheckSVG size={15} strokeWidth={2} /></span>}
         {displayState === 'failed' && <span className="hcard-day-tick hcard-day-fail">✗</span>}
@@ -489,18 +489,18 @@ const HabitCard: React.FC<{
       className={`hcard ${expanded ? 'hcard--expanded' : 'hcard--collapsed'} ${hasDanger ? 'hcard-danger' : hasWarning ? 'hcard-warning' : ''}`}
       style={{ '--theme': accent, '--theme-dim': `${accent}66`, '--theme-glow': `${accent}22` } as React.CSSProperties}
     >
-      {/* Summary row — circle · name · level · streak · calendar · chevron */}
+      {/* Summary row, circle · name · level · streak · calendar · chevron */}
       <div className="hcard-summary" onClick={() => setExpanded(e => { const next = !e; if (!next) setHistOpen(false); return next; })}>
         <button
           className={`hcard-icon hcard-icon-btn ${currentDone ? 'done' : ''}`}
           onClick={e => { e.stopPropagation(); toggleCurrent(); }}
-          aria-label={currentDone ? 'Done — tap to clear' : 'Mark done'}
+          aria-label={currentDone ? 'Done, tap to clear' : 'Mark done'}
         >
           {currentDone ? <CheckSVG size={14} strokeWidth={2.5} /> : <span className="hcard-icon-empty-dot" />}
         </button>
         <span className="hcard-name">{habit}</span>
         {!expanded && (
-          <span className="hcard-level-badge" title={`Level ${stats.level} — ${stats.totalDays} days logged · +${stats.xpPerDay} XP per day`}>
+          <span className="hcard-level-badge" title={`Level ${stats.level}, ${stats.totalDays} days logged · +${stats.xpPerDay} XP per day`}>
             LV{stats.level}
           </span>
         )}
@@ -513,7 +513,7 @@ const HabitCard: React.FC<{
             <span className="hcard-streak-mini off"><span className="hsm-ico">💤</span>{daysSinceDone}d</span>
           )
         )}
-        {/* Archive icon — always rendered so layout never shifts; only interactive when expanded */}
+        {/* Archive icon, always rendered so layout never shifts; only interactive when expanded */}
         <button
           className={`hcard-archive-icon${expanded ? ' visible' : ''}`}
           onClick={e => { e.stopPropagation(); if (expanded) onRequestRemove(habit); }}
@@ -522,7 +522,7 @@ const HabitCard: React.FC<{
         >
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
         </button>
-        {/* Permanent delete — only interactive when expanded */}
+        {/* Permanent delete, only interactive when expanded */}
         <button
           className={`hcard-delete-icon${expanded ? ' visible' : ''}`}
           onClick={e => { e.stopPropagation(); if (expanded) onRequestDelete(habit); }}
@@ -545,7 +545,7 @@ const HabitCard: React.FC<{
       <div className="hcard-body-wrap">
       <div className="hcard-body">
 
-      {/* Unified stat panel — earned title · level hero w/ progress · streak + XP */}
+      {/* Unified stat panel, earned title · level hero w/ progress · streak + XP */}
       <div className="hsp">
         <div className="hsp-title" style={{ color: rank.color }}>
           <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" aria-hidden><path d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l7.1-1.01z"/></svg>
@@ -590,8 +590,8 @@ const HabitCard: React.FC<{
         </div>
       </div>
 
-      {hasDanger && <p className="hcard-risk-chip danger">streak reset — start fresh today</p>}
-      {hasWarning && <p className="hcard-risk-chip warning">missed yesterday — keep going</p>}
+      {hasDanger && <p className="hcard-risk-chip danger">streak reset, start fresh today</p>}
+      {hasWarning && <p className="hcard-risk-chip warning">missed yesterday, keep going</p>}
 
       {isDaily ? (
         <div className="hcard-week">
@@ -633,7 +633,7 @@ const HabitCard: React.FC<{
             <span className="hcard-month-label">{MINI_MONTHS[dispMonth]} {dispYear}</span>
             <button className="hcard-month-arrow" disabled={monthOffset >= 0} onClick={() => setMonthOffset(o => Math.min(0, o + 1))} aria-label="Next month">›</button>
           </div>
-          <p className="hcard-history-hint">Tap any past day — cycles done → missed → blank.</p>
+          <p className="hcard-history-hint">Tap any past day, cycles done → missed → blank.</p>
           <MiniMonthHeatmap habit={habit} year={dispYear} monthIdx={dispMonth} ht={ht} onEdit={onEditDay} />
         </div>
       )}
@@ -719,6 +719,7 @@ const Habits: React.FC = () => {
   const [addOpen, setAddOpen] = useState(false);
   const [featuredOpen, setFeaturedOpen] = useState(false);
   const [showDayOverlay, setShowDayOverlay] = useState(false);
+  const [overlayDay, setOverlayDay] = useState<string | null>(null); // null = today; else a DD/MM key
 
   // Week gold — purely derived: gold ONLY on Sunday when all 7 days are logged.
   // Resets to original colour automatically on Monday (no persisted state, no veteran ring).
@@ -756,7 +757,8 @@ const Habits: React.FC = () => {
   const dismissInstall = () => animateOutInstall(() => localStorage.setItem(pwaDayKey, todayStr));
   const neverShowInstall = () => animateOutInstall(() => localStorage.setItem(pwaKey, 'dismissed'));
 
-  const openDayOverlay = () => {
+  const openDayOverlay = (dayKey?: string) => {
+    setOverlayDay(dayKey ?? null); // no arg (weigh-in / auto-refresh) = today
     localStorage.setItem(OVERLAY_REFRESH_KEY, String(Date.now()));
     setShowDayOverlay(true);
   };
@@ -844,11 +846,13 @@ const Habits: React.FC = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loaded]);
 
-  // Always show/refresh overlay immediately after a weigh-in
+  // Show/refresh the habit overlay after a check-in (weigh-in, vitals, evening).
+  // NOT on superdub:tracker-updated, which also fires for step logging and would
+  // wrongly pop this long overlay every time you log steps.
   useEffect(() => {
     const handler = () => openDayOverlay();
-    window.addEventListener('superdub:tracker-updated', handler);
-    return () => window.removeEventListener('superdub:tracker-updated', handler);
+    window.addEventListener('superdub:checkin-done', handler);
+    return () => window.removeEventListener('superdub:checkin-done', handler);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -868,6 +872,20 @@ const Habits: React.FC = () => {
       window.dispatchEvent(new CustomEvent('superdub:streak-updated'));
     }
   }, [loaded, ht, today, startDates, xpCarry]);
+
+  // Feed this month's community habit: contribute today's completed daily-habit XP
+  // (10 per habit). The server keeps one row per user per day, so re-sending is
+  // idempotent; the ref just avoids firing the request on every unrelated render.
+  const lastContribRef = useRef(-1);
+  useEffect(() => {
+    if (!loaded) return;
+    const doneToday = habits.filter(h => h !== MANDATORY_HABIT && (habitCadence[h] ?? 'daily') === 'daily' && ht[today]?.[h] === 'done').length;
+    const xp = doneToday * 10;
+    if (xp !== lastContribRef.current) {
+      lastContribRef.current = xp;
+      api.contributeGlobal(xp).catch(() => {});
+    }
+  }, [loaded, ht, today, habits, habitCadence]);
 
   // Fallback: check every 5 minutes if 6 hours have passed
   useEffect(() => {
@@ -1062,7 +1080,7 @@ const Habits: React.FC = () => {
         <div className="confirm-overlay" onClick={() => setPendingDelete(null)}>
           <div className="confirm-dialog" onClick={e => e.stopPropagation()}>
             <p className="confirm-title">Delete "{pendingDelete}" forever?</p>
-            <p className="confirm-desc">This permanently erases the habit and all of its history. This can't be undone — archive it instead if you might want it back.</p>
+            <p className="confirm-desc">This permanently erases the habit and all of its history. This can't be undone, archive it instead if you might want it back.</p>
             <div className="confirm-actions">
               <button className="confirm-cancel" onClick={() => setPendingDelete(null)}>Cancel</button>
               <button className="confirm-ok confirm-ok--danger" onClick={() => confirmDeleteHabit(pendingDelete)}>Delete forever</button>
@@ -1118,7 +1136,7 @@ const Habits: React.FC = () => {
       {/* Featured habits sheet */}
       <FeaturedSheet open={featuredOpen} onClose={() => setFeaturedOpen(false)} userHabits={habits} onAdd={handleAddFeatured} />
 
-      {/* Honesty declaration — shown once per session before backfilling past days */}
+      {/* Honesty declaration, shown once per session before backfilling past days */}
       {honestyPending && (
         <div className="honesty-overlay" onClick={() => setHonestyPending(null)}>
           <div className="honesty-modal" onClick={e => e.stopPropagation()}>
@@ -1128,7 +1146,7 @@ const Habits: React.FC = () => {
               You're editing a past day. Only log what you <strong>genuinely did</strong> —
               your streaks, XP and trends are only worth something if they're real. No one's watching but you.
             </p>
-            <button className="honesty-confirm" onClick={confirmHonesty}>I'll be honest — let me edit</button>
+            <button className="honesty-confirm" onClick={confirmHonesty}>I'll be honest, let me edit</button>
             <button className="honesty-cancel" onClick={() => setHonestyPending(null)}>Cancel</button>
           </div>
         </div>
@@ -1156,7 +1174,7 @@ const Habits: React.FC = () => {
                 ) : (
                   <>
                     <strong>Superdub for Android</strong>
-                    <span>The Android app is here — download it now.</span>
+                    <span>The Android app is here. Download it now.</span>
                   </>
                 )}
               </div>
@@ -1181,7 +1199,7 @@ const Habits: React.FC = () => {
                   </a>
                 </div>
                 <p className="pwa-banner-note">
-                  Not from the Play Store — Android will ask you to allow “install from unknown sources”. That’s expected, not a problem.
+                  Not from the Play Store, so Android will ask you to allow “install from unknown sources”. That’s expected, not a problem.
                 </p>
                 <button className="pwa-banner-never pwa-banner-never--row" onClick={neverShowInstall}>Don't show again</button>
               </>
@@ -1208,43 +1226,49 @@ const Habits: React.FC = () => {
             {playerLevel.xpForNext != null ? (
               <p className="hb-xp-to">{(playerLevel.xpForNext - totalXPAll).toLocaleString()} XP to <span>{playerLevel.nextTitle}</span></p>
             ) : (
-              <p className="hb-xp-to">Max level — you legend.</p>
+              <p className="hb-xp-to">Max level, you legend.</p>
             )}
           </div>
         </div>
 
-        {/* Weekly strip — the simplified "Logging into Superdub" habit */}
+        {/* Weekly strip, the simplified "Logging into Superdub" habit */}
         <div className={`hb-week${isPerfectWeek ? ' hb-week-gold' : ''}${weekCelebrating ? ' hb-week-celebrating' : ''}`}>
           {weekDays.map(({ key, label, isFuture, isToday }) => {
             const state = ht[key]?.[MANDATORY_HABIT] ?? null;
-            // Read-only: this strip mirrors your daily login automatically — not tappable.
+            // Tap a past/today cell to open that day's log; future days are disabled.
             return (
-              <div key={key} className="hb-week-col">
+              <button
+                key={key}
+                type="button"
+                className="hb-week-col hb-week-col-btn"
+                disabled={isFuture}
+                onClick={() => !isFuture && openDayOverlay(key)}
+                aria-label={`${label}: ${state ?? 'not logged'}, view this day`}
+              >
                 <span className="hb-week-dow">{label}</span>
                 <div
                   className={`hb-week-circle ${state === 'done' ? 'done' : ''} ${state === 'failed' ? 'failed' : ''} ${isToday ? 'today' : ''} ${isFuture ? 'future' : ''}`}
-                  role="img"
-                  aria-label={`${label}: ${state ?? 'not logged'}`}
+                  aria-hidden="true"
                 >
                   {state === 'done' && <span className="hb-week-tick"><CheckSVG size={18} strokeWidth={2} /></span>}
                   {state === 'failed' && <span className="hb-week-tick fail">✕</span>}
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
         <p className="hb-week-caption">{mandatoryStats.streak}-day check-in streak · keep it alive</p>
 
-        {/* Daily Log — the app's own inputs (weigh-in / steps / check-in) */}
+        {/* Daily Log, the app's own inputs (weigh-in / steps / check-in) */}
         <DailyLog />
 
-        {/* Weekly Recap — Sunday only, right under the gold circles */}
+        {/* Weekly Recap, Sunday only, right under the gold circles */}
         {isSunday && <WeeklyRecap />}
 
-        {/* Your habits — cadence carousel (Daily · Weekly · Monthly · Yearly) */}
+        {/* Your habits, cadence carousel (Daily · Weekly · Monthly · Yearly) */}
         <CadenceCarousel panels={cadencePanels} startIndex={0} compact={scrolled} />
 
-        {/* Featured banner — tap to open & join (below the user's habits) */}
+        {/* Featured banner, tap to open & join (below the user's habits) */}
         <button className="hb-featured" onClick={() => setFeaturedOpen(true)}>
           <div className="hb-featured-text">
             <span className="hb-featured-eyebrow">FEATURED</span>
@@ -1256,11 +1280,13 @@ const Habits: React.FC = () => {
         <div style={{ height: 100 }} />
       </div>
 
-      {/* ── Habit day overlay — triggered by weigh-in or 6-hour refresh ── */}
+      {/* ── Habit day overlay, triggered by weigh-in or 6-hour refresh ── */}
       {showDayOverlay && loaded && (() => {
-        const todayHabits = ht[today] ?? {};
-        // Daily check-in popup only covers daily habits — weekly/monthly/yearly
-        // are completed via their swipe cards in the cadence carousel.
+        const viewingDay = overlayDay ?? today;
+        const isTodayView = viewingDay === today;
+        const todayHabits = ht[viewingDay] ?? {};
+        // Daily check-in popup only covers daily habits (weekly/monthly/yearly are
+        // completed via their swipe cards in the cadence carousel).
         const displayHabits = yourHabits.filter(h => (habitCadence[h] ?? 'daily') === 'daily');
         const doneCount = displayHabits.filter(h => todayHabits[h] === 'done').length;
         const total = displayHabits.length;
@@ -1269,16 +1295,17 @@ const Habits: React.FC = () => {
         const now = loggingNow();
         const hour = now.getHours();
         const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-        const todayLabel = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+        const viewDate = isTodayView ? now : new Date(now.getFullYear(), parseInt(viewingDay.slice(3), 10) - 1, parseInt(viewingDay.slice(0, 2), 10));
+        const dayLabel = viewDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
         return (
           <div className="checkin-overlay" onClick={() => setShowDayOverlay(false)}>
             <div className="checkin-inner" onClick={e => e.stopPropagation()}>
               <button className="checkin-close" onClick={() => setShowDayOverlay(false)} aria-label="Close">✕</button>
               <div className="checkin-head">
                 <div className="checkin-greet-wrap">
-                  <p className="checkin-eyebrow">{todayLabel}</p>
-                  <h2 className="checkin-greeting">{greeting} <span className="checkin-wave">👋</span></h2>
-                  <p className="checkin-sub">Here's your habit progress for today.</p>
+                  <p className="checkin-eyebrow">{dayLabel}</p>
+                  <h2 className="checkin-greeting">{isTodayView ? <>{greeting} <span className="checkin-wave">👋</span></> : 'Your log'}</h2>
+                  <p className="checkin-sub">{isTodayView ? "Here's your habit progress for today." : 'Tap a habit to backfill this day.'}</p>
                 </div>
                 <div
                   className="checkin-ring"
@@ -1293,7 +1320,7 @@ const Habits: React.FC = () => {
               </div>
 
               {total === 0 ? (
-                <p className="checkin-empty">No habits yet — add some below.</p>
+                <p className="checkin-empty">No habits yet, add some below.</p>
               ) : (
                 <div className="checkin-habits">
                   {displayHabits.map(h => {
@@ -1304,7 +1331,7 @@ const Habits: React.FC = () => {
                         key={h}
                         type="button"
                         className={`checkin-habit ${done ? 'done' : ''}`}
-                        onClick={() => handleToggleDay(h, today, cycleState(state))}
+                        onClick={() => handleToggleDay(h, viewingDay, cycleState(state))}
                         aria-pressed={done}
                       >
                         <span className="checkin-tick">{done ? '✓' : '+'}</span>
@@ -1317,7 +1344,7 @@ const Habits: React.FC = () => {
 
               <div className="checkin-footer">
                 {allDone
-                  ? <p className="checkin-done-msg">All habits done — nice work! 🎉</p>
+                  ? <p className="checkin-done-msg">All habits done, nice work! 🎉</p>
                   : total > 0 && <p className="checkin-hint-msg">Tap to check off habits.</p>}
                 <button type="button" className="checkin-scroll-hint" onClick={() => setShowDayOverlay(false)}>
                   {allDone ? 'Keep it up 🚀' : 'Close'} <span className="checkin-chevron">▾</span>

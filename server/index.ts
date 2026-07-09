@@ -10,13 +10,12 @@ import trackerRoutes from './routes/tracker';
 import tasksRoutes from './routes/tasks';
 import dietRoutes from './routes/diet';
 import weightSettingsRoutes from './routes/weightSettings';
-import foodlogRoutes from './routes/foodlog';
-import mealplansRoutes from './routes/mealplans';
 import stepsRoutes from './routes/steps';
 import planRoutes from './routes/plan';
 import checkinRoutes from './routes/checkin';
 import pushRoutes from './routes/push';
 import goalsRoutes from './routes/goals';
+import globalRoutes from './routes/global';
 import { sendPush, pushEnabled } from './services/push';
 import { reminderDue } from './reminderSchedule';
 import { pool } from './db';
@@ -36,13 +35,12 @@ app.use('/api/tracker', trackerRoutes);
 app.use('/api/tasks', tasksRoutes);
 app.use('/api/diet', dietRoutes);
 app.use('/api/weight-settings', weightSettingsRoutes);
-app.use('/api/food-log', foodlogRoutes);
-app.use('/api/meal-plans', mealplansRoutes);
 app.use('/api/steps', stepsRoutes);
 app.use('/api/plan', planRoutes);
 app.use('/api/checkin', checkinRoutes);
 app.use('/api/push', pushRoutes);
 app.use('/api/goals', goalsRoutes);
+app.use('/api/global', globalRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
@@ -78,15 +76,6 @@ const migrations = [
   `CREATE UNIQUE INDEX IF NOT EXISTS tracker_habits_user_day_habit_uniq ON tracker_habits (user_id, day, habit_name)`,
   // 3-state habit support: done / failed / blank
   `ALTER TABLE tracker_habits ADD COLUMN IF NOT EXISTS state TEXT`,
-  `CREATE TABLE IF NOT EXISTS food_logs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    date DATE NOT NULL DEFAULT CURRENT_DATE,
-    items JSONB NOT NULL DEFAULT '[]',
-    totals JSONB NOT NULL DEFAULT '{}',
-    transcript TEXT DEFAULT '',
-    created_at TIMESTAMPTZ DEFAULT NOW()
-  )`,
   // Fix possible typo from old deployment (antophic_ instead of anthropic_)
   `DO $$ BEGIN
     IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='profile' AND column_name='antophic_api_key')
@@ -286,6 +275,19 @@ const migrations = [
     done        BOOLEAN DEFAULT FALSE,
     created_at  TIMESTAMPTZ DEFAULT NOW()
   )`,
+  // This month's community habit: one shared XP goal all users climb together.
+  `CREATE TABLE IF NOT EXISTS global_months (
+    month TEXT PRIMARY KEY,          -- 'YYYY-MM'
+    title TEXT NOT NULL,
+    goal  BIGINT NOT NULL
+  )`,
+  // Per-user, per-day XP contribution (idempotent: re-logging a day replaces it).
+  `CREATE TABLE IF NOT EXISTS global_contributions (
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    day     DATE NOT NULL DEFAULT CURRENT_DATE,
+    xp      INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (user_id, day)
+  )`,
 ];
 (async () => {
   for (const sql of migrations) {
@@ -294,10 +296,10 @@ const migrations = [
   console.log('[migrate] done');
 })();
 
-// ── Daily reminder pushes — runs every 30 min. Two independent nudges, each
+// ── Daily reminder pushes — runs every 30 min. Three independent nudges, each
 // fires once/day at the user's chosen local hour and self-suppresses if the
-// matching loop is already closed: morning weigh-in and an optional
-// post-workout check-in.
+// matching loop is already closed: morning weigh-in, an evening reflection
+// (mood + eating), and an optional post-workout check-in.
 // ponytail: daily_checkins.date is stored as server-UTC
 // CURRENT_DATE, so the "already logged today" skip is off by up to a tz-day at
 // the extremes — acceptable for a nudge (worst case: one redundant reminder).
@@ -343,7 +345,27 @@ async function runReminders() {
         await stamp('last_reminded', r.id, localDate);
       }
 
-      // 2. Post-workout check-in — opt-in (NULL = off); skip if already logged today
+      // 2. Evening reflection — mood + eating; skip if today's check-in is already in.
+      // Reuses the nutrition_hour column (default 8 PM) freed when food logging went.
+      const eveningHour = Number.isInteger(r.nutrition_hour) ? r.nutrition_hour : 20;
+      if (reminderDue(eveningHour, hour, r.last_nutrition, localDate)) {
+        const c = await pool.query(
+          'SELECT 1 FROM daily_checkins WHERE user_id = $1 AND date = $2 AND mood IS NOT NULL LIMIT 1',
+          [r.user_id, localDate]
+        ).catch(() => ({ rows: [] as any[] }));
+        if (c.rows.length === 0) {
+          const ok = await sendPush(r.subscription, {
+            title: 'superdub 🌙',
+            body: 'How did today feel, and how did eating land?',
+            url: '/?prompt=evening',
+            tag: 'evening-reminder',
+          });
+          if (!ok) { await prune(r.id); continue; }
+        }
+        await stamp('last_nutrition', r.id, localDate);
+      }
+
+      // 3. Post-workout check-in — opt-in (NULL = off); skip if already logged today
       if (reminderDue(r.workout_hour, hour, r.last_workout, localDate)) {
         const wo = await pool.query(
           'SELECT 1 FROM daily_checkins WHERE user_id = $1 AND date = $2 AND workout_done = true LIMIT 1',

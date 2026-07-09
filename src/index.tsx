@@ -5,8 +5,9 @@ import Habits from './Habits';
 import DailyCheckIn from './DailyCheckIn';
 import VitalsPrompt from './VitalsPrompt';
 import ExercisePrompt from './ExercisePrompt';
-import EnergyCheckIn from './EnergyCheckIn';
+import EveningPrompt from './EveningPrompt';
 import StepEntry from './StepEntry';
+import WeightEntry from './WeightEntry';
 import BottomNav from './BottomNav';
 import UpdateBanner from './UpdateBanner';
 import DayBanner from './DayBanner';
@@ -18,6 +19,7 @@ import { XPProvider } from './XPContext';
 import LevelUpCelebration from './LevelUpCelebration';
 import CoachReport from './CoachReport';
 import BackgroundApplier from './BackgroundApplier';
+import NightSky from './NightSky';
 
 // Habits (home) stays eager for instant first paint; everything else splits
 // into its own chunk so recharts etc. load only when the page is visited.
@@ -31,7 +33,6 @@ const MathsPage = lazy(() => import('./MathsPage'));
 const LevelPage = lazy(() => import('./LevelPage'));
 const ArchivedHabits = lazy(() => import('./ArchivedHabits'));
 const SuccessKit = lazy(() => import('./SuccessKit'));
-const MealPlans = lazy(() => import('./MealPlans'));
 const PlanPage = lazy(() => import('./PlanPage'));
 
 const NO_NAV_PATHS = ['/privacy'];
@@ -79,6 +80,7 @@ function AppRouter() {
     const prompt = params.get('prompt');
     if (!prompt) return;
     const evt = prompt === 'exercise' ? 'superdub:show-exercise'
+      : prompt === 'evening' ? 'superdub:show-evening'
       : prompt === 'weight' ? 'superdub:show-checkin' : null;
     window.history.replaceState({}, '', location.pathname);
     // Defer so the overlay listeners (siblings mounted this same tick) are attached.
@@ -107,15 +109,15 @@ function AppRouter() {
         <Route path="/level" element={<LevelPage />} />
         <Route path="/archived" element={<ArchivedHabits />} />
         <Route path="/success-kit" element={<SuccessKit />} />
-        <Route path="/meal-plans" element={<MealPlans />} />
         <Route path="/plan" element={<PlanPage />} />
       </Routes>
       </Suspense>
       <DailyCheckIn />
       <VitalsPrompt />
       <ExercisePrompt />
-      <EnergyCheckIn />
+      <EveningPrompt />
       <StepEntry />
+      <WeightEntry />
       <BottomNav />
     </>
   );
@@ -126,6 +128,7 @@ function Root() {
     <BrowserRouter>
       <XPProvider>
         <BackgroundApplier />
+        <NightSky />
         <UpdateBanner />
         <DayBanner />
         <AppRouter />

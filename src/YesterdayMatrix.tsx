@@ -5,8 +5,8 @@ import React from 'react';
 // target: what you ate, how far you walked, how you slept/felt, and how many
 // habits you closed. Data is passed in from App.tsx (single source of truth).
 //
-// Palette: gold #FFD233 + flame #FF8A00 for progress/hits; violet #7C3AED →
-// #B84DFF for going over a limit; muted obsidian for empty state.
+// Palette: gold #FFD233 + flame #FF8A00 for progress/hits; DANGER #FF5470 for
+// going over target (semantic per DESIGN_SYSTEM); muted obsidian for empty state.
 
 export interface YesterdayMatrixProps {
   intake: number | null;          // yesterday's estimated kcal
@@ -22,7 +22,7 @@ export interface YesterdayMatrixProps {
 
 const MOOD_LABEL = (m: number) => m >= 4.5 ? 'great' : m >= 3.5 ? 'good' : m >= 2.5 ? 'okay' : m >= 1.5 ? 'low' : 'rough';
 
-// SVG progress ring; `over` flips it to the violet critical gradient.
+// SVG progress ring; `over` flips it to the danger gradient (over target = warning).
 const Ring: React.FC<{ pct: number; over: boolean; children: React.ReactNode }> = ({ pct, over, children }) => {
   const R = 34, C = 2 * Math.PI * R;
   const dash = Math.max(0, Math.min(1, pct)) * C;
@@ -32,14 +32,14 @@ const Ring: React.FC<{ pct: number; over: boolean; children: React.ReactNode }> 
         <linearGradient id="ym-gold" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#FFD233" /><stop offset="100%" stopColor="#FF8A00" />
         </linearGradient>
-        <linearGradient id="ym-violet" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#7C3AED" /><stop offset="100%" stopColor="#B84DFF" />
+        <linearGradient id="ym-over" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#FF5470" /><stop offset="100%" stopColor="#B23048" />
         </linearGradient>
       </defs>
       <circle cx="40" cy="40" r={R} className="ltm-ring-track" />
       <circle
         cx="40" cy="40" r={R} className="ltm-ring-fill"
-        stroke={over ? 'url(#ym-violet)' : 'url(#ym-gold)'}
+        stroke={over ? 'url(#ym-over)' : 'url(#ym-gold)'}
         strokeDasharray={`${dash} ${C}`} transform="rotate(-90 40 40)"
       />
       <foreignObject x="6" y="6" width="68" height="68">
@@ -72,7 +72,7 @@ const YesterdayMatrix: React.FC<YesterdayMatrixProps> = ({
               <span className="ltm-ring-unit">kcal</span>
             </Ring>
             {delta != null
-              ? <span className={over ? 'ltm-alert' : 'ltm-sub good'}>{Math.abs(delta).toLocaleString()} {over ? 'over' : 'under'} target</span>
+              ? <span className={over ? 'ltm-alert' : 'ltm-sub good'}>est. {Math.abs(delta).toLocaleString()} {over ? 'over' : 'under'} target</span>
               : <span className="ltm-sub">vs {targetCalories.toLocaleString()} target</span>}
           </>
         ) : (
@@ -91,7 +91,7 @@ const YesterdayMatrix: React.FC<YesterdayMatrixProps> = ({
         </span>
       </div>
 
-      {/* Vitals — sleep + mood */}
+      {/* Vitals, sleep + mood */}
       <div className="ltm-cell">
         <span className="ltm-eyebrow">VITALS</span>
         {sleepBounded != null ? (

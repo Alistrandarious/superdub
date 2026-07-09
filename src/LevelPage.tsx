@@ -6,7 +6,7 @@ import { api } from './api';
 import { useXP } from './XPContext';
 import SuperdubHeader from './SuperdubHeader';
 import LevelRing from './LevelRing';
-import CoreHabitsMatrix from './CoreHabitsMatrix';
+import GlobalHabitCard from './GlobalHabitCard';
 import DubMascot, { getMascot, MASCOT_KEY, type MascotSpecies } from './DubMascot';
 import { pageTheme, GOLD } from './theme';
 import {
@@ -319,9 +319,9 @@ const LevelPage: React.FC = () => {
   return (
     <div className="app flush" style={pageTheme(GOLD)}>
       <div className="page-content level-page-content">
-        {/* Header scrolls with the page — nothing on this page needs to stay pinned */}
+        {/* Header scrolls with the page, nothing on this page needs to stay pinned */}
         <SuperdubHeader />
-        {/* Hero stage — the ring floats on a theme-coloured bloom */}
+        {/* Hero stage, the ring floats on a theme-coloured bloom */}
         <div className="lvl-hero" style={{ '--hero-glow': theme.glow, '--hero-from': theme.from, '--hero-to': theme.to } as React.CSSProperties}>
           <div className="lvl-hero-bloom" />
           <div className="lvl-hero-ring">
@@ -338,15 +338,15 @@ const LevelPage: React.FC = () => {
             {playerLevel.xpForNext != null ? (
               <p className="hb-xp-to">{(playerLevel.xpForNext - totalXP).toLocaleString()} XP to <span>{playerLevel.nextTitle}</span></p>
             ) : (
-              <p className="hb-xp-to">Max level — you legend.</p>
+              <p className="hb-xp-to">Max level, you legend.</p>
             )}
           </div>
         </div>
 
-        {/* Core Habits — the four daily loops as illuminating tokens */}
-        <CoreHabitsMatrix />
+        {/* This month's community habit, one shared XP goal we all climb */}
+        <GlobalHabitCard />
 
-        {/* Next unlock — swatch of the actual reward, mono eyebrow, no emoji */}
+        {/* Next unlock, swatch of the actual reward, mono eyebrow, no emoji */}
         {playerLevel.nextReward && (
           <div className="next-reward-card">
             <span className="next-reward-mark">{rewardMark(playerLevel.nextReward)}</span>
@@ -358,9 +358,9 @@ const LevelPage: React.FC = () => {
           </div>
         )}
 
-        {/* ── Customise — mono eyebrows + horizontal shelves ── */}
+        {/* ── Customise, mono eyebrows + horizontal shelves ── */}
         <section className="asc-section">
-          <Eyebrow sub="arc or liquid — marked on each">RING</Eyebrow>
+          <Eyebrow sub="arc or liquid, marked on each">RING</Eyebrow>
           <div className="asc-shelf">
             {RING_THEMES.map(t => {
               const locked = !isUnlocked(t.unlock, ctx);
@@ -372,7 +372,7 @@ const LevelPage: React.FC = () => {
                   className={`ringtheme-chip${active ? ' active' : ''}${locked ? ' locked' : ''}`}
                   onClick={() => equipTheme(t)}
                   disabled={locked}
-                  title={`${t.name} — ${isLiquid ? 'liquid fill' : 'arc'}${locked ? ` · unlocks: ${unlockLabel(t.unlock)}` : ''}`}
+                  title={`${t.name}, ${isLiquid ? 'liquid fill' : 'arc'}${locked ? ` · unlocks: ${unlockLabel(t.unlock)}` : ''}`}
                 >
                   <span className={`ringtheme-swatch${t.animated ? ' animated' : ''}`} style={{ background: `linear-gradient(135deg, ${t.from}, ${t.to})`, boxShadow: active ? `0 0 12px ${t.glow}` : undefined }}>
                     {locked && <span className="ringtheme-lock"><LockIc /></span>}
@@ -475,7 +475,7 @@ const LevelPage: React.FC = () => {
           </div>
         </section>
 
-        {/* ── The Ladder — every level as a stop on a gold spine ── */}
+        {/* ── The Ladder, every level as a stop on a gold spine ── */}
         <section className="asc-section">
           <Eyebrow sub={`you're LV${playerLevel.level} of ${PLAYER_LEVELS.length}`}>THE LADDER</Eyebrow>
           <div className="asc-ladder">
@@ -498,7 +498,7 @@ const LevelPage: React.FC = () => {
           </div>
         </section>
 
-        {/* ── Badges — medals, not emoji ── */}
+        {/* ── Badges, medals, not emoji ── */}
         <section className="asc-section">
           <Eyebrow sub={`${earnedBadges} of ${badges.length} earned`}>BADGES</Eyebrow>
           <div className="badges-grid">
