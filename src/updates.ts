@@ -10,6 +10,18 @@ export interface UpdateEntry {
 
 export const UPDATE_LOG: UpdateEntry[] = [
   {
+    date: '2026-07-09',
+    emoji: '🌍',
+    title: 'The Global habit: one thing, all of us',
+    summary: 'A slowly turning planet now sits by your level ring. Tap it for this month\'s shared habit that the whole community levels up together.',
+    points: [
+      'Tap the spinning planet, top left of your level ring, to open The Global habit.',
+      'This July it is one simple thing: do a good deed today. Log it once a day.',
+      'Every deed levels the habit up for you and adds to one shared community total that everyone climbs together.',
+      'When we reach 10,000 XP as a community, everyone who has chipped in at least 100 XP unlocks a brand new colour for Dub: pure white. Equip it on your Level page whenever you like.',
+    ],
+  },
+  {
     date: '2026-07-08',
     emoji: '✨',
     title: 'A big polish pass, and your Data Table is back',

@@ -53,6 +53,14 @@ user's hour) → Evening reflection (mood + how eating landed).
 - In-app auto-opens after 6 PM once per day, gated by the "Daily Check-in" toggle
   (`superdub.checkin.enabled`).
 
+## Tap-to-open (no time-lock, no push)
+
+- **The Global habit** → `superdub:show-global` (`GlobalPrompt.tsx`): the spinning planet
+  top-left of the level ring opens it. One shared monthly habit ("Do a good deed today" for
+  July 2026); logging it contributes to the community total and levels the habit up per user.
+  It is **not** once-per-day-suppressed by a `localStorage` stamp — the server row (one per
+  user per day) is the source of truth, so the button just reads `doneToday` from the API.
+
 ## Manual-only (cog → Quick log, no time-lock, no push)
 
 - **Log Weight** → `superdub:show-checkin` (same prompt as #1).

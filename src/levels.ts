@@ -50,13 +50,14 @@ export interface PlayerLevelDef {
 // ── Unlock conditions — one model for every cosmetic ────────────────────────
 // A cosmetic unlocks by reaching a level, hitting a day-streak, or being an
 // early adopter (joined before launch). No condition = always available.
-export interface Unlock { level?: number; streak?: number; special?: 'earlyAdopter'; }
-export interface UnlockCtx { level: number; streak: number; earlyAdopter: boolean; }
+export interface Unlock { level?: number; streak?: number; special?: 'earlyAdopter' | 'globalWhite'; }
+export interface UnlockCtx { level: number; streak: number; earlyAdopter: boolean; globalWhite: boolean; }
 export const EARLY_ADOPTER_BEFORE = '2026-08-01';
 
 export function isUnlocked(u: Unlock | undefined, ctx: UnlockCtx): boolean {
   if (!u) return true;
   if (u.special === 'earlyAdopter') return ctx.earlyAdopter;
+  if (u.special === 'globalWhite') return ctx.globalWhite;
   if (u.streak != null && ctx.streak < u.streak) return false;
   if (u.level != null && ctx.level < u.level) return false;
   return true;
@@ -64,10 +65,20 @@ export function isUnlocked(u: Unlock | undefined, ctx: UnlockCtx): boolean {
 export function unlockLabel(u: Unlock | undefined): string {
   if (!u) return '';
   if (u.special === 'earlyAdopter') return 'Early adopter';
+  if (u.special === 'globalWhite') return 'Community 10k';
   if (u.streak != null) return `${u.streak}-day streak`;
   if (u.level != null) return `LV${u.level}`;
   return '';
 }
+
+// ── The Global habit reward: white "Aurora" dub ─────────────────────────────
+// Earned when the shared monthly total hits 10k AND this user has personally
+// added ≥100 XP (participants only). A localStorage flag latches it so it stays
+// earned; the swatch shelf then shows it as pickable (never auto-equipped).
+export const DUB_WHITE_KEY = 'superdub.dub.white';
+export const whiteUnlocked = (total: number, mine: number) => total >= 10000 && mine >= 100;
+export const globalWhiteEarned = () =>
+  typeof localStorage !== 'undefined' && localStorage.getItem(DUB_WHITE_KEY) === '1';
 
 // ── Ring themes — the equippable cosmetic reward ────────────────────────────
 export interface RingTheme {
@@ -132,6 +143,7 @@ export const DUB_COLORS: DubColor[] = [
   { id: 'gold',   name: 'Golden',  bodyFrom: '#FFE08A', bodyTo: '#E0A22E', accent: '#FFC42E', unlock: { streak: 7 } },
   { id: 'violet', name: 'Violet',  bodyFrom: '#C3A6FF', bodyTo: '#7E54C8', accent: '#B79CFF', unlock: { level: 8 } },
   { id: 'shadow', name: 'Shadow',  bodyFrom: '#454B5E', bodyTo: '#22262F', accent: '#6C8BFF', unlock: { level: 11 } },
+  { id: 'white',  name: 'Aurora White', bodyFrom: '#FFFFFF', bodyTo: '#E6ECF5', accent: '#FFB928', unlock: { special: 'globalWhite' } },
 ];
 export const DUB_COLOR_KEY = 'superdub.dubColor';
 export function getDubColor(): DubColor {

@@ -281,6 +281,12 @@ const migrations = [
     title TEXT NOT NULL,
     goal  BIGINT NOT NULL
   )`,
+  // The GLOBAL habit is now one named habit per month; correct the seeded July row
+  // (was the old 500k "Community Climb") to the 10k good-deed milestone.
+  `ALTER TABLE global_months ADD COLUMN IF NOT EXISTS habit TEXT`,
+  `INSERT INTO global_months (month, title, goal, habit)
+     VALUES ('2026-07', 'Do a good deed', 10000, 'Do a good deed today')
+   ON CONFLICT (month) DO UPDATE SET title = EXCLUDED.title, goal = EXCLUDED.goal, habit = EXCLUDED.habit`,
   // Per-user, per-day XP contribution (idempotent: re-logging a day replaces it).
   `CREATE TABLE IF NOT EXISTS global_contributions (
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

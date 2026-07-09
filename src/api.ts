@@ -171,7 +171,7 @@ export const api = {
     request('/push/prompt-times', { method: 'POST', body: JSON.stringify(times) }),
 
   // community global habit (this month's shared XP goal)
-  getGlobalHabit: (): Promise<{ month: string; title: string; goal: number; total: number; contributors: number; mine: number }> =>
+  getGlobalHabit: (): Promise<{ month: string; title: string; habit: string; goal: number; total: number; contributors: number; mine: number; myDays: number; doneToday: boolean }> =>
     request('/global'),
   contributeGlobal: (xp: number) =>
     request('/global/contribute', { method: 'POST', body: JSON.stringify({ xp }) }),

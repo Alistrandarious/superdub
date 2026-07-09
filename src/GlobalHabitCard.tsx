@@ -1,12 +1,15 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { api } from './api';
+import { whiteUnlocked, DUB_WHITE_KEY } from './levels';
 
 // This month's GLOBAL habit: one shared XP goal every Superdubber climbs together.
-// Read-only here (contribution happens on the Habits page as you complete habits);
-// this card just shows the collective progress, refreshing on check-ins and logs.
+// Read-only here (you log the deed from the planet overlay on the Habits page);
+// this card just shows the collective progress, refreshing on check-ins and logs,
+// and latches the white-dub reward once the 10k / ≥100-XP milestone is met.
 interface GlobalData {
   month: string;
   title: string;
+  habit: string;
   goal: number;
   total: number;
   contributors: number;
@@ -15,7 +18,12 @@ interface GlobalData {
 
 const GlobalHabitCard: React.FC = () => {
   const [data, setData] = useState<GlobalData | null>(null);
-  const load = useCallback(() => { api.getGlobalHabit().then(setData).catch(() => {}); }, []);
+  const load = useCallback(() => {
+    api.getGlobalHabit().then(d => {
+      setData(d);
+      if (whiteUnlocked(d.total, d.mine)) localStorage.setItem(DUB_WHITE_KEY, '1');
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     load();
@@ -34,10 +42,10 @@ const GlobalHabitCard: React.FC = () => {
   return (
     <section className="global-habit">
       <div className="global-habit-head">
-        <span className="global-habit-eyebrow">THIS MONTH · TOGETHER</span>
+        <span className="global-habit-eyebrow">THE GLOBAL HABIT · TOGETHER</span>
         <span className="global-habit-contributors">{data.contributors.toLocaleString()} climbing</span>
       </div>
-      <h3 className="global-habit-title">{data.title}</h3>
+      <h3 className="global-habit-title">{data.habit}</h3>
       <div className="global-habit-bar">
         <div className="global-habit-fill" style={{ width: `${Math.max(2, pct)}%` }} />
       </div>

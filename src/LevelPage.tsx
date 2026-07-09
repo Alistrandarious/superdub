@@ -12,7 +12,7 @@ import { pageTheme, GOLD } from './theme';
 import {
   PLAYER_LEVELS, RING_THEMES, getRingTheme, getSelectedThemeId,
   SELECTED_THEME_KEY, type RingTheme, habitXPForDoneDays,
-  isUnlocked, unlockLabel, EARLY_ADOPTER_BEFORE, type UnlockCtx,
+  isUnlocked, unlockLabel, EARLY_ADOPTER_BEFORE, type UnlockCtx, globalWhiteEarned,
   DUB_COLORS, DUB_COLOR_KEY, getDubColor,
   HABIT_COLORS, GLOW_COLORS, HABITS_COLOR_KEY, NAV_GLOW_KEY, type AccentColor,
   BACKGROUNDS, BACKGROUND_KEY, getBackground, type Background,
@@ -250,7 +250,7 @@ const LevelPage: React.FC = () => {
     }).catch(() => {});
   }, []);
   const dayStreak = parseInt(localStorage.getItem('superdub.dayStreak') || '0', 10);
-  const ctx: UnlockCtx = { level: playerLevel.level, streak: dayStreak, earlyAdopter };
+  const ctx: UnlockCtx = { level: playerLevel.level, streak: dayStreak, earlyAdopter, globalWhite: globalWhiteEarned() };
 
   const [themeId, setThemeId] = useState(getSelectedThemeId);
   const theme = getRingTheme(themeId);

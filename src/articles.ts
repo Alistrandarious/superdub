@@ -18,6 +18,25 @@ export interface Article {
 
 export const ARTICLES: Article[] = [
   {
+    id: 'the-global-habit',
+    title: 'The Global Habit: One Thing, All of Us',
+    author: 'Ali Shah',
+    readMins: 2,
+    tag: 'Superdub',
+    accent: '#FFB928',
+    dek: 'A slowly turning planet by your level ring opens one shared habit that the whole community levels up together.',
+    body: [
+      { t: 'p', text: 'Every habit in Superdub so far has been yours alone. This one is different. There is now a small planet, slowly turning, sitting just to the top left of your level ring. Tap it and you meet The Global habit: one thing, the same for everyone, for the whole month.' },
+      { t: 'h', text: 'This month: do a good deed' },
+      { t: 'p', text: 'That is the whole ask. Hold a door, text a friend back, pick up the litter nobody else did. Then open the planet and log it. Once a day, no streak pressure, no guilt if you miss one.' },
+      { t: 'quote', text: 'Small and shared beats big and alone.' },
+      { t: 'h', text: 'You level it up, we climb together' },
+      { t: 'p', text: 'Each deed levels the habit up for you personally, exactly like your other habits, and it pays more XP the longer you keep at it. But here is the twist: all of that XP flows into one shared total that every Superdubber is filling at the same time. You are never climbing on your own.' },
+      { t: 'h', text: 'The reward is white' },
+      { t: 'p', text: 'When we reach 10,000 XP together, a new colour opens up for Dub: pure, calm white. It only goes to people who actually showed up, so you need at least 100 XP of your own in the pot. When it unlocks it simply appears in your Level page, ready to equip whenever the mood takes you. Tap the planet, do one good thing, and add your bit to the climb. 🌍' },
+    ],
+  },
+  {
     id: 'live-target-matrix',
     title: 'Your Day, as a Live Target Matrix',
     author: 'Ali Shah',

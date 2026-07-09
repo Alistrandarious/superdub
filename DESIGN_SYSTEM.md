@@ -28,6 +28,12 @@ read `var(--theme)` — never hardcode the accent inside a component.
 - `--grad-brand` green→blue `#2FD27E → #2E8BFF` (flagship / wordmark)
 - `--grad-health`, `--grad-growth`, `--grad-ascension` (gold `#FFB928 → #FFE08A`)
 
+### Cosmetic rewards
+- Dub colours live in `DUB_COLORS` (`src/levels.ts`). **Aurora White** (`id: 'white'`,
+  body `#FFFFFF → #E6ECF5`, gold accent) is the community reward: it unlocks when The
+  Global habit's shared total hits 10k and the user has personally added ≥100 XP. It is
+  made available in the Level-page swatch shelf, never auto-equipped.
+
 ## Surfaces — dark, glass, navy-black
 
 Single source in `App.css :root`; prefer the semantic aliases going forward.

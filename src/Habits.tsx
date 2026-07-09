@@ -10,6 +10,7 @@ import CadenceCarousel from './CadenceCarousel';
 import SuperdubHeader from './SuperdubHeader';
 import LevelRing from './LevelRing';
 import DubMascot, { getMascot } from './DubMascot';
+import GlobalPlanet from './GlobalPlanet';
 import DailyLog from './DailyLog';
 import { pageTheme, HEALTH } from './theme';
 import {
@@ -873,19 +874,9 @@ const Habits: React.FC = () => {
     }
   }, [loaded, ht, today, startDates, xpCarry]);
 
-  // Feed this month's community habit: contribute today's completed daily-habit XP
-  // (10 per habit). The server keeps one row per user per day, so re-sending is
-  // idempotent; the ref just avoids firing the request on every unrelated render.
-  const lastContribRef = useRef(-1);
-  useEffect(() => {
-    if (!loaded) return;
-    const doneToday = habits.filter(h => h !== MANDATORY_HABIT && (habitCadence[h] ?? 'daily') === 'daily' && ht[today]?.[h] === 'done').length;
-    const xp = doneToday * 10;
-    if (xp !== lastContribRef.current) {
-      lastContribRef.current = xp;
-      api.contributeGlobal(xp).catch(() => {});
-    }
-  }, [loaded, ht, today, habits, habitCadence]);
+  // The community habit is now a single dedicated habit ("do a good deed"), logged
+  // from the Global planet overlay (GlobalPrompt) — no longer fed by daily-habit
+  // completions here.
 
   // Fallback: check every 5 minutes if 6 hours have passed
   useEffect(() => {
@@ -1211,6 +1202,9 @@ const Habits: React.FC = () => {
         <div className="hb-level">
           <div className="hb-ring-wrap">
             <LevelRing level={playerLevel.level} title={playerLevel.title} progress={playerLevel.progress} theme={ringTheme} onClick={() => navigateWithTransition(navigate, '/level')} />
+            <button className="hb-planet-by-ring" onClick={() => window.dispatchEvent(new CustomEvent('superdub:show-global'))} aria-label="The Global habit" title="The Global habit">
+              <GlobalPlanet size={34} />
+            </button>
             <button className="hb-dub-by-ring" onClick={() => window.dispatchEvent(new CustomEvent('superdub:show-coach'))} aria-label="Talk to Dub" title="Talk to Dub">
               <DubMascot size={46} mood="happy" species={mascotSpecies} />
             </button>

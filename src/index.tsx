@@ -6,6 +6,7 @@ import DailyCheckIn from './DailyCheckIn';
 import VitalsPrompt from './VitalsPrompt';
 import ExercisePrompt from './ExercisePrompt';
 import EveningPrompt from './EveningPrompt';
+import GlobalPrompt from './GlobalPrompt';
 import StepEntry from './StepEntry';
 import WeightEntry from './WeightEntry';
 import BottomNav from './BottomNav';
@@ -116,6 +117,7 @@ function AppRouter() {
       <VitalsPrompt />
       <ExercisePrompt />
       <EveningPrompt />
+      <GlobalPrompt />
       <StepEntry />
       <WeightEntry />
       <BottomNav />

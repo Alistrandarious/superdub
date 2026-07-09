@@ -34,6 +34,11 @@ Superdub is a **habit + weight + nutrition tracker** built around a single loop:
 - **XP & Levels** (`/level`) — XP is recomputed live from habit streaks (not
   stored). 15 named levels ("First Day" → "Transcendent"), a reward per level, and
   unlockable cosmetics (level-ring themes, Dub the mascot). Gold = XP, violet = rank.
+- **The Global habit** — a slowly turning planet by the level ring opens one shared
+  monthly habit (July 2026: "do a good deed today"). Each user levels it up
+  personally, but the XP feeds one community total (`global_months` /
+  `global_contributions`, `GlobalPrompt.tsx`). Reaching 10k together, with ≥100 XP of
+  your own, unlocks the white "Aurora" Dub colour.
 
 ### 4. Dub — the coach
 - A small robotic Yorkie (switchable to a cat at L2) that reads your data and

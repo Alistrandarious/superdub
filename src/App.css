@@ -6246,6 +6246,45 @@ h1, h2, h3, h4, .sora {
 .hb-dub-by-ring:active { transform: scale(0.94); }
 @keyframes dub-peek-in { from { opacity: 0; transform: translateY(10px) scale(0.8); } to { opacity: 1; transform: none; } }
 
+/* The Global habit planet — top-left of the ring, mirroring the dub button */
+.hb-planet-by-ring {
+  position: absolute; left: -26px; top: -6px;
+  width: 46px; height: 46px; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 35%, rgba(46,139,255,0.20), rgba(14,14,20,0.92));
+  border: 1.5px solid rgba(111,195,255,0.4);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.45), 0 0 0 4px rgba(14,14,20,0.6);
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.2s;
+  animation: dub-peek-in 0.5s cubic-bezier(0.22,1,0.36,1) both;
+}
+.hb-planet-by-ring:hover { transform: scale(1.1); border-color: rgba(111,195,255,0.7); }
+.hb-planet-by-ring:active { transform: scale(0.94); }
+.gp-svg { display: block; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.4)); }
+.gp-land { transform-box: fill-box; transform-origin: center; animation: planet-spin 24s linear infinite; }
+@keyframes planet-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .gp-land { animation: none; } }
+
+/* Global habit overlay (GlobalPrompt) — ascension gold, reuses .global-habit-* */
+.gp-modal { border-top: 2px solid rgba(255,185,40,0.4); }
+.gp-head { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.gp-planet-wrap { flex: 0 0 auto; }
+.gp-title {
+  font-family: var(--font-display, 'Kanit'), sans-serif; font-size: 1.3rem; font-weight: 700;
+  color: #FFE08A; margin: 2px 0 0;
+}
+.gp-section { margin-bottom: 16px; }
+.gp-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+.gp-lvl { font-family: var(--font-display, 'Kanit'), sans-serif; font-weight: 700; color: #F0F4FF; font-size: 0.95rem; }
+.gp-rate { font-family: var(--font-data); font-weight: 700; font-size: 0.78rem; color: rgba(255,224,138,0.85); }
+.gp-earned {
+  margin: 4px 0 14px; padding: 10px 12px; border-radius: 12px;
+  background: rgba(255,185,40,0.12); border: 1px solid rgba(255,185,40,0.3);
+  font-family: var(--font-ui); font-size: 0.8rem; color: #FFE08A; text-align: center;
+}
+.gp-save { background: var(--grad-ascension); color: #2A1B00; }
+
 /* ── Level page: hero stage ─────────────────────────────────── */
 .lvl-hero {
   position: relative;
