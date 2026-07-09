@@ -2492,6 +2492,14 @@ h1, h2, h3, h4, .sora {
   margin: 0;
 }
 .chart-title-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+/* Quiet active-cadence label beside the Habits title (the loud tab row moved into
+   the cog). */
+.chart-title-cad {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.56rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.4);
+}
 .chart-title-target {
   margin-left: auto;
   font-family: 'Space Mono', monospace;
@@ -2580,6 +2588,8 @@ h1, h2, h3, h4, .sora {
 }
 .chart-cog-check.on { background: #2FD27E; border-color: #2FD27E; }
 .chart-cog-habit { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Splits the Cadence group from the Filter-habits list in the cog menu. */
+.chart-cog-divider { height: 1px; margin: 6px 4px; background: var(--glass-border); }
 
 .chart-range-btn {
   background: transparent;
@@ -2607,15 +2617,6 @@ h1, h2, h3, h4, .sora {
   opacity: 0.6;
 }
 .chart-range-btn--locked:hover { border-color: rgba(255,255,255,0.08); }
-
-/* Cadence toggle under the Habits chart title — daily/weekly/monthly/yearly */
-.chart-cadence-row {
-  display: flex;
-  gap: 6px;
-  justify-content: center;
-  flex-wrap: wrap;
-  padding: 0 14px 6px;
-}
 
 .chart-section-inner {
   display: flex;
@@ -5949,7 +5950,9 @@ h1, h2, h3, h4, .sora {
   gap: 12px;
   padding: 20px;
   border-radius: var(--r-card);
-  background: var(--glass-bg);
+  /* Translucent so an unlocked coloured background shows through (on the default
+     flat #0E0E14 this is ~identical to the old opaque fill, so nothing regresses). */
+  background: rgba(14,14,20,0.5);
   border: 1px solid var(--glass-border);
   border-left: 3px solid var(--theme-dim);
   box-shadow: var(--glass-shadow);

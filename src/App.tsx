@@ -1824,15 +1824,28 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       {habits.length > 0 && (
         <section className="chart-section">
           <div className="chart-title-row">
-            <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#2FD27E' }} />Habits</h3>
+            <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#2FD27E' }} />Habits<span className="chart-title-cad">{CADENCE_META[chartCadence].label}</span></h3>
             <div className="chart-cog-wrap">
-              <button className={`chart-cog-btn${chartCogOpen ? ' active' : ''}`} onClick={() => setChartCogOpen(o => !o)} aria-label="Filter habits">
+              <button className={`chart-cog-btn${chartCogOpen ? ' active' : ''}`} onClick={() => setChartCogOpen(o => !o)} aria-label="Habit cadence and filters">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
               </button>
               {chartCogOpen && (
                 <>
                   <div className="chart-cog-overlay" onClick={() => setChartCogOpen(false)} />
                   <div className="chart-cog-menu">
+                    <div className="chart-cog-title">Cadence</div>
+                    <div role="radiogroup" aria-label="Habit cadence">
+                      {CADENCE_ORDER.map(c => {
+                        const sel = chartCadence === c;
+                        return (
+                          <button key={c} role="radio" aria-checked={sel} className="chart-cog-row" onClick={() => setChartCadence(c)}>
+                            <span className={`chart-cog-check ${sel ? 'on' : ''}`}>{sel ? '✓' : ''}</span>
+                            <span className="chart-cog-habit">{CADENCE_META[c].label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="chart-cog-divider" />
                     <div className="chart-cog-title">Filter habits</div>
                     {habits.map(h => {
                       const shown = !hiddenHabits.has(h);
@@ -1866,19 +1879,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 );
               })}
             </div>
-          </div>
-          <div className="chart-cadence-row" role="tablist" aria-label="Habit cadence">
-            {CADENCE_ORDER.map(c => (
-              <button
-                key={c}
-                role="tab"
-                aria-selected={chartCadence === c}
-                className={`chart-range-btn ${chartCadence === c ? 'active' : ''}`}
-                onClick={() => setChartCadence(c)}
-              >
-                {CADENCE_META[c].label}
-              </button>
-            ))}
           </div>
           {renderChartPager()}
           <div className="chart-section-inner">
