@@ -2,10 +2,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import { api } from './api';
 import GlobalPlanet from './GlobalPlanet';
-import {
-  habitLevelFromDays, HABIT_LEVEL_RATES, HABIT_LEVEL_TIERS, MAX_HABIT_LEVEL,
-  whiteUnlocked, DUB_WHITE_KEY,
-} from './levels';
+import { habitLevelFromDays, HABIT_LEVEL_RATES, whiteUnlocked, DUB_WHITE_KEY } from './levels';
+
+// Community progress ring geometry (the gold arc around the globe).
+const RING_R = 80;
+const RING_C = 2 * Math.PI * RING_R;
 
 // The Global habit overlay — opened by tapping the spinning planet by the level
 // ring (dispatches `superdub:show-global`). One shared, ascension-gold habit that
@@ -67,46 +68,51 @@ const GlobalPrompt: React.FC = () => {
   const d = data;
   const pct = d ? Math.max(0, Math.min(100, Math.round((d.total / Math.max(1, d.goal)) * 100))) : 0;
   const level = d ? habitLevelFromDays(d.myDays) : 1;
-  const curTier = HABIT_LEVEL_TIERS[level - 1];
-  const nextTier = level < MAX_HABIT_LEVEL ? HABIT_LEVEL_TIERS[level] : null;
-  const lvlPct = d
-    ? (nextTier ? Math.max(4, Math.min(100, Math.round(((d.myDays - curTier) / (nextTier - curTier)) * 100))) : 100)
-    : 0;
+  const ringOffset = RING_C * (1 - pct / 100);
 
   return (
     <div className="checkin-overlay" onClick={() => setShow(false)}>
       <div className="checkin-modal gp-modal" onClick={e => e.stopPropagation()}>
         <div className="gp-head">
-          <span className="gp-planet-wrap"><GlobalPlanet size={40} /></span>
-          <div>
-            <span className="global-habit-eyebrow">THE GLOBAL HABIT · TOGETHER</span>
-            <h2 className="gp-title">{d?.habit ?? 'Do a good deed today'}</h2>
-          </div>
+          <span className="global-habit-eyebrow">THE GLOBAL HABIT · TOGETHER</span>
+          <h2 className="gp-title">{d?.habit ?? 'Do a good deed today'}</h2>
         </div>
 
         {d && (
           <>
-            {/* Your personal progress on this habit */}
-            <div className="gp-section">
-              <div className="gp-row">
-                <span className="gp-lvl">Level {level}</span>
-                <span className="gp-rate">+{rateFor(d.myDays + 1)} XP · {d.myDays} {d.myDays === 1 ? 'day' : 'days'}</span>
-              </div>
-              <div className="global-habit-bar"><span className="global-habit-fill" style={{ width: `${lvlPct}%` }} /></div>
+            {/* Hero: the globe sits inside a gold ring that fills as we all climb. */}
+            <div className="gp-hero">
+              <svg className="gp-ring" viewBox="0 0 180 180" width="180" height="180" aria-hidden="true">
+                <defs>
+                  <linearGradient id="gp-ring-grad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#FFB928" />
+                    <stop offset="100%" stopColor="#FFE08A" />
+                  </linearGradient>
+                </defs>
+                <circle cx="90" cy="90" r={RING_R} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="6" />
+                <circle
+                  className="gp-ring-arc"
+                  cx="90" cy="90" r={RING_R} fill="none"
+                  stroke="url(#gp-ring-grad)" strokeWidth="6" strokeLinecap="round"
+                  strokeDasharray={RING_C} strokeDashoffset={ringOffset}
+                  transform="rotate(-90 90 90)"
+                />
+              </svg>
+              <span className="gp-ring-core"><GlobalPlanet size={116} /></span>
             </div>
 
-            {/* The shared community climb */}
-            <div className="gp-section">
-              <div className="global-habit-head">
-                <span className="global-habit-eyebrow">COMMUNITY · {d.goal.toLocaleString()} XP GOAL</span>
-                <span className="global-habit-contributors">{d.contributors.toLocaleString()} climbing</span>
-              </div>
-              <div className="global-habit-bar"><span className="global-habit-fill" style={{ width: `${Math.max(2, pct)}%` }} /></div>
-              <div className="global-habit-stats">
-                <span className="global-habit-total">{d.total.toLocaleString()}<span> / {d.goal.toLocaleString()} XP</span></span>
-                <span className="global-habit-pct">{pct}%</span>
-              </div>
-              {d.mine > 0 && <p className="global-habit-mine">You've added {d.mine.toLocaleString()} XP this month.</p>}
+            {/* The shared climb, front and centre. */}
+            <div className="gp-climb">
+              <span className="gp-climb-total">{d.total.toLocaleString()}<em> / {d.goal.toLocaleString()} XP</em></span>
+              <span className="gp-climb-sub">{d.contributors.toLocaleString()} climbing · {pct}% there</span>
+            </div>
+
+            {/* Your quiet, personal line under the collective one. */}
+            <div className="gp-you">
+              <span className="gp-you-chip">LV {level}</span>
+              <span className="gp-you-text">
+                {d.mine > 0 ? `You've added ${d.mine.toLocaleString()} XP this month` : 'Log your first deed to join the climb'}
+              </span>
             </div>
 
             {justEarned && (
@@ -125,7 +131,7 @@ const GlobalPrompt: React.FC = () => {
               >
                 <span className="checkin-tick">{d.doneToday ? '✓' : '+'}</span>
                 <span className="checkin-habit-name">
-                  {saving ? 'Saving…' : d.doneToday ? 'Good deed done today' : d.habit}
+                  {saving ? 'Saving…' : d.doneToday ? 'Good deed done today' : 'I did a good deed'}
                 </span>
               </button>
               <button className="checkin-skip-btn" onClick={() => setShow(false)}>Close</button>

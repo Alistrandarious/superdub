@@ -6330,18 +6330,37 @@ h1, h2, h3, h4, .sora {
 /* The globe's axial spin is done with SVG <animateTransform> in GlobalPlanet.tsx
    (user-unit precise, size-independent) and JS-gated for reduced motion. */
 
-/* Global habit overlay (GlobalPrompt) — ascension gold, reuses .global-habit-* */
+/* Global habit overlay (GlobalPrompt) — ascension gold, globe-in-a-progress-ring */
 .gp-modal { border-top: 2px solid rgba(255,185,40,0.4); }
-.gp-head { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
-.gp-planet-wrap { flex: 0 0 auto; }
+.gp-head { display: block; text-align: center; margin-bottom: 12px; }
 .gp-title {
   font-family: var(--font-display, 'Kanit'), sans-serif; font-size: 1.3rem; font-weight: 700;
-  color: #FFE08A; margin: 2px 0 0;
+  color: #FFE08A; margin: 4px 0 0;
 }
-.gp-section { margin-bottom: 16px; }
-.gp-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
-.gp-lvl { font-family: var(--font-display, 'Kanit'), sans-serif; font-weight: 700; color: #F0F4FF; font-size: 0.95rem; }
-.gp-rate { font-family: var(--font-data); font-weight: 700; font-size: 0.78rem; color: rgba(255,224,138,0.85); }
+
+/* Hero: the wireframe globe centred inside the gold community-progress ring */
+.gp-hero { position: relative; width: 180px; height: 180px; margin: 6px auto 14px; }
+.gp-ring { display: block; }
+.gp-ring-arc {
+  transition: stroke-dashoffset 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  filter: drop-shadow(0 0 6px rgba(255,185,40,0.5));
+}
+.gp-ring-core { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.gp-ring-core .gp-svg { filter: drop-shadow(0 2px 10px rgba(0,0,0,0.5)); }
+
+/* The shared climb, front and centre */
+.gp-climb { text-align: center; margin-bottom: 12px; }
+.gp-climb-total { display: block; font-family: var(--font-data); font-weight: 700; font-size: 1.5rem; color: #FFE08A; letter-spacing: 0.01em; }
+.gp-climb-total em { font-style: normal; font-size: 0.9rem; color: rgba(255,224,138,0.55); }
+.gp-climb-sub { display: block; font-family: var(--font-ui); font-size: 0.78rem; color: rgba(255,255,255,0.5); margin-top: 3px; }
+
+/* Your quiet personal line */
+.gp-you { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 16px; font-size: 0.8rem; color: rgba(255,255,255,0.68); }
+.gp-you-chip {
+  font-family: var(--font-data); font-weight: 700; font-size: 0.68rem; color: #2A1B00;
+  background: var(--grad-ascension, linear-gradient(160deg, #FFB928, #FFE08A));
+  padding: 2px 9px; border-radius: 999px;
+}
 .gp-earned {
   margin: 4px 0 14px; padding: 10px 12px; border-radius: 12px;
   background: rgba(255,185,40,0.12); border: 1px solid rgba(255,185,40,0.3);

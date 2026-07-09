@@ -1,43 +1,44 @@
-import React from 'react';
+import React, { useId } from 'react';
 
-// The Global habit's entry point: a small earth that turns on its axis. Pure inline
-// SVG (no asset, no emoji — house style). The continents live in a `.gp-land` group
-// clipped to the ocean circle; two identical copies of the land sit side by side and
-// the whole belt scrolls left by one globe-width (100 user units) on a loop, so land
-// drifts across the sphere and wraps around the edge like a real globe rotating.
-// The scroll uses SVG <animateTransform> (user units, so it's exact at any render
-// size, unlike a CSS px translate). Reduced-motion is honoured by omitting it.
+// The Global habit's motif: a clean WIREFRAME globe (no blotchy landmasses). An
+// ocean sphere with fixed latitude arcs and a belt of longitude meridians that
+// scrolls sideways and wraps — so the wireframe turns on its axis like a real
+// globe. Scroll uses SVG <animateTransform> (user units, exact at any size) and
+// is JS-gated for reduced motion. Ids are namespaced per instance so multiple
+// globes on a page (ring button + prompt hero) never collide.
 
-// The four continents, reused for both the on-screen copy and the +100 wrap copy.
-const LAND = (
-  <>
-    <path d="M18 40 q10 -12 22 -6 q10 5 6 16 q-6 12 -20 8 q-14 -4 -8 -18 Z" fill="#43C982" />
-    <path d="M58 22 q14 -4 20 8 q4 12 -8 16 q-14 4 -18 -8 q-3 -12 6 -16 Z" fill="#4FD08A" />
-    <path d="M52 58 q12 -3 16 8 q3 12 -10 16 q-13 3 -16 -9 q-2 -11 10 -15 Z" fill="#3FBE7A" />
-    <path d="M30 66 q8 -2 11 6 q2 9 -7 11 q-9 1 -11 -7 q-1 -8 7 -10 Z" fill="#47CE86" />
-  </>
+// One set of evenly spaced meridians (vertical lines), spanning one globe-width.
+const MERIDIANS = (
+  <g fill="none" stroke="rgba(206,232,255,0.34)" strokeWidth="1">
+    {[6.25, 18.75, 31.25, 43.75, 56.25, 68.75, 81.25, 93.75].map(x => (
+      <line key={x} x1={x} y1="4" x2={x} y2="96" />
+    ))}
+  </g>
 );
 
 const GlobalPlanet: React.FC<{ size?: number }> = ({ size = 34 }) => {
+  const uid = useId().replace(/[:]/g, '');
+  const oceanId = `gpo-${uid}`;
+  const clipId = `gpc-${uid}`;
   const reduce = typeof window !== 'undefined'
     && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   return (
     <svg className="gp-svg" width={size} height={size} viewBox="0 0 100 100" aria-hidden="true">
       <defs>
-        <radialGradient id="gp-ocean" cx="38%" cy="32%" r="78%">
+        <radialGradient id={oceanId} cx="38%" cy="32%" r="80%">
           <stop offset="0%" stopColor="#6FC3FF" />
           <stop offset="55%" stopColor="#2E8BFF" />
-          <stop offset="100%" stopColor="#123E8E" />
+          <stop offset="100%" stopColor="#0E357E" />
         </radialGradient>
-        <clipPath id="gp-clip"><circle cx="50" cy="50" r="45" /></clipPath>
+        <clipPath id={clipId}><circle cx="50" cy="50" r="45" /></clipPath>
       </defs>
-      <circle cx="50" cy="50" r="45" fill="url(#gp-ocean)" />
-      <g className="gp-land" clipPath="url(#gp-clip)">
-        {/* Scrolling belt: copy A at origin, copy B one globe-width to the right.
-            Translating 0 → -100 loops seamlessly (B lands exactly where A started). */}
-        <g className="gp-land-belt">
-          {LAND}
-          <g transform="translate(100 0)">{LAND}</g>
+      <circle cx="50" cy="50" r="45" fill={`url(#${oceanId})`} />
+      <g clipPath={`url(#${clipId})`}>
+        {/* Longitude belt — two copies side by side; translating 0 → -100 loops
+            seamlessly, turning the wireframe on its axis. */}
+        <g className="gp-belt">
+          {MERIDIANS}
+          <g transform="translate(100 0)">{MERIDIANS}</g>
           {!reduce && (
             <animateTransform
               attributeName="transform"
@@ -45,15 +46,21 @@ const GlobalPlanet: React.FC<{ size?: number }> = ({ size = 34 }) => {
               type="translate"
               from="0 0"
               to="-100 0"
-              dur="16s"
+              dur="22s"
               repeatCount="indefinite"
             />
           )}
         </g>
+        {/* Fixed latitude arcs, gently bowed to read as a sphere. */}
+        <g fill="none" stroke="rgba(206,232,255,0.4)" strokeWidth="1">
+          <path d="M12 34 Q50 30 88 34" />
+          <path d="M6 50 Q50 50 94 50" />
+          <path d="M12 66 Q50 70 88 66" />
+        </g>
       </g>
-      {/* soft glare + atmosphere rim — static, on top, sells the fixed light source */}
-      <ellipse cx="37" cy="31" rx="15" ry="9" fill="rgba(255,255,255,0.18)" />
-      <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.22)" strokeWidth="1.5" />
+      {/* Atmosphere rim + soft glare. */}
+      <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(206,232,255,0.38)" strokeWidth="1.5" />
+      <ellipse cx="37" cy="30" rx="15" ry="9" fill="rgba(255,255,255,0.16)" />
     </svg>
   );
 };
