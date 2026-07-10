@@ -68,7 +68,8 @@ export const StormIc: React.FC<IconProps> = (p) => (
 
 // ── Featured-habit tiles ─────────────────────────────────────────────────────
 export const WalkIc: React.FC<IconProps> = (p) => (   // steps / walking (was 🚶)
-  <S {...p}><circle cx="13" cy="4" r="2" /><path d="M13 7l-2 4 3 2 1 7M11 11l-3 2-1 4M14 13l4 1" /></S>
+  // Same activity glyph the Steps chip uses (DailyLog StepIc) — clean + consistent.
+  <S {...p}><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></S>
 );
 export const BookIc: React.FC<IconProps> = (p) => (   // reading (was 📖)
   <S {...p}><path d="M12 6C10 4 6 4 3 5v14c3-1 7-1 9 1 2-2 6-2 9-1V5c-3-1-7-1-9 1z" /><path d="M12 6v14" /></S>
