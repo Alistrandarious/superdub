@@ -5239,23 +5239,13 @@ h1, h2, h3, h4, .sora {
 .cadx { padding: 6px 0 0; }
 .cadx-header {
   position: sticky; top: 0; z-index: 20;
-  background: var(--card-bg);
+  background: transparent;   /* same as the rest of the app — no tinted bar */
   padding: 4px 0 6px;
   transition: padding 0.2s ease;
-}
-.cadx-header::after {
-  content: '';
-  position: absolute;
-  bottom: -14px; left: 0; right: 0;
-  height: 14px;
-  background: linear-gradient(to bottom, var(--card-bg), transparent);
-  pointer-events: none;
-  z-index: 1;
 }
 /* Collapsed-on-scroll: hide the title, leave just the four colour dots */
 .cadx--compact .cadx-header {
   padding: 8px 0;
-  box-shadow: 0 6px 16px -10px rgba(0,0,0,0.6);
 }
 .cadx--compact .cadx-title { display: none; }
 .cadx-dotrow { display: flex; gap: 18px; justify-content: center; align-items: center; }
