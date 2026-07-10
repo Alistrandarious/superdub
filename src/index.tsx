@@ -35,6 +35,7 @@ const LevelPage = lazy(() => import('./LevelPage'));
 const ArchivedHabits = lazy(() => import('./ArchivedHabits'));
 const SuccessKit = lazy(() => import('./SuccessKit'));
 const PlanPage = lazy(() => import('./PlanPage'));
+const CommunityPage = lazy(() => import('./CommunityPage'));
 
 const NO_NAV_PATHS = ['/privacy'];
 
@@ -111,6 +112,7 @@ function AppRouter() {
         <Route path="/archived" element={<ArchivedHabits />} />
         <Route path="/success-kit" element={<SuccessKit />} />
         <Route path="/plan" element={<PlanPage />} />
+        <Route path="/community" element={<CommunityPage />} />
       </Routes>
       </Suspense>
       <DailyCheckIn />

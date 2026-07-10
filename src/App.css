@@ -5101,6 +5101,32 @@ h1, h2, h3, h4, .sora {
 .hb-rewind-back:hover { background: rgba(46,139,255,0.18); border-color: #2E8BFF; }
 .hb-rewind-back:active { transform: scale(0.96); }
 
+/* ── Community (Global & Friends) page ──────────── */
+.community-content { display: flex; flex-direction: column; gap: 16px; }
+.community-intro { margin: 4px 4px 0; }
+.community-eyebrow {
+  font-family: var(--font-data); font-size: 0.62rem; font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.4);
+}
+.community-sub {
+  margin: 6px 0 0; font-family: var(--font-ui); font-size: 0.82rem; line-height: 1.45;
+  color: rgba(255,255,255,0.6);
+}
+.community-deed-btn {
+  align-self: stretch; padding: 14px; border-radius: 14px; cursor: pointer;
+  font-family: var(--font-ui); font-size: 0.9rem; font-weight: 700; color: #1a1008;
+  background: linear-gradient(135deg, #FFE08A, #FFB020); border: none;
+  box-shadow: 0 4px 16px rgba(255,185,40,0.35); transition: transform 0.15s;
+}
+.community-deed-btn:active { transform: scale(0.98); }
+.community-friends { display: flex; flex-direction: column; gap: 8px; margin: 4px; }
+.community-soon {
+  padding: 18px 16px; border-radius: var(--r-card); text-align: center;
+  background: var(--card-bg); border: 1px dashed var(--glass-border);
+}
+.community-soon-title { margin: 0; font-family: var(--font-ui); font-weight: 700; font-size: 0.92rem; color: #EAF2EE; }
+.community-soon-sub { margin: 6px 0 0; font-family: var(--font-ui); font-size: 0.78rem; line-height: 1.45; color: rgba(255,255,255,0.5); }
+
 /* ── Daily Log — the "Daily Superdub" vitals strip ──────────── */
 .daily-log { margin: 16px 16px 4px; }
 .daily-log-head {

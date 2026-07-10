@@ -6,7 +6,6 @@ import { api } from './api';
 import { useXP } from './XPContext';
 import SuperdubHeader from './SuperdubHeader';
 import LevelRing from './LevelRing';
-import GlobalHabitCard from './GlobalHabitCard';
 import DubMascot, { getMascot, MASCOT_KEY, type MascotSpecies } from './DubMascot';
 import { pageTheme, GOLD } from './theme';
 import {
@@ -342,9 +341,6 @@ const LevelPage: React.FC = () => {
             )}
           </div>
         </div>
-
-        {/* This month's community habit, one shared XP goal we all climb */}
-        <GlobalHabitCard />
 
         {/* Next unlock, swatch of the actual reward, mono eyebrow, no emoji */}
         {playerLevel.nextReward && (
