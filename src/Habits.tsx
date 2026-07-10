@@ -436,9 +436,8 @@ const HabitCard: React.FC<{
   onToggleDay: (habit: string, dayKey: string, state: HabitState) => void;
   onEditDay: (habit: string, dayKey: string, cur: HabitState) => void;
   onRequestRemove: (habit: string) => void;
-  onRequestDelete: (habit: string) => void;
   startDate?: string | null;
-}> = ({ habit, stats, weekDays, ht, today, cadence, onToggleDay, onEditDay, onRequestRemove, onRequestDelete, startDate }) => {
+}> = ({ habit, stats, weekDays, ht, today, cadence, onToggleDay, onEditDay, onRequestRemove, startDate }) => {
   const [histOpen, setHistOpen] = useState(false);
   const [monthOffset, setMonthOffset] = useState(0); // 0 = this month, -1 = last month …
   const nowD = new Date();
@@ -528,15 +527,7 @@ const HabitCard: React.FC<{
         >
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
         </button>
-        {/* Permanent delete, only interactive when expanded */}
-        <button
-          className={`hcard-delete-icon${expanded ? ' visible' : ''}`}
-          onClick={e => { e.stopPropagation(); if (expanded) onRequestDelete(habit); }}
-          tabIndex={expanded ? 0 : -1}
-          aria-label="Delete habit permanently"
-        >
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-        </button>
+        {/* Permanent delete lives only on the Archived page — archive first. */}
         <button
           className={`hcard-cog${histOpen ? ' active' : ''}`}
           onClick={e => { e.stopPropagation(); setExpanded(true); setMonthOffset(0); setHistOpen(o => !o); }}
@@ -723,7 +714,6 @@ const Habits: React.FC = () => {
   const [loaded, setLoaded] = useState(false);
   const [newHabit, setNewHabit] = useState('');
   const [pendingRemove, setPendingRemove] = useState<string | null>(null);
-  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [featuredOpen, setFeaturedOpen] = useState(false);
   const [showDayOverlay, setShowDayOverlay] = useState(false);
@@ -983,22 +973,6 @@ const Habits: React.FC = () => {
     }).catch(() => {});
   };
 
-  // Permanently delete an active habit (+ its history). Behind a confirm dialog.
-  const confirmDeleteHabit = (name: string) => {
-    if (name === MANDATORY_HABIT) { setPendingDelete(null); return; }
-    setPendingDelete(null);
-    setHabits(prev => prev.filter(h => h !== name));      // optimistic
-    setStartDates(prev => { const next = { ...prev }; delete next[name]; return next; });
-    setHt(prev => {
-      const next = { ...prev };
-      ALL_DAYS.forEach(d => { if (next[d]) { const day = { ...next[d] }; delete day[name]; next[d] = day; } });
-      return next;
-    });
-    api.deleteHabitPermanently(name)
-      .then(() => window.dispatchEvent(new CustomEvent('superdub:tracker-updated')))
-      .catch(() => {});
-  };
-
   // Perfect week — gold ONLY lands on Sunday once all 7 days are logged.
   // (Mid-week "all non-future days done" would otherwise trip gold on Monday.)
   const nonFutureDays = weekDays.filter(d => !d.isFuture);
@@ -1054,7 +1028,6 @@ const Habits: React.FC = () => {
             onToggleDay={handleToggleDay}
             onEditDay={editPast}
             onRequestRemove={setPendingRemove}
-            onRequestDelete={setPendingDelete}
             startDate={startDates[habit]}
           />
         ))}
@@ -1085,19 +1058,6 @@ const Habits: React.FC = () => {
         </div>
       )}
 
-      {/* Permanent delete confirmation */}
-      {pendingDelete && (
-        <div className="confirm-overlay" onClick={() => setPendingDelete(null)}>
-          <div className="confirm-dialog" onClick={e => e.stopPropagation()}>
-            <p className="confirm-title">Delete "{pendingDelete}" forever?</p>
-            <p className="confirm-desc">This permanently erases the habit and all of its history. This can't be undone, archive it instead if you might want it back.</p>
-            <div className="confirm-actions">
-              <button className="confirm-cancel" onClick={() => setPendingDelete(null)}>Cancel</button>
-              <button className="confirm-ok confirm-ok--danger" onClick={() => confirmDeleteHabit(pendingDelete)}>Delete forever</button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Add habit sheet */}
       {addOpen && (

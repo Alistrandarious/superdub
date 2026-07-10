@@ -68,7 +68,7 @@ const ArchivedHabits: React.FC = () => {
         <div className="confirm-overlay" onClick={() => setConfirmDelete(null)}>
           <div className="confirm-dialog" onClick={e => e.stopPropagation()}>
             <p className="confirm-title">Delete "{confirmDelete}" forever?</p>
-            <p className="confirm-desc">This permanently erases the habit and all of its history. This can't be undone.</p>
+            <p className="confirm-desc">This removes the habit for good. The XP it earned stays in your lifetime total. This can't be undone.</p>
             <div className="confirm-actions">
               <button className="confirm-cancel" onClick={() => setConfirmDelete(null)}>Cancel</button>
               <button className="confirm-ok confirm-ok--danger" onClick={() => permaDelete(confirmDelete)}>Delete forever</button>
