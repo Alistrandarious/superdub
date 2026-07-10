@@ -5101,6 +5101,16 @@ h1, h2, h3, h4, .sora {
 .hb-rewind-back:hover { background: rgba(46,139,255,0.18); border-color: #2E8BFF; }
 .hb-rewind-back:active { transform: scale(0.96); }
 
+/* ── Profile: level links row (Coach + view-all-levels) ──────────── */
+.profile-level-links { display: flex; gap: 10px; margin: 4px 4px 8px; }
+.profile-coach-btn, .profile-level-link {
+  flex: 1; padding: 10px 12px; border-radius: 12px; cursor: pointer;
+  font-family: var(--font-ui); font-size: 0.78rem; font-weight: 600;
+  background: var(--card-bg); border: 1px solid var(--glass-border); color: rgba(255,255,255,0.75);
+  transition: background 0.15s, border-color 0.2s;
+}
+.profile-coach-btn:active, .profile-level-link:active { background: rgba(255,255,255,0.05); }
+
 /* ── Community (Global & Friends) page ──────────── */
 .community-content { display: flex; flex-direction: column; gap: 16px; }
 .community-intro { margin: 4px 4px 0; }

@@ -4,6 +4,7 @@ import './App.css';
 import { api, clearToken } from './api';
 import { computeActivity, JOB_OPTS } from './Auth';
 import SuperdubHeader from './SuperdubHeader';
+import LevelCustomizer from './LevelCustomizer';
 import { OCCUPATIONS, ETHNICITIES, GENDER_IDENTITIES, COUNTRIES, RELATIONSHIP_STATUSES, RELIGIONS } from './demographics';
 import { pageTheme, GROWTH } from './theme';
 import { setWeightUnit as persistWeightUnit } from './weightUnit';
@@ -409,6 +410,13 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
 
         <div className="page-intro">
           <p className="page-intro-sub">Profile, settings & quick actions</p>
+        </div>
+
+        {/* Level, customization & Dub — moved here from the Level page */}
+        <LevelCustomizer />
+        <div className="profile-level-links">
+          <button className="profile-coach-btn" onClick={() => window.dispatchEvent(new CustomEvent('superdub:show-coach'))}>Talk to Dub, your coach</button>
+          <button className="profile-level-link" onClick={() => navigate('/level')}>View all levels &amp; badges →</button>
         </div>
 
         {/* Identity */}
