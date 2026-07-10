@@ -1629,12 +1629,26 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
       </div>{/* /Yesterday panel */}
 
-      {/* ── Panel 1 · Today, placeholder until the live plan ships ── */}
+      {/* ── Panel 1 · Today — live targets to aim for ── */}
       <div className="story-panel story-panel--intro today-soon">
         <div className="today-soon-card">
           <span className="today-soon-eyebrow">TODAY</span>
-          <h3 className="today-soon-title">Your live plan is coming soon</h3>
-          <p className="today-soon-body">Soon this tab will show today's live targets: the calories, steps and habits to aim for right now. For today, check Yesterday to see how you closed the day.</p>
+          <h3 className="today-soon-title">What to aim for</h3>
+          <div className="today-targets">
+            <div className="today-target">
+              <span className="today-target-val">{targetCalories > 0 ? targetCalories.toLocaleString() : '—'}</span>
+              <span className="today-target-lbl">kcal target</span>
+            </div>
+            <div className="today-target">
+              <span className="today-target-val">{effectiveStepTarget.toLocaleString()}</span>
+              <span className="today-target-lbl">step goal</span>
+            </div>
+            <div className="today-target">
+              <span className="today-target-val">{realHabits.length}</span>
+              <span className="today-target-lbl">{realHabits.length === 1 ? 'habit today' : 'habits today'}</span>
+            </div>
+          </div>
+          <p className="today-soon-body">Your live targets for today. Log as you go, then check Yesterday to see how you closed the day.</p>
         </div>
       </div>
 

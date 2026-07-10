@@ -1967,9 +1967,18 @@ h1, h2, h3, h4, .sora {
   font-size: 1.1rem; color: #F0F4FF;
 }
 .today-soon-body {
-  margin: 0; font-family: var(--font-ui); font-size: 0.82rem; line-height: 1.5;
+  margin: 12px 0 0; font-family: var(--font-ui); font-size: 0.82rem; line-height: 1.5;
   color: rgba(255,255,255,0.55);
 }
+/* Today's live targets — three numbers to aim for. */
+.today-targets { display: flex; gap: 10px; margin-top: 14px; }
+.today-target {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 12px 6px; border-radius: 12px;
+  background: var(--card-bg); border: 1px solid var(--glass-border);
+}
+.today-target-val { font-family: var(--font-data); font-weight: 700; font-size: 1.15rem; color: #FFE08A; line-height: 1; }
+.today-target-lbl { font-family: var(--font-ui); font-size: 0.58rem; color: rgba(255,255,255,0.5); text-align: center; }
 
 /* ── Vitals prompt — sleek sleep/mood/energy sliders that reveal in sequence ── */
 .vitals-step { margin: 16px 0 2px; }
