@@ -20,6 +20,22 @@ function todayDDMM(d = loggingNow()): string {
 }
 function todayISO(): string { return loggingNow().toISOString().slice(0, 10); }
 
+// Steps lag a day — you can't know today's full step total until tomorrow — so the
+// Steps tile tracks the PREVIOUS day when you're on today, and the day itself when
+// you're reviewing a past day. Returns both the 'DD/MM' tracker key and an ISO date
+// (for pre-setting the step logger). `day` is the viewed day ('DD/MM') or null=today.
+function stepsDayFor(day: string | null): { ddmm: string; iso: string } {
+  const d = day
+    ? new Date(loggingNow().getFullYear(), parseInt(day.slice(3), 10) - 1, parseInt(day.slice(0, 2), 10))
+    : new Date(loggingNow().getTime());
+  if (!day) d.setDate(d.getDate() - 1); // today → yesterday
+  const p = (n: number) => String(n).padStart(2, '0');
+  return {
+    ddmm: `${p(d.getDate())}/${p(d.getMonth() + 1)}`,
+    iso: `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`,
+  };
+}
+
 const ScaleIc = () => (
   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="4" width="18" height="16" rx="3" /><path d="M9 8h6M12 8v3" /><circle cx="12" cy="14.5" r="0.6" fill="currentColor" />
@@ -57,7 +73,9 @@ const DailyLog: React.FC<DailyLogProps> = ({ day = null, checkedInDay }) => {
         api.getTracker(),
         day ? Promise.resolve({ today: null } as any) : api.getRecentCheckIns().catch(() => ({ today: null } as any)),
       ]);
-      const { weight: w, steps: s } = pickDayLog((tracker.days ?? []) as any, dayKey);
+      const days = (tracker.days ?? []) as any;
+      const { weight: w } = pickDayLog(days, dayKey);
+      const { steps: s } = pickDayLog(days, stepsDayFor(day).ddmm); // steps lag a day
       setWeight(w); setSteps(s);
       // Past day: trust the mandatory-habit signal the week strip already has.
       // Today: recent endpoint's `today`, or either prompt's stamp (morning
@@ -83,10 +101,11 @@ const DailyLog: React.FC<DailyLogProps> = ({ day = null, checkedInDay }) => {
     };
   }, [load]);
 
-  const fire = (evt: string) => window.dispatchEvent(new CustomEvent(evt));
+  const fire = (evt: string, detail?: any) => window.dispatchEvent(new CustomEvent(evt, detail ? { detail } : undefined));
   const allDone = weight != null && steps != null && checkedIn;
   // Past days are a read-only review; only today's chips open their editors.
   const interactive = !day;
+  const stepsInfo = stepsDayFor(day);
 
   const heading = day
     ? new Date(loggingNow().getFullYear(), parseInt(day.slice(3), 10) - 1, parseInt(day.slice(0, 2), 10))
@@ -95,18 +114,18 @@ const DailyLog: React.FC<DailyLogProps> = ({ day = null, checkedInDay }) => {
 
   // One slim chip: icon + value, sitting on the hairline row. `metric` is the
   // semantic accent (theme.ts) the chip takes once logged.
-  const row = (done: boolean, ico: React.ReactNode, label: string, val: string | null, evt: string, metric: string) => {
+  const row = (done: boolean, ico: React.ReactNode, label: string, val: string | null, evt: string, metric: string, detail?: any, hint?: string) => {
     const cls = `dl-row${done ? ' done' : ''}${allDone ? ' all-done' : ''}${interactive ? '' : ' dl-row-static'}`;
     const style = { '--metric': metric } as React.CSSProperties;
     const inner = (
       <>
         <span className="dl-row-ico">{ico}</span>
-        <span className="dl-row-val">{done && val ? val : '–'}</span>
+        <span className="dl-row-val">{done && val ? val : '–'}{hint && <span className="dl-row-hint">{hint}</span>}</span>
       </>
     );
-    const aria = `${label}: ${done && val ? val : 'not logged'}`;
+    const aria = `${label}${hint ? ` (${hint})` : ''}: ${done && val ? val : 'not logged'}`;
     return interactive
-      ? <button className={cls} style={style} onClick={() => fire(evt)} aria-label={aria}>{inner}</button>
+      ? <button className={cls} style={style} onClick={() => fire(evt, detail)} aria-label={aria}>{inner}</button>
       : <div className={cls} style={style} aria-label={aria}>{inner}</div>;
   };
 
@@ -117,7 +136,7 @@ const DailyLog: React.FC<DailyLogProps> = ({ day = null, checkedInDay }) => {
       </div>
       <div className="daily-log-rows">
         {row(weight != null, <ScaleIc />, 'Weight', weight != null ? formatWeightKg(parseFloat(weight), unit) : null, 'superdub:show-checkin', HEALTH)}
-        {row(steps != null, <StepIc />, 'Steps', steps != null ? steps.toLocaleString() : null, 'superdub:show-step-entry', GROWTH)}
+        {row(steps != null, <StepIc />, 'Steps', steps != null ? steps.toLocaleString() : null, 'superdub:show-step-entry', GROWTH, { date: stepsInfo.iso }, day ? undefined : 'yst')}
         {row(checkedIn, <MoodIc />, 'Check-in', 'Logged', 'superdub:show-vitals', TEAL)}
       </div>
     </div>

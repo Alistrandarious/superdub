@@ -5132,6 +5132,11 @@ h1, h2, h3, h4, .sora {
   color: rgba(255,255,255,0.32); white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis;
 }
+/* Tiny "yst" tag on the Steps chip — its value is yesterday's (steps lag a day). */
+.dl-row-hint {
+  margin-left: 3px; font-size: 0.55em; font-weight: 700; letter-spacing: 0.04em;
+  text-transform: uppercase; color: rgba(255,255,255,0.35); vertical-align: super;
+}
 /* Logged — the chip takes its semantic accent */
 .dl-row.done .dl-row-ico { color: var(--metric); }
 .dl-row.done .dl-row-val { color: #EAF2EE; }

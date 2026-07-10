@@ -65,8 +65,10 @@ const StepEntry: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const handler = () => {
-      const d = todayISO();
+    const handler = (e: Event) => {
+      // Callers can pre-set the day (e.g. the Steps tile opens on yesterday, since
+      // step totals lag a day). Falls back to today.
+      const d = (e as CustomEvent).detail?.date || todayISO();
       setDate(d);
       setSteps('');
       setDone(false);
