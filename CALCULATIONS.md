@@ -115,6 +115,14 @@ newTarget  = clamp(calorieTarget + calorieAdj, 1200, 5000)
 If you're gaining when you mean to lose, deviation is positive → it cuts calories.
 
 ## 9. Estimated intake (Progress chart)
+> **This is the single source of truth for calories.** Superdub reverse-engineers
+> your intake from **steps + weight-loss trend + activity** — you never have to log
+> food. Food logging (the nutrition tracker) is only a *confidence heuristic*: it
+> corroborates the estimate, it does not override it, and it is never scored
+> "over/under" against a target. Superdub is deliberately an app that **destroys
+> food logging**. The one calorie target is `targetCalories` (see §1); the estimate
+> is the one verdict shown everywhere.
+
 Back-calculated from energy balance:
 ```
 intake ≈ TDEE + stepDeviation×kcalPerStep + (7-day EMA slope)×7700

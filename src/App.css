@@ -2375,6 +2375,11 @@ h1, h2, h3, h4, .sora {
 
 /* ── Patterns card (day-of-week + correlations) ── */
 .patterns-card { padding: 14px 16px 16px; }
+.patterns-empty {
+  margin: 8px 2px 2px;
+  font-family: var(--font-ui); font-size: 0.78rem; line-height: 1.45;
+  color: rgba(255,255,255,0.5);
+}
 .patterns-head {
   display: flex;
   align-items: center;
@@ -2655,6 +2660,12 @@ h1, h2, h3, h4, .sora {
   overflow: hidden;
 }
 
+.tracker-note {
+  margin: 0; padding: 8px 14px 10px;
+  font-family: var(--font-ui); font-size: 0.68rem; line-height: 1.4;
+  color: rgba(255,255,255,0.45);
+  border-bottom: 1px solid var(--glass-border);
+}
 .tracker-tabs {
   display: flex;
   align-items: center;
@@ -11459,6 +11470,13 @@ h3, h4,
 }
 .plan-engine-card--off {
   border-left-color: #FF5470;
+}
+/* Empty state — no active plan yet; teach instead of vanishing. */
+.plan-engine-card--empty { border-left-color: rgba(255,255,255,0.15); }
+.plan-engine-empty-text {
+  margin: 8px 0 0;
+  font-family: var(--font-ui); font-size: 0.82rem; line-height: 1.45;
+  color: rgba(255,255,255,0.55);
 }
 .plan-engine-title-group {
   display: flex;

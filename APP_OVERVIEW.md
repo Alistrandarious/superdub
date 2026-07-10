@@ -10,6 +10,13 @@
 Superdub is a **habit + weight + nutrition tracker** built around a single loop:
 **log → see the trend → get a plain-English read → do one small thing today.**
 
+> **Core principle — Superdub destroys food logging.** Calorie intake is
+> reverse-engineered from **steps + weight-loss trend + activity**, never from a
+> food diary. Food logging exists only as a *confidence heuristic* that corroborates
+> the estimate; it is optional and is never scored "over/under" against a target.
+> There is **one** calorie target and **one** verdict (the estimate) shown across the
+> app. See [CALCULATIONS.md](CALCULATIONS.md) §9.
+
 ### 1. Habit & process tracking
 - **Habits** (`/`, home) — collapsible cards you tick daily. Each habit carries a
   persistent level (grows with total days, never resets on a miss), streaks with

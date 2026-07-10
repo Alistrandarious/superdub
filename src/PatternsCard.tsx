@@ -99,8 +99,20 @@ const PatternsCard: React.FC<{ days: PatternDay[] }> = ({ days }) => {
     return out.sort((a, b) => Math.abs(b.r) - Math.abs(a.r)).slice(0, 2);
   }, [days]);
 
-  // Need a reasonable amount of data before patterns mean anything.
-  if (days.length < 10 || !active) return null;
+  // No active goal — patterns don't apply; stay hidden.
+  if (!active) return null;
+  // Need a reasonable amount of data before patterns mean anything — but say so
+  // instead of vanishing.
+  if (days.length < 10) {
+    return (
+      <section className="chart-section patterns-card">
+        <div className="patterns-head">
+          <h3 className="chart-title"><span className="chart-title-dot" style={{ background: active.color }} />Your Patterns</h3>
+        </div>
+        <p className="patterns-empty">Keep logging — your patterns unlock at 10 days of data ({days.length}/10 so far).</p>
+      </section>
+    );
+  }
 
   return (
     <section className="chart-section patterns-card">

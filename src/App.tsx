@@ -2262,6 +2262,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             <button className="tab-action-btn" onClick={() => setNutritionOpen(true)} aria-label="Nutrition"><AppleIc size={16} /></button>
           )}
         </div>
+        {trackerTab === 'nutrition' && (
+          <p className="tracker-note">Logging food is optional. Superdub already estimates your calories from your weight and steps — logging just sharpens that estimate.</p>
+        )}
         <div className="tracker-body" ref={trackerBodyRef}>
         <div className="tracker-grid" style={{ gridTemplateColumns: `148px repeat(${visibleDays.length}, 56px)` }}>
           {/* Header row */}
@@ -2289,10 +2292,10 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           <div className="tracker-label">Calories</div>
           {visibleDays.map((day, i) => {
             const t = getDayTargets(i);
-            const val = parseInt(tracker[day]?.calories ?? '') || 0;
-            const over = t && val > t.calories;
+            // Food logging is a confidence signal, not a verdict — Superdub estimates
+            // intake from weight + steps + activity. So no red "over" flag here.
             return (
-              <div key={`cal-${day}`} className={`tracker-cell ${over ? 'cell-over' : ''}`}>
+              <div key={`cal-${day}`} className="tracker-cell">
                 <input
                   className="macro-input"
                   type="text"

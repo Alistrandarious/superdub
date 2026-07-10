@@ -12,7 +12,15 @@ const AdaptiveWeightPlanCard: React.FC<{
   lastEMAValue: number | null;
 }> = ({ planStatus, planCycle, coachingMsg, lastEMAValue }) => {
   const unit = useWeightUnit();
-  if (!planStatus?.active || !planStatus.currentTarget) return null;
+  // No active plan — teach instead of vanishing.
+  if (!planStatus?.active || !planStatus.currentTarget) {
+    return (
+      <div className="plan-engine-card plan-engine-card--empty">
+        <span className="plan-engine-eyebrow">Adaptive Weight Plan</span>
+        <p className="plan-engine-empty-text">Set a weight goal to switch this on. It retunes your daily calorie target every week from your real weight trend.</p>
+      </div>
+    );
+  }
 
   const target = planStatus.currentTarget!;
   const g = planStatus.goal!;
