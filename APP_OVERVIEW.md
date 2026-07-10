@@ -29,29 +29,35 @@ Superdub is a **habit + weight + nutrition tracker** built around a single loop:
   and an energy check-in that nudges the day's step target.
 
 ### 2. Weight & nutrition
-- **Progress** (`/dashboard`) — weight trend (EMA + regression), safe-zone
-  corridor, sleep chart, a swipeable chart carousel, and a "Yesterday's Verdict"
-  hero (estimated intake vs target). Calories-first — macros were removed.
-- **Plan / Diet** (`/diet`, `/plan`) — calorie target, step goal, training burn,
-  Smart Adjust. **Food Log** (`/food-log`) and **Meal Plans** (`/meal-plans`).
+- **Progress** (`/dashboard`) — leads with a **Today** panel of live targets
+  (calorie target · step goal · habit count), then a "Yesterday's Verdict" hero
+  (estimated intake vs target), weight trend (EMA + regression), safe-zone corridor,
+  sleep chart, and a swipeable chart carousel. Calories-first — macros were removed.
+- **Plan / Diet** (`/diet`, `/plan`) — calorie target, training burn, activity
+  targets, Smart Adjust. Being folded into Progress; **off the bottom nav** (reached
+  via the cog → Adaptive Weight Plan). **Food Log** (`/food-log`) and **Meal Plans**.
 - All formulas are documented in [CALCULATIONS.md](CALCULATIONS.md) and mirrored
   live in the in-app **The Maths** page (`/maths`).
 
 ### 3. Gamification
-- **XP & Levels** (`/level`) — XP is recomputed live from habit streaks (not
-  stored). 15 named levels ("First Day" → "Transcendent"), a reward per level, and
-  unlockable cosmetics (level-ring themes, Dub the mascot). Gold = XP, violet = rank.
-- **The Global habit** — a slowly turning planet by the level ring opens one shared
-  monthly habit (July 2026: "do a good deed today"). Each user levels it up
-  personally, but the XP feeds one community total (`global_months` /
-  `global_contributions`, `GlobalPrompt.tsx`). Reaching 10k together, with ≥100 XP of
-  your own, unlocks the white "Aurora" Dub colour.
+- **XP & Levels** — XP is recomputed live from habit streaks (not stored, and never
+  lost on archive/delete). 15 named levels ("First
+  Day" → "Transcendent"), a reward per level. The level ring, XP, and all unlockable
+  cosmetics (ring themes, Dub species/colour, accent colours, backgrounds) live on
+  **Profile** (`LevelCustomizer`); `/level` keeps the ladder, badges, and habit record.
+  Gold = XP, violet = rank.
+- **The Global habit** — its own **Global & Friends** tab (`/community`,
+  `CommunityPage.tsx`): one shared monthly habit (July 2026: "do a good deed today").
+  Each user levels it up personally, but the XP feeds one community total
+  (`global_months` / `global_contributions`, `GlobalPrompt.tsx`). Reaching 10k together,
+  with ≥100 XP of your own, unlocks the white "Aurora" Dub colour. A Friends layer is
+  coming soon (not yet built).
 
 ### 4. Dub — the coach
 - A small robotic Yorkie (switchable to a cat at L2) that reads your data and
   gives an honest read after each weigh-in: a win to protect, what's slipping, and
-  one tiny next step. Sits by the level ring and atop Progress; asks for a "walk"
-  when momentum stalls.
+  one tiny next step. Opens from **Profile** ("Talk to Dub") and automatically after
+  a weigh-in; asks for a "walk" when momentum stalls.
 
 ## Behavioural insights ("ML"-flavoured, mostly deterministic)
 
