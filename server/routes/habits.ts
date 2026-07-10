@@ -93,38 +93,30 @@ router.delete('/:name', requireAuth as any, async (req: AuthRequest, res: Respon
   }
 });
 
-// Permanently delete a habit + its tracker history. Works for active OR archived
-// habits (the client always guards this behind an explicit confirm). The only
-// hard rule: the mandatory check-in habit can never be deleted.
+// Permanently delete a habit (removes it from the list + graveyard). Its
+// tracker_habits history is deliberately KEPT so lifetime XP is never lost — XP is
+// computed from history, not the habit row. Works for active OR archived habits
+// (the client guards this behind an explicit confirm). The only hard rule: the
+// mandatory check-in habit can never be deleted.
 const MANDATORY_HABIT = 'Logging into Superdub';
 router.delete('/:name/permanent', requireAuth as any, async (req: AuthRequest, res: Response) => {
   const { name } = req.params;
   if (name === MANDATORY_HABIT) {
     return res.status(403).json({ error: 'This habit cannot be deleted' });
   }
-  const client = await pool.connect();
   try {
-    await client.query('BEGIN');
-    const del = await client.query(
+    const del = await pool.query(
       'DELETE FROM habits WHERE user_id = $1 AND name = $2',
       [req.userId, name]
     );
     if (del.rowCount === 0) {
-      await client.query('ROLLBACK');
       return res.status(404).json({ error: 'Not found' });
     }
-    // Remove its tracker history too (tracker_habits links by name, no FK cascade).
-    await client.query(
-      'DELETE FROM tracker_habits WHERE user_id = $1 AND habit_name = $2',
-      [req.userId, name]
-    );
-    await client.query('COMMIT');
+    // NOTE: tracker_habits rows are intentionally left in place so this habit's
+    // earned XP keeps counting toward the lifetime total.
     res.json({ ok: true });
   } catch {
-    await client.query('ROLLBACK').catch(() => {});
     res.status(500).json({ error: 'Server error' });
-  } finally {
-    client.release();
   }
 });
 

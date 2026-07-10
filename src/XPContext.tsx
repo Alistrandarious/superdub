@@ -9,28 +9,23 @@ const INSTALL_XP_KEY = 'superdub.installXP';
 const XP_CACHE_KEY = 'superdub.xp.cache';
 
 function computeXPFromRaw(
-  habits: { name: string }[],
   trackerHabits: { day: string; habit_name: string; state: string }[],
   installBonus: boolean,
   xpCarry: Record<string, number> = {},
 ): number {
-  const habitNames = habits.map(h => h.name);
-  const known = new Set(habitNames);
-  // XP is per-habit and level-based: it only depends on each habit's TOTAL
-  // completed-day count (paid at the level rate). Count dones per habit, then
-  // sum each habit's level-based XP — this matches the habit cards exactly.
-  // xpCarry seeds prior-year done counts so lifetime XP survives Jan 1.
-  const doneCount: Record<string, number> = {};
-  for (const name of habitNames) {
-    if (xpCarry[name]) doneCount[name] = xpCarry[name];
-  }
+  // Lifetime XP is per-habit and level-based: each habit's XP depends only on its
+  // TOTAL completed-day count (paid at the level rate). We sum EVERY habit that has
+  // history — active, archived, or since deleted (its tracker history is kept) — so
+  // archiving or deleting a habit never drops XP. xpCarry seeds prior-year done
+  // counts (lifetime XP survives Jan 1); trackerHabits adds this year's dones.
+  const doneCount: Record<string, number> = { ...xpCarry };
   for (const row of trackerHabits) {
-    if (row.state === 'done' && known.has(row.habit_name)) {
+    if (row.state === 'done') {
       doneCount[row.habit_name] = (doneCount[row.habit_name] ?? 0) + 1;
     }
   }
-  const xp = habitNames.reduce((sum, name) => sum + habitXPForDoneDays(doneCount[name] ?? 0), 0);
-  return xp + (installBonus ? INSTALL_XP : 0);
+  return Object.keys(doneCount).reduce((sum, name) => sum + habitXPForDoneDays(doneCount[name] ?? 0), 0)
+    + (installBonus ? INSTALL_XP : 0);
 }
 
 interface XPContextValue {
@@ -55,11 +50,10 @@ export function XPProvider({ children }: { children: React.ReactNode }) {
   const load = useCallback(async () => {
     if (!isLoggedIn()) return;
     try {
-      const [habitsData, trackerData] = await Promise.all([
-        api.getHabits(),
-        api.getTracker(),
-      ]);
-      const xp = computeXPFromRaw(habitsData, trackerData.habits ?? [], installBonus, trackerData.xpCarry ?? {});
+      // XP is lifetime, computed from all tracker history — no need to know which
+      // habits are currently active/archived.
+      const trackerData = await api.getTracker();
+      const xp = computeXPFromRaw(trackerData.habits ?? [], installBonus, trackerData.xpCarry ?? {});
       setTotalXP(xp);
       localStorage.setItem(XP_CACHE_KEY, String(xp));
     } catch {
