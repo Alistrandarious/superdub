@@ -783,6 +783,10 @@ const Habits: React.FC = () => {
   const weekDays = getWeekDays();
   const { totalXP: totalXPAll, playerLevel, refresh: refreshXP } = useXP();
   const ringTheme = useRingTheme();
+  // XP bar intro: start at 0 on mount, then let the CSS width transition rise it
+  // up to the real value (never animate down from a stale/full width on login).
+  const [xpBarReady, setXpBarReady] = useState(false);
+  useEffect(() => { const id = setTimeout(() => setXpBarReady(true), 60); return () => clearTimeout(id); }, []);
   const [mascotSpecies, setMascotSpecies] = useState(getMascot);
   useEffect(() => {
     const sync = () => setMascotSpecies(getMascot());
@@ -1224,7 +1228,7 @@ const Habits: React.FC = () => {
               <span>{playerLevel.xpForNext != null ? playerLevel.xpForNext.toLocaleString() : 'MAX'}</span>
             </div>
             <div className="hb-xp-bar">
-              <div className="hb-xp-fill" style={{ width: `${Math.max(2, playerLevel.progress * 100)}%`, background: `linear-gradient(90deg, ${ringTheme.from}, ${ringTheme.to})`, boxShadow: `0 0 10px ${ringTheme.glow}` }} />
+              <div className="hb-xp-fill" style={{ width: `${xpBarReady ? Math.max(2, playerLevel.progress * 100) : 0}%`, background: `linear-gradient(90deg, ${ringTheme.from}, ${ringTheme.to})`, boxShadow: `0 0 10px ${ringTheme.glow}` }} />
             </div>
             {playerLevel.xpForNext != null ? (
               <p className="hb-xp-to">{(playerLevel.xpForNext - totalXPAll).toLocaleString()} XP to <span>{playerLevel.nextTitle}</span></p>

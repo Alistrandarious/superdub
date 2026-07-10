@@ -5239,7 +5239,7 @@ h1, h2, h3, h4, .sora {
 .cadx { padding: 6px 0 0; }
 .cadx-header {
   position: sticky; top: 0; z-index: 20;
-  background: var(--glass-bg);
+  background: var(--card-bg);
   padding: 4px 0 6px;
   transition: padding 0.2s ease;
 }
@@ -5248,7 +5248,7 @@ h1, h2, h3, h4, .sora {
   position: absolute;
   bottom: -14px; left: 0; right: 0;
   height: 14px;
-  background: linear-gradient(to bottom, var(--glass-bg), transparent);
+  background: linear-gradient(to bottom, var(--card-bg), transparent);
   pointer-events: none;
   z-index: 1;
 }
