@@ -5255,6 +5255,26 @@ h1, h2, h3, h4, .sora {
   transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
 }
 .cadx-dot2.active { background: var(--chip); transform: scale(1.4); box-shadow: 0 0 10px -1px var(--chip); }
+
+/* ── Once-a-day swipe hint — bottom-to-top wave nudging the daily cards toward
+   weekly, with the daily (green) + weekly (blue) dots lit together. ── */
+.cadx--hint .cadx-viewport .hcard { transition: transform 0.3s ease; transform: translateX(-16px); }
+.cadx--hint.cadx--hint-back .cadx-viewport .hcard { transform: translateX(0); }
+/* Reverse stagger: the add button is the last child, so the bottom card is
+   nth-last-child(2) and fires first — the wave then travels up. */
+.cadx--hint .cadx-viewport .hcard:nth-last-child(2) { transition-delay: 0s; }
+.cadx--hint .cadx-viewport .hcard:nth-last-child(3) { transition-delay: 0.05s; }
+.cadx--hint .cadx-viewport .hcard:nth-last-child(4) { transition-delay: 0.10s; }
+.cadx--hint .cadx-viewport .hcard:nth-last-child(5) { transition-delay: 0.15s; }
+.cadx--hint .cadx-viewport .hcard:nth-last-child(6) { transition-delay: 0.20s; }
+.cadx--hint .cadx-viewport .hcard:nth-last-child(7) { transition-delay: 0.25s; }
+.cadx--hint .cadx-viewport .hcard:nth-last-child(n+8) { transition-delay: 0.30s; }
+/* Light the daily (1st) + weekly (2nd) dots at the same time. */
+.cadx--hint .cadx-dot2:nth-child(1),
+.cadx--hint .cadx-dot2:nth-child(2) { background: var(--chip); transform: scale(1.4); box-shadow: 0 0 10px -1px var(--chip); }
+@media (prefers-reduced-motion: reduce) {
+  .cadx--hint .cadx-viewport .hcard { transition: none; transform: none; }
+}
 .cadx-active-label {
   font-family: 'Sora', sans-serif;
   font-size: 0.72rem;
