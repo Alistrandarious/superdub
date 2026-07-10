@@ -18,6 +18,7 @@ const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number; 
   const startX = useRef(0);
   const startY = useRef(0);
   const axis = useRef<'h' | 'v' | null>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
   const n = panels.length;
   const width = () => vpRef.current?.clientWidth ?? 1;
 
@@ -25,6 +26,8 @@ const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number; 
   // next cadence while the daily (green) + weekly (blue) dots light up together, so
   // it's obvious the list swipes. Uses a transform transition (not a keyframe) so it
   // never retriggers the cards' own entrance animation. Out phase → return phase.
+  // Waits until the list is actually scrolled into view (it lives below the fold),
+  // and only consumes the day then — otherwise it plays unseen at the top of the page.
   const [hint, setHint] = useState(false);
   const [hintBack, setHintBack] = useState(false);
   useEffect(() => {
@@ -32,11 +35,20 @@ const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number; 
     const key = 'superdub.swipeHintDay';
     const today = new Date().toISOString().slice(0, 10);
     if (localStorage.getItem(key) === today) return;
-    localStorage.setItem(key, today);
-    const t0 = setTimeout(() => setHint(true), 500);
-    const t1 = setTimeout(() => setHintBack(true), 500 + 700);
-    const t2 = setTimeout(() => { setHint(false); setHintBack(false); }, 500 + 700 + 700);
-    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); };
+    const el = rootRef.current;
+    if (!el) return;
+    const timers: number[] = [];
+    const io = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return;
+      io.disconnect();
+      if (localStorage.getItem(key) === today) return;
+      localStorage.setItem(key, today);
+      timers.push(window.setTimeout(() => setHint(true), 250));
+      timers.push(window.setTimeout(() => setHintBack(true), 250 + 750));
+      timers.push(window.setTimeout(() => { setHint(false); setHintBack(false); }, 250 + 750 + 750));
+    }, { threshold: 0.45 });
+    io.observe(el);
+    return () => { io.disconnect(); timers.forEach(clearTimeout); };
   }, [n, startIndex]);
 
   const go = useCallback((next: number) => {
@@ -82,7 +94,7 @@ const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number; 
   };
 
   return (
-    <div className={`cadx${compact ? ' cadx--compact' : ''}${hint ? ' cadx--hint' : ''}${hintBack ? ' cadx--hint-back' : ''}`}>
+    <div ref={rootRef} className={`cadx${compact ? ' cadx--compact' : ''}${hint ? ' cadx--hint' : ''}${hintBack ? ' cadx--hint-back' : ''}`}>
       <div className="cadx-header">
         {/* Dots + active label so users know other cadences exist */}
         <div className="cadx-dotrow">
