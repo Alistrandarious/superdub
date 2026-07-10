@@ -1,16 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useXP } from './XPContext';
-import { flushSync } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
 import './App.css';
 import { api } from './api';
 import { loggingNow, getLoggingDay } from './day';
 import WeeklyRecap from './WeeklyRecap';
 import CadenceCarousel from './CadenceCarousel';
 import SuperdubHeader from './SuperdubHeader';
-import LevelRing from './LevelRing';
-import DubMascot, { getMascot } from './DubMascot';
-import GlobalPlanet from './GlobalPlanet';
 import DailyLog from './DailyLog';
 import AnimatedFlame from './AnimatedFlame';
 import {
@@ -19,7 +14,6 @@ import {
 } from './icons';
 import { pageTheme, HEALTH } from './theme';
 import {
-  getRingTheme, getSelectedThemeId, type RingTheme,
   HABIT_LEVEL_TIERS as LEVEL_TIERS, HABIT_LEVEL_RATES as LEVEL_RATES,
   MAX_HABIT_LEVEL as MAX_LEVEL, habitLevelFromDays as levelFromDays, habitXPForDoneDays,
 } from './levels';
@@ -76,14 +70,6 @@ function computePeriodUnits(habit: string, cadence: Cadence, ht: HabitTracker, t
   }
   // daily handled inline by the existing weekday row
   return [];
-}
-
-// Navigate with a View Transition (shared-element morph) where supported
-function navigateWithTransition(navigate: any, to: string | number) {
-  const doNav = () => navigate(to);
-  const startVT = (document as any).startViewTransition?.bind(document);
-  if (startVT) startVT(() => flushSync(doNav));
-  else doNav();
 }
 
 const PWA_PROMPT_VERSION = '1.0';
@@ -315,21 +301,6 @@ function cycleState(current: HabitState): HabitState {
   if (current === null || current === undefined) return 'done';
   if (current === 'done') return 'failed';
   return null;
-}
-
-// Small hook: the equipped ring theme, kept in sync across tabs/pages.
-function useRingTheme(): RingTheme {
-  const [id, setId] = useState(getSelectedThemeId);
-  useEffect(() => {
-    const sync = () => setId(getSelectedThemeId());
-    window.addEventListener('superdub:ring-theme-changed', sync);
-    window.addEventListener('storage', sync);
-    return () => {
-      window.removeEventListener('superdub:ring-theme-changed', sync);
-      window.removeEventListener('storage', sync);
-    };
-  }, []);
-  return getRingTheme(id);
 }
 
 // Mini month calendar for one habit — tappable past days for backfill
@@ -695,7 +666,6 @@ const FeaturedSheet: React.FC<{
 const MANDATORY_HABIT = 'Logging into Superdub';
 
 const Habits: React.FC = () => {
-  const navigate = useNavigate();
   const [habits, setHabits] = useState<string[]>([]);
   const [habitCadence, setHabitCadence] = useState<Record<string, Cadence>>({});
   const [newHabitCadence, setNewHabitCadence] = useState<Cadence>('daily');
@@ -771,19 +741,9 @@ const Habits: React.FC = () => {
   // stay as-of-today; only the completion pointer/checkmarks follow activeDay.
   const activeDay = rewindDay ?? today;
   const weekDays = getWeekDays();
-  const { totalXP: totalXPAll, playerLevel, refresh: refreshXP } = useXP();
-  const ringTheme = useRingTheme();
+  const { refresh: refreshXP } = useXP();
   // XP bar intro: start at 0 on mount, then let the CSS width transition rise it
   // up to the real value (never animate down from a stale/full width on login).
-  const [xpBarReady, setXpBarReady] = useState(false);
-  useEffect(() => { const id = setTimeout(() => setXpBarReady(true), 60); return () => clearTimeout(id); }, []);
-  const [mascotSpecies, setMascotSpecies] = useState(getMascot);
-  useEffect(() => {
-    const sync = () => setMascotSpecies(getMascot());
-    window.addEventListener('superdub:mascot-changed', sync);
-    window.addEventListener('storage', sync);
-    return () => { window.removeEventListener('superdub:mascot-changed', sync); window.removeEventListener('storage', sync); };
-  }, []);
 
   useEffect(() => {
     Promise.all([api.getHabits(), api.getTracker()]).then(([loadedHabits, trackerData]) => {
@@ -1177,39 +1137,7 @@ const Habits: React.FC = () => {
           </div>
         )}
 
-        {/* Level ring + XP */}
-        <div className="hb-level">
-          <div className="hb-ring-wrap">
-            <LevelRing level={playerLevel.level} title={playerLevel.title} progress={playerLevel.progress} theme={ringTheme} onClick={() => navigateWithTransition(navigate, '/level')} />
-          </div>
-          <div className="hb-xp">
-            <div className="hb-xp-scale">
-              <span>{totalXPAll.toLocaleString()} XP</span>
-              <span>{playerLevel.xpForNext != null ? playerLevel.xpForNext.toLocaleString() : 'MAX'}</span>
-            </div>
-            <div className="hb-xp-bar">
-              <div className="hb-xp-fill" style={{ width: `${xpBarReady ? Math.max(2, playerLevel.progress * 100) : 0}%`, background: `linear-gradient(90deg, ${ringTheme.from}, ${ringTheme.to})`, boxShadow: `0 0 10px ${ringTheme.glow}` }} />
-            </div>
-            {playerLevel.xpForNext != null ? (
-              <p className="hb-xp-to">{(playerLevel.xpForNext - totalXPAll).toLocaleString()} XP to <span>{playerLevel.nextTitle}</span></p>
-            ) : (
-              <p className="hb-xp-to">Max level, you legend.</p>
-            )}
-          </div>
-        </div>
-
-        {/* Coach + the Global habit — labeled shortcuts, not circles overlapping
-            the ring. Same events as before. */}
-        <div className="hb-shortcuts">
-          <button className="hb-shortcut" onClick={() => window.dispatchEvent(new CustomEvent('superdub:show-coach'))} aria-label="Talk to Dub, your coach">
-            <DubMascot size={24} mood="happy" species={mascotSpecies} />
-            <span className="hb-shortcut-label">Coach</span>
-          </button>
-          <button className="hb-shortcut" onClick={() => window.dispatchEvent(new CustomEvent('superdub:show-global'))} aria-label="The Global habit">
-            <GlobalPlanet size={22} />
-            <span className="hb-shortcut-label">Global</span>
-          </button>
-        </div>
+        {/* Level ring + XP moved to Profile; Coach + Global now live in their own tabs. */}
 
         {/* Weekly strip, the simplified "Logging into Superdub" habit */}
         <div className={`hb-week${isPerfectWeek ? ' hb-week-gold' : ''}${weekCelebrating ? ' hb-week-celebrating' : ''}`}>

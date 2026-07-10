@@ -7194,6 +7194,10 @@ h1, h2, h3, h4, .sora {
   z-index: 500;
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
+/* Six uniform tabs — tighten icon/label so they fit across a phone width. */
+.bottom-nav--six .bottom-nav-item { padding: 8px 2px 6px; gap: 2px; }
+.bottom-nav--six .bottom-nav-icon { width: 20px; height: 20px; }
+.bottom-nav--six .bottom-nav-label { font-size: 0.54rem; letter-spacing: 0.02em; }
 
 .bottom-nav-item {
   flex: 1;
