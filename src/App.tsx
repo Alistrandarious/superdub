@@ -30,6 +30,7 @@ import YesterdayMatrix from './YesterdayMatrix';
 import GoalSheet from './GoalSheet';
 import SleepCandleChart, { hhmmToAxis, type SleepCandle } from './SleepCandleChart';
 import { CADENCE_ORDER, CADENCE_META, type Cadence } from './Habits';
+import { UsersIc, AppleIc } from './icons';
 
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -1613,7 +1614,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         <div className="cohort-banner">
           <div className="cohort-banner-inner">
             <div className="cohort-banner-header">
-              <span className="cohort-banner-icon">👥</span>
+              <span className="cohort-banner-icon"><UsersIc size={16} /></span>
               <span className="cohort-banner-label">Expert Coach · Community Cohort</span>
               <button className="cohort-banner-dismiss" onClick={() => {
                 setCohortDismissed(true);
@@ -2258,7 +2259,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             <button className="tab-action-btn" onClick={() => setHabitsModalOpen(true)} aria-label="Edit habits">✎</button>
           )}
           {trackerTab === 'nutrition' && (
-            <button className="tab-action-btn" onClick={() => setNutritionOpen(true)} aria-label="Nutrition">🍎</button>
+            <button className="tab-action-btn" onClick={() => setNutritionOpen(true)} aria-label="Nutrition"><AppleIc size={16} /></button>
           )}
         </div>
         <div className="tracker-body" ref={trackerBodyRef}>

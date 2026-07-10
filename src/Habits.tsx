@@ -12,6 +12,11 @@ import LevelRing from './LevelRing';
 import DubMascot, { getMascot } from './DubMascot';
 import GlobalPlanet from './GlobalPlanet';
 import DailyLog from './DailyLog';
+import AnimatedFlame from './AnimatedFlame';
+import {
+  MoonIc, CalendarIc, MedalIc, TrophyIc, WalkIc, BookIc, NoSmokeIc, MealIc, MoneyIc, HealthIc,
+  SunIc, CloudSunIc, CloudIc, RainIc, SnowIc, StormIc, type IconProps,
+} from './icons';
 import { pageTheme, HEALTH } from './theme';
 import {
   getRingTheme, getSelectedThemeId, type RingTheme,
@@ -153,16 +158,16 @@ function getRank(totalDays: number): { title: string; color: string } {
   return { title: 'Habitteaur', color: '#888' };
 }
 
-function weatherEmoji(code: number): string {
-  if (code === 0)  return '☀️';
-  if (code <= 3)   return '⛅';
-  if (code <= 48)  return '🌫️';
-  if (code <= 55)  return '🌦️';
-  if (code <= 65)  return '🌧️';
-  if (code <= 77)  return '❄️';
-  if (code <= 82)  return '🌧️';
-  return '⛈️';
-}
+// WMO weather code → SVG icon (was an emoji; style guide: no emoji chrome).
+const WeatherIc: React.FC<IconProps & { code: number }> = ({ code, ...p }) => {
+  if (code === 0)  return <SunIc {...p} />;
+  if (code <= 3)   return <CloudSunIc {...p} />;
+  if (code <= 48)  return <CloudIc {...p} />;
+  if (code <= 65)  return <RainIc {...p} />;   // drizzle + rain
+  if (code <= 77)  return <SnowIc {...p} />;
+  if (code <= 82)  return <RainIc {...p} />;    // rain showers
+  return <StormIc {...p} />;
+};
 
 /* ── habit stats computation ─────────────────────────────── */
 
@@ -263,40 +268,40 @@ function computeHabitStats(
 
 /* ── featured habits ─────────────────────────────────────── */
 
-const FEATURED: { id: string; name: string; tagline: string; icon: string; accent: string; bgClass: string; cadence: Cadence }[] = [
+const FEATURED: { id: string; name: string; tagline: string; icon: React.FC<IconProps>; accent: string; bgClass: string; cadence: Cadence }[] = [
   // 3 daily
   {
     id: 'walk-10k', name: '10K Steps', cadence: 'daily',
     tagline: 'Build the daily movement habit, one step at a time.',
-    icon: '🚶‍♂️', accent: '#2FD27E', bgClass: 'featured-bg-walk',
+    icon: WalkIc, accent: '#2FD27E', bgClass: 'featured-bg-walk',
   },
   {
     id: 'reading', name: 'Reading', cadence: 'daily',
     tagline: 'Sharpen your mind with just 20 pages a day.',
-    icon: '📖', accent: '#2FD27E', bgClass: 'featured-bg-read',
+    icon: BookIc, accent: '#2FD27E', bgClass: 'featured-bg-read',
   },
   {
     id: 'quit-smoking', name: 'Quit Smoking', cadence: 'daily',
     tagline: 'Every cigarette-free day is a victory. Start yours now.',
-    icon: '🚭', accent: '#2FD27E', bgClass: 'featured-bg-smoke',
+    icon: NoSmokeIc, accent: '#2FD27E', bgClass: 'featured-bg-smoke',
   },
   // 1 weekly
   {
     id: 'meal-prep', name: 'Meal Prep', cadence: 'weekly',
     tagline: 'Cook ahead once a week, eat well all week.',
-    icon: '🥘', accent: '#2E8BFF', bgClass: 'featured-bg-walk',
+    icon: MealIc, accent: '#2E8BFF', bgClass: 'featured-bg-walk',
   },
   // 1 monthly
   {
     id: 'budget-review', name: 'Budget Review', cadence: 'monthly',
     tagline: 'Check your spending once a month and stay on track.',
-    icon: '💰', accent: '#8B5CF6', bgClass: 'featured-bg-read',
+    icon: MoneyIc, accent: '#8B5CF6', bgClass: 'featured-bg-read',
   },
   // 1 yearly
   {
     id: 'health-checkup', name: 'Health Check-up', cadence: 'yearly',
     tagline: 'Book your annual check-up, future you will thank you.',
-    icon: '🩺', accent: '#FF8A00', bgClass: 'featured-bg-yoga',
+    icon: HealthIc, accent: '#FF8A00', bgClass: 'featured-bg-yoga',
   },
 ];
 
@@ -507,11 +512,11 @@ const HabitCard: React.FC<{
         )}
         {!expanded && (
           stats.streak > 0 ? (
-            <span className="hcard-streak-mini on"><span className="hsm-ico">🔥</span>{stats.streak}d</span>
+            <span className="hcard-streak-mini on"><span className="hsm-ico"><AnimatedFlame size={12} /></span>{stats.streak}d</span>
           ) : daysSinceDone === null ? (
             <span className="hcard-streak-mini new">new</span>
           ) : (
-            <span className="hcard-streak-mini off"><span className="hsm-ico">💤</span>{daysSinceDone}d</span>
+            <span className="hcard-streak-mini off"><span className="hsm-ico"><MoonIc size={12} /></span>{daysSinceDone}d</span>
           )
         )}
         {/* Archive icon, always rendered so layout never shifts; only interactive when expanded */}
@@ -567,24 +572,26 @@ const HabitCard: React.FC<{
             </div>
             <div className="hsp-bar"><div className="hsp-bar-fill" style={{ width: `${stats.levelProgress * 100}%` }} /></div>
             <span className="hsp-prog-foot">
-              {stats.maxed ? `Earning +${stats.xpPerDay} XP/day 🏆` : `${stats.daysToNext} ${stats.daysToNext === 1 ? 'day' : 'days'} to next level`}
+              {stats.maxed
+                ? <>Earning +{stats.xpPerDay} XP/day <TrophyIc size={12} /></>
+                : `${stats.daysToNext} ${stats.daysToNext === 1 ? 'day' : 'days'} to next level`}
             </span>
           </div>
         </div>
 
         <div className="hsp-stats">
           <div className={`hsp-stat ${stats.streak > 0 ? 'hot' : 'cold'}`}>
-            <span className="hsp-stat-ico">{stats.streak > 0 ? '🔥' : '💤'}</span>
+            <span className="hsp-stat-ico">{stats.streak > 0 ? <AnimatedFlame size={16} /> : <MoonIc size={16} />}</span>
             <span className="hsp-stat-val">{stats.streak > 0 ? stats.streak : daysSinceDone ?? 0}</span>
             <span className="hsp-stat-lbl">{stats.streak > 0 ? 'day streak' : 'days off'}</span>
           </div>
           <div className="hsp-stat">
-            <span className="hsp-stat-ico">📅</span>
+            <span className="hsp-stat-ico"><CalendarIc size={16} /></span>
             <span className="hsp-stat-val">{stats.totalDays}</span>
             <span className="hsp-stat-lbl">days done</span>
           </div>
           <div className="hsp-stat">
-            <span className="hsp-stat-ico">🏅</span>
+            <span className="hsp-stat-ico"><MedalIc size={16} /></span>
             <span className="hsp-stat-val">{stats.misses}</span>
             <span className="hsp-stat-lbl">recent miss</span>
           </div>
@@ -666,7 +673,7 @@ const FeaturedSheet: React.FC<{
             const added = userHabits.includes(f.name);
             return (
               <div key={f.id} className="hb-feat-item" style={{ '--featured-accent': f.accent } as React.CSSProperties}>
-                <span className="hb-feat-icon">{f.icon}</span>
+                <span className="hb-feat-icon">{React.createElement(f.icon, { size: 20 })}</span>
                 <div className="hb-feat-text">
                   <div className="hb-feat-name">
                     {f.name}
@@ -1155,7 +1162,7 @@ const Habits: React.FC = () => {
         {/* Top bar: brand + weather + cog (shared header) */}
         <SuperdubHeader>
           {weather && (
-            <span className="hb-weather">{weatherEmoji(weather.code)} {weather.temp}°</span>
+            <span className="hb-weather"><WeatherIc code={weather.code} size={14} />{weather.temp}°</span>
           )}
         </SuperdubHeader>
 
@@ -1302,7 +1309,7 @@ const Habits: React.FC = () => {
             <span className="hb-featured-eyebrow">FEATURED</span>
             <span className="hb-featured-cta">Discover habits to join →</span>
           </div>
-          <span className="hb-featured-icon">🚶</span>
+          <span className="hb-featured-icon"><WalkIc size={44} /></span>
         </button>
 
         <div style={{ height: 100 }} />
