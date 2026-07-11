@@ -65,13 +65,15 @@ export const api = {
   heartbeat: () => request('/profile/heartbeat', { method: 'POST' }),
 
   // habits
-  getHabits: (): Promise<{ name: string; startDate: string | null; cadence?: string; quitStartedAt?: string | null; starred?: boolean }[]> => request('/habits'),
+  getHabits: (): Promise<{ name: string; startDate: string | null; cadence?: string; quitStartedAt?: string | null; starred?: boolean; dueDate?: string | null }[]> => request('/habits'),
   updateHabits: (habits: (string | { name: string; cadence: string })[]) =>
     request('/habits', { method: 'PUT', body: JSON.stringify({ habits }) }),
   setQuitStart: (name: string, startedAt: string) =>
     request('/habits/quit-start', { method: 'PATCH', body: JSON.stringify({ name, startedAt }) }),
   setHabitStar: (name: string, starred: boolean) =>
     request('/habits/star', { method: 'PATCH', body: JSON.stringify({ name, starred }) }),
+  setHabitDueDate: (name: string, dueDate: string | null) =>
+    request('/habits/due-date', { method: 'PATCH', body: JSON.stringify({ name, dueDate }) }),
   archiveHabit: (name: string) => request(`/habits/${encodeURIComponent(name)}`, { method: 'DELETE' }),
   restoreHabit: (name: string) => request(`/habits/${encodeURIComponent(name)}/restore`, { method: 'POST' }),
   deleteHabitPermanently: (name: string) => request(`/habits/${encodeURIComponent(name)}/permanent`, { method: 'DELETE' }),

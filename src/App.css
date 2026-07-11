@@ -7209,6 +7209,26 @@ h1, h2, h3, h4, .sora {
 .hsp-stat.miss .hsp-stat-ico { color: #FFB928; }
 .hsp-stat.miss .hsp-stat-val { color: #FFB928; }
 
+/* One-off habit due date (expanded card). The native date input overlays the row
+   so a tap anywhere opens the picker; the clear button sits above it. */
+.hcard-due {
+  display: flex; align-items: center; gap: 8px; margin-top: 10px;
+  padding: 8px 10px; border-radius: 8px; cursor: pointer; position: relative;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
+}
+.hcard-due-text {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'Sora', sans-serif; font-size: 0.72rem; color: rgba(255,255,255,0.6);
+}
+.hcard-due.overdue { border-color: rgba(255,84,112,0.4); }
+.hcard-due.overdue .hcard-due-text { color: #FF5470; }
+.hcard-due-input { position: absolute; inset: 0; opacity: 0; width: 100%; cursor: pointer; }
+.hcard-due-clear {
+  margin-left: auto; position: relative; z-index: 1;
+  background: none; border: none; color: rgba(255,255,255,0.4);
+  font-size: 0.68rem; cursor: pointer; padding: 2px 4px;
+}
+
 /* Week circles */
 .hcard-week {
   display: flex;

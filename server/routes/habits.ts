@@ -19,10 +19,10 @@ router.get('/graveyard', requireAuth as any, async (req: AuthRequest, res: Respo
 router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
     const { rows } = await pool.query(
-      "SELECT name, start_date, COALESCE(cadence, 'daily') AS cadence, quit_started_at, COALESCE(starred, FALSE) AS starred FROM habits WHERE user_id = $1 AND (archived = FALSE OR archived IS NULL) ORDER BY position",
+      "SELECT name, start_date, COALESCE(cadence, 'daily') AS cadence, quit_started_at, COALESCE(starred, FALSE) AS starred, due_date::text AS due_date FROM habits WHERE user_id = $1 AND (archived = FALSE OR archived IS NULL) ORDER BY position",
       [req.userId]
     );
-    res.json(rows.map((r: any) => ({ name: r.name, startDate: r.start_date, cadence: r.cadence, quitStartedAt: r.quit_started_at, starred: r.starred })));
+    res.json(rows.map((r: any) => ({ name: r.name, startDate: r.start_date, cadence: r.cadence, quitStartedAt: r.quit_started_at, starred: r.starred, dueDate: r.due_date })));
   } catch {
     res.status(500).json({ error: 'Server error' });
   }
@@ -91,6 +91,23 @@ router.patch('/quit-start', requireAuth as any, async (req: AuthRequest, res: Re
     await pool.query(
       'UPDATE habits SET quit_started_at = $3 WHERE user_id = $1 AND name = $2',
       [req.userId, name, when.toISOString()]
+    );
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Set / clear a habit's one-off due date. Body: { name, dueDate } where dueDate is
+// 'YYYY-MM-DD', or null/'' to clear.
+router.patch('/due-date', requireAuth as any, async (req: AuthRequest, res: Response) => {
+  try {
+    const { name, dueDate } = req.body as { name?: string; dueDate?: string | null };
+    if (!name) return res.status(400).json({ error: 'name required' });
+    const clean = dueDate && /^\d{4}-\d{2}-\d{2}$/.test(dueDate) ? dueDate : null;
+    await pool.query(
+      'UPDATE habits SET due_date = $3 WHERE user_id = $1 AND name = $2',
+      [req.userId, name, clean]
     );
     res.json({ ok: true });
   } catch {

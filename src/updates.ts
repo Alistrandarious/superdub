@@ -11,6 +11,16 @@ export interface UpdateEntry {
 export const UPDATE_LOG: UpdateEntry[] = [
   {
     date: '2026-07-11',
+    emoji: '📅',
+    title: 'Habit due dates, and a sleep-chart fix',
+    summary: 'You can now pin a due date to any habit, whatever its cadence. And sleep will show on your chart even on nights you logged hours without exact bed and wake times.',
+    points: [
+      'Open any habit and set a due date. It shows on the card and turns red once it is overdue and still not done. Tap clear to drop it.',
+      'The sleep chart now falls back to the hours line when a night was logged without bed and wake times, so those nights no longer vanish from the chart.',
+    ],
+  },
+  {
+    date: '2026-07-11',
     emoji: '🃏',
     title: 'Habit cards, cleaned up and easier to read',
     summary: 'The habit card no longer crams everything onto one line. The name sits up top with its circle, level, streak and controls fall into place beneath, and the month calendar now opens right where you track your streak.',

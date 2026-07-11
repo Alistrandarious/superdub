@@ -269,6 +269,8 @@ const migrations = [
   `ALTER TABLE habits ADD COLUMN IF NOT EXISTS quit_started_at TIMESTAMPTZ`,
   // Starred habits surface on the Progress Today/Yesterday panels.
   `ALTER TABLE habits ADD COLUMN IF NOT EXISTS starred BOOLEAN DEFAULT FALSE`,
+  // Optional one-off due date for a habit (any cadence).
+  `ALTER TABLE habits ADD COLUMN IF NOT EXISTS due_date DATE`,
   // Personal SMART goals (Lists → Goals tab).
   `CREATE TABLE IF NOT EXISTS smart_goals (
     id          TEXT PRIMARY KEY,

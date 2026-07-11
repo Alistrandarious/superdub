@@ -418,8 +418,10 @@ const HabitCard: React.FC<{
   startDate?: string | null;
   starred?: boolean;
   onToggleStar: (habit: string) => void;
+  dueDate?: string | null;
+  onSetDueDate: (habit: string, dueDate: string | null) => void;
   dragHandle?: React.ReactNode;
-}> = ({ habit, stats, weekDays, ht, today, cadence, onToggleDay, onEditDay, onRequestRemove, startDate, starred, onToggleStar, dragHandle }) => {
+}> = ({ habit, stats, weekDays, ht, today, cadence, onToggleDay, onEditDay, onRequestRemove, startDate, starred, onToggleStar, dueDate, onSetDueDate, dragHandle }) => {
   const [histOpen, setHistOpen] = useState(false);
   const [monthOffset, setMonthOffset] = useState(0); // 0 = this month, -1 = last month …
   const nowD = new Date();
@@ -637,6 +639,29 @@ const HabitCard: React.FC<{
           ))}
         </div>
       )}
+
+      {/* One-off due date (optional, any cadence). Overdue = past + not done. */}
+      {(() => {
+        const localToday = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
+        const overdue = !!dueDate && dueDate < localToday && !currentDone;
+        return (
+          <label className={`hcard-due${overdue ? ' overdue' : ''}`} onClick={e => e.stopPropagation()}>
+            <span className="hcard-due-text">
+              <CalendarIc size={12} />
+              {dueDate
+                ? `Due ${new Date(dueDate + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}${overdue ? ' · overdue' : ''}`
+                : 'Set a due date'}
+            </span>
+            <input
+              type="date"
+              className="hcard-due-input"
+              value={dueDate ?? ''}
+              onChange={e => onSetDueDate(habit, e.target.value || null)}
+            />
+            {dueDate && <button type="button" className="hcard-due-clear" onClick={() => onSetDueDate(habit, null)}>clear</button>}
+          </label>
+        );
+      })()}
       </div>
       </div>
     </div>
@@ -870,6 +895,7 @@ const Habits: React.FC = () => {
   const [startDates, setStartDates] = useState<Record<string, string | null>>({});
   const [quitStarts, setQuitStarts] = useState<Record<string, string | null>>({}); // ISO timestamp per quit habit
   const [starred, setStarred] = useState<Record<string, boolean>>({});
+  const [dueDates, setDueDates] = useState<Record<string, string | null>>({}); // 'YYYY-MM-DD' per habit
   const [newQuitStart, setNewQuitStart] = useState<string>(() => toLocalDatetimeValue(new Date()));
   const [xpCarry, setXpCarry] = useState<Record<string, number>>({});
   const [ht, setHt] = useState<HabitTracker>({});
@@ -946,11 +972,13 @@ const Habits: React.FC = () => {
       const cad: Record<string, Cadence> = {};
       const quits: Record<string, string | null> = {};
       const stars: Record<string, boolean> = {};
-      loadedHabits.forEach(h => { dates[h.name] = h.startDate; cad[h.name] = ((h as any).cadence as Cadence) || 'daily'; quits[h.name] = (h as any).quitStartedAt ?? null; stars[h.name] = !!(h as any).starred; });
+      const dues: Record<string, string | null> = {};
+      loadedHabits.forEach(h => { dates[h.name] = h.startDate; cad[h.name] = ((h as any).cadence as Cadence) || 'daily'; quits[h.name] = (h as any).quitStartedAt ?? null; stars[h.name] = !!(h as any).starred; dues[h.name] = (h as any).dueDate ?? null; });
       cad[MANDATORY_HABIT] = 'daily';
       setHabitCadence(cad);
       setQuitStarts(quits);
       setStarred(stars);
+      setDueDates(dues);
       cadenceRef.current = cad;
 
       // Mandatory habit is always present in state.
@@ -1139,6 +1167,11 @@ const Habits: React.FC = () => {
     });
   }, []);
 
+  const handleSetDueDate = useCallback((name: string, dueDate: string | null) => {
+    setDueDates(prev => ({ ...prev, [name]: dueDate }));
+    api.setHabitDueDate(name, dueDate).catch(() => {});
+  }, []);
+
   // Reorder within one cadence group: rebuild the global habits array, keeping
   // members of other groups in their existing slots, then persist (positions).
   const commitGroupReorder = useCallback((newOrder: string[]) => {
@@ -1214,6 +1247,8 @@ const Habits: React.FC = () => {
         startDate={startDates[habit]}
         starred={starred[habit]}
         onToggleStar={handleToggleStar}
+        dueDate={dueDates[habit] ?? null}
+        onSetDueDate={handleSetDueDate}
         dragHandle={handle}
       />
     );

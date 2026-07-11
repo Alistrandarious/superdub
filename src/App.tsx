@@ -735,6 +735,12 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     [chartDayRange, sleepTimesByDate, moodByDate] // eslint-disable-line react-hooks/exhaustive-deps
   );
   const sleepCandleHasData = sleepCandleData.some(d => d.bedVal != null);
+  // Only draw the bed→wake candlesticks when most logged nights actually carry
+  // times; otherwise fall back to the reliable hours line so a night logged as
+  // hours-only (no bed/wake) still appears on the chart instead of vanishing.
+  const sleepLineCount = sleepChartData.filter(d => d.sleep != null).length;
+  const sleepCandleCount = sleepCandleData.filter(d => d.bedVal != null).length;
+  const sleepUseCandle = sleepCandleHasData && sleepCandleCount >= Math.max(1, Math.ceil(sleepLineCount * 0.75));
   const moodStats = useMemo(() => {
     const v7: number[] = [], v30: number[] = [];
     for (let i = 0; i < 30; i++) {
@@ -2150,7 +2156,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
           {(sleepCandleHasData || sleepHasData) && (
             <DraggableChart disabled onPage={pageBy}>
-            {sleepCandleHasData ? (
+            {sleepUseCandle ? (
               <SleepCandleChart data={sleepCandleData} height="100%" interval={displayInterval} xTick={chartXTick} />
             ) : (
             <ResponsiveContainer width="100%" height="100%">
