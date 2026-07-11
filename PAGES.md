@@ -16,9 +16,10 @@
 | `/food-log` | `FoodLog.tsx` | Daily food / calorie logging | — | HEALTH green |
 | `/meal-plans` | `MealPlans.tsx` | Meal plan browsing / assignment | — | HEALTH green |
 | `/tasks` | `Tasks.tsx` | **Lists** — to-do / task lists | Lists | — |
+| `/dub` | `DubPage.tsx` | **Dub** — coach home: check-in button (fires the Coach report), live read, and on-device data insights (`dubInsights`) | Dub | GROWTH blue |
 | `/success-kit` | `SuccessKit.tsx` | **Kit** (Success Kit) — articles, book recs, What's New timeline | Kit | GOLD |
 | `/level` | `LevelPage.tsx` | **The Ascension** — level ladder, badges, habit record (cosmetics moved to Profile) | — | GOLD / VIOLET |
-| `/profile` | `Profile.tsx` | **Profile** — level ring + XP, all cosmetics + Dub customization (`LevelCustomizer`), identity, targets, settings (`onLogout`) | Profile | GROWTH blue |
+| `/profile` | `Profile.tsx` | **Profile** — level ring + XP, all cosmetics + Dub customization (`LevelCustomizer`), identity, targets, settings (`onLogout`); off the nav, reachable via cog | — | GROWTH blue |
 | `/maths` | `MathsPage.tsx` | **The Maths** — live formulas w/ worked examples | — | GROWTH tint |
 | `/about` | `About.tsx` | About the app | — | — |
 | `/archived` | `ArchivedHabits.tsx` | Archived habits (restore / permanent delete) | — | HEALTH green |
@@ -39,7 +40,7 @@
 | `UpdateBanner.tsx` | New-version / What's-New prompt (see `BUILD_TAG` in `version.ts`) |
 
 ## Notable shared components
-- `BottomNav.tsx` — 6-item uniform fixed nav (Habits · Progress · Profile · Global · Lists · Kit); no raised centre button. Habits icon tints with the habits-colour cosmetic; active tint follows the nav-glow cosmetic.
+- `BottomNav.tsx` — 6-item uniform fixed nav (Habits · Progress · Dub · Global · Lists · Kit); no raised centre button. Profile left the nav (now cog-only); Dub took its slot. Habits icon tints with the habits-colour cosmetic; active tint follows the nav-glow cosmetic.
 - `LevelCustomizer.tsx` — the level hero + all cosmetic/companion shelves (ring themes, Dub species/colour, accents, background); rendered on Profile.
 - `CogMenu.tsx` — unified per-page cog menu (settings, navigation, quick-log).
 - `LevelRing.tsx` / ring themes — XP ring, incl. the Liquid ring cosmetic.

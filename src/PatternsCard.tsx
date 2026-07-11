@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { pearson } from './dubInsights';
 
 // One joined day of signals, prepared by the parent (Progress page).
 export interface PatternDay {
@@ -17,19 +18,6 @@ const METRICS: { key: MetricKey; label: string; color: string; fmt: (v: number) 
   { key: 'habitRate', label: 'Habits', color: '#2FD27E', fmt: v => `${Math.round(v * 100)}%` },
   { key: 'mood',      label: 'Mood',   color: '#FFB928', fmt: v => `${v.toFixed(1)}/5` },
 ];
-
-// Pearson correlation over paired samples; null if too few points or no variance.
-function pearson(pairs: [number, number][]): number | null {
-  const n = pairs.length;
-  if (n < 6) return null;
-  let sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0;
-  for (const [x, y] of pairs) { sx += x; sy += y; sxx += x * x; syy += y * y; sxy += x * y; }
-  const cov = sxy - (sx * sy) / n;
-  const vx = sxx - (sx * sx) / n;
-  const vy = syy - (sy * sy) / n;
-  if (vx <= 0 || vy <= 0) return null;
-  return cov / Math.sqrt(vx * vy);
-}
 
 function strength(r: number): string {
   const a = Math.abs(r);

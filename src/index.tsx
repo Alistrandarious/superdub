@@ -28,6 +28,7 @@ const App = lazy(() => import('./App'));
 const Diet = lazy(() => import('./Diet'));
 const Tasks = lazy(() => import('./Tasks'));
 const Profile = lazy(() => import('./Profile'));
+const DubPage = lazy(() => import('./DubPage'));
 const About = lazy(() => import('./About'));
 const PrivacyPolicy = lazy(() => import('./PrivacyPolicy'));
 const MathsPage = lazy(() => import('./MathsPage'));
@@ -106,6 +107,7 @@ function AppRouter() {
         <Route path="/diet" element={<Diet />} />
         <Route path="/tasks" element={<Tasks />} />
         <Route path="/profile" element={<Profile onLogout={handleLogout} />} />
+        <Route path="/dub" element={<DubPage />} />
         <Route path="/about" element={<About />} />
         <Route path="/maths" element={<MathsPage />} />
         <Route path="/level" element={<LevelPage />} />

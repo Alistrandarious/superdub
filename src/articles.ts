@@ -18,6 +18,26 @@ export interface Article {
 
 export const ARTICLES: Article[] = [
   {
+    id: 'dub-gets-a-tab',
+    title: 'Dub Gets His Own Tab, and a Sharper Eye',
+    author: 'Ali Shah',
+    readMins: 2,
+    tag: 'Dub',
+    accent: '#2E8BFF',
+    dek: 'Your coach steps out of the shadows into his own spot on the bar, and starts reading your data for the patterns you cannot see day to day.',
+    body: [
+      { t: 'p', text: 'Dub has always been in Superdub, popping up after a weigh-in with a kind word and a read on your trend. The trouble was you could only reach him at that one moment. So we gave him a home: his own tab, right in the middle of the bottom bar, there whenever you want him.' },
+      { t: 'h', text: 'Where Profile went' },
+      { t: 'p', text: 'To make room, Profile moved into the cog menu at the top right. That is where all your settings, your plan and your customization already lived, so it is one tidy place now instead of two. Tap the cog, tap Profile, same as ever.' },
+      { t: 'h', text: 'A check-in on demand' },
+      { t: 'p', text: 'Open Dub and the first thing you get is a straight read on where you are: your weight trend, your habits, what is going well and what is slipping. Want the full report he gives after a weigh-in? Tap "Check in with Dub" any time you like.' },
+      { t: 'quote', text: 'The patterns that trip you up are rarely the ones you notice in the moment.' },
+      { t: 'h', text: 'The sharper eye' },
+      { t: 'p', text: 'Here is the real upgrade. Dub now reads back through your own history and tells you what it is quietly saying. Which weekday a habit slips most, so you can plan for it. Whether the days you keep a habit are also your higher-step days or your better-mood days. Even whether the weeks you hold a habit are the weeks your weight actually comes down.' },
+      { t: 'p', text: 'It is all worked out on your device, from your numbers, no cloud and no guessing. Give it about ten days of logging to warm up, then open Dub and see what he has found. 🐾' },
+    ],
+  },
+  {
     id: 'the-global-habit',
     title: 'The Global Habit: One Thing, All of Us',
     author: 'Ali Shah',

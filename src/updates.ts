@@ -10,6 +10,18 @@ export interface UpdateEntry {
 
 export const UPDATE_LOG: UpdateEntry[] = [
   {
+    date: '2026-07-11',
+    emoji: '🐾',
+    title: 'Dub gets his own tab, and a sharper eye',
+    summary: 'Dub moves off the sidelines into his own spot on the bottom bar. Tap him any time for a check-in, a read on where you are, and the patterns he has dug out of your own data.',
+    points: [
+      'Dub now sits in the middle of the bottom bar. Your Profile moves into the cog menu, top right, where all your settings and customization already live.',
+      'Open Dub for a live read on your weight trend and habits, plus a "Check in with Dub" button whenever you want his full report.',
+      'Dub now reads your history for patterns: which weekday a habit slips most, whether a habit goes with more steps or a better mood, and whether keeping it up tracks with your weight coming down.',
+      'It is all worked out on your device from your own numbers. No guessing, no cloud, and it unlocks once you have about ten days of data.',
+    ],
+  },
+  {
     date: '2026-07-09',
     emoji: '🌍',
     title: 'The Global habit: one thing, all of us',

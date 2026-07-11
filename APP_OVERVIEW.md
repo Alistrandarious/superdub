@@ -56,8 +56,12 @@ Superdub is a **habit + weight + nutrition tracker** built around a single loop:
 ### 4. Dub — the coach
 - A small robotic Yorkie (switchable to a cat at L2) that reads your data and
   gives an honest read after each weigh-in: a win to protect, what's slipping, and
-  one tiny next step. Opens from **Profile** ("Talk to Dub") and automatically after
-  a weigh-in; asks for a "walk" when momentum stalls.
+  one tiny next step. Has its own nav tab (`/dub`, `DubPage.tsx`): a check-in button,
+  a live read, and **per-habit data insights** (`src/dubInsights.ts`) — which weekday
+  a habit slips most, whether it goes with more steps / better mood, and whether its
+  weekly adherence tracks the weight trend. Also fires automatically after a weigh-in;
+  asks for a "walk" when momentum stalls. (Insight logic is on-device; the client
+  `dubInsights.ts` + `coach.ts` + `PatternsCard.tsx` complement the server services below.)
 
 ## Behavioural insights ("ML"-flavoured, mostly deterministic)
 
