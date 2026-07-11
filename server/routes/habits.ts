@@ -19,10 +19,10 @@ router.get('/graveyard', requireAuth as any, async (req: AuthRequest, res: Respo
 router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
     const { rows } = await pool.query(
-      "SELECT name, start_date, COALESCE(cadence, 'daily') AS cadence, quit_started_at FROM habits WHERE user_id = $1 AND (archived = FALSE OR archived IS NULL) ORDER BY position",
+      "SELECT name, start_date, COALESCE(cadence, 'daily') AS cadence, quit_started_at, COALESCE(starred, FALSE) AS starred FROM habits WHERE user_id = $1 AND (archived = FALSE OR archived IS NULL) ORDER BY position",
       [req.userId]
     );
-    res.json(rows.map((r: any) => ({ name: r.name, startDate: r.start_date, cadence: r.cadence, quitStartedAt: r.quit_started_at })));
+    res.json(rows.map((r: any) => ({ name: r.name, startDate: r.start_date, cadence: r.cadence, quitStartedAt: r.quit_started_at, starred: r.starred })));
   } catch {
     res.status(500).json({ error: 'Server error' });
   }
@@ -91,6 +91,21 @@ router.patch('/quit-start', requireAuth as any, async (req: AuthRequest, res: Re
     await pool.query(
       'UPDATE habits SET quit_started_at = $3 WHERE user_id = $1 AND name = $2',
       [req.userId, name, when.toISOString()]
+    );
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Toggle a habit's starred flag. Body: { name, starred }.
+router.patch('/star', requireAuth as any, async (req: AuthRequest, res: Response) => {
+  try {
+    const { name, starred } = req.body as { name?: string; starred?: boolean };
+    if (!name || typeof starred !== 'boolean') return res.status(400).json({ error: 'name and starred required' });
+    await pool.query(
+      'UPDATE habits SET starred = $3 WHERE user_id = $1 AND name = $2',
+      [req.userId, name, starred]
     );
     res.json({ ok: true });
   } catch {

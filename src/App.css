@@ -6930,6 +6930,39 @@ h1, h2, h3, h4, .sora {
 }
 .dub-gender-pick.active { background: var(--theme, #2E8BFF); color: #06101F; }
 
+/* ── Habit star toggle ──────────────────────────────────────────────────────── */
+.hcard-star {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; padding: 0; border: none; background: transparent;
+  color: rgba(255,255,255,0.28); cursor: pointer; flex-shrink: 0;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+.hcard-star.on { color: #FFB928; }
+.hcard-star:active { transform: scale(0.88); }
+
+/* ── Starred-habit strip on Progress Today / Yesterday panels ───────────────── */
+.star-strip { margin-top: 14px; }
+.star-strip-eyebrow {
+  display: block; font-family: 'Space Mono', monospace; font-size: 0.58rem; font-weight: 700;
+  letter-spacing: 0.14em; color: #FFB928; margin-bottom: 8px;
+}
+.star-strip-rows { display: flex; flex-direction: column; gap: 6px; }
+.star-strip-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 10px; border-radius: var(--r-md);
+  background: rgba(255,255,255,0.04); border-left: 2px solid rgba(255,255,255,0.12);
+}
+.star-strip-ico {
+  width: 18px; height: 18px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; font-size: 0.72rem; font-weight: 800;
+}
+.star-strip-item--done { border-left-color: #2FD27E; }
+.star-strip-item--done .star-strip-ico { background: rgba(47,210,126,0.18); color: #2FD27E; }
+.star-strip-item--missed { border-left-color: #FF5470; }
+.star-strip-item--missed .star-strip-ico { background: rgba(255,84,112,0.18); color: #FF5470; }
+.star-strip-item--blank .star-strip-ico { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.4); }
+.star-strip-name { font-size: 0.85rem; color: rgba(255,255,255,0.85); }
+
 /* ── Unified stat panel (.hsp) — one designed object, not 3 boxes ───────────── */
 .hsp {
   position: relative;

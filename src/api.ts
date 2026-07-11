@@ -65,11 +65,13 @@ export const api = {
   heartbeat: () => request('/profile/heartbeat', { method: 'POST' }),
 
   // habits
-  getHabits: (): Promise<{ name: string; startDate: string | null; cadence?: string; quitStartedAt?: string | null }[]> => request('/habits'),
+  getHabits: (): Promise<{ name: string; startDate: string | null; cadence?: string; quitStartedAt?: string | null; starred?: boolean }[]> => request('/habits'),
   updateHabits: (habits: (string | { name: string; cadence: string })[]) =>
     request('/habits', { method: 'PUT', body: JSON.stringify({ habits }) }),
   setQuitStart: (name: string, startedAt: string) =>
     request('/habits/quit-start', { method: 'PATCH', body: JSON.stringify({ name, startedAt }) }),
+  setHabitStar: (name: string, starred: boolean) =>
+    request('/habits/star', { method: 'PATCH', body: JSON.stringify({ name, starred }) }),
   archiveHabit: (name: string) => request(`/habits/${encodeURIComponent(name)}`, { method: 'DELETE' }),
   restoreHabit: (name: string) => request(`/habits/${encodeURIComponent(name)}/restore`, { method: 'POST' }),
   deleteHabitPermanently: (name: string) => request(`/habits/${encodeURIComponent(name)}/permanent`, { method: 'DELETE' }),

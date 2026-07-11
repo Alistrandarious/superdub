@@ -286,6 +286,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
   const [, setName] = useState('');
   const [habits, setHabits] = useState<string[]>([]);
+  const [starredHabits, setStarredHabits] = useState<string[]>([]);
   const [moodByDate, setMoodByDate] = useState<Record<string, number>>({}); // ISO date → mood 1..5
   const [sleepByDate, setSleepByDate] = useState<Record<string, number>>({}); // ISO date → hours slept
   const [sleepTimesByDate, setSleepTimesByDate] = useState<Record<string, { bedtime: string; waketime: string }>>({}); // ISO → bed/wake 'HH:MM'
@@ -411,9 +412,10 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       if (profile.accountCreatedAt) setAccountCreatedAt(profile.accountCreatedAt);
       setStepTarget(parseInt(profile.stepTarget) || 10000);
 
-      const habitObjs = loadedHabits as { name: string; cadence?: string }[];
+      const habitObjs = loadedHabits as { name: string; cadence?: string; starred?: boolean }[];
       const activeHabits = habitObjs.length > 0 ? habitObjs.map(h => h.name) : (currentHabits ?? DEFAULT_HABITS);
       setHabits(activeHabits);
+      setStarredHabits(habitObjs.filter(h => h.starred).map(h => h.name));
       // Keep each habit's cadence so the Progress page can filter by period.
       const cad: Record<string, Cadence> = {};
       habitObjs.forEach(h => { cad[h.name] = (h.cadence as Cadence) || 'daily'; });
@@ -1393,6 +1395,29 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     null,
   ];
 
+  // Starred habits (set on the Habits page) with their state for a given day.
+  const renderStarStrip = (dayKey: string) => {
+    const stars = starredHabits.filter(h => realHabits.includes(h));
+    if (stars.length === 0) return null;
+    return (
+      <div className="star-strip">
+        <span className="star-strip-eyebrow">STARRED</span>
+        <div className="star-strip-rows">
+          {stars.map(h => {
+            const st = tracker[dayKey]?.habits[h];
+            const cls = st === true ? 'done' : st === 'failed' ? 'missed' : 'blank';
+            return (
+              <div key={h} className={`star-strip-item star-strip-item--${cls}`}>
+                <span className="star-strip-ico">{st === true ? '✓' : st === 'failed' ? '✕' : '·'}</span>
+                <span className="star-strip-name">{h}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="app flush" style={{ '--theme': themeColor, '--theme-dim': themeColor + '66', '--theme-glow': themeColor + '14' } as React.CSSProperties}>
       <div className="hb-topbar">
@@ -1609,6 +1634,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         habitsTotal={realHabits.length}
       />
 
+      {renderStarStrip(yesterdayKey)}
+
       {/* ── Cohort onboarding banner (shown once after signup) ── */}
       {cohortMsg && !cohortDismissed && (
         <div className="cohort-banner">
@@ -1649,6 +1676,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             </div>
           </div>
           <p className="today-soon-body">Your live targets for today. Log as you go, then check Yesterday to see how you closed the day.</p>
+          {renderStarStrip(todayKey)}
         </div>
       </div>
 

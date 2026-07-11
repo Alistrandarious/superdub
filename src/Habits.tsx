@@ -410,7 +410,9 @@ const HabitCard: React.FC<{
   onEditDay: (habit: string, dayKey: string, cur: HabitState) => void;
   onRequestRemove: (habit: string) => void;
   startDate?: string | null;
-}> = ({ habit, stats, weekDays, ht, today, cadence, onToggleDay, onEditDay, onRequestRemove, startDate }) => {
+  starred?: boolean;
+  onToggleStar: (habit: string) => void;
+}> = ({ habit, stats, weekDays, ht, today, cadence, onToggleDay, onEditDay, onRequestRemove, startDate, starred, onToggleStar }) => {
   const [histOpen, setHistOpen] = useState(false);
   const [monthOffset, setMonthOffset] = useState(0); // 0 = this month, -1 = last month …
   const nowD = new Date();
@@ -491,6 +493,17 @@ const HabitCard: React.FC<{
             <span className="hcard-streak-mini off"><span className="hsm-ico"><MoonIc size={12} /></span>{daysSinceDone}d</span>
           )
         )}
+        {/* Star toggle — starred habits surface on Progress Today/Yesterday */}
+        <button
+          className={`hcard-star${starred ? ' on' : ''}`}
+          onClick={e => { e.stopPropagation(); onToggleStar(habit); }}
+          aria-label={starred ? 'Unstar habit' : 'Star habit'}
+          aria-pressed={!!starred}
+        >
+          <svg viewBox="0 0 24 24" width="15" height="15" fill={starred ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+          </svg>
+        </button>
         {/* Archive icon, always rendered so layout never shifts; only interactive when expanded */}
         <button
           className={`hcard-archive-icon${expanded ? ' visible' : ''}`}
@@ -744,6 +757,7 @@ const Habits: React.FC = () => {
   }, []);
   const [startDates, setStartDates] = useState<Record<string, string | null>>({});
   const [quitStarts, setQuitStarts] = useState<Record<string, string | null>>({}); // ISO timestamp per quit habit
+  const [starred, setStarred] = useState<Record<string, boolean>>({});
   const [newQuitStart, setNewQuitStart] = useState<string>(() => toLocalDatetimeValue(new Date()));
   const [xpCarry, setXpCarry] = useState<Record<string, number>>({});
   const [ht, setHt] = useState<HabitTracker>({});
@@ -819,10 +833,12 @@ const Habits: React.FC = () => {
       const dates: Record<string, string | null> = {};
       const cad: Record<string, Cadence> = {};
       const quits: Record<string, string | null> = {};
-      loadedHabits.forEach(h => { dates[h.name] = h.startDate; cad[h.name] = ((h as any).cadence as Cadence) || 'daily'; quits[h.name] = (h as any).quitStartedAt ?? null; });
+      const stars: Record<string, boolean> = {};
+      loadedHabits.forEach(h => { dates[h.name] = h.startDate; cad[h.name] = ((h as any).cadence as Cadence) || 'daily'; quits[h.name] = (h as any).quitStartedAt ?? null; stars[h.name] = !!(h as any).starred; });
       cad[MANDATORY_HABIT] = 'daily';
       setHabitCadence(cad);
       setQuitStarts(quits);
+      setStarred(stars);
       cadenceRef.current = cad;
 
       // Mandatory habit is always present in state.
@@ -1003,6 +1019,14 @@ const Habits: React.FC = () => {
     api.setQuitStart(name, startedAtISO).catch(() => {});
   }, []);
 
+  const handleToggleStar = useCallback((name: string) => {
+    setStarred(prev => {
+      const next = !prev[name];
+      api.setHabitStar(name, next).catch(() => {});
+      return { ...prev, [name]: next };
+    });
+  }, []);
+
   const confirmRemove = (name: string) => {
     if (name === MANDATORY_HABIT) { setPendingRemove(null); return; }
     setPendingRemove(null);
@@ -1075,6 +1099,8 @@ const Habits: React.FC = () => {
         onEditDay={editPast}
         onRequestRemove={setPendingRemove}
         startDate={startDates[habit]}
+        starred={starred[habit]}
+        onToggleStar={handleToggleStar}
       />
     );
     const content = list.length === 0 ? (

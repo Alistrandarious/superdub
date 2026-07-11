@@ -267,6 +267,8 @@ const migrations = [
   // Quit habits (abstinence timers): the moment the current clean run began.
   // Rewind resets it to now; the 30-day bar fills from here.
   `ALTER TABLE habits ADD COLUMN IF NOT EXISTS quit_started_at TIMESTAMPTZ`,
+  // Starred habits surface on the Progress Today/Yesterday panels.
+  `ALTER TABLE habits ADD COLUMN IF NOT EXISTS starred BOOLEAN DEFAULT FALSE`,
   // Personal SMART goals (Lists → Goals tab).
   `CREATE TABLE IF NOT EXISTS smart_goals (
     id          TEXT PRIMARY KEY,
