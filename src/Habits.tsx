@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { useXP } from './XPContext';
 import './App.css';
 import { api } from './api';
@@ -479,6 +479,18 @@ const HabitCard: React.FC<{
 }> = ({ habit, stats, weekDays, ht, today, cadence, onToggleDay, onEditDay, onRequestRemove, startDate, starred, onToggleStar, dueDate, onSetDueDate, reminderHour, onSetReminder, dragHandle }) => {
   const [histOpen, setHistOpen] = useState(false);
   const [monthOffset, setMonthOffset] = useState(0); // 0 = this month, -1 = last month …
+  // Shrink the name font when it wraps to more than one line. Measured at the base
+  // size on mount / name change; deps are [habit] only so applying the smaller font
+  // never re-triggers the measure (no oscillation).
+  // ponytail: not re-measured on resize — the card width is fixed by the carousel.
+  const nameRef = useRef<HTMLSpanElement>(null);
+  const [nameWrapped, setNameWrapped] = useState(false);
+  useLayoutEffect(() => {
+    const el = nameRef.current;
+    if (!el) return;
+    const lh = parseFloat(getComputedStyle(el).lineHeight) || 18;
+    setNameWrapped(el.offsetHeight > lh * 1.4);
+  }, [habit]);
   const nowD = new Date();
   const dispBase = new Date(nowD.getFullYear(), nowD.getMonth() + monthOffset, 1);
   const dispMonth = dispBase.getMonth();
@@ -545,7 +557,7 @@ const HabitCard: React.FC<{
           {currentDone ? <CheckSVG size={14} strokeWidth={2.5} /> : <span className="hcard-icon-empty-dot" />}
         </button>
         <div className="hcard-head">
-          <span className="hcard-name">{habit}</span>
+          <span ref={nameRef} className={`hcard-name${nameWrapped ? ' hcard-name--wrapped' : ''}`}>{habit}</span>
           <div className="hcard-head-meta">
             <span className="hcard-level-badge" title={`Level ${stats.level}, ${stats.totalDays} days logged · +${stats.xpPerDay} XP per day`}>LV{stats.level}</span>
             <span className={`hcard-chevron ${expanded ? 'open' : ''}`}>▾</span>
