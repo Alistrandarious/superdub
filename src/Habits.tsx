@@ -550,6 +550,10 @@ const HabitCard: React.FC<{
   const accent = CADENCE_META[cadence].color;
   const [expanded, setExpanded] = useState(false);
   const currentDone = isDaily ? todayState === 'done' : !!currentUnit?.done;
+  // What the header circle shows. Daily reflects today's full state (done/failed/na)
+  // so it mirrors the weekday circles' double-tap / long-press. Non-daily units only
+  // carry done, so they stay done-or-blank.
+  const headState: HabitState = isDaily ? todayState : (currentUnit?.done ? 'done' : null);
   const toggleCurrent = () => {
     if (isDaily) onToggleDay(habit, today, cycleState(todayState));
     else if (currentUnit) toggleUnit(currentUnit);
@@ -592,11 +596,14 @@ const HabitCard: React.FC<{
       <div className="hcard-summary" onClick={() => setExpanded(e => { const next = !e; if (!next) setHistOpen(false); return next; })}>
         {dragHandle}
         <button
-          className={`hcard-icon hcard-icon-btn ${currentDone ? 'done' : ''}`}
+          className={`hcard-icon hcard-icon-btn ${headState === 'done' ? 'done' : headState === 'failed' ? 'failed' : headState === 'na' ? 'na' : ''}`}
           onClick={e => { e.stopPropagation(); toggleCurrent(); }}
-          aria-label={currentDone ? 'Done, tap to clear' : 'Mark done'}
+          aria-label={`${headState ?? 'blank'}, tap to cycle`}
         >
-          {currentDone ? <CheckSVG size={14} strokeWidth={2.5} /> : <span className="hcard-icon-empty-dot" />}
+          {headState === 'done' ? <CheckSVG size={14} strokeWidth={2.5} />
+            : headState === 'failed' ? <span className="hcard-icon-glyph fail">✗</span>
+            : headState === 'na' ? <span className="hcard-icon-glyph na">–</span>
+            : <span className="hcard-icon-empty-dot" />}
         </button>
         <div className="hcard-head">
           <span ref={nameRef} className={`hcard-name${nameWrapped ? ' hcard-name--wrapped' : ''}`}>{habit}</span>
