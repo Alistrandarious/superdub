@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import { api } from './api';
+import { promptEnabled } from './promptPrefs';
 
 // ── Evening reflection — the sleek end-of-day step: how the day felt (mood) and
 // whether eating landed on plan. Time-locked to the evening (6 PM+, once/day) so
@@ -27,6 +28,7 @@ const EATING_BLOCKS: { level: number; sym: string; label: string }[] = [
 ];
 
 const EveningPrompt: React.FC = () => {
+  const moodOn = promptEnabled('mood');
   const [show, setShow] = useState(false);
   const [mood, setMood] = useState(6);
   const [moodTouched, setMoodTouched] = useState(false);
@@ -55,13 +57,13 @@ const EveningPrompt: React.FC = () => {
 
   const dismiss = () => { localStorage.setItem(EVENING_KEY, todayISO()); setShow(false); };
 
-  const canSave = moodTouched && adherenceLevel !== null;
+  const canSave = (moodOn ? moodTouched : true) && adherenceLevel !== null;
   const save = async () => {
     if (!canSave || adherenceLevel === null) return;
     setSaving(true); setError(null);
     try {
       await api.submitCheckIn({
-        mood: to5(mood),
+        ...(moodOn ? { mood: to5(mood) } : {}),
         adherence: adherenceEnum(adherenceLevel),
         adherenceLevel,
       });
@@ -83,21 +85,25 @@ const EveningPrompt: React.FC = () => {
     <div className="checkin-overlay">
       <div className="checkin-modal vitals-modal">
         <h2 className="checkin-title">Evening reflection</h2>
-        <p className="checkin-subtitle">Two taps. How the day felt, and how eating landed.</p>
+        <p className="checkin-subtitle">{moodOn ? 'Two taps. How the day felt, and how eating landed.' : 'One tap. How eating landed today.'}</p>
 
-        {/* Mood, 1–10 */}
-        <div className="vitals-step">
-          <div className="vitals-label"><span>Mood today</span><span className="vitals-value">{mood}<span className="vitals-of">/10</span></span></div>
-          <input
-            type="range" min={1} max={10} step={1} value={mood} className="vitals-slider mood"
-            onChange={e => { setMood(parseInt(e.target.value, 10)); setMoodTouched(true); }}
-            aria-label="Mood today"
-          />
-          <div className="vitals-scale"><span>rough</span><span>great</span></div>
-        </div>
+        {/* Mood, 1–10. No thumb until you tap and slide to lock it in. */}
+        {moodOn && (
+          <div className="vitals-step">
+            <div className="vitals-label"><span>Mood today</span><span className="vitals-value">{moodTouched ? mood : '–'}<span className="vitals-of">/10</span></span></div>
+            <input
+              type="range" min={1} max={10} step={1} value={mood}
+              className={`vitals-slider mood${moodTouched ? '' : ' untouched'}`}
+              onChange={e => { setMood(parseInt(e.target.value, 10)); setMoodTouched(true); }}
+              aria-label="Mood today"
+            />
+            <div className="vitals-scale"><span>rough</span><span>great</span></div>
+          </div>
+        )}
 
-        {/* Eating, feeds the plan engine's confidence, slides in once mood is set */}
-        <div className={`adherence-section vitals-reveal${moodTouched ? ' in' : ''}`}>
+        {/* Eating, feeds the plan engine's confidence. Slides in once mood is set;
+            shown straight away when mood is off. */}
+        <div className={`adherence-section${moodOn ? ` vitals-reveal${moodTouched ? ' in' : ''}` : ''}`}>
           <p className="energy-label-row">
             Eating vs. your target today?
             {adherenceLevel !== null && (
@@ -129,7 +135,7 @@ const EveningPrompt: React.FC = () => {
             <>
               {error && <p className="checkin-error">{error}</p>}
               <button className="checkin-save-btn" onClick={save} disabled={saving || !canSave}>
-                {saving ? 'Saving…' : error ? 'Retry' : canSave ? 'Log it' : 'Mood + eating'}
+                {saving ? 'Saving…' : error ? 'Retry' : canSave ? 'Log it' : moodOn ? 'Mood + eating' : 'Pick eating'}
               </button>
               <button className="checkin-skip-btn" onClick={dismiss} disabled={saving}>Skip today</button>
             </>

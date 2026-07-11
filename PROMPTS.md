@@ -14,6 +14,14 @@ Two things are separate and must not be conflated:
 Every prompt is **once per day**, keyed by a `localStorage` stamp, and self-suppresses if
 its data is already logged for the day. All hours are the user's local time.
 
+**Per-prompt opt-out.** The cog menu → *Daily prompts* lets the user turn each field on or
+off (`src/promptPrefs.ts`, `superdub.prompt.<key>`): **Weigh-in**, **Sleep**, **Energy**,
+**Mood**. Weigh-in defaults to *following the weight plan* (on while a plan is active, off
+otherwise) so people without a plan aren't nagged to weigh in; the others default on. A
+disabled field is dropped from its prompt, and a prompt with no enabled fields no longer
+auto-opens (manual cog triggers still open it). Mood and Energy show **no pre-set point** —
+the slider has no thumb until the user taps and slides to lock a value in.
+
 ## The daily order
 
 | # | Prompt | Captures | Trigger event | Push? | In-app time-lock | Once/day key |

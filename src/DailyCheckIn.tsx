@@ -3,6 +3,7 @@ import './App.css';
 import { api } from './api';
 import WeightInput from './WeightInput';
 import { useWeightUnit, formatWeightKg } from './weightUnit';
+import { promptEnabled } from './promptPrefs';
 
 const CHECKIN_KEY = 'superdub.weight.checkin';
 const SNOOZE_KEY = 'superdub.weight.snooze';   // timestamp (ms) to re-ask after "Ask me later"
@@ -53,6 +54,9 @@ const DailyCheckIn: React.FC = () => {
 
   useEffect(() => {
     if (localStorage.getItem(CHECKIN_KEY) === todayStr()) return;
+    // Off for people who don't want a daily weigh-in (default: on only while a weight
+    // plan is active). The manual "Log Weight" trigger below still works regardless.
+    if (!promptEnabled('weight')) return;
     let cancelled = false;
     let tid: ReturnType<typeof setTimeout>;
     api.getTracker().then((data: any) => {

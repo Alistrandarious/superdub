@@ -2075,6 +2075,11 @@ h1, h2, h3, h4, .sora {
   background: transparent;
 }
 .vitals-slider.mood { accent-color: #19C5B0; }   /* teal — the check-in accent */
+/* "No point first": before the user taps, the thumb and fill are invisible (a bare
+   track), so nothing is pre-selected. The first tap/slide reveals it. */
+.vitals-slider.untouched { accent-color: transparent; }
+.vitals-slider.untouched::-webkit-slider-thumb { opacity: 0; }
+.vitals-slider.untouched::-moz-range-thumb { opacity: 0; border-color: transparent; background: transparent; }
 .vitals-scale {
   display: flex; justify-content: space-between; margin-top: 2px;
   font-family: var(--font-data); font-size: 0.58rem; letter-spacing: 0.04em;

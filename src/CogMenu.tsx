@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { enablePush, disablePush, pushIsEnabled, pushSupported, getReminderHour, setReminderHour, getEveningHour, setEveningHour, getWorkoutHour, setWorkoutHour } from './push';
 import { clearToken } from './api';
 import { BUILD_TAG } from './version';
+import { promptEnabled, setPromptEnabled, PromptKey } from './promptPrefs';
 
 function readPlanBadge(): { active: boolean; calories: number | null; onTrack: boolean | null } | null {
   try {
@@ -25,6 +26,15 @@ const HOUR_OPTIONS = Array.from({ length: 24 }, (_, h) => (
   <option key={h} value={h}>{h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`}</option>
 ));
 
+// The daily prompts the user can opt in/out of. Weigh-in defaults to following the
+// weight plan; the rest default on (see promptPrefs).
+const PROMPT_ROWS: { key: PromptKey; label: string; icon: React.ReactNode }[] = [
+  { key: 'weight', label: 'Weigh-in', icon: <Ic><path d="M6 2v6M18 2v6M3 10h18M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></Ic> },
+  { key: 'sleep', label: 'Sleep', icon: <Ic><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.6 6.6 0 0 0 9.8 9.8z" /></Ic> },
+  { key: 'energy', label: 'Energy', icon: <Ic><path d="M13 2L3 14h7l-1 8 10-12h-7z" /></Ic> },
+  { key: 'mood', label: 'Mood', icon: <Ic><circle cx="12" cy="12" r="10" /><path d="M8 14s1.5 2 4 2 4-2 4-2" /><line x1="9" y1="9" x2="9.01" y2="9" /><line x1="15" y1="9" x2="15.01" y2="9" /></Ic> },
+];
+
 // The single settings/menu surface, shared on every page header. Bundles the
 // quick-log actions, navigation, and app settings that used to be split between
 // the Habits cog and the bottom-nav "More" menu.
@@ -37,6 +47,15 @@ const CogMenu: React.FC = () => {
   const [reminderHour, setReminderHourState] = useState(getReminderHour);
   const [eveningHour, setEveningHourState] = useState(getEveningHour);
   const [workoutHour, setWorkoutHourState] = useState<number | null>(getWorkoutHour);
+  const [prompts, setPrompts] = useState<Record<PromptKey, boolean>>(() => ({
+    weight: promptEnabled('weight'), sleep: promptEnabled('sleep'),
+    energy: promptEnabled('energy'), mood: promptEnabled('mood'),
+  }));
+  const togglePrompt = (k: PromptKey) => {
+    const next = !prompts[k];
+    setPromptEnabled(k, next);
+    setPrompts(p => ({ ...p, [k]: next }));
+  };
   const planBadge = readPlanBadge();
 
   const logout = () => { clearToken(); window.location.href = '/'; };
@@ -125,6 +144,14 @@ const CogMenu: React.FC = () => {
               <span className="cog-mi-ico"><Ic><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" /></Ic></span> Daily Check-in
               <span className={`checkin-toggle-pill ${checkinEnabled ? 'on' : 'off'}`} style={{ marginLeft: 'auto' }}>{checkinEnabled ? 'ON' : 'OFF'}</span>
             </button>
+
+            <div className="cog-menu-label">Daily prompts</div>
+            {PROMPT_ROWS.map(r => (
+              <button key={r.key} className="cog-menu-item" onClick={() => togglePrompt(r.key)}>
+                <span className="cog-mi-ico">{r.icon}</span> {r.label}
+                <span className={`checkin-toggle-pill ${prompts[r.key] ? 'on' : 'off'}`} style={{ marginLeft: 'auto' }}>{prompts[r.key] ? 'ON' : 'OFF'}</span>
+              </button>
+            ))}
             {pushSupported() && (
               <button className="cog-menu-item" onClick={togglePush}>
                 <span className="cog-mi-ico"><Ic><path d="M3 11l18-5v12L3 14v-3zM11.6 16.8a3 3 0 1 1-5.8-1.6" /></Ic></span> Notifications

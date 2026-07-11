@@ -11,6 +11,18 @@ export interface UpdateEntry {
 export const UPDATE_LOG: UpdateEntry[] = [
   {
     date: '2026-07-11',
+    emoji: '🎚️',
+    title: 'Choose the daily prompts you want',
+    summary: 'You now decide which daily check-ins Superdub asks for. Turn the morning weigh-in off if you are not running a weight plan, and pick whether you are prompted for sleep, energy and mood. Mood and energy also start from a blank slider, so nothing is pre-picked for you.',
+    points: [
+      'Open the menu and find Daily prompts. Toggle Weigh-in, Sleep, Energy and Mood on or off, each one on its own.',
+      'The morning weigh-in now follows your plan by default: on while you have an active weight plan, off if you do not. Turn it back on any time from the menu.',
+      'Mood and Energy start with no point set. The slider is blank until you tap and slide to lock in your answer, so you are never nudged toward a default.',
+      'A prompt with everything switched off simply stops appearing. Turn a field back on and it returns.',
+    ],
+  },
+  {
+    date: '2026-07-11',
     emoji: '📌',
     title: 'Give a weekly, monthly or yearly habit its own day',
     summary: 'A non-daily habit can now run on a set day. Pick a weekday for a weekly habit, a date for a monthly one, or a month and day for a yearly one. It anchors the tick, shows up in Today as it approaches, and only nudges you on its day.',

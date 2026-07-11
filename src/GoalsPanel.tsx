@@ -118,7 +118,11 @@ const GoalsPanel: React.FC<{ accent: string }> = ({ accent }) => {
 
       {goals.length === 0 && !formOpen ? (
         <div className="lists-empty">
-          <div className="lists-empty-icon">🎯</div>
+          <div className="lists-empty-icon">
+            <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1.5" />
+            </svg>
+          </div>
           <div className="lists-empty-title">No goals yet</div>
           <div className="lists-empty-sub">Set a SMART goal, Specific, Measurable, Achievable, Relevant, Time-bound.</div>
         </div>

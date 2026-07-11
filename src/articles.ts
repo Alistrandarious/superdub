@@ -18,6 +18,25 @@ export interface Article {
 
 export const ARTICLES: Article[] = [
   {
+    id: 'choose-your-prompts',
+    title: 'Only the Check-ins You Actually Want',
+    author: 'Ali Shah',
+    readMins: 2,
+    tag: 'Settings',
+    accent: '#19C5B0',
+    dek: 'Turn the daily prompts on or off one by one, skip the weigh-in when you are not on a plan, and answer mood and energy from a blank slider.',
+    body: [
+      { t: 'p', text: 'Superdub asks a few small things through the day: your weight in the morning, how you slept, your energy, your mood. Useful when you want them, noise when you do not. So now you choose which ones you get.' },
+      { t: 'h', text: 'Pick your prompts' },
+      { t: 'p', text: 'Open the menu and look for Daily prompts. There are four switches: Weigh-in, Sleep, Energy and Mood. Flip off the ones you would rather skip and they stop appearing. Turn a field back on and it comes straight back. If a prompt has nothing left switched on, it quietly stops opening at all.' },
+      { t: 'h', text: 'No plan, no weigh-in' },
+      { t: 'p', text: 'The morning weigh-in now follows your plan. If you have an active weight plan it stays on, because the daily reading is what makes the plan work. If you are not running one, it starts off, so you are not asked to step on the scales every morning for no reason. You can always switch it back on from the same menu.' },
+      { t: 'quote', text: 'The best prompt is one you actually wanted.' },
+      { t: 'h', text: 'A blank slider for mood and energy' },
+      { t: 'p', text: 'Mood and energy used to open with the slider already sitting in the middle, which quietly nudged your answer. Now the slider starts blank, with no point at all. You tap and slide to lock in where you really are, and nothing is chosen for you until you do. Open the menu, set your prompts the way you like them, and Superdub will only ask for what you asked it to. 🎚️' },
+    ],
+  },
+  {
     id: 'habit-runs-on-a-day',
     title: 'Give a Habit the Day It Runs On',
     author: 'Ali Shah',
