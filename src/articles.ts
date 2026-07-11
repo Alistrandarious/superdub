@@ -18,6 +18,25 @@ export interface Article {
 
 export const ARTICLES: Article[] = [
   {
+    id: 'habits-to-quit',
+    title: 'Habits to Quit: A Clock That Counts Up',
+    author: 'Ali Shah',
+    readMins: 2,
+    tag: 'Habits',
+    accent: '#8A8F98',
+    dek: 'Some habits you build by ticking them off. Others you beat by simply not doing them, one clean hour at a time.',
+    body: [
+      { t: 'p', text: 'Every habit in Superdub so far has been about doing something: walk, read, drink water, tick it off. But some of the most important habits are the opposite. Stopping smoking. Cutting the late-night scroll. The thing you know you are better off without. You do not tick those off. You just go without, and the longer you go the bigger the win.' },
+      { t: 'h', text: 'Where to find it' },
+      { t: 'p', text: 'Open the Habits page and swipe your cards to the left, past Daily, Weekly, Monthly and Yearly. At the end sits a new panel in calm grey: Quit. Add the thing you are giving up, and tell it when you actually stopped, right down to the hour.' },
+      { t: 'quote', text: 'You do not have to be perfect. You just have to keep the clock running.' },
+      { t: 'h', text: 'A timer, not a checkbox' },
+      { t: 'p', text: 'From that moment a clock counts up: days, hours, minutes, seconds, live. A bar fills alongside it and reaches full at your first 30 clean days. There is nothing to remember and nothing to tap each day. Time passing is the whole point, and the clock does that for you.' },
+      { t: 'h', text: 'If you slip' },
+      { t: 'p', text: 'You might slip. Most people do, and it is not the end of anything. Tap Rewind and the clock simply restarts from now. No guilt trip, no lecture, no wiped record. Just a clean run beginning again, which is exactly how quitting actually works. Swipe over, set your start, and watch the time add up. ⏱' },
+    ],
+  },
+  {
     id: 'dub-gets-a-tab',
     title: 'Dub Gets His Own Tab, and a Sharper Eye',
     author: 'Ali Shah',

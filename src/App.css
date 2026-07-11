@@ -6829,6 +6829,54 @@ h1, h2, h3, h4, .sora {
   padding: 14px; background: rgba(255,255,255,0.03); border-radius: var(--r-md);
 }
 
+/* ── Quit habits (grey abstinence timers) ───────────────────────────────────── */
+.quitcard { padding-bottom: 14px; }
+.quit-rewind { color: var(--theme); }
+.quit-rewind:active { transform: scale(0.92); }
+.quit-timer {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+  padding: 6px 12px 12px;
+}
+.quit-seg {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 8px 0; border-radius: var(--r-md);
+  background: rgba(255,255,255,0.04);
+}
+.quit-seg-num {
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.35rem;
+  color: #fff; line-height: 1; font-variant-numeric: tabular-nums;
+}
+.quit-seg-lbl {
+  font-family: 'Space Mono', monospace; font-size: 0.58rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.45);
+}
+.quit-bar {
+  height: 8px; margin: 0 12px; border-radius: 999px;
+  background: rgba(255,255,255,0.08); overflow: hidden;
+}
+.quit-bar-fill {
+  height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, var(--theme-dim), var(--theme));
+  transition: width 0.6s ease;
+}
+.quit-pct {
+  margin: 8px 12px 0; font-size: 0.75rem; color: rgba(255,255,255,0.55);
+  text-align: center;
+}
+.quit-confirm {
+  margin: 12px 12px 0; padding: 12px; border-radius: var(--r-md);
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+}
+.quit-confirm-q { display: block; font-size: 0.82rem; color: rgba(255,255,255,0.75); margin-bottom: 10px; }
+.quit-confirm-actions { display: flex; gap: 8px; }
+.quit-confirm-cancel, .quit-confirm-ok {
+  flex: 1; padding: 9px; border-radius: var(--r-md); border: none; cursor: pointer;
+  font-family: 'Sora', sans-serif; font-weight: 700; font-size: 0.82rem;
+}
+.quit-confirm-cancel { background: rgba(255,255,255,0.08); color: #fff; }
+.quit-confirm-ok { background: var(--theme); color: #10131b; }
+.hb-sheet-hint { font-size: 0.75rem; color: rgba(255,255,255,0.5); margin: 8px 2px 0; line-height: 1.4; }
+
 /* ── Unified stat panel (.hsp) — one designed object, not 3 boxes ───────────── */
 .hsp {
   position: relative;

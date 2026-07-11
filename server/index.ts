@@ -260,8 +260,11 @@ const migrations = [
   `ALTER TABLE profile ADD COLUMN IF NOT EXISTS religion TEXT`,
   // Suppress the "goal reached" celebration once the user has chosen "keep going".
   `ALTER TABLE weight_goals ADD COLUMN IF NOT EXISTS reached_dismissed BOOLEAN DEFAULT FALSE`,
-  // Habit cadence: daily (default) | weekly | monthly | yearly.
+  // Habit cadence: daily (default) | weekly | monthly | yearly | quit.
   `ALTER TABLE habits ADD COLUMN IF NOT EXISTS cadence TEXT DEFAULT 'daily'`,
+  // Quit habits (abstinence timers): the moment the current clean run began.
+  // Rewind resets it to now; the 30-day bar fills from here.
+  `ALTER TABLE habits ADD COLUMN IF NOT EXISTS quit_started_at TIMESTAMPTZ`,
   // Personal SMART goals (Lists → Goals tab).
   `CREATE TABLE IF NOT EXISTS smart_goals (
     id          TEXT PRIMARY KEY,

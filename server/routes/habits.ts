@@ -19,10 +19,10 @@ router.get('/graveyard', requireAuth as any, async (req: AuthRequest, res: Respo
 router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
     const { rows } = await pool.query(
-      "SELECT name, start_date, COALESCE(cadence, 'daily') AS cadence FROM habits WHERE user_id = $1 AND (archived = FALSE OR archived IS NULL) ORDER BY position",
+      "SELECT name, start_date, COALESCE(cadence, 'daily') AS cadence, quit_started_at FROM habits WHERE user_id = $1 AND (archived = FALSE OR archived IS NULL) ORDER BY position",
       [req.userId]
     );
-    res.json(rows.map((r: any) => ({ name: r.name, startDate: r.start_date, cadence: r.cadence })));
+    res.json(rows.map((r: any) => ({ name: r.name, startDate: r.start_date, cadence: r.cadence, quitStartedAt: r.quit_started_at })));
   } catch {
     res.status(500).json({ error: 'Server error' });
   }
@@ -32,7 +32,7 @@ router.put('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
     const { habits: rawHabits } = req.body as { habits: (string | { name: string; cadence?: string })[] };
     // Accept both plain strings (legacy) and { name, cadence } objects.
-    const CADENCES = new Set(['daily', 'weekly', 'monthly', 'yearly']);
+    const CADENCES = new Set(['daily', 'weekly', 'monthly', 'yearly', 'quit']);
     const habits = (rawHabits ?? []).map(h => {
       const name = typeof h === 'string' ? h : h.name;
       const cadence = typeof h === 'string' ? 'daily' : (CADENCES.has(h.cadence ?? '') ? h.cadence! : 'daily');
@@ -74,6 +74,24 @@ router.put('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
       }
     }
 
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Set / rewind a quit habit's clean-run start. Body: { name, startedAt } where
+// startedAt is an ISO timestamp (Rewind sends "now"; add sends the chosen start).
+router.patch('/quit-start', requireAuth as any, async (req: AuthRequest, res: Response) => {
+  try {
+    const { name, startedAt } = req.body as { name?: string; startedAt?: string };
+    if (!name || !startedAt) return res.status(400).json({ error: 'name and startedAt required' });
+    const when = new Date(startedAt);
+    if (isNaN(when.getTime())) return res.status(400).json({ error: 'invalid startedAt' });
+    await pool.query(
+      'UPDATE habits SET quit_started_at = $3 WHERE user_id = $1 AND name = $2',
+      [req.userId, name, when.toISOString()]
+    );
     res.json({ ok: true });
   } catch {
     res.status(500).json({ error: 'Server error' });

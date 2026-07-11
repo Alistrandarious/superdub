@@ -13,18 +13,20 @@ import {
   SunIc, CloudSunIc, CloudIc, RainIc, SnowIc, StormIc, type IconProps,
 } from './icons';
 import { pageTheme, HEALTH } from './theme';
+import { quitProgress, quitElapsed, toLocalDatetimeValue } from './quit';
 import {
   HABIT_LEVEL_TIERS as LEVEL_TIERS, HABIT_LEVEL_RATES as LEVEL_RATES,
   MAX_HABIT_LEVEL as MAX_LEVEL, habitLevelFromDays as levelFromDays, habitXPForDoneDays,
 } from './levels';
 
-export type Cadence = 'daily' | 'weekly' | 'monthly' | 'yearly';
-export const CADENCE_ORDER: Cadence[] = ['daily', 'weekly', 'monthly', 'yearly'];
+export type Cadence = 'daily' | 'weekly' | 'monthly' | 'yearly' | 'quit';
+export const CADENCE_ORDER: Cadence[] = ['daily', 'weekly', 'monthly', 'yearly', 'quit'];
 export const CADENCE_META: Record<Cadence, { label: string; color: string; icon: string; period: string }> = {
   daily:   { label: 'Daily',   color: '#2FD27E', icon: '✓',  period: 'today' },
   weekly:  { label: 'Weekly',  color: '#2E8BFF', icon: '📅', period: 'this week' },
   monthly: { label: 'Monthly', color: '#8B5CF6', icon: '🗓️', period: 'this month' },
   yearly:  { label: 'Yearly',  color: '#FF8A00', icon: '🔥', period: 'this year' },
+  quit:    { label: 'Quit',    color: '#8A8F98', icon: '⏱',  period: 'so far' },
 };
 const MONTH_INITIALS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
 
@@ -613,6 +615,70 @@ const HabitCard: React.FC<{
   );
 };
 
+// Quit habit card — a continual abstinence timer with a 30-day fill bar. The
+// icon-circle slot becomes a Rewind button (resets the clock to now). No "done".
+const QuitCard: React.FC<{
+  name: string;
+  startedAt: string | null;
+  onRewind: (name: string) => void;
+  onRequestRemove: (name: string) => void;
+}> = ({ name, startedAt, onRewind, onRequestRemove }) => {
+  const [now, setNow] = useState(Date.now());
+  const [confirming, setConfirming] = useState(false);
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  // No start yet (just added, write in flight) reads as freshly started.
+  const startMs = startedAt ? new Date(startedAt).getTime() : now;
+  const { days, hours, mins, secs } = quitElapsed(startMs, now);
+  const prog = quitProgress(startMs, now);
+  const accent = CADENCE_META.quit.color;
+  const pad = (n: number) => String(n).padStart(2, '0');
+
+  return (
+    <div className="hcard hcard--collapsed quitcard" style={{ '--theme': accent, '--theme-dim': `${accent}66`, '--theme-glow': `${accent}22` } as React.CSSProperties}>
+      <div className="hcard-summary">
+        <button
+          className="hcard-icon quit-rewind"
+          onClick={() => setConfirming(c => !c)}
+          aria-label="Rewind, restart the timer"
+          title="Rewind, restart the timer"
+        >
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+          </svg>
+        </button>
+        <span className="hcard-name">{name}</span>
+        <span className="hcard-streak-mini on"><span className="hsm-ico"><AnimatedFlame size={12} /></span>{days}d</span>
+        <button className="hcard-archive-icon visible" onClick={() => onRequestRemove(name)} aria-label="Archive habit">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+        </button>
+      </div>
+
+      <div className="quit-timer">
+        <div className="quit-seg"><span className="quit-seg-num">{days}</span><span className="quit-seg-lbl">days</span></div>
+        <div className="quit-seg"><span className="quit-seg-num">{pad(hours)}</span><span className="quit-seg-lbl">hrs</span></div>
+        <div className="quit-seg"><span className="quit-seg-num">{pad(mins)}</span><span className="quit-seg-lbl">min</span></div>
+        <div className="quit-seg"><span className="quit-seg-num">{pad(secs)}</span><span className="quit-seg-lbl">sec</span></div>
+      </div>
+
+      <div className="quit-bar"><div className="quit-bar-fill" style={{ width: `${prog * 100}%` }} /></div>
+      <p className="quit-pct">{prog >= 1 ? '30 days clean, milestone reached' : `${Math.round(prog * 100)}% of your first 30 days`}</p>
+
+      {confirming && (
+        <div className="quit-confirm">
+          <span className="quit-confirm-q">Slipped? Restart the clock from now.</span>
+          <div className="quit-confirm-actions">
+            <button className="quit-confirm-cancel" onClick={() => setConfirming(false)}>Keep going</button>
+            <button className="quit-confirm-ok" onClick={() => { onRewind(name); setConfirming(false); }}>Rewind</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Featured habits bottom-sheet (tap the banner to open, then join)
 const FeaturedSheet: React.FC<{
   open: boolean;
@@ -674,9 +740,11 @@ const Habits: React.FC = () => {
   // Persist habit names + their cadence (objects), using the latest cadence map.
   const persistHabits = useCallback((names: string[], overrides?: Record<string, Cadence>) => {
     const map = { ...cadenceRef.current, ...(overrides ?? {}) };
-    api.updateHabits(names.map(n => ({ name: n, cadence: map[n] ?? 'daily' }))).catch(() => {});
+    return api.updateHabits(names.map(n => ({ name: n, cadence: map[n] ?? 'daily' }))).catch(() => {});
   }, []);
   const [startDates, setStartDates] = useState<Record<string, string | null>>({});
+  const [quitStarts, setQuitStarts] = useState<Record<string, string | null>>({}); // ISO timestamp per quit habit
+  const [newQuitStart, setNewQuitStart] = useState<string>(() => toLocalDatetimeValue(new Date()));
   const [xpCarry, setXpCarry] = useState<Record<string, number>>({});
   const [ht, setHt] = useState<HabitTracker>({});
   const [weather, setWeather] = useState<WeatherState | null>(null);
@@ -750,9 +818,11 @@ const Habits: React.FC = () => {
       let names = loadedHabits.map(h => h.name);
       const dates: Record<string, string | null> = {};
       const cad: Record<string, Cadence> = {};
-      loadedHabits.forEach(h => { dates[h.name] = h.startDate; cad[h.name] = ((h as any).cadence as Cadence) || 'daily'; });
+      const quits: Record<string, string | null> = {};
+      loadedHabits.forEach(h => { dates[h.name] = h.startDate; cad[h.name] = ((h as any).cadence as Cadence) || 'daily'; quits[h.name] = (h as any).quitStartedAt ?? null; });
       cad[MANDATORY_HABIT] = 'daily';
       setHabitCadence(cad);
+      setQuitStarts(quits);
       cadenceRef.current = cad;
 
       // Mandatory habit is always present in state.
@@ -912,11 +982,26 @@ const Habits: React.FC = () => {
       ALL_DAYS.forEach(d => { next[d] = { ...next[d], [n]: null }; });
       return next;
     });
-    persistHabits(updated, { [n]: newHabitCadence });
+    if (newHabitCadence === 'quit') {
+      // Set the clean-run start once the habit row exists (persist → set start).
+      const startedAtISO = new Date(newQuitStart).toISOString();
+      setQuitStarts(prev => ({ ...prev, [n]: startedAtISO }));
+      Promise.resolve(persistHabits(updated, { [n]: 'quit' })).then(() => api.setQuitStart(n, startedAtISO).catch(() => {}));
+    } else {
+      persistHabits(updated, { [n]: newHabitCadence });
+    }
     setNewHabit('');
     setNewHabitCadence('daily');
+    setNewQuitStart(toLocalDatetimeValue(new Date()));
     setAddOpen(false);
   };
+
+  const handleRewindQuit = useCallback((name: string) => {
+    const startedAtISO = new Date().toISOString();
+    setQuitStarts(prev => ({ ...prev, [name]: startedAtISO }));
+    if ('vibrate' in navigator) navigator.vibrate(30);
+    api.setQuitStart(name, startedAtISO).catch(() => {});
+  }, []);
 
   const confirmRemove = (name: string) => {
     if (name === MANDATORY_HABIT) { setPendingRemove(null); return; }
@@ -961,39 +1046,50 @@ const Habits: React.FC = () => {
   const yourHabits = habits.filter(h => h !== MANDATORY_HABIT);
 
   // ── Cadence grouping + period completion (weekly/monthly/yearly) ─────────────
-  const cadenceGroups: Record<Cadence, string[]> = { daily: [], weekly: [], monthly: [], yearly: [] };
+  const cadenceGroups: Record<Cadence, string[]> = { daily: [], weekly: [], monthly: [], yearly: [], quit: [] };
   yourHabits.forEach(h => { cadenceGroups[habitCadence[h] ?? 'daily'].push(h); });
 
   const cadencePanels = CADENCE_ORDER.map(cad => {
     const meta = CADENCE_META[cad];
     const list = cadenceGroups[cad];
+    const isQuit = cad === 'quit';
+    const addLabel = isQuit ? 'Add something to quit' : `Add a ${meta.label.toLowerCase()} habit`;
+    const renderCard = (habit: string) => isQuit ? (
+      <QuitCard
+        key={habit}
+        name={habit}
+        startedAt={quitStarts[habit] ?? null}
+        onRewind={handleRewindQuit}
+        onRequestRemove={setPendingRemove}
+      />
+    ) : (
+      <HabitCard
+        key={habit}
+        habit={habit}
+        stats={computeHabitStats(habit, ht, today, startDates[habit], xpCarry[habit] ?? 0)}
+        weekDays={weekDays}
+        ht={ht}
+        today={activeDay}
+        cadence={cad}
+        onToggleDay={handleToggleDay}
+        onEditDay={editPast}
+        onRequestRemove={setPendingRemove}
+        startDate={startDates[habit]}
+      />
+    );
     const content = list.length === 0 ? (
       <div className="hb-rows">
-        <button className="hcard hcard-add" onClick={() => { setNewHabitCadence(cad); setAddOpen(true); }} aria-label={`Add ${meta.label.toLowerCase()} habit`}>
+        <button className="hcard hcard-add" onClick={() => { setNewHabitCadence(cad); setAddOpen(true); }} aria-label={addLabel}>
           <span className="hcard-add-plus" style={{ color: meta.color }}>+</span>
-          <span className="hcard-add-label">Add a {meta.label.toLowerCase()} habit</span>
+          <span className="hcard-add-label">{addLabel}</span>
         </button>
       </div>
     ) : (
       <div className="hb-rows">
-        {list.map(habit => (
-          <HabitCard
-            key={habit}
-            habit={habit}
-            stats={computeHabitStats(habit, ht, today, startDates[habit], xpCarry[habit] ?? 0)}
-            weekDays={weekDays}
-            ht={ht}
-            today={activeDay}
-            cadence={cad}
-            onToggleDay={handleToggleDay}
-            onEditDay={editPast}
-            onRequestRemove={setPendingRemove}
-            startDate={startDates[habit]}
-          />
-        ))}
-        <button className="hcard-add hcard-add--mini" onClick={() => { setNewHabitCadence(cad); setAddOpen(true); }} aria-label={`Add ${meta.label.toLowerCase()} habit`}>
+        {list.map(renderCard)}
+        <button className="hcard-add hcard-add--mini" onClick={() => { setNewHabitCadence(cad); setAddOpen(true); }} aria-label={addLabel}>
           <span className="hcard-add-plus" style={{ color: meta.color }}>+</span>
-          <span className="hcard-add-label">Add a {meta.label.toLowerCase()} habit</span>
+          <span className="hcard-add-label">{addLabel}</span>
         </button>
       </div>
     );
@@ -1059,6 +1155,19 @@ const Habits: React.FC = () => {
                 );
               })}
             </div>
+            {newHabitCadence === 'quit' && (
+              <>
+                <p className="hb-sheet-sub" style={{ marginTop: 16, marginBottom: 8 }}>When did you quit?</p>
+                <input
+                  type="datetime-local"
+                  className="habit-add-input"
+                  value={newQuitStart}
+                  max={toLocalDatetimeValue(new Date())}
+                  onChange={e => setNewQuitStart(e.target.value)}
+                />
+                <p className="hb-sheet-hint">Your clock counts up from here. If you slip, tap Rewind to restart it.</p>
+              </>
+            )}
           </div>
         </div>
       )}

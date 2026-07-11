@@ -8,7 +8,7 @@
 
 | Route | Component | Role | Nav | Accent |
 |---|---|---|---|---|
-| `/` | `Habits.tsx` | **Habits** (home) — habit cards, week strip, Daily Log, streaks (level ring + Dub + Coach/Global moved off) | Habits | HEALTH green |
+| `/` | `Habits.tsx` | **Habits** (home) — habit cards, week strip, Daily Log, streaks; cadence carousel Daily · Weekly · Monthly · Yearly · **Quit** (grey abstinence timers, `QuitCard` + `quit.ts`) | Habits | HEALTH green |
 | `/dashboard` | `App.tsx` | **Progress** — Today live targets, Yesterday's Verdict, weight trend, safe-zone, sleep, chart carousel | Progress | GROWTH blue |
 | `/community` | `CommunityPage.tsx` | **Global & Friends** — shared Global habit (deed toggle) + Friends (coming soon) | Global | GOLD |
 | `/diet` | `Diet.tsx` | Plan cards — adaptive plan, activity targets, Smart Adjust (folding into Progress; **off the nav**, reachable via cog) | — | GROWTH blue |

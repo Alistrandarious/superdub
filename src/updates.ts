@@ -11,6 +11,18 @@ export interface UpdateEntry {
 export const UPDATE_LOG: UpdateEntry[] = [
   {
     date: '2026-07-11',
+    emoji: '⏱',
+    title: 'Habits to quit: a clock that counts up',
+    summary: 'Swipe past your daily habits to the new Quit panel. Set the moment you stopped, and a live timer counts every day, hour and minute you stay clean, filling toward your first 30 days.',
+    points: [
+      'On the Habits page, swipe your habit cards left past Daily, Weekly, Monthly and Yearly to reach the new grey Quit panel.',
+      'Add the thing you are quitting and set when you stopped. A continual timer then counts up in days, hours, minutes and seconds.',
+      'A bar fills as you go, reaching full at 30 clean days. There is no daily tick to remember, the clock just runs.',
+      'Slipped? Tap Rewind and the clock restarts from now. No shame, no lost history, just a fresh run.',
+    ],
+  },
+  {
+    date: '2026-07-11',
     emoji: '🐾',
     title: 'Dub gets his own tab, and a sharper eye',
     summary: 'Dub moves off the sidelines into his own spot on the bottom bar. Tap him any time for a check-in, a read on where you are, and the patterns he has dug out of your own data.',
