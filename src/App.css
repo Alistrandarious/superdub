@@ -6963,6 +6963,20 @@ h1, h2, h3, h4, .sora {
 .star-strip-item--blank .star-strip-ico { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.4); }
 .star-strip-name { font-size: 0.85rem; color: rgba(255,255,255,0.85); }
 
+/* ── Drag-to-reorder habits ─────────────────────────────────────────────────── */
+.reorder-item { transition: transform 0.18s cubic-bezier(0.22,1,0.36,1); }
+.reorder-item.dragging { transition: none; }
+.reorder-item.dragging .hcard {
+  box-shadow: 0 10px 28px rgba(0,0,0,0.45); opacity: 0.97;
+}
+.hcard-grip {
+  display: flex; align-items: center; justify-content: center;
+  width: 22px; height: 30px; padding: 0; margin-right: 2px; flex-shrink: 0;
+  border: none; background: transparent; color: rgba(255,255,255,0.32);
+  cursor: grab; touch-action: none;
+}
+.hcard-grip:active { cursor: grabbing; color: rgba(255,255,255,0.6); }
+
 /* ── Unified stat panel (.hsp) — one designed object, not 3 boxes ───────────── */
 .hsp {
   position: relative;

@@ -8,7 +8,7 @@
 
 | Route | Component | Role | Nav | Accent |
 |---|---|---|---|---|
-| `/` | `Habits.tsx` | **Habits** (home) — habit cards, week strip, Daily Log, streaks; cadence carousel Daily · Weekly · Monthly · Yearly · **Quit** (grey abstinence timers, `QuitCard` + `quit.ts`) | Habits | HEALTH green |
+| `/` | `Habits.tsx` | **Habits** (home) — habit cards (star toggle + drag-to-reorder via `ReorderableList`/`reorder.ts`), week strip, Daily Log, streaks; cadence carousel Daily · Weekly · Monthly · Yearly · **Quit** (grey abstinence timers, `QuitCard` + `quit.ts`) | Habits | HEALTH green |
 | `/dashboard` | `App.tsx` | **Progress** — Today live targets, Yesterday's Verdict, weight trend, safe-zone, sleep, chart carousel | Progress | GROWTH blue |
 | `/community` | `CommunityPage.tsx` | **Global & Friends** — shared Global habit (deed toggle) + Friends (coming soon) | Global | GOLD |
 | `/diet` | `Diet.tsx` | Plan cards — adaptive plan, activity targets, Smart Adjust (folding into Progress; **off the nav**, reachable via cog) | — | GROWTH blue |
@@ -41,7 +41,7 @@
 
 ## Notable shared components
 - `BottomNav.tsx` — 6-item uniform fixed nav (Habits · Progress · Dub · Global · Lists · Kit); no raised centre button. Profile left the nav (now cog-only); Dub took its slot. Habits icon tints with the habits-colour cosmetic; active tint follows the nav-glow cosmetic.
-- `LevelCustomizer.tsx` — the level hero + all cosmetic/companion shelves (ring themes, Dub species/colour, accents, background); rendered on Profile.
+- `LevelCustomizer.tsx` — the level hero + all cosmetic/companion shelves (ring themes, Dub species/colour, **Dub pronouns** via `dubPronouns.ts`, accents, background); rendered on Profile.
 - `CogMenu.tsx` — unified per-page cog menu (settings, navigation, quick-log).
 - `LevelRing.tsx` / ring themes — XP ring, incl. the Liquid ring cosmetic.
 - `DubMascot.tsx` — the coach avatar (dog/cat).

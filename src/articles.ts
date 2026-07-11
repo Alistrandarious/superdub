@@ -18,6 +18,25 @@ export interface Article {
 
 export const ARTICLES: Article[] = [
   {
+    id: 'make-it-yours',
+    title: 'Make It Yours: Star, Reorder, and Gender Dub',
+    author: 'Ali Shah',
+    readMins: 2,
+    tag: 'Habits',
+    accent: '#FFB928',
+    dek: 'Three small touches that turn a list of habits into your list, arranged your way, coached by a companion who is who you say they are.',
+    body: [
+      { t: 'p', text: 'The best habit tracker is the one that feels like yours. Not a generic list handed to you, but your things, in your order, watched over by a companion you chose. So this update is three small, human touches rather than one big feature.' },
+      { t: 'h', text: 'Star what matters' },
+      { t: 'p', text: 'Some habits carry more weight than others. Tap the star on any habit card and it becomes a favourite. Your starred habits then surface on the Progress page, under both Today and Yesterday, so the ones you care most about are always a glance away, whether you are ahead on them or not.' },
+      { t: 'h', text: 'Drag them into order' },
+      { t: 'p', text: 'Your list should read the way your day runs. Grab the handle on the left of any habit card and drag it up or down. Let go and the new order sticks. Put the morning ones first, the wind-down ones last, whatever makes sense to you.' },
+      { t: 'quote', text: 'Small choices about how a thing looks are how it starts to feel like yours.' },
+      { t: 'h', text: 'Dub, as you see them' },
+      { t: 'p', text: 'Dub has always been a bit of a he by default, but that was never really a decision, just a habit of ours. Now it is yours to make. Open Profile, find the Companion section next to where you pick the dog or the cat, and choose he, she or they. Dub\'s coaching updates to match. Star one habit, drag it to the top, set your pronouns, and it is already a little more your Superdub. ⭐' },
+    ],
+  },
+  {
     id: 'journal-with-a-mood',
     title: 'A Journal, and Why It Has a Mood',
     author: 'Ali Shah',

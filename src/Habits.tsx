@@ -14,6 +14,7 @@ import {
 } from './icons';
 import { pageTheme, HEALTH } from './theme';
 import { quitProgress, quitElapsed, toLocalDatetimeValue } from './quit';
+import { moveItem, applyGroupReorder } from './reorder';
 import {
   HABIT_LEVEL_TIERS as LEVEL_TIERS, HABIT_LEVEL_RATES as LEVEL_RATES,
   MAX_HABIT_LEVEL as MAX_LEVEL, habitLevelFromDays as levelFromDays, habitXPForDoneDays,
@@ -412,7 +413,8 @@ const HabitCard: React.FC<{
   startDate?: string | null;
   starred?: boolean;
   onToggleStar: (habit: string) => void;
-}> = ({ habit, stats, weekDays, ht, today, cadence, onToggleDay, onEditDay, onRequestRemove, startDate, starred, onToggleStar }) => {
+  dragHandle?: React.ReactNode;
+}> = ({ habit, stats, weekDays, ht, today, cadence, onToggleDay, onEditDay, onRequestRemove, startDate, starred, onToggleStar, dragHandle }) => {
   const [histOpen, setHistOpen] = useState(false);
   const [monthOffset, setMonthOffset] = useState(0); // 0 = this month, -1 = last month …
   const nowD = new Date();
@@ -469,8 +471,9 @@ const HabitCard: React.FC<{
       className={`hcard ${expanded ? 'hcard--expanded' : 'hcard--collapsed'} ${hasDanger ? 'hcard-danger' : hasWarning ? 'hcard-warning' : ''}`}
       style={{ '--theme': accent, '--theme-dim': `${accent}66`, '--theme-glow': `${accent}22` } as React.CSSProperties}
     >
-      {/* Summary row, circle · name · level · streak · calendar · chevron */}
+      {/* Summary row, grip · circle · name · level · streak · calendar · chevron */}
       <div className="hcard-summary" onClick={() => setExpanded(e => { const next = !e; if (!next) setHistOpen(false); return next; })}>
+        {dragHandle}
         <button
           className={`hcard-icon hcard-icon-btn ${currentDone ? 'done' : ''}`}
           onClick={e => { e.stopPropagation(); toggleCurrent(); }}
@@ -625,6 +628,103 @@ const HabitCard: React.FC<{
       </div>
       </div>
     </div>
+  );
+};
+
+// Pointer-based vertical reorder for a habit group. Touch-friendly (HTML5 drag
+// doesn't work on mobile). The grip captures the pointer and stops propagation so
+// the horizontal cadence carousel doesn't also swipe. Measures live row midpoints,
+// so it copes with cards of different heights (collapsed vs expanded).
+const GripIc: React.FC = () => (
+  <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden>
+    <circle cx="9" cy="6" r="1.6" /><circle cx="15" cy="6" r="1.6" />
+    <circle cx="9" cy="12" r="1.6" /><circle cx="15" cy="12" r="1.6" />
+    <circle cx="9" cy="18" r="1.6" /><circle cx="15" cy="18" r="1.6" />
+  </svg>
+);
+const ReorderableList: React.FC<{
+  names: string[];
+  onCommit: (order: string[]) => void;
+  renderItem: (name: string, handle: React.ReactNode) => React.ReactNode;
+}> = ({ names, onCommit, renderItem }) => {
+  const [order, setOrder] = useState(names);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dy, setDy] = useState(0);
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const startY = useRef(0);
+  const orderRef = useRef(order);
+  useEffect(() => { orderRef.current = order; }, [order]);
+
+  // Resync when the parent list actually changes (by content), never mid-drag.
+  const namesKey = names.join('');
+  useEffect(() => {
+    if (dragIdx === null) { setOrder(names); orderRef.current = names; }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [namesKey]);
+
+  const onDown = (i: number) => (e: React.PointerEvent) => {
+    e.stopPropagation();
+    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    setDragIdx(i); setDy(0); startY.current = e.clientY;
+  };
+  const onMove = (e: React.PointerEvent) => {
+    if (dragIdx === null) return;
+    e.stopPropagation();
+    const y = e.clientY;
+    setDy(y - startY.current);
+    let target = orderRef.current.length - 1;
+    for (let j = 0; j < itemRefs.current.length; j++) {
+      const el = itemRefs.current[j];
+      if (!el) continue;
+      const r = el.getBoundingClientRect();
+      if (y < r.top + r.height / 2) { target = j; break; }
+    }
+    if (target !== dragIdx) {
+      setOrder(prev => {
+        const next = moveItem(prev, dragIdx, target);
+        orderRef.current = next;
+        return next;
+      });
+      setDragIdx(target);
+      startY.current = y;
+      setDy(0);
+    }
+  };
+  const onUp = (e: React.PointerEvent) => {
+    if (dragIdx === null) return;
+    e.stopPropagation();
+    setDragIdx(null); setDy(0);
+    onCommit(orderRef.current);
+  };
+
+  return (
+    <>
+      {order.map((name, i) => {
+        const handle = (
+          <button
+            className="hcard-grip"
+            aria-label="Drag to reorder"
+            onClick={e => e.stopPropagation()}
+            onPointerDown={onDown(i)}
+            onPointerMove={onMove}
+            onPointerUp={onUp}
+            onPointerCancel={onUp}
+          >
+            <GripIc />
+          </button>
+        );
+        return (
+          <div
+            key={name}
+            ref={el => { itemRefs.current[i] = el; }}
+            className={`reorder-item${dragIdx === i ? ' dragging' : ''}`}
+            style={dragIdx === i ? { transform: `translateY(${dy}px)`, position: 'relative', zIndex: 5 } : undefined}
+          >
+            {renderItem(name, handle)}
+          </div>
+        );
+      })}
+    </>
   );
 };
 
@@ -1027,6 +1127,16 @@ const Habits: React.FC = () => {
     });
   }, []);
 
+  // Reorder within one cadence group: rebuild the global habits array, keeping
+  // members of other groups in their existing slots, then persist (positions).
+  const commitGroupReorder = useCallback((newOrder: string[]) => {
+    setHabits(prev => {
+      const next = applyGroupReorder(prev, newOrder);
+      persistHabits(next);
+      return next;
+    });
+  }, [persistHabits]);
+
   const confirmRemove = (name: string) => {
     if (name === MANDATORY_HABIT) { setPendingRemove(null); return; }
     setPendingRemove(null);
@@ -1078,17 +1188,8 @@ const Habits: React.FC = () => {
     const list = cadenceGroups[cad];
     const isQuit = cad === 'quit';
     const addLabel = isQuit ? 'Add something to quit' : `Add a ${meta.label.toLowerCase()} habit`;
-    const renderCard = (habit: string) => isQuit ? (
-      <QuitCard
-        key={habit}
-        name={habit}
-        startedAt={quitStarts[habit] ?? null}
-        onRewind={handleRewindQuit}
-        onRequestRemove={setPendingRemove}
-      />
-    ) : (
+    const renderHabitCard = (habit: string, handle?: React.ReactNode) => (
       <HabitCard
-        key={habit}
         habit={habit}
         stats={computeHabitStats(habit, ht, today, startDates[habit], xpCarry[habit] ?? 0)}
         weekDays={weekDays}
@@ -1101,8 +1202,26 @@ const Habits: React.FC = () => {
         startDate={startDates[habit]}
         starred={starred[habit]}
         onToggleStar={handleToggleStar}
+        dragHandle={handle}
       />
     );
+    const cards = isQuit
+      ? list.map(name => (
+          <QuitCard
+            key={name}
+            name={name}
+            startedAt={quitStarts[name] ?? null}
+            onRewind={handleRewindQuit}
+            onRequestRemove={setPendingRemove}
+          />
+        ))
+      : (
+        <ReorderableList
+          names={list}
+          onCommit={commitGroupReorder}
+          renderItem={(name, handle) => renderHabitCard(name, handle)}
+        />
+      );
     const content = list.length === 0 ? (
       <div className="hb-rows">
         <button className="hcard hcard-add" onClick={() => { setNewHabitCadence(cad); setAddOpen(true); }} aria-label={addLabel}>
@@ -1112,7 +1231,7 @@ const Habits: React.FC = () => {
       </div>
     ) : (
       <div className="hb-rows">
-        {list.map(renderCard)}
+        {cards}
         <button className="hcard-add hcard-add--mini" onClick={() => { setNewHabitCadence(cad); setAddOpen(true); }} aria-label={addLabel}>
           <span className="hcard-add-plus" style={{ color: meta.color }}>+</span>
           <span className="hcard-add-label">{addLabel}</span>

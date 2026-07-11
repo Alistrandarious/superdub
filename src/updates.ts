@@ -11,6 +11,17 @@ export interface UpdateEntry {
 export const UPDATE_LOG: UpdateEntry[] = [
   {
     date: '2026-07-11',
+    emoji: '⭐',
+    title: 'Make it yours: star, reorder, and gender Dub',
+    summary: 'Three small touches that make your habits feel like yours. Star the ones that matter, drag them into the order you like, and set whether Dub is a he, she or they.',
+    points: [
+      'Tap the star on any habit card to mark it a favourite. Your starred habits then show up on Progress, under Today and Yesterday, so the ones that matter are always in view.',
+      'Grab the handle on the left of a habit card and drag to reorder your list. The order sticks, exactly how you arranged it.',
+      "Dub can now be a he, she or they. Set it in Profile, under Companion, next to where you pick the dog or cat. Dub's coaching updates to match.",
+    ],
+  },
+  {
+    date: '2026-07-11',
     emoji: '📓',
     title: 'A Journal on your Lists, with a mood',
     summary: 'Lists gains a fourth tab. Write a line about your day, tag how you felt, and Dub folds that mood into the patterns he reads for you.',
