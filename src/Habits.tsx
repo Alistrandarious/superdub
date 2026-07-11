@@ -473,8 +473,10 @@ const HabitCard: React.FC<{
   onToggleStar: (habit: string) => void;
   dueDate?: string | null;
   onSetDueDate: (habit: string, dueDate: string | null) => void;
+  reminderHour?: number | null;
+  onSetReminder: (habit: string, hour: number | null) => void;
   dragHandle?: React.ReactNode;
-}> = ({ habit, stats, weekDays, ht, today, cadence, onToggleDay, onEditDay, onRequestRemove, startDate, starred, onToggleStar, dueDate, onSetDueDate, dragHandle }) => {
+}> = ({ habit, stats, weekDays, ht, today, cadence, onToggleDay, onEditDay, onRequestRemove, startDate, starred, onToggleStar, dueDate, onSetDueDate, reminderHour, onSetReminder, dragHandle }) => {
   const [histOpen, setHistOpen] = useState(false);
   const [monthOffset, setMonthOffset] = useState(0); // 0 = this month, -1 = last month …
   const nowD = new Date();
@@ -721,6 +723,26 @@ const HabitCard: React.FC<{
           </label>
         );
       })()}
+
+      {/* Per-habit reminder — a local hour to get a push nudge. Needs notifications on. */}
+      <div className="hcard-remind" onClick={e => e.stopPropagation()}>
+        <span className="hcard-remind-text">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          Reminder
+        </span>
+        <select
+          className="hcard-remind-select"
+          value={reminderHour == null ? '' : String(reminderHour)}
+          onChange={e => onSetReminder(habit, e.target.value === '' ? null : parseInt(e.target.value, 10))}
+        >
+          <option value="">Off</option>
+          {Array.from({ length: 24 }, (_, h) => (
+            <option key={h} value={h}>
+              {h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`}
+            </option>
+          ))}
+        </select>
+      </div>
       </div>
       </div>
     </div>
@@ -955,6 +977,7 @@ const Habits: React.FC = () => {
   const [quitStarts, setQuitStarts] = useState<Record<string, string | null>>({}); // ISO timestamp per quit habit
   const [starred, setStarred] = useState<Record<string, boolean>>({});
   const [dueDates, setDueDates] = useState<Record<string, string | null>>({}); // 'YYYY-MM-DD' per habit
+  const [reminderHours, setReminderHours] = useState<Record<string, number | null>>({}); // local hour 0-23 per habit
   const [newQuitStart, setNewQuitStart] = useState<string>(() => toLocalDatetimeValue(new Date()));
   const [xpCarry, setXpCarry] = useState<Record<string, number>>({});
   const [ht, setHt] = useState<HabitTracker>({});
@@ -1032,12 +1055,14 @@ const Habits: React.FC = () => {
       const quits: Record<string, string | null> = {};
       const stars: Record<string, boolean> = {};
       const dues: Record<string, string | null> = {};
-      loadedHabits.forEach(h => { dates[h.name] = h.startDate; cad[h.name] = ((h as any).cadence as Cadence) || 'daily'; quits[h.name] = (h as any).quitStartedAt ?? null; stars[h.name] = !!(h as any).starred; dues[h.name] = (h as any).dueDate ?? null; });
+      const rems: Record<string, number | null> = {};
+      loadedHabits.forEach(h => { dates[h.name] = h.startDate; cad[h.name] = ((h as any).cadence as Cadence) || 'daily'; quits[h.name] = (h as any).quitStartedAt ?? null; stars[h.name] = !!(h as any).starred; dues[h.name] = (h as any).dueDate ?? null; rems[h.name] = (h as any).reminderHour ?? null; });
       cad[MANDATORY_HABIT] = 'daily';
       setHabitCadence(cad);
       setQuitStarts(quits);
       setStarred(stars);
       setDueDates(dues);
+      setReminderHours(rems);
       cadenceRef.current = cad;
 
       // Mandatory habit is always present in state.
@@ -1231,6 +1256,13 @@ const Habits: React.FC = () => {
     api.setHabitDueDate(name, dueDate).catch(() => {});
   }, []);
 
+  const handleSetReminder = useCallback((name: string, hour: number | null) => {
+    setReminderHours(prev => ({ ...prev, [name]: hour }));
+    api.setHabitReminder(name, hour).catch(() => {});
+    // ponytail: reminders only arrive if notifications are enabled (cog → Notifications);
+    // the card copy says so rather than auto-prompting here.
+  }, []);
+
   // Reorder within one cadence group: rebuild the global habits array, keeping
   // members of other groups in their existing slots, then persist (positions).
   const commitGroupReorder = useCallback((newOrder: string[]) => {
@@ -1308,6 +1340,8 @@ const Habits: React.FC = () => {
         onToggleStar={handleToggleStar}
         dueDate={dueDates[habit] ?? null}
         onSetDueDate={handleSetDueDate}
+        reminderHour={reminderHours[habit] ?? null}
+        onSetReminder={handleSetReminder}
         dragHandle={handle}
       />
     );

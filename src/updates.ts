@@ -11,6 +11,17 @@ export interface UpdateEntry {
 export const UPDATE_LOG: UpdateEntry[] = [
   {
     date: '2026-07-11',
+    emoji: '⏰',
+    title: 'Set a reminder on any habit',
+    summary: 'Open a habit and pick an hour to be nudged. Superdub sends you a push at that time, unless you have already ticked it off for the day.',
+    points: [
+      'Open any habit and choose a reminder time from Off through the hours of the day. It saves straight away.',
+      'You get one push a day per habit at the hour you set, and it stays quiet on days you have already done it.',
+      'Reminders ride on notifications, so make sure they are switched on in the cog menu under Notifications.',
+    ],
+  },
+  {
+    date: '2026-07-11',
     emoji: '🗓️',
     title: 'Weekly, monthly and yearly habits get their own calendar',
     summary: 'Open the calendar on a weekly, monthly or yearly habit and it now shows one cell per period, weeks, months or the year, instead of a grid of single days that never fit its rhythm.',

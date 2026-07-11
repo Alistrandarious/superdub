@@ -19,10 +19,10 @@ router.get('/graveyard', requireAuth as any, async (req: AuthRequest, res: Respo
 router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
     const { rows } = await pool.query(
-      "SELECT name, start_date, COALESCE(cadence, 'daily') AS cadence, quit_started_at, COALESCE(starred, FALSE) AS starred, due_date::text AS due_date FROM habits WHERE user_id = $1 AND (archived = FALSE OR archived IS NULL) ORDER BY position",
+      "SELECT name, start_date, COALESCE(cadence, 'daily') AS cadence, quit_started_at, COALESCE(starred, FALSE) AS starred, due_date::text AS due_date, reminder_hour FROM habits WHERE user_id = $1 AND (archived = FALSE OR archived IS NULL) ORDER BY position",
       [req.userId]
     );
-    res.json(rows.map((r: any) => ({ name: r.name, startDate: r.start_date, cadence: r.cadence, quitStartedAt: r.quit_started_at, starred: r.starred, dueDate: r.due_date })));
+    res.json(rows.map((r: any) => ({ name: r.name, startDate: r.start_date, cadence: r.cadence, quitStartedAt: r.quit_started_at, starred: r.starred, dueDate: r.due_date, reminderHour: r.reminder_hour })));
   } catch {
     res.status(500).json({ error: 'Server error' });
   }
@@ -91,6 +91,24 @@ router.patch('/quit-start', requireAuth as any, async (req: AuthRequest, res: Re
     await pool.query(
       'UPDATE habits SET quit_started_at = $3 WHERE user_id = $1 AND name = $2',
       [req.userId, name, when.toISOString()]
+    );
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Set / clear a habit's per-day reminder hour. Body: { name, hour } where hour is
+// an integer 0–23, or null to turn the reminder off. Resets the last-fired stamp so
+// a freshly-set reminder can fire today.
+router.patch('/reminder', requireAuth as any, async (req: AuthRequest, res: Response) => {
+  try {
+    const { name, hour } = req.body as { name?: string; hour?: number | null };
+    if (!name) return res.status(400).json({ error: 'name required' });
+    const clean = Number.isInteger(hour) && (hour as number) >= 0 && (hour as number) <= 23 ? hour : null;
+    await pool.query(
+      'UPDATE habits SET reminder_hour = $3, reminder_last_fired = NULL WHERE user_id = $1 AND name = $2',
+      [req.userId, name, clean]
     );
     res.json({ ok: true });
   } catch {

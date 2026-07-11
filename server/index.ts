@@ -271,6 +271,10 @@ const migrations = [
   `ALTER TABLE habits ADD COLUMN IF NOT EXISTS starred BOOLEAN DEFAULT FALSE`,
   // Optional one-off due date for a habit (any cadence).
   `ALTER TABLE habits ADD COLUMN IF NOT EXISTS due_date DATE`,
+  // Optional per-habit push reminder: the local hour (0–23) to nudge, and the last
+  // local date it fired (so it fires at most once a day per habit).
+  `ALTER TABLE habits ADD COLUMN IF NOT EXISTS reminder_hour INTEGER`,
+  `ALTER TABLE habits ADD COLUMN IF NOT EXISTS reminder_last_fired DATE`,
   // Personal SMART goals (Lists → Goals tab).
   `CREATE TABLE IF NOT EXISTS smart_goals (
     id          TEXT PRIMARY KEY,
@@ -347,6 +351,7 @@ async function runReminders() {
     );
     for (const r of rows) {
       const { local, localDate, hour } = localHelper(r);
+      const dayDDMM = `${String(local.getUTCDate()).padStart(2, '0')}/${String(local.getUTCMonth() + 1).padStart(2, '0')}`;
 
       // 1. Morning weigh-in — skip if they've already weighed in today (local)
       const morningHour = Number.isInteger(r.reminder_hour) ? r.reminder_hour : 8;
@@ -405,6 +410,35 @@ async function runReminders() {
           if (!ok) { await prune(r.id); continue; }
         }
         await stamp('last_workout', r.id, localDate);
+      }
+
+      // 4. Per-habit reminders — each opted-in habit nudges at its own hour, at most
+      // once a local day, and is skipped if it's already marked done today.
+      const habitRows = await pool.query(
+        `SELECT name, reminder_hour, reminder_last_fired FROM habits
+           WHERE user_id = $1 AND reminder_hour IS NOT NULL AND (archived = FALSE OR archived IS NULL)`,
+        [r.user_id]
+      ).catch(() => ({ rows: [] as any[] }));
+      for (const h of habitRows.rows) {
+        if (!reminderDue(h.reminder_hour, hour, h.reminder_last_fired, localDate)) continue;
+        const done = await pool.query(
+          `SELECT 1 FROM tracker_habits WHERE user_id = $1 AND day = $2 AND habit_name = $3
+             AND state = 'done' AND year = $4 LIMIT 1`,
+          [r.user_id, dayDDMM, h.name, local.getUTCFullYear()]
+        ).catch(() => ({ rows: [] as any[] }));
+        if (done.rows.length === 0) {
+          const ok = await sendPush(r.subscription, {
+            title: 'superdub ⏰',
+            body: `Time for: ${h.name}`,
+            url: '/',
+            tag: `habit-${h.name}`,
+          });
+          if (!ok) { await prune(r.id); break; }
+        }
+        await pool.query(
+          'UPDATE habits SET reminder_last_fired = $3 WHERE user_id = $1 AND name = $2',
+          [r.user_id, h.name, localDate]
+        ).catch(() => {});
       }
     }
   } catch (err: any) {
