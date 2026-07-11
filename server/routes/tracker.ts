@@ -91,7 +91,7 @@ router.patch('/habit', requireAuth as any, async (req: AuthRequest, res: Respons
     const { day: rawDay, habitName, state } = req.body;
     if (!rawDay || !habitName) return res.status(400).json({ error: 'day and habitName required' });
     const day = dayToDDMM(rawDay);
-    const validState = state === 'done' || state === 'failed' ? state : null;
+    const validState = state === 'done' || state === 'failed' || state === 'na' ? state : null;
     const done = validState === 'done';
 
     const year = trackerYear();

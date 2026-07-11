@@ -11,6 +11,19 @@ export interface UpdateEntry {
 export const UPDATE_LOG: UpdateEntry[] = [
   {
     date: '2026-07-11',
+    emoji: '🟡',
+    title: 'Mark a habit day Not Applicable, plus a fuller Progress page',
+    summary: 'Some days a habit simply does not apply. You can now mark a day Not Applicable so it sits out neutrally, without denting your streak. Past days you never logged now show a yellow question mark, and the Progress page gains a Today list and a clearer Weight Plan tab.',
+    points: [
+      'Long press a weekday circle to set Not Applicable, a grey dash that never counts as a miss. Tap still marks done, double tap marks missed. The big button and calendar cycle done, missed, N/A, then blank.',
+      'A day you never reported now shows a yellow question mark instead of a plain grey ring, so unlogged days read differently from days you actively skipped.',
+      'Progress has a new Today tab: your to-dos due this week, plus any weekly or monthly habit whose period closes within three days and is still not done.',
+      'The old Today tab is now Weight Plan. It shows your gauge and steps when a goal is set, or a prompt to start a plan when one is not.',
+      'The Habits section lists the habits for the cadence you pick, the calendar reopens and closes with a smooth animation, and an over-target calorie ring now holds a steady yellow instead of flashing red.',
+    ],
+  },
+  {
+    date: '2026-07-11',
     emoji: '⏰',
     title: 'Set a reminder on any habit',
     summary: 'Open a habit and pick an hour to be nudged. Superdub sends you a push at that time, unless you have already ticked it off for the day.',

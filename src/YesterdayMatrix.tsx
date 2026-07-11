@@ -34,7 +34,7 @@ const Ring: React.FC<{ pct: number; over: boolean; children: React.ReactNode }> 
           <stop offset="0%" stopColor="#FFD233" /><stop offset="100%" stopColor="#FF8A00" />
         </linearGradient>
         <linearGradient id="ym-over" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#FF5470" /><stop offset="100%" stopColor="#B23048" />
+          <stop offset="0%" stopColor="#FFD233" /><stop offset="100%" stopColor="#E0A21E" />
         </linearGradient>
       </defs>
       <circle cx="40" cy="40" r={R} className="ltm-ring-track" />

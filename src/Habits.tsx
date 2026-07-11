@@ -3,6 +3,7 @@ import { useXP } from './XPContext';
 import './App.css';
 import { api } from './api';
 import { loggingNow, getLoggingDay } from './day';
+import { cycleState, type HabitState } from './habitState';
 import WeeklyRecap from './WeeklyRecap';
 import CadenceCarousel from './CadenceCarousel';
 import SuperdubHeader from './SuperdubHeader';
@@ -179,9 +180,9 @@ interface HabitStats {
   misses: number;
 }
 
-type HabitState = 'done' | 'failed' | null;
-// Derived-only render state: a past due day left untouched shows grey ("undeclared"),
-// distinct from an explicit red fail. Never persisted.
+// HabitState + cycleState live in ./habitState (unit-testable in isolation).
+// Derived-only render state: a past due day left untouched shows the yellow "?"
+// ("undeclared"), distinct from an explicit red fail or an N/A skip. Never persisted.
 type DisplayState = HabitState | 'undeclared';
 type HabitTracker = Record<string, Record<string, HabitState>>;
 
@@ -217,16 +218,19 @@ function computeHabitStats(
   }
   const totalXP = habitXPForDoneDays(totalDays);
 
-  // Consecutive misses (done=null or failed) before today
+  // Consecutive misses (done=null or failed) before today. 'na' days are neutral
+  // skips — they don't count as a miss and don't end the run.
   let misses = 0;
   if (totalDays > 0) {
     for (let i = todayIdx - 1; i > startIdx && i >= todayIdx - 4; i--) {
-      if (ht[ALL_DAYS[i]]?.[habit] !== 'done') misses++;
+      const state = ht[ALL_DAYS[i]]?.[habit];
+      if (state === 'na') continue;
+      if (state !== 'done') misses++;
       else break;
     }
   }
 
-  // Streak with 1-grace for blank days; 'failed' gets no grace
+  // Streak with 1-grace for blank days; 'failed' gets no grace; 'na' is skipped entirely
   let streak = 0;
   if (misses < 2) {
     const todayState = ht[today]?.[habit];
@@ -234,7 +238,9 @@ function computeHabitStats(
     let idx = todayState === 'done' ? todayIdx : todayIdx - 1;
     while (idx >= startIdx) {
       const state = ht[ALL_DAYS[idx]]?.[habit];
-      if (state === 'done') {
+      if (state === 'na') {
+        idx--; // neutral skip: doesn't advance or break the streak
+      } else if (state === 'done') {
         streak++;
         idx--;
       } else if (state !== 'failed' && !graceUsed) {
@@ -305,12 +311,6 @@ interface WeatherState { temp: number; code: number; city: string; }
 
 /* ── sub-components ──────────────────────────────────────── */
 
-function cycleState(current: HabitState): HabitState {
-  if (current === null || current === undefined) return 'done';
-  if (current === 'done') return 'failed';
-  return null;
-}
-
 // Mini month calendar for one habit — tappable past days for backfill
 const MINI_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const MINI_DOW = ['M','T','W','T','F','S','S'];
@@ -320,17 +320,25 @@ const MiniMonthHeatmap: React.FC<{
   monthIdx: number;
   ht: HabitTracker;
   onEdit: (habit: string, day: string, cur: HabitState) => void;
-}> = ({ habit, year, monthIdx, ht, onEdit }) => {
+  startDate?: string | null;
+}> = ({ habit, year, monthIdx, ht, onEdit, startDate }) => {
   const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
   const daysInMonth = new Date(year, monthIdx + 1, 0).getDate();
   const firstDow = (new Date(year, monthIdx, 1).getDay() + 6) % 7; // Mon=0
   const pad = (n: number) => String(n).padStart(2, '0');
-  const cells: ({ d: number; ddmm: string; state: HabitState; future: boolean } | null)[] = [];
+  // Only flag days on/after the habit's start as "not reported" (yellow ?), so days
+  // before the habit existed stay blank. No start date → don't guess, no ? in month view.
+  const startKey = startDateToKey(startDate ?? null);
+  const startMs = startKey ? new Date(year, parseInt(startKey.slice(3)) - 1, parseInt(startKey.slice(0, 2))).getTime() : null;
+  const cells: ({ d: number; ddmm: string; state: HabitState; future: boolean; undeclared: boolean } | null)[] = [];
   for (let i = 0; i < firstDow; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) {
     const ddmm = `${pad(d)}/${pad(monthIdx + 1)}`;
-    const future = new Date(year, monthIdx, d).getTime() > todayStart.getTime();
-    cells.push({ d, ddmm, state: ht[ddmm]?.[habit] ?? null, future });
+    const ms = new Date(year, monthIdx, d).getTime();
+    const future = ms > todayStart.getTime();
+    const state = ht[ddmm]?.[habit] ?? null;
+    const undeclared = !future && state === null && startMs != null && ms >= startMs;
+    cells.push({ d, ddmm, state, future, undeclared });
   }
   return (
     <div className="mini-hm">
@@ -341,10 +349,10 @@ const MiniMonthHeatmap: React.FC<{
           : (
             <button
               key={c.ddmm}
-              className={`mini-hm-cell ${c.state === 'done' ? 'done' : c.state === 'failed' ? 'failed' : ''} ${c.future ? 'future' : ''}`}
+              className={`mini-hm-cell ${c.state === 'done' ? 'done' : c.state === 'failed' ? 'failed' : c.state === 'na' ? 'na' : c.undeclared ? 'undeclared' : ''} ${c.future ? 'future' : ''}`}
               disabled={c.future}
               onClick={() => !c.future && onEdit(habit, c.ddmm, c.state)}
-              title={`${c.ddmm}: ${c.state ?? 'blank'}`}
+              title={`${c.ddmm}: ${c.state ?? (c.undeclared ? 'not reported' : 'blank')}`}
             >{c.d}</button>
           )
         )}
@@ -373,13 +381,20 @@ const CadenceCalendar: React.FC<{
   const todayMs = (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); })();
   const dnum = (ddmm: string) => new Date(year, parseInt(ddmm.slice(3)) - 1, parseInt(ddmm.slice(0, 2))).getTime();
 
-  type Cell = { key: string; label: string; done: boolean; failed: boolean; future: boolean; repDay: string };
+  type Cell = { key: string; label: string; done: boolean; failed: boolean; na: boolean; future: boolean; repDay: string };
   const mkCell = (key: string, label: string, bucket: string[]): Cell => {
     const doneDays = bucket.filter(d => ht[d]?.[habit] === 'done');
     const failedDays = bucket.filter(d => ht[d]?.[habit] === 'failed');
+    const naDays = bucket.filter(d => ht[d]?.[habit] === 'na');
     const past = bucket.filter(d => dnum(d) <= todayMs);
     const repDay = past.length ? past[past.length - 1] : (bucket[0] ?? '');
-    return { key, label, done: doneDays.length > 0, failed: failedDays.length > 0 && doneDays.length === 0, future: past.length === 0, repDay };
+    return {
+      key, label,
+      done: doneDays.length > 0,
+      failed: failedDays.length > 0 && doneDays.length === 0,
+      na: naDays.length > 0 && doneDays.length === 0 && failedDays.length === 0,
+      future: past.length === 0, repDay,
+    };
   };
 
   let cells: Cell[] = [];
@@ -399,12 +414,12 @@ const CadenceCalendar: React.FC<{
       {cells.map(c => (
         <button
           key={c.key}
-          className={`cadence-cal-cell ${c.done ? 'done' : c.failed ? 'failed' : ''} ${c.future ? 'future' : ''}`}
+          className={`cadence-cal-cell ${c.done ? 'done' : c.failed ? 'failed' : c.na ? 'na' : ''} ${c.future ? 'future' : ''}`}
           disabled={c.future || !c.repDay}
           onClick={() => { if (!c.future && c.repDay) onEdit(habit, c.repDay, ht[c.repDay]?.[habit] ?? null); }}
-          aria-label={`${c.label}: ${c.done ? 'done' : c.failed ? 'missed' : 'blank'}`}
+          aria-label={`${c.label}: ${c.done ? 'done' : c.failed ? 'missed' : c.na ? 'not applicable' : 'blank'}`}
         >
-          <span className="cadence-cal-tick">{c.done ? <CheckSVG size={13} strokeWidth={2} /> : c.failed ? '✕' : ''}</span>
+          <span className="cadence-cal-tick">{c.done ? <CheckSVG size={13} strokeWidth={2} /> : c.failed ? '✕' : c.na ? '–' : ''}</span>
           <span className="cadence-cal-lbl">{c.label}</span>
         </button>
       ))}
@@ -413,11 +428,12 @@ const CadenceCalendar: React.FC<{
 };
 
 // One weekday mini-circle. Single tap toggles done↔blank (the primary action);
-// double tap toggles failed↔blank. A short timer disambiguates the two, so the
-// first tap is deferred ~220ms — the standard cost of supporting double-tap.
-// `displayState` may differ from the stored state (past due days show grey), so
+// double tap toggles failed↔blank; a long-press toggles na↔blank ("not applicable").
+// A short timer disambiguates tap vs double-tap, so the first tap is deferred ~220ms.
+// `displayState` may differ from the stored state (past due days show a "?"), so
 // the toggles are driven by `rawState` (what's actually persisted).
 const TAP_DELAY_MS = 220;
+const LONGPRESS_MS = 500;
 const DayCircle: React.FC<{
   label: string;
   displayState: DisplayState;
@@ -427,9 +443,28 @@ const DayCircle: React.FC<{
   onSetState: (state: HabitState) => void;
 }> = ({ label, displayState, rawState, isFuture, isToday, onSetState }) => {
   const tapRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => { if (tapRef.current) clearTimeout(tapRef.current); }, []);
+  const longRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longFired = useRef(false);
+  useEffect(() => () => {
+    if (tapRef.current) clearTimeout(tapRef.current);
+    if (longRef.current) clearTimeout(longRef.current);
+  }, []);
+  const cancelLong = () => { if (longRef.current) { clearTimeout(longRef.current); longRef.current = null; } };
+  const handlePointerDown = () => {
+    if (isFuture) return;
+    longFired.current = false;
+    // ponytail: plain hold timer, no pointer-move cancel — a small drag could still
+    // fire N/A on these tiny circles; add a move threshold if that ever bites.
+    longRef.current = setTimeout(() => {
+      longRef.current = null;
+      longFired.current = true;
+      if (tapRef.current) { clearTimeout(tapRef.current); tapRef.current = null; }
+      onSetState(rawState === 'na' ? null : 'na');
+    }, LONGPRESS_MS);
+  };
   const handleTap = () => {
     if (isFuture) return;
+    if (longFired.current) { longFired.current = false; return; } // hold already handled it
     if (tapRef.current) {                       // second tap within window → fail
       clearTimeout(tapRef.current);
       tapRef.current = null;
@@ -442,15 +477,20 @@ const DayCircle: React.FC<{
     }
   };
   return (
-    <div className={`hcard-day ${displayState === 'done' ? 'done' : ''} ${displayState === 'failed' ? 'failed' : ''} ${displayState === 'undeclared' ? 'undeclared' : ''} ${isFuture ? 'future' : ''} ${isToday ? 'is-today' : ''}`}>
+    <div className={`hcard-day ${displayState === 'done' ? 'done' : ''} ${displayState === 'failed' ? 'failed' : ''} ${displayState === 'na' ? 'na' : ''} ${displayState === 'undeclared' ? 'undeclared' : ''} ${isFuture ? 'future' : ''} ${isToday ? 'is-today' : ''}`}>
       <button
         className="hcard-day-circle"
         disabled={isFuture}
         onClick={handleTap}
-        aria-label={`${label}: ${displayState ?? 'blank'}, tap to mark done, double-tap to mark failed`}
+        onPointerDown={handlePointerDown}
+        onPointerUp={cancelLong}
+        onPointerLeave={cancelLong}
+        aria-label={`${label}: ${displayState ?? 'blank'}, tap to mark done, double-tap to mark failed, long-press for not applicable`}
       >
         {displayState === 'done' && <span className="hcard-day-tick"><CheckSVG size={15} strokeWidth={2} /></span>}
         {displayState === 'failed' && <span className="hcard-day-tick hcard-day-fail">✗</span>}
+        {displayState === 'na' && <span className="hcard-day-tick hcard-day-na">–</span>}
+        {displayState === 'undeclared' && <span className="hcard-day-tick hcard-day-undeclared">?</span>}
       </button>
       <span className="hcard-day-label">{label}</span>
     </div>
@@ -527,7 +567,8 @@ const HabitCard: React.FC<{
   })();
 
   // Undeclared: a past due day (on/after the habit's start, before today) that was
-  // never marked shows grey, not red. Explicit fails stay red. Derived, not persisted.
+  // never marked shows the yellow "?", not red. Explicit fails stay red; N/A shows the
+  // grey dash. Derived render state — 'undeclared' is never persisted.
   const startKey = startDateToKey(startDate ?? null);
   const startIdx = startKey ? ALL_DAYS.indexOf(startKey) : 0;
   const todayIdx = ALL_DAYS.indexOf(today);
@@ -535,6 +576,7 @@ const HabitCard: React.FC<{
     const raw = ht[key]?.[habit] ?? null;
     if (raw === 'done') return 'done';
     if (raw === 'failed') return 'failed';
+    if (raw === 'na') return 'na';
     const idx = ALL_DAYS.indexOf(key);
     if (idx >= startIdx && idx < todayIdx) return 'undeclared'; // missed a due day
     return null;
@@ -665,23 +707,7 @@ const HabitCard: React.FC<{
         </button>
       </div>
 
-      {histOpen ? (
-        <div className="hcard-history">
-          {(isDaily || cadence === 'weekly') && (
-            <div className="hcard-month-nav">
-              <button className="hcard-month-arrow" onClick={() => setMonthOffset(o => o - 1)} aria-label="Previous month">‹</button>
-              <span className="hcard-month-label">{MINI_MONTHS[dispMonth]} {dispYear}</span>
-              <button className="hcard-month-arrow" disabled={monthOffset >= 0} onClick={() => setMonthOffset(o => Math.min(0, o + 1))} aria-label="Next month">›</button>
-            </div>
-          )}
-          <p className="hcard-history-hint">
-            {isDaily ? 'Tap any past day, cycles done → missed → blank.' : 'Tap a period, cycles done → missed → blank.'}
-          </p>
-          {isDaily
-            ? <MiniMonthHeatmap habit={habit} year={dispYear} monthIdx={dispMonth} ht={ht} onEdit={onEditDay} />
-            : <CadenceCalendar habit={habit} cadence={cadence} year={dispYear} monthIdx={dispMonth} ht={ht} onEdit={onEditDay} />}
-        </div>
-      ) : isDaily ? (
+      {isDaily ? (
         <div className="hcard-week">
           {weekDays.map(({ key, label, isFuture, isToday }) => (
             <DayCircle
@@ -712,6 +738,26 @@ const HabitCard: React.FC<{
           ))}
         </div>
       )}
+
+      {/* Calendar expands below the week strip. Always mounted inside a grid-rows
+          collapser so both open AND close animate smoothly (no unmount pop). */}
+      <div className={`hcard-history-wrap${histOpen ? ' open' : ''}`}>
+        <div className="hcard-history">
+          {(isDaily || cadence === 'weekly') && (
+            <div className="hcard-month-nav">
+              <button className="hcard-month-arrow" onClick={() => setMonthOffset(o => o - 1)} aria-label="Previous month">‹</button>
+              <span className="hcard-month-label">{MINI_MONTHS[dispMonth]} {dispYear}</span>
+              <button className="hcard-month-arrow" disabled={monthOffset >= 0} onClick={() => setMonthOffset(o => Math.min(0, o + 1))} aria-label="Next month">›</button>
+            </div>
+          )}
+          <p className="hcard-history-hint">
+            {isDaily ? 'Tap any past day, cycles done → missed → N/A → blank.' : 'Tap a period, cycles done → missed → N/A → blank.'}
+          </p>
+          {isDaily
+            ? <MiniMonthHeatmap habit={habit} year={dispYear} monthIdx={dispMonth} ht={ht} onEdit={onEditDay} startDate={startDate} />
+            : <CadenceCalendar habit={habit} cadence={cadence} year={dispYear} monthIdx={dispMonth} ht={ht} onEdit={onEditDay} />}
+        </div>
+      </div>
 
       {/* One-off due date (optional, any cadence). Overdue = past + not done. */}
       {(() => {
@@ -1566,11 +1612,12 @@ const Habits: React.FC = () => {
               >
                 <span className="hb-week-dow">{label}</span>
                 <div
-                  className={`hb-week-circle ${state === 'done' ? 'done' : ''} ${state === 'failed' ? 'failed' : ''} ${isToday ? 'today' : ''} ${key === rewindDay ? 'viewing' : ''} ${isFuture ? 'future' : ''}`}
+                  className={`hb-week-circle ${state === 'done' ? 'done' : ''} ${state === 'failed' ? 'failed' : ''} ${state === 'na' ? 'na' : ''} ${isToday ? 'today' : ''} ${key === rewindDay ? 'viewing' : ''} ${isFuture ? 'future' : ''}`}
                   aria-hidden="true"
                 >
                   {state === 'done' && <span className="hb-week-tick"><CheckSVG size={18} strokeWidth={2} /></span>}
                   {state === 'failed' && <span className="hb-week-tick fail">✕</span>}
+                  {state === 'na' && <span className="hb-week-tick na">–</span>}
                 </div>
               </button>
             );
@@ -1663,11 +1710,11 @@ const Habits: React.FC = () => {
                       <button
                         key={h}
                         type="button"
-                        className={`checkin-habit ${done ? 'done' : ''}`}
+                        className={`checkin-habit ${done ? 'done' : ''} ${state === 'failed' ? 'failed' : ''} ${state === 'na' ? 'na' : ''}`}
                         onClick={() => handleToggleDay(h, viewingDay, cycleState(state))}
                         aria-pressed={done}
                       >
-                        <span className="checkin-tick">{done ? '✓' : '+'}</span>
+                        <span className="checkin-tick">{done ? '✓' : state === 'failed' ? '✕' : state === 'na' ? '–' : '+'}</span>
                         <span className="checkin-habit-name">{h}</span>
                       </button>
                     );

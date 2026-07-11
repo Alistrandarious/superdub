@@ -33,7 +33,7 @@ import YesterdayMatrix from './YesterdayMatrix';
 import GoalSheet from './GoalSheet';
 import SleepCandleChart, { hhmmToAxis, type SleepCandle } from './SleepCandleChart';
 import { CADENCE_ORDER, CADENCE_META, type Cadence } from './Habits';
-import { UsersIc, AppleIc } from './icons';
+import { UsersIc, AppleIc, CalendarIc } from './icons';
 
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -238,7 +238,7 @@ function getWeekOfMonth(dayStr: string): number {
 
 const DEFAULT_HABITS: string[] = [];
 
-type HabitState = true | 'failed' | false;
+type HabitState = true | 'failed' | 'na' | false;
 
 interface DayData {
   weight: string;
@@ -352,6 +352,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   // Progress page tell a daily habit from a yearly one (chart filter + Yesterday).
   const [habitCadence, setHabitCadence] = useState<Record<string, Cadence>>({});
   const [chartCadence, setChartCadence] = useState<Cadence>('daily');
+  // To-do items for the "Today" tab (due today → this week). Loaded once on mount.
+  const [tasks, setTasks] = useState<{ id: string; text: string; done: boolean; type: string; dueDate?: string }[]>([]);
+  useEffect(() => {
+    api.getTasks().then((rows: any) => setTasks(Array.isArray(rows) ? rows : [])).catch(() => {});
+  }, []);
 
   // Coaching message state (includes today's energy score, advisable steps, workout calories)
   const [coachingMsg, setCoachingMsg] = useState<{
@@ -443,7 +448,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       (trackerData.habits as any[]).forEach(row => {
         if (merged[row.day]) {
           merged[row.day].habits[row.habit_name] =
-            row.state === 'done' ? true : row.state === 'failed' ? 'failed' : false;
+            row.state === 'done' ? true : row.state === 'failed' ? 'failed' : row.state === 'na' ? 'na' : false;
         }
       });
       setTracker(merged);
@@ -735,12 +740,10 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     [chartDayRange, sleepTimesByDate, moodByDate] // eslint-disable-line react-hooks/exhaustive-deps
   );
   const sleepCandleHasData = sleepCandleData.some(d => d.bedVal != null);
-  // Only draw the bed→wake candlesticks when most logged nights actually carry
-  // times; otherwise fall back to the reliable hours line so a night logged as
-  // hours-only (no bed/wake) still appears on the chart instead of vanishing.
-  const sleepLineCount = sleepChartData.filter(d => d.sleep != null).length;
-  const sleepCandleCount = sleepCandleData.filter(d => d.bedVal != null).length;
-  const sleepUseCandle = sleepCandleHasData && sleepCandleCount >= Math.max(1, Math.ceil(sleepLineCount * 0.75));
+  // Show the bed→wake candlesticks whenever any night carries both times. Nights
+  // logged hours-only simply have no bar (SleepIBar returns null for a null span);
+  // the hours line is only the fallback when NO night has times at all.
+  const sleepUseCandle = sleepCandleHasData;
   const moodStats = useMemo(() => {
     const v7: number[] = [], v30: number[] = [];
     for (let i = 0; i < 30; i++) {
@@ -853,7 +856,10 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     const visible = habits.filter(h => !hiddenHabits.has(h) && (habitCadence[h] ?? 'daily') === chartCadence);
     const completed = visible.filter(h => d.habits[h] === true).length;
     const failed = visible.filter(h => d.habits[h] === 'failed').length;
-    const undeclared = date.getTime() < todayStartMs ? visible.length - completed - failed : 0;
+    // N/A days are deliberate skips — drop them from the day's total so they don't
+    // inflate the grey "undeclared" bar.
+    const na = visible.filter(h => d.habits[h] === 'na').length;
+    const undeclared = date.getTime() < todayStartMs ? visible.length - completed - failed - na : 0;
     const ema = chartEMA[i] != null ? chartEMA[i] : null;
     // Only show trend line where we have real weight data nearby (within 3 days)
     const trend = hasTrend ? +(trendIntercept + trendSlope * i).toFixed(2) : null;
@@ -932,6 +938,37 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   // Count only the selected cadence's visible habits — the chart is filtered to it.
   const cadenceHabitCount = habits.filter(h => (habitCadence[h] ?? 'daily') === chartCadence && !hiddenHabits.has(h)).length;
   const habitAxisMax = Math.max(1, cadenceHabitCount);
+  // The habits that belong to the selected cadence, each with its current-period
+  // status — so the Habits section literally lists "this week's habits" etc.
+  const currentPeriodDays = (cad: Cadence): string[] => {
+    if (cad === 'daily' || cad === 'quit') return [todayKey];
+    if (cad === 'yearly') return ALL_DAYS.slice();
+    const base = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let start: Date, end: Date;
+    if (cad === 'weekly') {
+      const dow = (base.getDay() + 6) % 7; // Mon=0
+      start = new Date(base); start.setDate(base.getDate() - dow);
+      end = new Date(start); end.setDate(start.getDate() + 6);
+    } else { // monthly
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    }
+    const days: string[] = [];
+    for (const d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      days.push(`${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`);
+    }
+    return days;
+  };
+  const cadenceHabitList = habits
+    .filter(h => (habitCadence[h] ?? 'daily') === chartCadence && !hiddenHabits.has(h))
+    .map(h => {
+      const days = currentPeriodDays(chartCadence);
+      let status: 'done' | 'failed' | 'na' | 'pending' = 'pending';
+      if (days.some(dk => tracker[dk]?.habits[h] === true)) status = 'done';
+      else if (days.some(dk => tracker[dk]?.habits[h] === 'failed')) status = 'failed';
+      else if (days.some(dk => tracker[dk]?.habits[h] === 'na')) status = 'na';
+      return { name: h, status };
+    });
   const habitTicks = (() => {
     const step = Math.max(1, Math.ceil(habitAxisMax / 4));
     const t: number[] = [];
@@ -1397,10 +1434,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   // Story panels: Yesterday (retrospective KPIs) first, then a placeholder Today,
   // the charts in the middle, and a scrollable Stats panel last. Tabs/notes stay
   // index-aligned with the slides; Dub's top bar shows each note.
-  const storyTabs = ['Yesterday', 'Today', ...chartMeta.map(m => m.name), 'Stats'];
+  const storyTabs = ['Yesterday', 'Today', 'Weight Plan', ...chartMeta.map(m => m.name), 'Stats'];
   const storyNotes: (string | null)[] = [
     liveVerdict,
-    "Your live plan for today is on its way. For now, peek at yesterday to see how you closed the day.",
+    "Here is what is due today and coming up this week. Knock them out one at a time.",
+    "Your live plan for today. The steps to hit and where your weight is heading.",
     ...chartMeta.map(m => m.note),
     null,
   ];
@@ -1422,6 +1460,40 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   // Green when losing toward goal, blue when gaining — matches the Plan page accent.
   const planAccent = planTargetW != null && planGaugeWeight > 0 ? (planTargetW > planGaugeWeight ? GROWTH : HEALTH) : GROWTH;
 
+  // ── "Today" tab feed: to-dos due today → this week, plus weekly/monthly habits
+  // whose period closes within 3 days and hasn't been done yet.
+  const pad2 = (n: number) => String(n).padStart(2, '0');
+  const isoOf = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  const ddmmOf = (d: Date) => `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}`;
+  const todayISOv = isoOf(now);
+  const weekAheadISO = (() => { const d = new Date(now); d.setDate(d.getDate() + 7); return isoOf(d); })();
+  const dueTasks = tasks
+    .filter(t => t.type === 'todo' && !t.done && !!t.dueDate && t.dueDate >= todayISOv && t.dueDate <= weekAheadISO)
+    .sort((a, b) => (a.dueDate! < b.dueDate! ? -1 : a.dueDate! > b.dueDate! ? 1 : 0));
+  const todayMid = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  // ponytail: recomputed each render (habit list is tiny); memoize if it ever grows.
+  const pendingHabits = habits.filter(h => {
+    const cad = habitCadence[h] ?? 'daily';
+    if (cad !== 'weekly' && cad !== 'monthly') return false;
+    let start: Date, end: Date;
+    if (cad === 'weekly') {
+      const dow = (todayMid.getDay() + 6) % 7; // Mon=0
+      start = new Date(todayMid); start.setDate(todayMid.getDate() - dow);
+      end = new Date(start); end.setDate(start.getDate() + 6);
+    } else {
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    }
+    let doneInPeriod = false;
+    for (const d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      if (tracker[ddmmOf(d)]?.habits[h] === true) { doneInPeriod = true; break; }
+    }
+    if (doneInPeriod) return false;
+    const daysLeft = Math.round((end.getTime() - todayMid.getTime()) / 86400000);
+    return daysLeft >= 0 && daysLeft <= 3;
+  });
+  const todayFeedCount = dueTasks.length + pendingHabits.length;
+
   // Starred habits (set on the Habits page) with their state for a given day.
   const renderStarStrip = (dayKey: string) => {
     const stars = starredHabits.filter(h => realHabits.includes(h));
@@ -1432,10 +1504,10 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         <div className="star-strip-rows">
           {stars.map(h => {
             const st = tracker[dayKey]?.habits[h];
-            const cls = st === true ? 'done' : st === 'failed' ? 'missed' : 'blank';
+            const cls = st === true ? 'done' : st === 'failed' ? 'missed' : st === 'na' ? 'na' : 'blank';
             return (
               <div key={h} className={`star-strip-item star-strip-item--${cls}`}>
-                <span className="star-strip-ico">{st === true ? '✓' : st === 'failed' ? '✕' : '·'}</span>
+                <span className="star-strip-ico">{st === true ? '✓' : st === 'failed' ? '✕' : st === 'na' ? '–' : '·'}</span>
                 <span className="star-strip-name">{h}</span>
               </div>
             );
@@ -1684,59 +1756,113 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
       </div>{/* /Yesterday panel */}
 
-      {/* ── Panel 1 · Today — your Plan: weight-journey gauge + weekly chart + steps ── */}
-      <div className="story-panel today-plan">
-        <section className="plan-hero plan-hero--today">
-          <div className="plan-hero-head">
-            <span className="today-soon-eyebrow">TODAY</span>
-            <span className="plan-hero-title">Your plan</span>
-            <button className="plan-hero-edit" onClick={() => navigate(planGoal ? '/plan' : '/profile')}>Edit →</button>
-          </div>
-          <PlanGauge
-            displayWeight={planGaugeWeight}
-            startW={planStartW}
-            targetW={planTargetW}
-            startMs={planStartMs}
-            targetMs={planTargetMs}
-            accent={planAccent}
-            weeksLeft={planWeeksLeft}
-          />
-        </section>
-
-        <WeightSparkline
-          allTrackerDays={planAllDays}
-          currentWeight={planGaugeWeight > 0 ? planGaugeWeight : startWeight}
-          goalWeight={planTargetW ?? planGoalWNum}
-          lossPerWeek={planLossPerWeek}
-        />
-
-        {/* Step count for today, with yesterday's result */}
-        <div className="diet-section today-plan-steps">
-          <div className="atc-steps-needed">
-            <div className="atc-steps-big">{effectiveStepTarget.toLocaleString()}</div>
-            <div className="atc-steps-sub">step goal today</div>
-          </div>
-          {ySteps > 0 && (
-            <div className="step-perf-yesterday">
-              <div className="step-perf-bar-wrap">
-                <div className="step-perf-bar">
-                  <div className="step-perf-fill" style={{
-                    width: `${Math.min(100, (ySteps / effectiveStepTarget) * 100)}%`,
-                    background: ySteps >= effectiveStepTarget ? '#2FD27E' : '#FFD233',
-                  }} />
-                </div>
-              </div>
-              <div className="step-perf-row">
-                <span className="step-perf-count">{ySteps.toLocaleString()} yesterday</span>
-                <span className={`step-perf-badge${ySteps >= effectiveStepTarget ? ' hit' : ' miss'}`}>
-                  {ySteps >= effectiveStepTarget ? '✓ Target hit' : `${(effectiveStepTarget - ySteps).toLocaleString()} short`}
-                </span>
-              </div>
-            </div>
-          )}
+      {/* ── Panel · Today — to-dos due this week + weekly/monthly habits about to lapse ── */}
+      <div className="story-panel today-feed">
+        <div className="plan-hero-head today-feed-head">
+          <span className="today-soon-eyebrow">TODAY</span>
+          <span className="plan-hero-title">Due this week</span>
+          <button className="plan-hero-edit" onClick={() => navigate('/tasks')}>Lists →</button>
         </div>
+        {todayFeedCount === 0 ? (
+          <div className="today-feed-empty">
+            <CalendarIc size={26} />
+            <p>Nothing due in the next seven days. Enjoy the breathing room.</p>
+          </div>
+        ) : (
+          <div className="today-feed-list">
+            {dueTasks.map(t => {
+              const overdue = t.dueDate! < todayISOv;
+              const when = t.dueDate === todayISOv
+                ? 'Today'
+                : new Date(t.dueDate! + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+              return (
+                <button key={t.id} className={`today-feed-item${overdue ? ' overdue' : ''}`} onClick={() => navigate('/tasks')}>
+                  <span className="today-feed-ico today-feed-ico--task"><CalendarIc size={15} /></span>
+                  <span className="today-feed-text">{t.text}</span>
+                  <span className="today-feed-when">{when}</span>
+                </button>
+              );
+            })}
+            {pendingHabits.map(h => {
+              const cad = habitCadence[h] ?? 'weekly';
+              return (
+                <button key={h} className="today-feed-item today-feed-item--habit" onClick={() => navigate('/')}>
+                  <span className="today-feed-ico" style={{ color: CADENCE_META[cad].color }}>
+                    <span className="today-feed-dot" style={{ background: CADENCE_META[cad].color }} />
+                  </span>
+                  <span className="today-feed-text">{h}</span>
+                  <span className="today-feed-when">{CADENCE_META[cad].label} · due soon</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
-        {renderStarStrip(todayKey)}
+      {/* ── Panel · Weight Plan — gauge + weekly chart + steps, or a start-plan prompt ── */}
+      <div className="story-panel today-plan">
+        {planGoal ? (
+          <>
+            <section className="plan-hero plan-hero--today">
+              <div className="plan-hero-head">
+                <span className="today-soon-eyebrow">WEIGHT PLAN</span>
+                <span className="plan-hero-title">Your plan</span>
+                <button className="plan-hero-edit" onClick={() => navigate('/plan')}>Edit →</button>
+              </div>
+              <PlanGauge
+                displayWeight={planGaugeWeight}
+                startW={planStartW}
+                targetW={planTargetW}
+                startMs={planStartMs}
+                targetMs={planTargetMs}
+                accent={planAccent}
+                weeksLeft={planWeeksLeft}
+              />
+            </section>
+
+            <WeightSparkline
+              allTrackerDays={planAllDays}
+              currentWeight={planGaugeWeight > 0 ? planGaugeWeight : startWeight}
+              goalWeight={planTargetW ?? planGoalWNum}
+              lossPerWeek={planLossPerWeek}
+            />
+
+            {/* Step count for today, with yesterday's result */}
+            <div className="diet-section today-plan-steps">
+              <div className="atc-steps-needed">
+                <div className="atc-steps-big">{effectiveStepTarget.toLocaleString()}</div>
+                <div className="atc-steps-sub">step goal today</div>
+              </div>
+              {ySteps > 0 && (
+                <div className="step-perf-yesterday">
+                  <div className="step-perf-bar-wrap">
+                    <div className="step-perf-bar">
+                      <div className="step-perf-fill" style={{
+                        width: `${Math.min(100, (ySteps / effectiveStepTarget) * 100)}%`,
+                        background: ySteps >= effectiveStepTarget ? '#2FD27E' : '#FFD233',
+                      }} />
+                    </div>
+                  </div>
+                  <div className="step-perf-row">
+                    <span className="step-perf-count">{ySteps.toLocaleString()} yesterday</span>
+                    <span className={`step-perf-badge${ySteps >= effectiveStepTarget ? ' hit' : ' miss'}`}>
+                      {ySteps >= effectiveStepTarget ? '✓ Target hit' : `${(effectiveStepTarget - ySteps).toLocaleString()} short`}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {renderStarStrip(todayKey)}
+          </>
+        ) : (
+          <div className="plan-start-prompt">
+            <span className="today-soon-eyebrow">WEIGHT PLAN</span>
+            <h3 className="plan-start-title">Set a weight to reach</h3>
+            <p className="plan-start-sub">Pick a target and Superdub builds a daily calorie and step plan that adapts as you go.</p>
+            <button className="plan-start-btn" onClick={() => navigate('/profile')}>Start your plan</button>
+          </div>
+        )}
       </div>
 
       {/* ── Panel 2 · Weight ── */}
@@ -2005,6 +2131,17 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               </DraggableChart>
             </div>
           </div>
+          {cadenceHabitList.length > 0 && (
+            <div className="cadence-habit-list">
+              {cadenceHabitList.map(({ name, status }) => (
+                <div key={name} className={`cadence-habit-row cadence-habit-row--${status}`}>
+                  <span className="cadence-habit-mark">{status === 'done' ? '✓' : status === 'failed' ? '✕' : status === 'na' ? '–' : '○'}</span>
+                  <span className="cadence-habit-name">{name}</span>
+                  <span className="cadence-habit-status">{status === 'done' ? 'Done' : status === 'failed' ? 'Missed' : status === 'na' ? 'N/A' : 'Pending'}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       )}
 

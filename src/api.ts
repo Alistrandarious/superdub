@@ -85,7 +85,7 @@ export const api = {
   getTracker: (): Promise<{ days: any[]; habits: any[]; xpCarry?: Record<string, number>; year?: number }> => request('/tracker'),
   updateTrackerDay: (day: string, data: object) =>
     request('/tracker', { method: 'PATCH', body: JSON.stringify({ day, ...data }) }),
-  toggleTrackerHabit: (day: string, habitName: string, state: 'done' | 'failed' | null) =>
+  toggleTrackerHabit: (day: string, habitName: string, state: 'done' | 'failed' | 'na' | null) =>
     request('/tracker/habit', { method: 'PATCH', body: JSON.stringify({ day, habitName, state }) }),
 
   // steps (provenance-aware)

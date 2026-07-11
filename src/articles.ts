@@ -18,6 +18,27 @@ export interface Article {
 
 export const ARTICLES: Article[] = [
   {
+    id: 'not-applicable-days',
+    title: 'Some Days It Just Does Not Apply',
+    author: 'Ali Shah',
+    readMins: 3,
+    tag: 'Habits',
+    accent: '#FFD233',
+    dek: 'A new Not Applicable mark lets a habit sit out a day without hurting your streak, unlogged days now show a yellow question mark, and Progress gets a Today list.',
+    body: [
+      { t: 'p', text: 'Real life does not run on a perfect grid. You travel, a gym closes, a rest day is the healthy choice. Marking those days as missed felt like a lie, and leaving them blank quietly ate your streak. So habits now have a fourth state that simply means this one did not count today.' },
+      { t: 'h', text: 'Done, missed, and now N/A' },
+      { t: 'p', text: 'Tap a weekday circle to mark it done, double tap to mark it missed, and press and hold to set Not Applicable. It shows as a calm grey dash. The difference that matters: an N/A day is neutral. It never counts as a miss and it never breaks your streak, it just steps aside. The big button and the calendar walk the full cycle for you: done, missed, N/A, then blank.' },
+      { t: 'quote', text: 'A day that did not apply is not a day you failed.' },
+      { t: 'h', text: 'The yellow question mark' },
+      { t: 'p', text: 'A past day you never got round to logging used to look like an empty ring, easy to mistake for nothing. Now it shows a soft yellow question mark, so a day you simply did not report reads differently from a day you actively skipped or missed. It is a gentle nudge, not a red mark.' },
+      { t: 'h', text: 'A Today worth opening' },
+      { t: 'p', text: 'Progress has a new Today tab. It gathers your to-dos due between now and the end of the week, and it flags any weekly or monthly habit whose window is closing within three days and is still not done. It is the short list of what actually needs you soon, in one place.' },
+      { t: 'h', text: 'Weight Plan, clearly labelled' },
+      { t: 'p', text: 'Your weight gauge, weekly trend and steps now live under their own Weight Plan tab. Set a goal and it is all there. Have not set one yet? The tab shows a simple prompt to start a plan. While we were here we also let the Habits section list the habits for the cadence you pick, gave the calendar a smooth open and close, and calmed the over-target calorie ring to a steady yellow instead of a flash of red. Open Progress, swipe to Today, and press and hold a habit day the next time life gets in the way. 🟡' },
+    ],
+  },
+  {
     id: 'plan-back-on-today',
     title: 'Your Plan, Back Where You Look Every Day',
     author: 'Ali Shah',
