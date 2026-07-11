@@ -1653,6 +1653,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         mood={yMood}
         habitsDone={yHabitsDone}
         habitsTotal={realHabits.length}
+        onLogSteps={() => window.dispatchEvent(new CustomEvent('superdub:show-step-entry', { detail: { date: yesterdayISO } }))}
       />
 
       {renderStarStrip(yesterdayKey)}

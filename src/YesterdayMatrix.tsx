@@ -18,6 +18,7 @@ export interface YesterdayMatrixProps {
   mood: number | null;            // 1–5
   habitsDone: number;
   habitsTotal: number;
+  onLogSteps?: () => void;         // tap the Steps cell to log yesterday's steps
 }
 
 const MOOD_LABEL = (m: number) => m >= 4.5 ? 'great' : m >= 3.5 ? 'good' : m >= 2.5 ? 'okay' : m >= 1.5 ? 'low' : 'rough';
@@ -50,7 +51,7 @@ const Ring: React.FC<{ pct: number; over: boolean; children: React.ReactNode }> 
 };
 
 const YesterdayMatrix: React.FC<YesterdayMatrixProps> = ({
-  intake, targetCalories, delta, steps, stepTarget, sleepHours, mood, habitsDone, habitsTotal,
+  intake, targetCalories, delta, steps, stepTarget, sleepHours, mood, habitsDone, habitsTotal, onLogSteps,
 }) => {
   const [explain, setExplain] = useState(false);
   const over = delta != null && delta > 0;
@@ -99,15 +100,26 @@ const YesterdayMatrix: React.FC<YesterdayMatrixProps> = ({
         )}
       </div>
 
-      {/* Steps taken */}
-      <div className="ltm-cell">
-        <span className="ltm-eyebrow">STEPS</span>
-        <div className="ltm-metric">{steps.toLocaleString()}{stepsHit && <span className="ltm-metric-unit"> ✓</span>}</div>
-        <div className="ltm-bar"><span className="ltm-bar-fill" style={{ width: `${Math.min(100, stepPct * 100)}%` }} /></div>
-        <span className={`ltm-sub${stepsHit ? ' good' : ''}`}>
-          {steps > 0 ? `of ${stepTarget.toLocaleString()} target${stepsHit ? ' · hit' : ''}` : 'no steps logged'}
-        </span>
-      </div>
+      {/* Steps taken — tap to log yesterday's steps */}
+      {onLogSteps ? (
+        <button className="ltm-cell ltm-cell-btn" onClick={onLogSteps} aria-label="Log yesterday's steps">
+          <span className="ltm-eyebrow">STEPS</span>
+          <div className="ltm-metric">{steps.toLocaleString()}{stepsHit && <span className="ltm-metric-unit"> ✓</span>}</div>
+          <div className="ltm-bar"><span className="ltm-bar-fill" style={{ width: `${Math.min(100, stepPct * 100)}%` }} /></div>
+          <span className={`ltm-sub${stepsHit ? ' good' : ''}`}>
+            {steps > 0 ? `of ${stepTarget.toLocaleString()} target${stepsHit ? ' · hit' : ''}` : 'tap to log steps'}
+          </span>
+        </button>
+      ) : (
+        <div className="ltm-cell">
+          <span className="ltm-eyebrow">STEPS</span>
+          <div className="ltm-metric">{steps.toLocaleString()}{stepsHit && <span className="ltm-metric-unit"> ✓</span>}</div>
+          <div className="ltm-bar"><span className="ltm-bar-fill" style={{ width: `${Math.min(100, stepPct * 100)}%` }} /></div>
+          <span className={`ltm-sub${stepsHit ? ' good' : ''}`}>
+            {steps > 0 ? `of ${stepTarget.toLocaleString()} target${stepsHit ? ' · hit' : ''}` : 'no steps logged'}
+          </span>
+        </div>
+      )}
 
       {/* Vitals, sleep + mood */}
       <div className="ltm-cell">

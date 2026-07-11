@@ -11,6 +11,18 @@ export interface UpdateEntry {
 export const UPDATE_LOG: UpdateEntry[] = [
   {
     date: '2026-07-11',
+    emoji: '🃏',
+    title: 'Habit cards, cleaned up and easier to read',
+    summary: 'The habit card no longer crams everything onto one line. The name sits up top with its circle, level, streak and controls fall into place beneath, and the month calendar now opens right where you track your streak.',
+    points: [
+      'The name and its done-circle sit on the top row. Below the name: your level, the expand chevron and your streak length. Star and Archive move to their own controls on the right.',
+      'Open a card and the streak line now carries a calendar button. Tap it and the month view opens in place of the Mon-to-Sun row, so past days and this week live in the same spot.',
+      'The "recent miss" stat lost its medal (a medal for missing never made sense) and now reads clearly, turning amber only when you have actually slipped.',
+      'On Progress, tap the Steps box under Yesterday to log yesterday\'s steps right there.',
+    ],
+  },
+  {
+    date: '2026-07-11',
     emoji: '🎯',
     title: 'Your Plan is back, right on the Today tab',
     summary: 'Progress → Today now shows your weight plan again: the start-to-goal semi-circle, your Weight This Week chart, and your step count, all in one place. Quit habits also moved to the left of Daily.',

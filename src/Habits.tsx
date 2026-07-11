@@ -9,7 +9,7 @@ import SuperdubHeader from './SuperdubHeader';
 import DailyLog from './DailyLog';
 import AnimatedFlame from './AnimatedFlame';
 import {
-  MoonIc, CalendarIc, MedalIc, TrophyIc, WalkIc, BookIc, NoSmokeIc, MealIc, MoneyIc, HealthIc,
+  MoonIc, CalendarIc, TrophyIc, WalkIc, BookIc, NoSmokeIc, MealIc, MoneyIc, HealthIc,
   SunIc, CloudSunIc, CloudIc, RainIc, SnowIc, StormIc, type IconProps,
 } from './icons';
 import { pageTheme, HEALTH } from './theme';
@@ -476,7 +476,8 @@ const HabitCard: React.FC<{
       className={`hcard ${expanded ? 'hcard--expanded' : 'hcard--collapsed'} ${hasDanger ? 'hcard-danger' : hasWarning ? 'hcard-warning' : ''}`}
       style={{ '--theme': accent, '--theme-dim': `${accent}66`, '--theme-glow': `${accent}22` } as React.CSSProperties}
     >
-      {/* Summary row, grip · circle · name · level · streak · calendar · chevron */}
+      {/* Header — top row: circle + name; bottom row: level · chevron · streak.
+          Controls (star + archive) sit to the right. */}
       <div className="hcard-summary" onClick={() => setExpanded(e => { const next = !e; if (!next) setHistOpen(false); return next; })}>
         {dragHandle}
         <button
@@ -486,50 +487,41 @@ const HabitCard: React.FC<{
         >
           {currentDone ? <CheckSVG size={14} strokeWidth={2.5} /> : <span className="hcard-icon-empty-dot" />}
         </button>
-        <span className="hcard-name">{habit}</span>
-        {!expanded && (
-          <span className="hcard-level-badge" title={`Level ${stats.level}, ${stats.totalDays} days logged · +${stats.xpPerDay} XP per day`}>
-            LV{stats.level}
-          </span>
-        )}
-        {!expanded && (
-          stats.streak > 0 ? (
-            <span className="hcard-streak-mini on"><span className="hsm-ico"><AnimatedFlame size={12} /></span>{stats.streak}d</span>
-          ) : daysSinceDone === null ? (
-            <span className="hcard-streak-mini new">new</span>
-          ) : (
-            <span className="hcard-streak-mini off"><span className="hsm-ico"><MoonIc size={12} /></span>{daysSinceDone}d</span>
-          )
-        )}
-        {/* Star toggle — starred habits surface on Progress Today/Yesterday */}
-        <button
-          className={`hcard-star${starred ? ' on' : ''}`}
-          onClick={e => { e.stopPropagation(); onToggleStar(habit); }}
-          aria-label={starred ? 'Unstar habit' : 'Star habit'}
-          aria-pressed={!!starred}
-        >
-          <svg viewBox="0 0 24 24" width="15" height="15" fill={starred ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-          </svg>
-        </button>
-        {/* Archive icon, always rendered so layout never shifts; only interactive when expanded */}
-        <button
-          className={`hcard-archive-icon${expanded ? ' visible' : ''}`}
-          onClick={e => { e.stopPropagation(); if (expanded) onRequestRemove(habit); }}
-          tabIndex={expanded ? 0 : -1}
-          aria-label="Archive habit"
-        >
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
-        </button>
-        {/* Permanent delete lives only on the Archived page — archive first. */}
-        <button
-          className={`hcard-cog${histOpen ? ' active' : ''}`}
-          onClick={e => { e.stopPropagation(); setExpanded(true); setMonthOffset(0); setHistOpen(o => !o); }}
-          aria-label="Edit past days"
-        >
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        </button>
-        <span className={`hcard-chevron ${expanded ? 'open' : ''}`}>▾</span>
+        <div className="hcard-head">
+          <span className="hcard-name">{habit}</span>
+          <div className="hcard-head-meta">
+            <span className="hcard-level-badge" title={`Level ${stats.level}, ${stats.totalDays} days logged · +${stats.xpPerDay} XP per day`}>LV{stats.level}</span>
+            <span className={`hcard-chevron ${expanded ? 'open' : ''}`}>▾</span>
+            {stats.streak > 0 ? (
+              <span className="hcard-streak-mini on"><span className="hsm-ico"><AnimatedFlame size={12} /></span>{stats.streak}d</span>
+            ) : daysSinceDone === null ? (
+              <span className="hcard-streak-mini new">new</span>
+            ) : (
+              <span className="hcard-streak-mini off"><span className="hsm-ico"><MoonIc size={12} /></span>{daysSinceDone}d</span>
+            )}
+          </div>
+        </div>
+        <div className="hcard-head-controls">
+          {/* Star toggle — starred habits surface on Progress Today/Yesterday */}
+          <button
+            className={`hcard-star${starred ? ' on' : ''}`}
+            onClick={e => { e.stopPropagation(); onToggleStar(habit); }}
+            aria-label={starred ? 'Unstar habit' : 'Star habit'}
+            aria-pressed={!!starred}
+          >
+            <svg viewBox="0 0 24 24" width="15" height="15" fill={starred ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
+          </button>
+          {/* Archive → confirm dialog. Permanent delete lives only on the Archived page. */}
+          <button
+            className="hcard-archive-icon visible"
+            onClick={e => { e.stopPropagation(); onRequestRemove(habit); }}
+            aria-label="Archive habit"
+          >
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+          </button>
+        </div>
       </div>
 
 
@@ -575,18 +567,46 @@ const HabitCard: React.FC<{
             <span className="hsp-stat-val">{stats.totalDays}</span>
             <span className="hsp-stat-lbl">days done</span>
           </div>
-          <div className="hsp-stat">
-            <span className="hsp-stat-ico"><MedalIc size={16} /></span>
+          <div className={`hsp-stat${stats.misses > 0 ? ' miss' : ''}`}>
+            <span className="hsp-stat-ico">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </span>
             <span className="hsp-stat-val">{stats.misses}</span>
-            <span className="hsp-stat-lbl">recent miss</span>
+            <span className="hsp-stat-lbl">recent {stats.misses === 1 ? 'miss' : 'misses'}</span>
           </div>
         </div>
       </div>
 
-      {hasDanger && <p className="hcard-risk-chip danger">streak reset, start fresh today</p>}
-      {hasWarning && <p className="hcard-risk-chip warning">missed yesterday, keep going</p>}
+      {/* Streak prompt row — the calendar toggle lives here; opening it swaps the
+          M-S breakdown for the month calendar. */}
+      <div className={`hcard-streakrow ${hasDanger ? 'danger' : hasWarning ? 'warning' : ''}`}>
+        <span className="hcard-streak-label">
+          {hasDanger ? 'Streak reset, start fresh today'
+            : hasWarning ? 'Missed yesterday, keep going'
+            : stats.streak > 0 ? `${stats.streak}-day streak, keep it alive`
+            : daysSinceDone != null ? `${daysSinceDone} ${daysSinceDone === 1 ? 'day' : 'days'} off, restart today`
+            : 'New habit, log your first day'}
+        </span>
+        <button
+          className={`hcard-cal-toggle${histOpen ? ' active' : ''}`}
+          onClick={e => { e.stopPropagation(); setMonthOffset(0); setHistOpen(o => !o); }}
+          aria-label={histOpen ? 'Hide calendar' : 'Open calendar'}
+        >
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </button>
+      </div>
 
-      {isDaily ? (
+      {histOpen ? (
+        <div className="hcard-history">
+          <div className="hcard-month-nav">
+            <button className="hcard-month-arrow" onClick={() => setMonthOffset(o => o - 1)} aria-label="Previous month">‹</button>
+            <span className="hcard-month-label">{MINI_MONTHS[dispMonth]} {dispYear}</span>
+            <button className="hcard-month-arrow" disabled={monthOffset >= 0} onClick={() => setMonthOffset(o => Math.min(0, o + 1))} aria-label="Next month">›</button>
+          </div>
+          <p className="hcard-history-hint">Tap any past day, cycles done → missed → blank.</p>
+          <MiniMonthHeatmap habit={habit} year={dispYear} monthIdx={dispMonth} ht={ht} onEdit={onEditDay} />
+        </div>
+      ) : isDaily ? (
         <div className="hcard-week">
           {weekDays.map(({ key, label, isFuture, isToday }) => (
             <DayCircle
@@ -615,19 +635,6 @@ const HabitCard: React.FC<{
               <span className="hcard-day-label">{u.label}</span>
             </div>
           ))}
-        </div>
-      )}
-
-
-      {histOpen && (
-        <div className="hcard-history">
-          <div className="hcard-month-nav">
-            <button className="hcard-month-arrow" onClick={() => setMonthOffset(o => o - 1)} aria-label="Previous month">‹</button>
-            <span className="hcard-month-label">{MINI_MONTHS[dispMonth]} {dispYear}</span>
-            <button className="hcard-month-arrow" disabled={monthOffset >= 0} onClick={() => setMonthOffset(o => Math.min(0, o + 1))} aria-label="Next month">›</button>
-          </div>
-          <p className="hcard-history-hint">Tap any past day, cycles done → missed → blank.</p>
-          <MiniMonthHeatmap habit={habit} year={dispYear} monthIdx={dispMonth} ht={ht} onEdit={onEditDay} />
         </div>
       )}
       </div>

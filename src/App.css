@@ -2081,6 +2081,10 @@ h1, h2, h3, h4, .sora {
   border: 1px solid rgba(255,255,255,0.05);
   text-align: center; overflow: hidden;
 }
+/* Tappable Steps cell (Yesterday) — reset button chrome, add a subtle affordance. */
+.ltm-cell-btn { cursor: pointer; font: inherit; color: inherit; width: 100%; }
+.ltm-cell-btn:active { transform: scale(0.98); }
+.ltm-cell-btn:hover { border-color: var(--theme-dim, rgba(255,255,255,0.15)); }
 .ltm-eyebrow {
   position: absolute; top: 9px; left: 12px;
   font-family: var(--font-data); font-size: 0.54rem; font-weight: 700;
@@ -6061,18 +6065,20 @@ h1, h2, h3, h4, .sora {
 .hcard-summary {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
-.hcard-summary .hcard-name {
-  flex: 1; min-width: 0;
-  font-size: 0.92rem;
-  white-space: normal;
-  overflow-wrap: anywhere;
-  line-height: 1.25;
+/* Middle column: name on top, meta row (level · chevron · streak) underneath. */
+.hcard-head { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.hcard-head .hcard-name {
+  flex: none;
+  font-size: 0.95rem; font-weight: 700;
+  white-space: normal; overflow-wrap: anywhere; line-height: 1.2;
 }
-.hcard-summary .hcard-cog { flex-shrink: 0; }
+.hcard-head-meta { display: flex; align-items: center; gap: 8px; }
+.hcard-head-meta .hcard-chevron { margin: 0; }
+.hcard-head-controls { flex-shrink: 0; display: flex; align-items: center; gap: 2px; align-self: flex-start; }
 .hcard-summary .hcard-icon.done { color: var(--theme); }
 
 /* Smooth expand/collapse via grid-template-rows (0fr → 1fr) */
@@ -7178,6 +7184,30 @@ h1, h2, h3, h4, .sora {
 }
 .hcard-risk-chip.warning { color: rgba(255,185,40,0.75); }
 .hcard-risk-chip.danger  { color: rgba(255,69,58,0.75); }
+
+/* Streak prompt row — carries the streak status + the calendar toggle. Opening
+   the calendar swaps the M-S row for the month heatmap. */
+.hcard-streakrow {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  margin-top: 4px; padding: 4px 0;
+}
+.hcard-streak-label {
+  font-family: 'Sora', sans-serif; font-size: 0.72rem; font-weight: 600;
+  letter-spacing: 0.01em; color: rgba(255,255,255,0.55); min-width: 0;
+}
+.hcard-streakrow.warning .hcard-streak-label { color: rgba(255,185,40,0.85); }
+.hcard-streakrow.danger  .hcard-streak-label { color: rgba(255,69,58,0.85); }
+.hcard-cal-toggle {
+  flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 28px; padding: 0; border: none; border-radius: 8px;
+  background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.55); cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.hcard-cal-toggle.active { color: var(--theme); background: var(--theme-glow); }
+.hcard-cal-toggle:active { transform: scale(0.92); }
+/* Recent-miss KPI turns amber when there are misses. */
+.hsp-stat.miss .hsp-stat-ico { color: #FFB928; }
+.hsp-stat.miss .hsp-stat-val { color: #FFB928; }
 
 /* Week circles */
 .hcard-week {
