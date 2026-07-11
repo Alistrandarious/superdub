@@ -18,6 +18,25 @@ export interface Article {
 
 export const ARTICLES: Article[] = [
   {
+    id: 'plan-back-on-today',
+    title: 'Your Plan, Back Where You Look Every Day',
+    author: 'Ali Shah',
+    readMins: 2,
+    tag: 'Progress',
+    accent: '#2E8BFF',
+    dek: 'The weight-journey gauge, your weekly trend and your step count return to the Today tab, so the whole picture is one glance away.',
+    body: [
+      { t: 'p', text: 'When the app moved to its six clean tabs, the old Plan screen stepped back to make room. The intent was always to fold its best parts into Progress, and that never quite happened, so the Today tab ended up a little bare. This puts it right.' },
+      { t: 'h', text: 'The gauge you missed' },
+      { t: 'p', text: 'Open Progress and tap Today. The semi-circle is back: your current weight sits big in the middle, the arc sweeps from where you started round to your goal, and a small bar underneath shows how much of your time you have used. One look tells you if you are ahead of the clock or behind it.' },
+      { t: 'quote', text: 'A goal you can see is a goal you keep.' },
+      { t: 'h', text: 'The week, and your steps' },
+      { t: 'p', text: 'Under the gauge sits Weight This Week: your logged weigh-ins, a smoothed line through the noise, your 28-day direction and the golden safe-zone corridor around the ideal path. Below that, your step goal for today and how yesterday landed. The trend, the target and the movement, together.' },
+      { t: 'h', text: 'Nothing lost' },
+      { t: 'p', text: 'The full Plan page, with your calorie target, the adaptive engine and Smart Adjust, is still there any time you want the detail: open the cog menu and tap it. And the grey Quit panel on Habits now sits just to the left of Daily, one swipe away, while the page still opens on Daily each day. Open Today and take it all in. 🎯' },
+    ],
+  },
+  {
     id: 'make-it-yours',
     title: 'Make It Yours: Star, Reorder, and Gender Dub',
     author: 'Ali Shah',

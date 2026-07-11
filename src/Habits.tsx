@@ -21,7 +21,12 @@ import {
 } from './levels';
 
 export type Cadence = 'daily' | 'weekly' | 'monthly' | 'yearly' | 'quit';
-export const CADENCE_ORDER: Cadence[] = ['daily', 'weekly', 'monthly', 'yearly', 'quit'];
+// Quit sits leftmost so a left-swipe off Daily reaches it; the carousel still
+// opens on Daily each day (see startIndex where CadenceCarousel is mounted).
+export const CADENCE_ORDER: Cadence[] = ['quit', 'daily', 'weekly', 'monthly', 'yearly'];
+// Add-habit "How often?" picker keeps a daily-first order (Quit last) — reads
+// more naturally there than leading with Quit.
+export const ADD_CADENCE_ORDER: Cadence[] = ['daily', 'weekly', 'monthly', 'yearly', 'quit'];
 export const CADENCE_META: Record<Cadence, { label: string; color: string; icon: string; period: string }> = {
   daily:   { label: 'Daily',   color: '#2FD27E', icon: '✓',  period: 'today' },
   weekly:  { label: 'Weekly',  color: '#2E8BFF', icon: '📅', period: 'this week' },
@@ -1284,7 +1289,7 @@ const Habits: React.FC = () => {
             </div>
             <p className="hb-sheet-sub" style={{ marginTop: 16, marginBottom: 8 }}>How often?</p>
             <div className="cadence-picker">
-              {CADENCE_ORDER.map(cad => {
+              {ADD_CADENCE_ORDER.map(cad => {
                 const m = CADENCE_META[cad];
                 const active = newHabitCadence === cad;
                 return (
@@ -1447,7 +1452,7 @@ const Habits: React.FC = () => {
         )}
 
         {/* Your habits, cadence carousel (Daily · Weekly · Monthly · Yearly) */}
-        <CadenceCarousel panels={cadencePanels} startIndex={0} compact={scrolled} />
+        <CadenceCarousel panels={cadencePanels} startIndex={CADENCE_ORDER.indexOf('daily')} compact={scrolled} />
 
         {/* Featured banner, tap to open & join (below the user's habits) */}
         <button className="hb-featured" onClick={() => setFeaturedOpen(true)}>

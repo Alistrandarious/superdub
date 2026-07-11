@@ -1980,6 +1980,20 @@ h1, h2, h3, h4, .sora {
 .today-target-val { font-family: var(--font-data); font-weight: 700; font-size: 1.15rem; color: #FFE08A; line-height: 1; }
 .today-target-lbl { font-family: var(--font-ui); font-size: 0.58rem; color: rgba(255,255,255,0.5); text-align: center; }
 
+/* ── Today panel = the Plan (gauge + weekly chart + steps) folded into Progress.
+   It runs taller than the height-locked box, so it keeps its natural height and
+   the viz area scrolls it (same trick as the Stats panel). ── */
+.cc-slide-viz > .today-plan {
+  flex-shrink: 0; margin: 0 16px; display: flex; flex-direction: column; gap: 12px;
+}
+.plan-hero--today { margin: 0; }
+.plan-hero--today .plan-hero-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.plan-hero-title { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; color: #F0F4FF; }
+.plan-hero--today .plan-hero-edit { margin-left: auto; }
+.today-plan .weight-sparkline-card,
+.today-plan .today-plan-steps,
+.today-plan .plan-hero--today { margin-left: 0; margin-right: 0; }
+
 /* ── Vitals prompt — sleek sleep/mood/energy sliders that reveal in sequence ── */
 .vitals-step { margin: 16px 0 2px; }
 .vitals-label {
