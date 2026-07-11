@@ -7229,6 +7229,23 @@ h1, h2, h3, h4, .sora {
   font-size: 0.68rem; cursor: pointer; padding: 2px 4px;
 }
 
+/* Cadence calendar — one cell per period (weeks / months / year) for non-daily
+   habits, shown in place of the daily month grid. */
+.cadence-cal { display: grid; gap: 6px; padding-top: 6px; }
+.cadence-cal--monthly, .cadence-cal--weekly { grid-template-columns: repeat(4, 1fr); }
+.cadence-cal--yearly { grid-template-columns: 1fr; }
+.cadence-cal-cell {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  padding: 10px 4px; border-radius: 10px; cursor: pointer;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.55);
+}
+.cadence-cal-cell.done { background: color-mix(in srgb, var(--theme) 22%, transparent); border-color: var(--theme-dim); color: var(--theme); }
+.cadence-cal-cell.failed { background: rgba(255,84,112,0.14); border-color: rgba(255,84,112,0.4); color: #FF9DAC; }
+.cadence-cal-cell.future { opacity: 0.35; cursor: default; }
+.cadence-cal-tick { height: 14px; display: flex; align-items: center; }
+.cadence-cal-lbl { font-family: 'Space Mono', monospace; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.04em; }
+
 /* Week circles */
 .hcard-week {
   display: flex;

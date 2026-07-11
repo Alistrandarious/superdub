@@ -11,6 +11,16 @@ export interface UpdateEntry {
 export const UPDATE_LOG: UpdateEntry[] = [
   {
     date: '2026-07-11',
+    emoji: '🗓️',
+    title: 'Weekly, monthly and yearly habits get their own calendar',
+    summary: 'Open the calendar on a weekly, monthly or yearly habit and it now shows one cell per period, weeks, months or the year, instead of a grid of single days that never fit its rhythm.',
+    points: [
+      'Daily habits keep the familiar month grid of days.',
+      'Weekly habits show the weeks of the month; monthly habits show all twelve months; yearly shows the year. Tap a period to mark it, same as before.',
+    ],
+  },
+  {
+    date: '2026-07-11',
     emoji: '📅',
     title: 'Habit due dates, and a sleep-chart fix',
     summary: 'You can now pin a due date to any habit, whatever its cadence. And sleep will show on your chart even on nights you logged hours without exact bed and wake times.',

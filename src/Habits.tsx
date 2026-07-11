@@ -359,6 +359,59 @@ const CheckSVG: React.FC<{ size?: number; strokeWidth?: number }> = ({ size = 14
   </svg>
 );
 
+// Cadence-aware calendar for non-daily habits: instead of a daily month grid, each
+// cell is one PERIOD (a week of the month for weekly, a month for monthly, the year
+// for yearly). A cell is "done" if any day inside it is done. Tapping cycles that
+// period's representative day through the honesty-gated editor.
+// ponytail: a period toggle only edits its representative day (latest past day),
+// not every day in the bucket — keeps the tap simple; full-bucket clear is a later upgrade.
+const CadenceCalendar: React.FC<{
+  habit: string; cadence: Cadence; year: number; monthIdx: number;
+  ht: HabitTracker; onEdit: (habit: string, day: string, cur: HabitState) => void;
+}> = ({ habit, cadence, year, monthIdx, ht, onEdit }) => {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const todayMs = (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); })();
+  const dnum = (ddmm: string) => new Date(year, parseInt(ddmm.slice(3)) - 1, parseInt(ddmm.slice(0, 2))).getTime();
+
+  type Cell = { key: string; label: string; done: boolean; failed: boolean; future: boolean; repDay: string };
+  const mkCell = (key: string, label: string, bucket: string[]): Cell => {
+    const doneDays = bucket.filter(d => ht[d]?.[habit] === 'done');
+    const failedDays = bucket.filter(d => ht[d]?.[habit] === 'failed');
+    const past = bucket.filter(d => dnum(d) <= todayMs);
+    const repDay = past.length ? past[past.length - 1] : (bucket[0] ?? '');
+    return { key, label, done: doneDays.length > 0, failed: failedDays.length > 0 && doneDays.length === 0, future: past.length === 0, repDay };
+  };
+
+  let cells: Cell[] = [];
+  if (cadence === 'monthly') {
+    cells = Array.from({ length: 12 }, (_, m) => mkCell(`m${m}`, MINI_MONTHS[m], ALL_DAYS.filter(d => d.slice(3) === pad(m + 1))));
+  } else if (cadence === 'yearly') {
+    cells = [mkCell('y', String(year), ALL_DAYS.slice())];
+  } else { // weekly — the weeks of the shown month
+    const mm = pad(monthIdx + 1);
+    const monthDays = ALL_DAYS.filter(d => d.slice(3) === mm);
+    const weekOf = (d: string) => Math.min(4, Math.ceil(parseInt(d.slice(0, 2)) / 7));
+    cells = [1, 2, 3, 4].map(w => mkCell(`w${w}`, `W${w}`, monthDays.filter(d => weekOf(d) === w)));
+  }
+
+  return (
+    <div className={`cadence-cal cadence-cal--${cadence}`}>
+      {cells.map(c => (
+        <button
+          key={c.key}
+          className={`cadence-cal-cell ${c.done ? 'done' : c.failed ? 'failed' : ''} ${c.future ? 'future' : ''}`}
+          disabled={c.future || !c.repDay}
+          onClick={() => { if (!c.future && c.repDay) onEdit(habit, c.repDay, ht[c.repDay]?.[habit] ?? null); }}
+          aria-label={`${c.label}: ${c.done ? 'done' : c.failed ? 'missed' : 'blank'}`}
+        >
+          <span className="cadence-cal-tick">{c.done ? <CheckSVG size={13} strokeWidth={2} /> : c.failed ? '✕' : ''}</span>
+          <span className="cadence-cal-lbl">{c.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+};
+
 // One weekday mini-circle. Single tap toggles done↔blank (the primary action);
 // double tap toggles failed↔blank. A short timer disambiguates the two, so the
 // first tap is deferred ~220ms — the standard cost of supporting double-tap.
@@ -600,13 +653,19 @@ const HabitCard: React.FC<{
 
       {histOpen ? (
         <div className="hcard-history">
-          <div className="hcard-month-nav">
-            <button className="hcard-month-arrow" onClick={() => setMonthOffset(o => o - 1)} aria-label="Previous month">‹</button>
-            <span className="hcard-month-label">{MINI_MONTHS[dispMonth]} {dispYear}</span>
-            <button className="hcard-month-arrow" disabled={monthOffset >= 0} onClick={() => setMonthOffset(o => Math.min(0, o + 1))} aria-label="Next month">›</button>
-          </div>
-          <p className="hcard-history-hint">Tap any past day, cycles done → missed → blank.</p>
-          <MiniMonthHeatmap habit={habit} year={dispYear} monthIdx={dispMonth} ht={ht} onEdit={onEditDay} />
+          {(isDaily || cadence === 'weekly') && (
+            <div className="hcard-month-nav">
+              <button className="hcard-month-arrow" onClick={() => setMonthOffset(o => o - 1)} aria-label="Previous month">‹</button>
+              <span className="hcard-month-label">{MINI_MONTHS[dispMonth]} {dispYear}</span>
+              <button className="hcard-month-arrow" disabled={monthOffset >= 0} onClick={() => setMonthOffset(o => Math.min(0, o + 1))} aria-label="Next month">›</button>
+            </div>
+          )}
+          <p className="hcard-history-hint">
+            {isDaily ? 'Tap any past day, cycles done → missed → blank.' : 'Tap a period, cycles done → missed → blank.'}
+          </p>
+          {isDaily
+            ? <MiniMonthHeatmap habit={habit} year={dispYear} monthIdx={dispMonth} ht={ht} onEdit={onEditDay} />
+            : <CadenceCalendar habit={habit} cadence={cadence} year={dispYear} monthIdx={dispMonth} ht={ht} onEdit={onEditDay} />}
         </div>
       ) : isDaily ? (
         <div className="hcard-week">
