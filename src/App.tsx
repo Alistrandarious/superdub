@@ -18,7 +18,10 @@ import { api } from './api';
 import { BUILD_TAG } from './version';
 import { kcalPerStep as kcalPerStepFor, stepsToKm, estimateIntakeKcal } from './energy';
 import { loggingNow } from './day';
-import { pageTheme, GROWTH, TEAL } from './theme';
+import { useNavigate } from 'react-router-dom';
+import { pageTheme, GROWTH, HEALTH, TEAL } from './theme';
+import PlanGauge from './PlanGauge';
+import WeightSparkline from './WeightSparkline';
 import { useWeightUnit, formatWeightKg, kgToUnitValue, unitLabel, WeightUnit } from './weightUnit';
 import WeightInput from './WeightInput';
 import StreakFlame from './StreakFlame';
@@ -263,6 +266,7 @@ const INITIAL_TRACKER = initData([]);
 interface AppProps { onLogout?: () => void; }
 
 const App: React.FC<AppProps> = ({ onLogout }) => {
+  const navigate = useNavigate();
   const unit = useWeightUnit();
   const trackerBodyRef = useRef<HTMLDivElement>(null);
 
@@ -1395,6 +1399,23 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     null,
   ];
 
+  // ── Plan-on-Today inputs — the old "Plan" surface folded into Progress→Today:
+  // the weight-journey gauge + "Weight This Week" chart + a step-count tile.
+  const planAllDays = Object.entries(tracker).map(([day, v]: [string, any]) => ({ ...v, day }));
+  const planFirstLoggedW = (() => { const e = planAllDays.find(d => parseFloat(d.weight) > 0); return e ? parseFloat(e.weight) : null; })();
+  const planTodayW = parseFloat(tracker[todayKey]?.weight ?? '') || 0;
+  const planGaugeWeight = planTodayW || startWeight;
+  const planStartW = planFirstLoggedW ?? (planGoal?.startWeight ?? (startWeight > 0 ? startWeight : null));
+  const planGoalWNum = parseFloat(goalWeight) || 0;
+  const planTargetW = planGoal?.targetWeight ?? (planGoalWNum > 0 ? planGoalWNum : null);
+  const planLossPerWeek = parseFloat(lossPerWeek) || 0;
+  const planWeightDiff = planGaugeWeight > 0 && planTargetW != null ? Math.abs(planGaugeWeight - planTargetW) : null;
+  const planWeeksLeft = planWeightDiff && planLossPerWeek > 0 ? Math.ceil(planWeightDiff / planLossPerWeek) : null;
+  const planStartMs = planGoal?.startDate ? new Date(planGoal.startDate).getTime() : null;
+  const planTargetMs = planGoal?.targetDate ? new Date(planGoal.targetDate).getTime() : null;
+  // Green when losing toward goal, blue when gaining — matches the Plan page accent.
+  const planAccent = planTargetW != null && planGaugeWeight > 0 ? (planTargetW > planGaugeWeight ? GROWTH : HEALTH) : GROWTH;
+
   // Starred habits (set on the Habits page) with their state for a given day.
   const renderStarStrip = (dayKey: string) => {
     const stars = starredHabits.filter(h => realHabits.includes(h));
@@ -1656,28 +1677,59 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
       </div>{/* /Yesterday panel */}
 
-      {/* ── Panel 1 · Today — live targets to aim for ── */}
-      <div className="story-panel story-panel--intro today-soon">
-        <div className="today-soon-card">
-          <span className="today-soon-eyebrow">TODAY</span>
-          <h3 className="today-soon-title">What to aim for</h3>
-          <div className="today-targets">
-            <div className="today-target">
-              <span className="today-target-val">{targetCalories > 0 ? targetCalories.toLocaleString() : '—'}</span>
-              <span className="today-target-lbl">kcal target</span>
-            </div>
-            <div className="today-target">
-              <span className="today-target-val">{effectiveStepTarget.toLocaleString()}</span>
-              <span className="today-target-lbl">step goal</span>
-            </div>
-            <div className="today-target">
-              <span className="today-target-val">{realHabits.length}</span>
-              <span className="today-target-lbl">{realHabits.length === 1 ? 'habit today' : 'habits today'}</span>
-            </div>
+      {/* ── Panel 1 · Today — your Plan: weight-journey gauge + weekly chart + steps ── */}
+      <div className="story-panel today-plan">
+        <section className="plan-hero plan-hero--today">
+          <div className="plan-hero-head">
+            <span className="today-soon-eyebrow">TODAY</span>
+            <span className="plan-hero-title">Your plan</span>
+            <button className="plan-hero-edit" onClick={() => navigate(planGoal ? '/plan' : '/profile')}>Edit →</button>
           </div>
-          <p className="today-soon-body">Your live targets for today. Log as you go, then check Yesterday to see how you closed the day.</p>
-          {renderStarStrip(todayKey)}
+          <PlanGauge
+            displayWeight={planGaugeWeight}
+            startW={planStartW}
+            targetW={planTargetW}
+            startMs={planStartMs}
+            targetMs={planTargetMs}
+            accent={planAccent}
+            weeksLeft={planWeeksLeft}
+          />
+        </section>
+
+        <WeightSparkline
+          allTrackerDays={planAllDays}
+          currentWeight={planGaugeWeight > 0 ? planGaugeWeight : startWeight}
+          goalWeight={planTargetW ?? planGoalWNum}
+          lossPerWeek={planLossPerWeek}
+        />
+
+        {/* Step count for today, with yesterday's result */}
+        <div className="diet-section today-plan-steps">
+          <div className="atc-steps-needed">
+            <div className="atc-steps-big">{effectiveStepTarget.toLocaleString()}</div>
+            <div className="atc-steps-sub">step goal today</div>
+          </div>
+          {ySteps > 0 && (
+            <div className="step-perf-yesterday">
+              <div className="step-perf-bar-wrap">
+                <div className="step-perf-bar">
+                  <div className="step-perf-fill" style={{
+                    width: `${Math.min(100, (ySteps / effectiveStepTarget) * 100)}%`,
+                    background: ySteps >= effectiveStepTarget ? '#2FD27E' : '#FFD233',
+                  }} />
+                </div>
+              </div>
+              <div className="step-perf-row">
+                <span className="step-perf-count">{ySteps.toLocaleString()} yesterday</span>
+                <span className={`step-perf-badge${ySteps >= effectiveStepTarget ? ' hit' : ' miss'}`}>
+                  {ySteps >= effectiveStepTarget ? '✓ Target hit' : `${(effectiveStepTarget - ySteps).toLocaleString()} short`}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
+
+        {renderStarStrip(todayKey)}
       </div>
 
       {/* ── Panel 2 · Weight ── */}

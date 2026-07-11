@@ -8,10 +8,10 @@
 
 | Route | Component | Role | Nav | Accent |
 |---|---|---|---|---|
-| `/` | `Habits.tsx` | **Habits** (home) — habit cards (star toggle + drag-to-reorder via `ReorderableList`/`reorder.ts`), week strip, Daily Log, streaks; cadence carousel Daily · Weekly · Monthly · Yearly · **Quit** (grey abstinence timers, `QuitCard` + `quit.ts`) | Habits | HEALTH green |
-| `/dashboard` | `App.tsx` | **Progress** — Today live targets, Yesterday's Verdict, weight trend, safe-zone, sleep, chart carousel | Progress | GROWTH blue |
+| `/` | `Habits.tsx` | **Habits** (home) — habit cards (star toggle + drag-to-reorder via `ReorderableList`/`reorder.ts`), week strip, Daily Log, streaks; cadence carousel **Quit** · Daily · Weekly · Monthly · Yearly (Quit leftmost — grey abstinence timers, `QuitCard` + `quit.ts`; carousel opens on Daily each day) | Habits | HEALTH green |
+| `/dashboard` | `App.tsx` | **Progress** — Today = your Plan (`PlanGauge` semicircle + `WeightSparkline` weekly chart + step tile, folded in from `/diet`), Yesterday's Verdict, weight trend, safe-zone, sleep, chart carousel | Progress | GROWTH blue |
 | `/community` | `CommunityPage.tsx` | **Global & Friends** — shared Global habit (deed toggle) + Friends (coming soon) | Global | GOLD |
-| `/diet` | `Diet.tsx` | Plan cards — adaptive plan, activity targets, Smart Adjust (folding into Progress; **off the nav**, reachable via cog) | — | GROWTH blue |
+| `/diet` | `Diet.tsx` | Plan cards — weight-journey gauge (`PlanGauge`), Weight This Week (`WeightSparkline`), adaptive plan, activity targets, Smart Adjust. Gauge + weekly chart now shared with Progress→Today; **off the nav**, reachable via cog | — | GROWTH blue |
 | `/plan` | `PlanPage.tsx` | Weight-plan setup / adaptive plan detail | — | GROWTH blue |
 | `/food-log` | `FoodLog.tsx` | Daily food / calorie logging | — | HEALTH green |
 | `/meal-plans` | `MealPlans.tsx` | Meal plan browsing / assignment | — | HEALTH green |

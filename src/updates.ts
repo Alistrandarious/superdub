@@ -11,6 +11,18 @@ export interface UpdateEntry {
 export const UPDATE_LOG: UpdateEntry[] = [
   {
     date: '2026-07-11',
+    emoji: '🎯',
+    title: 'Your Plan is back, right on the Today tab',
+    summary: 'Progress → Today now shows your weight plan again: the start-to-goal semi-circle, your Weight This Week chart, and your step count, all in one place. Quit habits also moved to the left of Daily.',
+    points: [
+      'Open Progress and tap Today. Your weight-journey gauge is back: current weight in the middle, how far along you are from start to goal, with the time you have used underneath.',
+      'Right below it sits Weight This Week, your smoothed trend, safe-zone corridor and 28-day direction, plus your step goal and how yesterday went.',
+      'On the Habits page, the grey Quit panel now sits to the left of Daily. The page still opens on Daily each time, so Quit is one swipe left when you want it.',
+      'Nothing was lost, the full Plan page is still one tap away in the cog menu.',
+    ],
+  },
+  {
+    date: '2026-07-11',
     emoji: '⭐',
     title: 'Make it yours: star, reorder, and gender Dub',
     summary: 'Three small touches that make your habits feel like yours. Star the ones that matter, drag them into the order you like, and set whether Dub is a he, she or they.',
