@@ -11,6 +11,18 @@ export interface UpdateEntry {
 export const UPDATE_LOG: UpdateEntry[] = [
   {
     date: '2026-07-11',
+    emoji: '📌',
+    title: 'Give a weekly, monthly or yearly habit its own day',
+    summary: 'A non-daily habit can now run on a set day. Pick a weekday for a weekly habit, a date for a monthly one, or a month and day for a yearly one. It anchors the tick, shows up in Today as it approaches, and only nudges you on its day.',
+    points: [
+      'Open a weekly, monthly or yearly habit and choose the day it runs on, from a weekday, a day of the month, or a month and date. Leave it on Any day to keep the old anytime-in-the-period behaviour.',
+      'The circle by the title and the calendar now aim at that scheduled day, so a tick lands where you meant it.',
+      'The Today tab lists a scheduled habit as its day approaches, and flags it once the day has passed and it is still not done.',
+      'If you set a reminder on a scheduled habit, the push only comes on its day, not every day of the period.',
+    ],
+  },
+  {
+    date: '2026-07-11',
     emoji: '🟡',
     title: 'Mark a habit day Not Applicable, plus a fuller Progress page',
     summary: 'Some days a habit simply does not apply. You can now mark a day Not Applicable so it sits out neutrally, without denting your streak. Past days you never logged now show a yellow question mark, and the Progress page gains a Today list and a clearer Weight Plan tab.',

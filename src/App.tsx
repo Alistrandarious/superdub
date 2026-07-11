@@ -33,6 +33,7 @@ import YesterdayMatrix from './YesterdayMatrix';
 import GoalSheet from './GoalSheet';
 import SleepCandleChart, { hhmmToAxis, type SleepCandle } from './SleepCandleChart';
 import { CADENCE_ORDER, CADENCE_META, type Cadence } from './Habits';
+import { scheduledDateInPeriod } from './habitSchedule';
 import { UsersIc, AppleIc, CalendarIc } from './icons';
 
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -351,6 +352,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   // Habit cadence (daily/weekly/monthly/yearly), loaded from the API. Lets the
   // Progress page tell a daily habit from a yearly one (chart filter + Yesterday).
   const [habitCadence, setHabitCadence] = useState<Record<string, Cadence>>({});
+  const [habitSchedule, setHabitSchedule] = useState<Record<string, string | null>>({});
   const [chartCadence, setChartCadence] = useState<Cadence>('daily');
   // To-do items for the "Today" tab (due today → this week). Loaded once on mount.
   const [tasks, setTasks] = useState<{ id: string; text: string; done: boolean; type: string; dueDate?: string }[]>([]);
@@ -427,8 +429,10 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       setStarredHabits(habitObjs.filter(h => h.starred).map(h => h.name));
       // Keep each habit's cadence so the Progress page can filter by period.
       const cad: Record<string, Cadence> = {};
-      habitObjs.forEach(h => { cad[h.name] = (h.cadence as Cadence) || 'daily'; });
+      const sched: Record<string, string | null> = {};
+      habitObjs.forEach(h => { cad[h.name] = (h.cadence as Cadence) || 'daily'; sched[h.name] = (h as any).schedule ?? null; });
       setHabitCadence(cad);
+      setHabitSchedule(sched);
 
       // Merge DB data into full-year tracker structure
       const merged = initData(activeHabits);
@@ -1472,25 +1476,30 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     .sort((a, b) => (a.dueDate! < b.dueDate! ? -1 : a.dueDate! > b.dueDate! ? 1 : 0));
   const todayMid = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   // ponytail: recomputed each render (habit list is tiny); memoize if it ever grows.
-  const pendingHabits = habits.filter(h => {
+  const pendingHabits = habits.flatMap(h => {
     const cad = habitCadence[h] ?? 'daily';
-    if (cad !== 'weekly' && cad !== 'monthly') return false;
-    let start: Date, end: Date;
-    if (cad === 'weekly') {
-      const dow = (todayMid.getDay() + 6) % 7; // Mon=0
-      start = new Date(todayMid); start.setDate(todayMid.getDate() - dow);
-      end = new Date(start); end.setDate(start.getDate() + 6);
+    if (cad !== 'weekly' && cad !== 'monthly' && cad !== 'yearly') return [];
+    const sched = habitSchedule[h] ?? null;
+    // Done anywhere in the current period → not pending.
+    if (currentPeriodDays(cad).some(dk => tracker[dk]?.habits[h] === true)) return [];
+    // Target = the scheduled day if set, otherwise the period's end. A yearly habit
+    // with no schedule is too far out to nudge, so it's skipped.
+    const sd = scheduledDateInPeriod(cad, sched, now);
+    let target: Date;
+    if (sd) target = new Date(sd.getFullYear(), sd.getMonth(), sd.getDate());
+    else if (cad === 'yearly') return [];
+    else if (cad === 'weekly') {
+      const dow = (todayMid.getDay() + 6) % 7;
+      target = new Date(todayMid); target.setDate(todayMid.getDate() - dow + 6);
     } else {
-      start = new Date(now.getFullYear(), now.getMonth(), 1);
-      end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      target = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     }
-    let doneInPeriod = false;
-    for (const d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      if (tracker[ddmmOf(d)]?.habits[h] === true) { doneInPeriod = true; break; }
-    }
-    if (doneInPeriod) return false;
-    const daysLeft = Math.round((end.getTime() - todayMid.getTime()) / 86400000);
-    return daysLeft >= 0 && daysLeft <= 3;
+    const daysLeft = Math.round((target.getTime() - todayMid.getTime()) / 86400000);
+    if (daysLeft > 3) return [];
+    const overdue = daysLeft < 0;
+    const when = overdue ? 'overdue' : daysLeft === 0 ? 'today'
+      : target.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+    return [{ name: h, cad, overdue, when }];
   });
   const todayFeedCount = dueTasks.length + pendingHabits.length;
 
@@ -1783,18 +1792,15 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 </button>
               );
             })}
-            {pendingHabits.map(h => {
-              const cad = habitCadence[h] ?? 'weekly';
-              return (
-                <button key={h} className="today-feed-item today-feed-item--habit" onClick={() => navigate('/')}>
-                  <span className="today-feed-ico" style={{ color: CADENCE_META[cad].color }}>
-                    <span className="today-feed-dot" style={{ background: CADENCE_META[cad].color }} />
-                  </span>
-                  <span className="today-feed-text">{h}</span>
-                  <span className="today-feed-when">{CADENCE_META[cad].label} · due soon</span>
-                </button>
-              );
-            })}
+            {pendingHabits.map(({ name, cad, overdue, when }) => (
+              <button key={name} className={`today-feed-item today-feed-item--habit${overdue ? ' overdue' : ''}`} onClick={() => navigate('/')}>
+                <span className="today-feed-ico" style={{ color: CADENCE_META[cad].color }}>
+                  <span className="today-feed-dot" style={{ background: CADENCE_META[cad].color }} />
+                </span>
+                <span className="today-feed-text">{name}</span>
+                <span className="today-feed-when">{when}</span>
+              </button>
+            ))}
           </div>
         )}
       </div>

@@ -4,6 +4,7 @@ import './App.css';
 import { api } from './api';
 import { loggingNow, getLoggingDay } from './day';
 import { cycleState, type HabitState } from './habitState';
+import { scheduleLabel, scheduledDateInPeriod, scheduleDdmm, WEEKDAYS_FULL } from './habitSchedule';
 import WeeklyRecap from './WeeklyRecap';
 import CadenceCarousel from './CadenceCarousel';
 import SuperdubHeader from './SuperdubHeader';
@@ -46,10 +47,14 @@ function ddmmToDateNum(ddmm: string): number {
   return new Date(YEAR, parseInt(ddmm.slice(3)) - 1, parseInt(ddmm.slice(0, 2))).getTime();
 }
 
-function computePeriodUnits(habit: string, cadence: Cadence, ht: HabitTracker, today: string): PeriodUnit[] {
+function computePeriodUnits(habit: string, cadence: Cadence, ht: HabitTracker, today: string, schedule?: string | null): PeriodUnit[] {
   const now = new Date();
   const todayNum = ddmmToDateNum(today);
   const doneIn = (days: string[]) => days.filter(d => ht[d]?.[habit] === 'done');
+  // When the habit is anchored to a specific day, the current period's target/toggle
+  // day is that scheduled day, not just today.
+  const sd = scheduledDateInPeriod(cadence, schedule ?? null, now);
+  const schedKey = sd ? scheduleDdmm(sd) : null;
 
   if (cadence === 'weekly') {
     const mm = String(now.getMonth() + 1).padStart(2, '0');
@@ -59,7 +64,7 @@ function computePeriodUnits(habit: string, cadence: Cadence, ht: HabitTracker, t
       const bucket = monthDays.filter(d => weekOf(d) === w);
       const doneDays = doneIn(bucket);
       const inBucket = bucket.includes(today);
-      const repDay = inBucket ? today : (bucket[0] ?? today);
+      const repDay = inBucket ? (schedKey && bucket.includes(schedKey) ? schedKey : today) : (bucket[0] ?? today);
       return { key: `w${w}`, label: `W${w}`, done: doneDays.length > 0, isFuture: bucket.length > 0 && ddmmToDateNum(bucket[0]) > todayNum, isCurrent: inBucket, repDay, doneDays };
     });
   }
@@ -69,13 +74,13 @@ function computePeriodUnits(habit: string, cadence: Cadence, ht: HabitTracker, t
       const bucket = ALL_DAYS.filter(d => d.slice(3) === mm);
       const doneDays = doneIn(bucket);
       const isCurrent = m === now.getMonth();
-      const repDay = isCurrent ? today : (bucket[0] ?? today);
+      const repDay = isCurrent ? (schedKey ?? today) : (bucket[0] ?? today);
       return { key: `m${m}`, label: MONTH_INITIALS[m], done: doneDays.length > 0, isFuture: m > now.getMonth(), isCurrent, repDay, doneDays };
     });
   }
   if (cadence === 'yearly') {
     const doneDays = doneIn(ALL_DAYS);
-    return [{ key: 'y', label: String(YEAR), done: doneDays.length > 0, isFuture: false, isCurrent: true, repDay: today, doneDays }];
+    return [{ key: 'y', label: String(YEAR), done: doneDays.length > 0, isFuture: false, isCurrent: true, repDay: schedKey ?? today, doneDays }];
   }
   // daily handled inline by the existing weekday row
   return [];
@@ -515,8 +520,10 @@ const HabitCard: React.FC<{
   onSetDueDate: (habit: string, dueDate: string | null) => void;
   reminderHour?: number | null;
   onSetReminder: (habit: string, hour: number | null) => void;
+  schedule?: string | null;
+  onSetSchedule: (habit: string, schedule: string | null) => void;
   dragHandle?: React.ReactNode;
-}> = ({ habit, stats, weekDays, ht, today, cadence, onToggleDay, onEditDay, onRequestRemove, startDate, starred, onToggleStar, dueDate, onSetDueDate, reminderHour, onSetReminder, dragHandle }) => {
+}> = ({ habit, stats, weekDays, ht, today, cadence, onToggleDay, onEditDay, onRequestRemove, startDate, starred, onToggleStar, dueDate, onSetDueDate, reminderHour, onSetReminder, schedule, onSetSchedule, dragHandle }) => {
   const [histOpen, setHistOpen] = useState(false);
   const [monthOffset, setMonthOffset] = useState(0); // 0 = this month, -1 = last month …
   // Shrink the name font when it wraps to more than one line. Measured at the base
@@ -541,7 +548,7 @@ const HabitCard: React.FC<{
   const hasDanger = isDaily && stats.misses >= 2;
   const hasWarning = isDaily && stats.misses === 1 && todayState !== 'done';
   // Period dots for non-daily cadences (weekly 4 · monthly 12 · yearly 1).
-  const units = isDaily ? [] : computePeriodUnits(habit, cadence, ht, today);
+  const units = isDaily ? [] : computePeriodUnits(habit, cadence, ht, today, schedule);
   const toggleUnit = (u: PeriodUnit) => {
     if (u.done) u.doneDays.forEach(d => onToggleDay(habit, d, null));
     else onToggleDay(habit, u.repDay, 'done');
@@ -767,6 +774,41 @@ const HabitCard: React.FC<{
       </div>
 
       {/* One-off due date (optional, any cadence). Overdue = past + not done. */}
+      {/* Scheduling anchor — the day a non-daily habit runs on. */}
+      {!isDaily && cadence !== 'quit' && (
+        <div className="hcard-schedule" onClick={e => e.stopPropagation()}>
+          <span className="hcard-schedule-text">
+            <CalendarIc size={12} />
+            {scheduleLabel(cadence, schedule) ?? 'Runs any day'}
+          </span>
+          {cadence === 'weekly' && (
+            <select className="hcard-schedule-select" value={schedule ?? ''} onChange={e => onSetSchedule(habit, e.target.value || null)}>
+              <option value="">Any day</option>
+              {WEEKDAYS_FULL.map((d, i) => <option key={i} value={String(i)}>{d}</option>)}
+            </select>
+          )}
+          {cadence === 'monthly' && (
+            <select className="hcard-schedule-select" value={schedule ?? ''} onChange={e => onSetSchedule(habit, e.target.value || null)}>
+              <option value="">Any day</option>
+              {Array.from({ length: 31 }, (_, i) => <option key={i} value={String(i + 1)}>Day {i + 1}</option>)}
+            </select>
+          )}
+          {cadence === 'yearly' && (
+            <input
+              type="date"
+              className="hcard-schedule-input"
+              value={schedule ? `${YEAR}-${String(parseInt(schedule.split('-')[0], 10)).padStart(2, '0')}-${String(parseInt(schedule.split('-')[1], 10)).padStart(2, '0')}` : ''}
+              onChange={e => {
+                if (!e.target.value) { onSetSchedule(habit, null); return; }
+                const [, mo, dd] = e.target.value.split('-');
+                onSetSchedule(habit, `${parseInt(mo, 10)}-${parseInt(dd, 10)}`);
+              }}
+            />
+          )}
+          {schedule && <button type="button" className="hcard-due-clear" onClick={() => onSetSchedule(habit, null)}>clear</button>}
+        </div>
+      )}
+
       {(() => {
         const localToday = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
         const overdue = !!dueDate && dueDate < localToday && !currentDone;
@@ -1043,6 +1085,7 @@ const Habits: React.FC = () => {
   const [starred, setStarred] = useState<Record<string, boolean>>({});
   const [dueDates, setDueDates] = useState<Record<string, string | null>>({}); // 'YYYY-MM-DD' per habit
   const [reminderHours, setReminderHours] = useState<Record<string, number | null>>({}); // local hour 0-23 per habit
+  const [schedules, setSchedules] = useState<Record<string, string | null>>({}); // scheduling anchor per non-daily habit
   const [newQuitStart, setNewQuitStart] = useState<string>(() => toLocalDatetimeValue(new Date()));
   const [xpCarry, setXpCarry] = useState<Record<string, number>>({});
   const [ht, setHt] = useState<HabitTracker>({});
@@ -1121,13 +1164,15 @@ const Habits: React.FC = () => {
       const stars: Record<string, boolean> = {};
       const dues: Record<string, string | null> = {};
       const rems: Record<string, number | null> = {};
-      loadedHabits.forEach(h => { dates[h.name] = h.startDate; cad[h.name] = ((h as any).cadence as Cadence) || 'daily'; quits[h.name] = (h as any).quitStartedAt ?? null; stars[h.name] = !!(h as any).starred; dues[h.name] = (h as any).dueDate ?? null; rems[h.name] = (h as any).reminderHour ?? null; });
+      const scheds: Record<string, string | null> = {};
+      loadedHabits.forEach(h => { dates[h.name] = h.startDate; cad[h.name] = ((h as any).cadence as Cadence) || 'daily'; quits[h.name] = (h as any).quitStartedAt ?? null; stars[h.name] = !!(h as any).starred; dues[h.name] = (h as any).dueDate ?? null; rems[h.name] = (h as any).reminderHour ?? null; scheds[h.name] = (h as any).schedule ?? null; });
       cad[MANDATORY_HABIT] = 'daily';
       setHabitCadence(cad);
       setQuitStarts(quits);
       setStarred(stars);
       setDueDates(dues);
       setReminderHours(rems);
+      setSchedules(scheds);
       cadenceRef.current = cad;
 
       // Mandatory habit is always present in state.
@@ -1328,6 +1373,11 @@ const Habits: React.FC = () => {
     // the card copy says so rather than auto-prompting here.
   }, []);
 
+  const handleSetSchedule = useCallback((name: string, schedule: string | null) => {
+    setSchedules(prev => ({ ...prev, [name]: schedule }));
+    api.setHabitSchedule(name, schedule).catch(() => {});
+  }, []);
+
   // Reorder within one cadence group: rebuild the global habits array, keeping
   // members of other groups in their existing slots, then persist (positions).
   const commitGroupReorder = useCallback((newOrder: string[]) => {
@@ -1407,6 +1457,8 @@ const Habits: React.FC = () => {
         onSetDueDate={handleSetDueDate}
         reminderHour={reminderHours[habit] ?? null}
         onSetReminder={handleSetReminder}
+        schedule={schedules[habit] ?? null}
+        onSetSchedule={handleSetSchedule}
         dragHandle={handle}
       />
     );

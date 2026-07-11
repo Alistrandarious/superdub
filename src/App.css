@@ -7332,6 +7332,28 @@ h1, h2, h3, h4, .sora {
   font-size: 0.68rem; cursor: pointer; padding: 2px 4px;
 }
 
+/* Scheduling anchor picker (non-daily habits) — the day it runs on. */
+.hcard-schedule {
+  display: flex; align-items: center; gap: 8px; margin-top: 10px;
+  padding: 8px 10px; border-radius: 8px; position: relative;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
+}
+.hcard-schedule-text {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'Sora', sans-serif; font-size: 0.72rem; color: rgba(255,255,255,0.6);
+}
+.hcard-schedule-select {
+  margin-left: auto; background: rgba(255,255,255,0.06); color: #fff;
+  border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;
+  padding: 4px 8px; font-family: 'Sora', sans-serif; font-size: 0.72rem; cursor: pointer;
+}
+.hcard-schedule-input {
+  margin-left: auto; background: rgba(255,255,255,0.06); color: #fff;
+  border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;
+  padding: 4px 8px; font-family: 'Sora', sans-serif; font-size: 0.72rem; cursor: pointer;
+  color-scheme: dark;
+}
+
 /* Per-habit reminder hour picker (expanded card). */
 .hcard-remind {
   display: flex; align-items: center; gap: 8px; margin-top: 8px;

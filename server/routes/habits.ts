@@ -19,10 +19,10 @@ router.get('/graveyard', requireAuth as any, async (req: AuthRequest, res: Respo
 router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
     const { rows } = await pool.query(
-      "SELECT name, start_date, COALESCE(cadence, 'daily') AS cadence, quit_started_at, COALESCE(starred, FALSE) AS starred, due_date::text AS due_date, reminder_hour FROM habits WHERE user_id = $1 AND (archived = FALSE OR archived IS NULL) ORDER BY position",
+      "SELECT name, start_date, COALESCE(cadence, 'daily') AS cadence, quit_started_at, COALESCE(starred, FALSE) AS starred, due_date::text AS due_date, reminder_hour, schedule FROM habits WHERE user_id = $1 AND (archived = FALSE OR archived IS NULL) ORDER BY position",
       [req.userId]
     );
-    res.json(rows.map((r: any) => ({ name: r.name, startDate: r.start_date, cadence: r.cadence, quitStartedAt: r.quit_started_at, starred: r.starred, dueDate: r.due_date, reminderHour: r.reminder_hour })));
+    res.json(rows.map((r: any) => ({ name: r.name, startDate: r.start_date, cadence: r.cadence, quitStartedAt: r.quit_started_at, starred: r.starred, dueDate: r.due_date, reminderHour: r.reminder_hour, schedule: r.schedule ?? null })));
   } catch {
     res.status(500).json({ error: 'Server error' });
   }
@@ -125,6 +125,24 @@ router.patch('/due-date', requireAuth as any, async (req: AuthRequest, res: Resp
     const clean = dueDate && /^\d{4}-\d{2}-\d{2}$/.test(dueDate) ? dueDate : null;
     await pool.query(
       'UPDATE habits SET due_date = $3 WHERE user_id = $1 AND name = $2',
+      [req.userId, name, clean]
+    );
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Set / clear a non-daily habit's scheduling anchor (the day it runs on). Body:
+// { name, schedule } where schedule is a small string read by cadence, or null/'' to
+// clear. Format validated client-side; stored as-is (bounded to 16 chars here).
+router.patch('/schedule', requireAuth as any, async (req: AuthRequest, res: Response) => {
+  try {
+    const { name, schedule } = req.body as { name?: string; schedule?: string | null };
+    if (!name) return res.status(400).json({ error: 'name required' });
+    const clean = typeof schedule === 'string' && schedule.length > 0 && schedule.length <= 16 ? schedule : null;
+    await pool.query(
+      'UPDATE habits SET schedule = $3 WHERE user_id = $1 AND name = $2',
       [req.userId, name, clean]
     );
     res.json({ ok: true });

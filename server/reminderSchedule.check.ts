@@ -1,6 +1,6 @@
 // Self-check for the reminder gate (run: npx tsx server/reminderSchedule.check.ts)
 import assert from 'assert';
-import { reminderDue } from './reminderSchedule';
+import { reminderDue, scheduleMatchesToday } from './reminderSchedule';
 
 const TODAY = '2026-07-06';
 const YESTERDAY = '2026-07-05';
@@ -23,5 +23,21 @@ assert.strictEqual(reminderDue(8, 8, '2026-07-07', TODAY), false, 'lastFired ahe
 // ── Suppressed: switched off (workout prompt defaults to NULL/off) ──────────────
 assert.strictEqual(reminderDue(null, 8, null, TODAY), false, 'null target → off');
 assert.strictEqual(reminderDue(undefined, 8, null, TODAY), false, 'undefined target → off');
+
+// ── scheduleMatchesToday: non-daily habits only nudge on their scheduled day ─────
+// 2026-07-07 is a Tuesday (UTC). Mon=0 so Tuesday = dow 1.
+const TUE = new Date('2026-07-07T12:00:00Z');
+assert.strictEqual(scheduleMatchesToday('weekly', '1', TUE), true, 'weekly Tue matches a Tuesday');
+assert.strictEqual(scheduleMatchesToday('weekly', '2', TUE), false, 'weekly Wed does not match a Tuesday');
+assert.strictEqual(scheduleMatchesToday('monthly', '7', TUE), true, 'monthly day 7 matches the 7th');
+assert.strictEqual(scheduleMatchesToday('monthly', '8', TUE), false, 'monthly day 8 does not match the 7th');
+assert.strictEqual(scheduleMatchesToday('yearly', '7-7', TUE), true, 'yearly 7 Jul matches');
+assert.strictEqual(scheduleMatchesToday('yearly', '6-7', TUE), false, 'yearly 7 Jun does not match July');
+// Clamp: day 31 in a 28-day February fires on the 28th.
+const FEB28 = new Date('2026-02-28T12:00:00Z');
+assert.strictEqual(scheduleMatchesToday('monthly', '31', FEB28), true, 'monthly 31 clamps to last day of Feb');
+// No schedule / daily → always matches.
+assert.strictEqual(scheduleMatchesToday('daily', null, TUE), true, 'no schedule → every day');
+assert.strictEqual(scheduleMatchesToday('weekly', '', TUE), true, 'empty schedule → every day');
 
 console.log('reminderSchedule.check.ts — all assertions passed');

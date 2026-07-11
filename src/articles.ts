@@ -18,6 +18,25 @@ export interface Article {
 
 export const ARTICLES: Article[] = [
   {
+    id: 'habit-runs-on-a-day',
+    title: 'Give a Habit the Day It Runs On',
+    author: 'Ali Shah',
+    readMins: 2,
+    tag: 'Habits',
+    accent: '#2E8BFF',
+    dek: 'Weekly, monthly and yearly habits can now pin the exact day they happen, so the tick lands right and the nudge comes at the right time.',
+    body: [
+      { t: 'p', text: 'A weekly habit is rarely "some time this week." Laundry is Sunday. The budget review is the first of the month. The dentist is one date a year. Until now a non-daily habit just wanted one tick somewhere in its period, which is fine, but it could not say when. Now it can.' },
+      { t: 'h', text: 'Pick the day' },
+      { t: 'p', text: 'Open any weekly, monthly or yearly habit. Under the calendar you will find a new line: the day it runs on. A weekly habit picks a weekday, a monthly one picks a date, and a yearly one picks a month and a day. Prefer the old anytime rhythm? Leave it on Any day and nothing changes.' },
+      { t: 'quote', text: 'A habit with a day is a habit with a plan.' },
+      { t: 'h', text: 'It follows through' },
+      { t: 'p', text: 'Once a habit has a day, the rest lines up behind it. The circle by the title and the calendar aim at that day, so a quick tick marks the right one. The Today tab brings the habit up as its day approaches, and flags it if the day passes and it is still not done. And if you set a reminder, the push arrives only on its day, not every morning of the week.' },
+      { t: 'h', text: 'Set one now' },
+      { t: 'p', text: 'Open a weekly habit, choose its weekday, and watch it appear in Today when the day is near. One small setting, and your longer-rhythm habits finally keep proper time. 📌' },
+    ],
+  },
+  {
     id: 'not-applicable-days',
     title: 'Some Days It Just Does Not Apply',
     author: 'Ali Shah',

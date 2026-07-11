@@ -18,7 +18,7 @@ import goalsRoutes from './routes/goals';
 import globalRoutes from './routes/global';
 import journalRoutes from './routes/journal';
 import { sendPush, pushEnabled } from './services/push';
-import { reminderDue } from './reminderSchedule';
+import { reminderDue, scheduleMatchesToday } from './reminderSchedule';
 import { pool } from './db';
 
 dotenv.config();
@@ -271,6 +271,9 @@ const migrations = [
   `ALTER TABLE habits ADD COLUMN IF NOT EXISTS starred BOOLEAN DEFAULT FALSE`,
   // Optional one-off due date for a habit (any cadence).
   `ALTER TABLE habits ADD COLUMN IF NOT EXISTS due_date DATE`,
+  // Optional scheduling anchor for non-daily habits — the day it runs on. Small
+  // string read by cadence: weekly "<dow 0-6>", monthly "<dom 1-31>", yearly "<m>-<d>".
+  `ALTER TABLE habits ADD COLUMN IF NOT EXISTS schedule TEXT`,
   // Optional per-habit push reminder: the local hour (0–23) to nudge, and the last
   // local date it fired (so it fires at most once a day per habit).
   `ALTER TABLE habits ADD COLUMN IF NOT EXISTS reminder_hour INTEGER`,
@@ -415,12 +418,14 @@ async function runReminders() {
       // 4. Per-habit reminders — each opted-in habit nudges at its own hour, at most
       // once a local day, and is skipped if it's already marked done today.
       const habitRows = await pool.query(
-        `SELECT name, reminder_hour, reminder_last_fired FROM habits
+        `SELECT name, reminder_hour, reminder_last_fired, COALESCE(cadence, 'daily') AS cadence, schedule FROM habits
            WHERE user_id = $1 AND reminder_hour IS NOT NULL AND (archived = FALSE OR archived IS NULL)`,
         [r.user_id]
       ).catch(() => ({ rows: [] as any[] }));
       for (const h of habitRows.rows) {
         if (!reminderDue(h.reminder_hour, hour, h.reminder_last_fired, localDate)) continue;
+        // A scheduled non-daily habit only nudges on its day (the day it "runs on").
+        if (h.schedule && !scheduleMatchesToday(h.cadence, h.schedule, local)) continue;
         const done = await pool.query(
           `SELECT 1 FROM tracker_habits WHERE user_id = $1 AND day = $2 AND habit_name = $3
              AND state = 'done' AND year = $4 LIMIT 1`,

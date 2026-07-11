@@ -20,3 +20,36 @@ export function reminderDue(
   }
   return true;
 }
+
+// Does the user's local "today" fall on a non-daily habit's scheduled day? A daily
+// (or quit, or unscheduled) habit matches every day. `local` is the Date whose UTC
+// fields already represent the user's local time (as built in the reminder loop).
+// Schedule encoding mirrors src/habitSchedule.ts: weekly "<dow 0-6, Mon=0>",
+// monthly "<dom 1-31>", yearly "<month 1-12>-<day 1-31>". Out-of-range days clamp to
+// the last day of the month so e.g. "31" still fires in February.
+export function scheduleMatchesToday(
+  cadence: string | null | undefined,
+  schedule: string | null | undefined,
+  local: Date,
+): boolean {
+  if (!schedule) return true;
+  const lastDom = new Date(Date.UTC(local.getUTCFullYear(), local.getUTCMonth() + 1, 0)).getUTCDate();
+  if (cadence === 'weekly') {
+    const dow = parseInt(schedule, 10);
+    if (!(dow >= 0 && dow <= 6)) return true;
+    return ((local.getUTCDay() + 6) % 7) === dow;
+  }
+  if (cadence === 'monthly') {
+    const dom = parseInt(schedule, 10);
+    if (!(dom >= 1 && dom <= 31)) return true;
+    return local.getUTCDate() === Math.min(dom, lastDom);
+  }
+  if (cadence === 'yearly') {
+    const [m, day] = schedule.split('-').map(n => parseInt(n, 10));
+    if (!(m >= 1 && m <= 12 && day >= 1 && day <= 31)) return true;
+    if (local.getUTCMonth() + 1 !== m) return false;
+    const lastOfM = new Date(Date.UTC(local.getUTCFullYear(), m, 0)).getUTCDate();
+    return local.getUTCDate() === Math.min(day, lastOfM);
+  }
+  return true; // daily / quit / unknown → every day
+}
