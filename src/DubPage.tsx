@@ -6,6 +6,7 @@ import { buildHabitInsights, type DubInsight } from './dubInsights';
 import DubMascot, { getMascot, type MascotSpecies } from './DubMascot';
 import SuperdubHeader from './SuperdubHeader';
 import { pageTheme, GROWTH } from './theme';
+import { dubPronouns, getDubGender, dubHas, type DubGender } from './dubPronouns';
 
 const YEAR = new Date().getFullYear();
 const MANDATORY_HABIT = 'Logging into Superdub';
@@ -32,12 +33,15 @@ const DubPage: React.FC = () => {
   const [dataDays, setDataDays] = useState(0);
   const [loaded, setLoaded] = useState(false);
   const [species, setSpecies] = useState<MascotSpecies>(getMascot);
+  const [gender, setGender] = useState<DubGender>(getDubGender);
 
   useEffect(() => {
-    const sync = () => setSpecies(getMascot());
+    const sync = () => { setSpecies(getMascot()); setGender(getDubGender()); };
     window.addEventListener('superdub:mascot-changed', sync);
     return () => window.removeEventListener('superdub:mascot-changed', sync);
   }, []);
+  const pn = dubPronouns(gender);
+  const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
   useEffect(() => {
     (async () => {
@@ -152,7 +156,7 @@ const DubPage: React.FC = () => {
 
         {/* Insights — what Dub has found in your data */}
         <section className="dub-section">
-          <h3 className="dub-section-title">What Dub's spotted</h3>
+          <h3 className="dub-section-title">What {pn.subject} spotted</h3>
           {insights.length > 0 ? (
             <div className="coach-lines">
               {insights.map((ins, i) => (
@@ -168,8 +172,8 @@ const DubPage: React.FC = () => {
           ) : (
             <p className="dub-empty">
               {dataDays < 10
-                ? `Keep logging — I start spotting patterns at 10 days of data (${dataDays}/10 so far).`
-                : "Nothing jumps out yet. Keep ticking your habits and I'll surface what's driving your steps, mood and weight."}
+                ? `Keep logging. ${cap(pn.subject)} ${dubHas(gender)} enough to read patterns at 10 days of data (${dataDays}/10 so far).`
+                : `Nothing jumps out yet. Keep ticking your habits and ${pn.subject}'ll surface what's driving your steps, mood and weight.`}
             </p>
           )}
         </section>

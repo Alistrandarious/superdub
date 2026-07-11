@@ -5,6 +5,7 @@ import { api } from './api';
 import { useXP } from './XPContext';
 import LevelRing from './LevelRing';
 import DubMascot, { getMascot, MASCOT_KEY, type MascotSpecies } from './DubMascot';
+import { getDubGender, DUB_GENDER_KEY, type DubGender } from './dubPronouns';
 import {
   PLAYER_LEVELS, RING_THEMES, getRingTheme, getSelectedThemeId,
   SELECTED_THEME_KEY, type RingTheme,
@@ -86,6 +87,13 @@ const LevelCustomizer: React.FC = () => {
     if (s === 'cat' && !catUnlocked) return;
     setSpecies(s);
     localStorage.setItem(MASCOT_KEY, s);
+    window.dispatchEvent(new CustomEvent('superdub:mascot-changed'));
+  };
+
+  const [dubGender, setDubGender] = useState<DubGender>(getDubGender);
+  const pickGender = (g: DubGender) => {
+    setDubGender(g);
+    localStorage.setItem(DUB_GENDER_KEY, g);
     window.dispatchEvent(new CustomEvent('superdub:mascot-changed'));
   };
 
@@ -197,6 +205,18 @@ const LevelCustomizer: React.FC = () => {
             </span>
             <span className="companion-name">{catUnlocked ? `Dub the cat${species === 'cat' ? ' ✓' : ''}` : 'Cat · LV2'}</span>
           </button>
+        </div>
+        <div className="dub-gender-row">
+          <span className="dub-gender-label">Dub's pronouns</span>
+          <div className="dub-gender-seg">
+            {([['he', 'He'], ['she', 'She'], ['they', 'They']] as [DubGender, string][]).map(([g, label]) => (
+              <button
+                key={g}
+                className={`dub-gender-pick${dubGender === g ? ' active' : ''}`}
+                onClick={() => pickGender(g)}
+              >{label}</button>
+            ))}
+          </div>
         </div>
         <div className="asc-shelf" style={{ marginTop: 10 }}>
           {DUB_COLORS.map(dc => {

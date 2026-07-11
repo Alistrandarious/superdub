@@ -6916,6 +6916,20 @@ h1, h2, h3, h4, .sora {
 .journal-card-head .goal-remove { margin-left: auto; }
 .journal-card-body { font-size: 0.9rem; line-height: 1.55; color: rgba(255,255,255,0.85); white-space: pre-wrap; word-break: break-word; margin: 0; }
 
+/* ── Dub gender / pronouns picker (Profile → Companion) ─────────────────────── */
+.dub-gender-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; }
+.dub-gender-label {
+  font-family: 'Space Mono', monospace; font-size: 0.62rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.5);
+}
+.dub-gender-seg { display: flex; gap: 4px; background: rgba(255,255,255,0.05); padding: 3px; border-radius: 999px; }
+.dub-gender-pick {
+  padding: 6px 14px; border: none; border-radius: 999px; cursor: pointer;
+  background: transparent; color: rgba(255,255,255,0.6);
+  font-family: 'Sora', sans-serif; font-weight: 700; font-size: 0.8rem;
+}
+.dub-gender-pick.active { background: var(--theme, #2E8BFF); color: #06101F; }
+
 /* ── Unified stat panel (.hsp) — one designed object, not 3 boxes ───────────── */
 .hsp {
   position: relative;
