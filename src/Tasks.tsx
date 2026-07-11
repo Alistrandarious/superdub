@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import { api } from './api';
 import GoalsPanel from './GoalsPanel';
+import JournalPanel from './JournalPanel';
 import SuperdubHeader from './SuperdubHeader';
-import { HEALTH, GROWTH, VIOLET } from './theme';
+import { HEALTH, GROWTH, VIOLET, TEAL } from './theme';
 
 const GOAL_ACCENT = VIOLET; // rare rank accent per the swatches guide
+const JOURNAL_ACCENT = TEAL; // mood / reflection surface per the swatches guide
 
 const TargetIcon: React.FC<{ size?: number }> = ({ size = 16 }) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
@@ -60,6 +62,12 @@ const CheckIcon: React.FC<{ size?: number }> = ({ size = 16 }) => (
   </svg>
 );
 
+const JournalIcon: React.FC<{ size?: number }> = ({ size = 16 }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
+    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /><path d="M9 7h6" />
+  </svg>
+);
+
 const CartIcon: React.FC<{ size?: number }> = ({ size = 16 }) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
     <circle cx="9" cy="21" r="1" />
@@ -70,7 +78,7 @@ const CartIcon: React.FC<{ size?: number }> = ({ size = 16 }) => (
 
 const Tasks: React.FC = () => {
   const [tasks, setTasks]   = useState<Task[]>([]);
-  const [tab, setTab]       = useState<'todo' | 'shopping' | 'goals'>('todo');
+  const [tab, setTab]       = useState<'todo' | 'shopping' | 'goals' | 'journal'>('todo');
   const [input, setInput]   = useState('');
   const [due, setDue]       = useState('');
   const [showDate, setShowDate] = useState(false); // due-date dropdown open?
@@ -85,7 +93,7 @@ const Tasks: React.FC = () => {
 
   const addItem = async () => {
     const text = input.trim();
-    if (!text || tab === 'goals') return;
+    if (!text || tab === 'goals' || tab === 'journal') return;
     const listType: 'todo' | 'shopping' = tab;
     const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const newTask: Task = { id, text, done: false, type: listType, dueDate: due || undefined };
@@ -126,7 +134,8 @@ const Tasks: React.FC = () => {
 
   const isShopping = tab === 'shopping';
   const isGoals = tab === 'goals';
-  const accent = isGoals ? GOAL_ACCENT : isShopping ? SHOP_ACCENT : TODO_ACCENT;
+  const isJournal = tab === 'journal';
+  const accent = isGoals ? GOAL_ACCENT : isJournal ? JOURNAL_ACCENT : isShopping ? SHOP_ACCENT : TODO_ACCENT;
   const themeVars = {
     '--theme': accent,
     '--theme-dim': accent + '66',
@@ -156,11 +165,19 @@ const Tasks: React.FC = () => {
         >
           <TargetIcon /> Goals
         </button>
+        <button
+          className={`lists-tab${tab === 'journal' ? ' lists-tab--active' : ''}`}
+          onClick={() => setTab('journal')}
+        >
+          <JournalIcon /> Journal
+        </button>
       </div>
 
       <div className="tasks-content page-content">
         {isGoals ? (
           <GoalsPanel accent={GOAL_ACCENT} />
+        ) : isJournal ? (
+          <JournalPanel accent={JOURNAL_ACCENT} />
         ) : (
         <>
         {/* Add block: task text + add. A due date lives in a dropdown below the

@@ -100,6 +100,12 @@ export const api = {
     request(`/tasks/${id}`, { method: 'PUT', body: JSON.stringify({ done }) }),
   deleteTask: (id: string) => request(`/tasks/${id}`, { method: 'DELETE' }),
 
+  // journal (free text + optional mood 1..5; feeds Dub)
+  getJournal: (): Promise<{ id: string; body: string; mood: number | null; createdAt: string }[]> => request('/journal'),
+  createJournalEntry: (id: string, body: string, mood: number | null) =>
+    request('/journal', { method: 'POST', body: JSON.stringify({ id, body, mood }) }),
+  deleteJournalEntry: (id: string) => request(`/journal/${id}`, { method: 'DELETE' }),
+
   // SMART goals
   getGoals: () => request('/goals'),
   createGoal: (goal: object) => request('/goals', { method: 'POST', body: JSON.stringify(goal) }),

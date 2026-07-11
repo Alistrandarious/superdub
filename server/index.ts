@@ -16,6 +16,7 @@ import checkinRoutes from './routes/checkin';
 import pushRoutes from './routes/push';
 import goalsRoutes from './routes/goals';
 import globalRoutes from './routes/global';
+import journalRoutes from './routes/journal';
 import { sendPush, pushEnabled } from './services/push';
 import { reminderDue } from './reminderSchedule';
 import { pool } from './db';
@@ -41,6 +42,7 @@ app.use('/api/checkin', checkinRoutes);
 app.use('/api/push', pushRoutes);
 app.use('/api/goals', goalsRoutes);
 app.use('/api/global', globalRoutes);
+app.use('/api/journal', journalRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
@@ -276,6 +278,15 @@ const migrations = [
     relevant    TEXT DEFAULT '',
     time_bound  DATE,
     done        BOOLEAN DEFAULT FALSE,
+    created_at  TIMESTAMPTZ DEFAULT NOW()
+  )`,
+  // Journal entries (Lists → Journal tab). Free text + an optional mood 1..5,
+  // which feeds Dub's insight engine alongside check-in moods.
+  `CREATE TABLE IF NOT EXISTS journal_entries (
+    id          TEXT PRIMARY KEY,
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    body        TEXT NOT NULL,
+    mood        INTEGER CHECK (mood BETWEEN 1 AND 5),
     created_at  TIMESTAMPTZ DEFAULT NOW()
   )`,
   // This month's community habit: one shared XP goal all users climb together.

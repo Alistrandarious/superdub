@@ -18,6 +18,25 @@ export interface Article {
 
 export const ARTICLES: Article[] = [
   {
+    id: 'journal-with-a-mood',
+    title: 'A Journal, and Why It Has a Mood',
+    author: 'Ali Shah',
+    readMins: 2,
+    tag: 'Lists',
+    accent: '#19C5B0',
+    dek: 'A quiet place to write a line about your day, and a small mood tag that quietly teaches Dub what actually lifts you.',
+    body: [
+      { t: 'p', text: 'Numbers tell you what happened. They rarely tell you why. You can see a low-step day on the chart, but not the argument, the bad night, or the small win that came with it. So Lists now has a Journal: a plain, private place to write a line or a paragraph about your day, whenever you feel like it.' },
+      { t: 'h', text: 'Where to find it' },
+      { t: 'p', text: 'Open Lists and you will see a new tab next to Goals, called Journal. Tap New entry, write whatever is on your mind, and save. Your entries stack newest first, each stamped with the time you wrote it.' },
+      { t: 'h', text: 'The mood is the clever bit' },
+      { t: 'p', text: 'Under the text you can tag how you felt, from rough to great. It is optional and it takes one tap, but it is doing quiet work. That mood is a signal, and Dub reads it. Alongside your evening check-ins, your journal moods feed the patterns he surfaces: whether the days you keep a habit are also your better days, whether more steps really do lift you.' },
+      { t: 'quote', text: 'Write the sentence you would tell a friend. The mood tag turns it into data without killing the feeling.' },
+      { t: 'h', text: 'Yours, quietly' },
+      { t: 'p', text: 'Nothing here is shared and nothing is judged. Write one honest line, tag the mood, and let Dub connect it to the rest over time. Open Lists, tap Journal, and start with today. 📓' },
+    ],
+  },
+  {
     id: 'habits-to-quit',
     title: 'Habits to Quit: A Clock That Counts Up',
     author: 'Ali Shah',

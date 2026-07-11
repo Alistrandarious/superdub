@@ -6877,6 +6877,45 @@ h1, h2, h3, h4, .sora {
 .quit-confirm-ok { background: var(--theme); color: #10131b; }
 .hb-sheet-hint { font-size: 0.75rem; color: rgba(255,255,255,0.5); margin: 8px 2px 0; line-height: 1.4; }
 
+/* ── Journal (Lists → Journal tab) ──────────────────────────────────────────── */
+.journal-wrap { display: flex; flex-direction: column; gap: 12px; }
+.journal-input {
+  width: 100%; box-sizing: border-box; resize: vertical;
+  padding: 12px; border-radius: var(--r-md);
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+  color: #fff; font-family: inherit; font-size: 0.9rem; line-height: 1.5;
+}
+.journal-input::placeholder { color: rgba(255,255,255,0.35); }
+.journal-mood-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.journal-mood-label {
+  font-family: 'Space Mono', monospace; font-size: 0.62rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.5);
+}
+.journal-mood-dots { display: flex; gap: 8px; }
+.journal-mood-dot {
+  width: 26px; height: 26px; border-radius: 50%; padding: 0; cursor: pointer;
+  border: 2px solid rgba(255,255,255,0.15); background: transparent;
+  display: flex; align-items: center; justify-content: center;
+}
+.journal-mood-fill {
+  width: 12px; height: 12px; border-radius: 50%; background: var(--m); opacity: 0.5;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.journal-mood-dot.active { border-color: var(--m); }
+.journal-mood-dot.active .journal-mood-fill { opacity: 1; transform: scale(1.15); }
+.journal-mood-picked { font-size: 0.8rem; color: rgba(255,255,255,0.7); min-width: 40px; }
+.journal-list { display: flex; flex-direction: column; gap: 10px; }
+.journal-card {
+  padding: 12px 14px; border-radius: var(--r-md);
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+}
+.journal-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.journal-card-mood { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.journal-card-when { font-size: 0.72rem; color: rgba(255,255,255,0.45); font-family: 'Space Mono', monospace; }
+.journal-card-moodlbl { font-size: 0.72rem; color: rgba(255,255,255,0.55); }
+.journal-card-head .goal-remove { margin-left: auto; }
+.journal-card-body { font-size: 0.9rem; line-height: 1.55; color: rgba(255,255,255,0.85); white-space: pre-wrap; word-break: break-word; margin: 0; }
+
 /* ── Unified stat panel (.hsp) — one designed object, not 3 boxes ───────────── */
 .hsp {
   position: relative;

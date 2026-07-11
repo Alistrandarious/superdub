@@ -42,11 +42,12 @@ const DubPage: React.FC = () => {
   useEffect(() => {
     (async () => {
       try {
-        const [tracker, habits, plan, moods] = await Promise.all([
+        const [tracker, habits, plan, moods, journal] = await Promise.all([
           api.getTracker(),
           api.getHabits(),
           api.getPlanStatus().catch(() => null),
           api.getCheckInHistory(180).catch(() => ({ entries: [] as any[] })),
+          api.getJournal().catch(() => [] as any[]),
         ]);
 
         // ── Coaching report (same inputs as the post-weigh-in modal) ──
@@ -74,6 +75,14 @@ const DubPage: React.FC = () => {
           // check-in dates are ISO (YYYY-MM-DD); insights key on DD/MM.
           const parts = String(e.date).split('-');
           if (parts.length === 3) moodByDay[`${parts[2]}/${parts[1]}`] = e.mood;
+        }
+        // Journal moods are an extra signal — fill days the check-in didn't cover.
+        for (const j of (journal as any[])) {
+          if (j.mood == null || !j.createdAt) continue;
+          const d = new Date(j.createdAt);
+          if (isNaN(d.getTime())) continue;
+          const key = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+          if (moodByDay[key] == null) moodByDay[key] = j.mood;
         }
         // count of days with any real signal — gates the "keep logging" state
         const signalDays = new Set<string>([...Object.keys(stepsByDay), ...Object.keys(weightByDay), ...Object.keys(moodByDay)]);

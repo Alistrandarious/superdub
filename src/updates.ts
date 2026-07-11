@@ -11,6 +11,18 @@ export interface UpdateEntry {
 export const UPDATE_LOG: UpdateEntry[] = [
   {
     date: '2026-07-11',
+    emoji: '📓',
+    title: 'A Journal on your Lists, with a mood',
+    summary: 'Lists gains a fourth tab. Write a line about your day, tag how you felt, and Dub folds that mood into the patterns he reads for you.',
+    points: [
+      'Open Lists and tap the new Journal tab, next to Goals.',
+      'Write whatever is on your mind, then tag your mood from rough to great. The mood is optional, the writing is yours.',
+      'Every entry is saved newest first, with its mood and the time you wrote it.',
+      'Dub reads those moods alongside your check-ins, so the days you journal feed straight into what he spots about your steps, habits and weight.',
+    ],
+  },
+  {
+    date: '2026-07-11',
     emoji: '⏱',
     title: 'Habits to quit: a clock that counts up',
     summary: 'Swipe past your daily habits to the new Quit panel. Set the moment you stopped, and a live timer counts every day, hour and minute you stay clean, filling toward your first 30 days.',
