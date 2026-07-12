@@ -37,11 +37,11 @@ const PinnedXpBar: React.FC<{ visible: boolean }> = ({ visible }) => {
       style={{ '--pxp-from': theme.from, '--pxp-to': theme.to, '--pxp-glow': theme.glow } as React.CSSProperties}
       aria-hidden={!visible}
     >
-      <span className="hb-pinned-lv">Lv {playerLevel.level}</span>
-      <div className="hb-pinned-track">
-        <div className="hb-pinned-fill" style={{ width: `${Math.max(2, playerLevel.progress * 100)}%` }} />
+      {/* Identical to the hero's XP bar: the count reads inside, no level tag. */}
+      <div className="hb-xp-bar">
+        <div className="hb-xp-fill" style={{ width: `${Math.max(2, playerLevel.progress * 100)}%`, background: `linear-gradient(90deg, ${theme.from}, ${theme.to})`, boxShadow: `0 0 10px ${theme.glow}` }} />
+        <span className="hb-xp-inbar">{span != null ? `${into.toLocaleString()} / ${span.toLocaleString()} XP` : `${totalXP.toLocaleString()} XP`}</span>
       </div>
-      <span className="hb-pinned-frac">{span != null ? `${into.toLocaleString()} / ${span.toLocaleString()}` : 'MAX'}</span>
     </div>
   );
 };

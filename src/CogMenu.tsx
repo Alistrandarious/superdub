@@ -117,6 +117,7 @@ const CogMenu: React.FC = () => {
             <div className="cog-menu-label">Quick log</div>
             <button className="cog-menu-item" onClick={() => fire('superdub:show-coach')}><span className="cog-mi-ico"><Ic><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" /></Ic></span> Talk to Dub</button>
             <button className="cog-menu-item" onClick={addHabit}><span className="cog-mi-ico"><Ic><path d="M12 5v14M5 12h14" /></Ic></span> Add Habit</button>
+            <button className="cog-menu-item" onClick={() => { close(); navigate('/'); setTimeout(() => window.dispatchEvent(new CustomEvent('superdub:show-featured')), 60); }}><span className="cog-mi-ico"><Ic><path d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l7.1-1.01z" /></Ic></span> Discover Habits</button>
             <button className="cog-menu-item" onClick={() => fire('superdub:show-weight')}>
               <span className="cog-mi-ico"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2v6M18 2v6M3 10h18M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span> Log Weight
             </button>

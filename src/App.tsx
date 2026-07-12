@@ -787,6 +787,12 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   // logged hours-only simply have no bar (SleepIBar returns null for a null span);
   // the hours line is only the fallback when NO night has times at all.
   const sleepUseCandle = sleepCandleHasData;
+  // Whether the user has EVER logged sleep (any date, any range). Drives the panel's
+  // visibility so the Sleep slide is always reachable — its range toggle then lets
+  // you widen to All and find older nights, instead of the tab vanishing when the
+  // current window happens to be empty.
+  const sleepEver = Object.keys(sleepByDate).length > 0 || Object.keys(sleepTimesByDate).length > 0;
+  const sleepInRange = sleepHasData || sleepCandleHasData;
   const moodStats = useMemo(() => {
     const v7: number[] = [], v30: number[] = [];
     for (let i = 0; i < 30; i++) {
@@ -1210,13 +1216,24 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     let maintenanceKcal: number | null = null;
     let stepBurnKcal: number | null = null;
     let weightChangeKcal: number | null = null;
+    let intakeCaveat: string | null = null;
     const yW = r?.w ?? null;
     const tW = tRow?.w ?? null;
     if (yW != null && tW != null) {
       maintenanceKcal = tdee > 0 ? tdee : Math.round(((10 * tW) + (6.25 * ht) - (5 * ag) + sexConst) * al);
       stepBurnKcal = walkAvg > 0 ? Math.round(((r?.steps ?? 0) - walkAvg) * kcalPerStep) : 0;
-      weightChangeKcal = Math.round((tW - yW) * 7700);   // negative = lost weight
-      intake = Math.max(0, maintenanceKcal + stepBurnKcal + weightChangeKcal);
+      // A single overnight weigh-in delta is mostly water/glycogen, not fat. Real
+      // tissue change tops out near ±0.35 kg/day even at aggressive deficits, so clamp
+      // the delta used for the energy estimate — otherwise a big water swing implies a
+      // nonsense intake (e.g. "0 kcal eaten"). The raw swing surfaces as a caveat.
+      const rawKg = tW - yW;                             // negative = lost weight
+      const MAX_KG = 0.35, FLOOR = 600;
+      const clampedKg = Math.max(-MAX_KG, Math.min(MAX_KG, rawKg));
+      weightChangeKcal = Math.round(clampedKg * 7700);
+      const rawIntake = maintenanceKcal + stepBurnKcal + weightChangeKcal;
+      intake = Math.max(FLOOR, rawIntake);              // never claim 0 eaten
+      if (Math.abs(rawKg) > MAX_KG) intakeCaveat = `You changed ${Math.abs(rawKg).toFixed(1)} kg overnight — most of that is water, so this is a rough low estimate.`;
+      else if (rawIntake < FLOOR) intakeCaveat = 'Your weigh-ins imply a very low intake, so this is floored — likely water, not that few calories.';
     } else {
       // Fallback: the smoothed estimate, needing a weigh-in within 3 days of today.
       const RECENCY = 3;
@@ -1251,7 +1268,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     // This week's actual change: first vs last weigh-in in the trailing 7 days
     const wk = rows.slice(-7).filter(x => x.w != null);
     const weekChange = wk.length >= 2 ? +(wk[wk.length - 1].w! - wk[0].w!).toFixed(1) : null;
-    return { intake, delta, zoneStatus, weekChange, maintenanceKcal, stepBurnKcal, weightChangeKcal };
+    return { intake, delta, zoneStatus, weekChange, maintenanceKcal, stepBurnKcal, weightChangeKcal, intakeCaveat };
   })();
 
   // ── New KPIs for the Progress page ────────────────────────────────────────
@@ -1458,7 +1475,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     { name: 'Intake', show: true, note: calorieHasData
       ? `Estimated intake's averaging ${cn(avgEstIntake)} kcal vs a ${cn(targetCalories)} target, ${avgEstIntake <= targetCalories ? 'nicely under' : 'running over'}.`
       : `As your weight and steps build up, I'll estimate your intake here.` },
-    { name: 'Sleep', show: sleepHasData || sleepCandleHasData,
+    { name: 'Sleep', show: sleepEver,
       note: sleepAvg != null
         ? `You're averaging ${sleepAvg}h a night, ${sleepAvg >= 7.5 ? 'right where you want to be' : 'a touch under 8h, worth protecting'}.`
         : `Log bed and wake times in the morning check-in to see your sleep here.` },
@@ -1904,6 +1921,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         maintenance={verdict?.maintenanceKcal ?? null}
         stepBurnKcal={verdict?.stepBurnKcal ?? null}
         weightChangeKcal={verdict?.weightChangeKcal ?? null}
+        intakeCaveat={verdict?.intakeCaveat ?? null}
         onLogSteps={() => window.dispatchEvent(new CustomEvent('superdub:show-step-entry', { detail: { date: yesterdayISO } }))}
       />
 
@@ -2384,13 +2402,19 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
              candles, or an hours line for older duration-only entries), mood
              below. Together they fill the uniform canvas height. ── */}
       {/* ── Sleep panel — bed→wake candles (or an hours line for hours-only nights) ── */}
-      {(sleepHasData || sleepCandleHasData) && (
+      {sleepEver && (
         <section className="chart-section chart-section--sleep">
           <div className="chart-title-row" style={{ padding: '4px 16px 0' }}>
             <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#8B5CF6' }} />Sleep</h3>
             <span className="chart-sub" style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>{sleepUseCandle ? 'bed to wake' : 'hours a night'}</span>
           </div>
+          {renderRangeGroup()}
           {renderChartPager()}
+          {!sleepInRange ? (
+            <p className="walk-empty" style={{ margin: '16px' }}>
+              No sleep logged in this window. Switch the range above to <strong>All</strong> to see older nights, or log bed and wake times in the morning check-in.
+            </p>
+          ) : (
           <DraggableChart disabled onPage={pageBy}>
           {sleepUseCandle ? (
             <SleepCandleChart data={sleepCandleData} height="100%" interval={displayInterval} xTick={chartXTick} />
@@ -2420,7 +2444,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           </ResponsiveContainer>
           )}
           </DraggableChart>
-          {!sleepUseCandle && (
+          )}
+          {sleepInRange && !sleepUseCandle && (
             <p className="walk-empty" style={{ margin: '4px 16px 0' }}>
               Log bed and wake times in the morning check-in to see the sleep candles.
             </p>
@@ -2435,6 +2460,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             <h3 className="chart-title"><span className="chart-title-dot" style={{ background: TEAL }} />Mood</h3>
             <span className="chart-sub" style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>how you felt</span>
           </div>
+          {renderRangeGroup()}
           {renderChartPager()}
           <DraggableChart disabled onPage={pageBy}>
           <ResponsiveContainer width="100%" height="100%">
@@ -2709,7 +2735,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               {habitsByCadence[cad].map(h => (
                 <div key={h} className="hhm-habit">
                   <span className="hhm-habit-name">{h}</span>
-                  <HabitYearHeatmap habit={h} cadence={cad} year={hmYear} tracker={tracker as any} />
+                  <HabitYearHeatmap habit={h} cadence={cad} year={hmYear} tracker={tracker as any} since={accountCreatedDate} />
                 </div>
               ))}
             </div>

@@ -7,10 +7,14 @@ import type { Cadence } from './Habits';
 //   monthly      = 12 cells (one per month)
 //   yearly       = 1 cell (the whole year)
 // `tracker` is App's shape: DD/MM -> { habits: { name: true | 'failed' | 'na' | false } }.
+// `since` (the account's signup date) blanks out any period before the user joined,
+// so the grid visually STARTS at signup rather than at a hollow 1 January. A new-year
+// boundary (1 Jan) is marked with a thin divider so multi-year grids read cleanly.
 type Tracker = Record<string, { habits: Record<string, unknown> }>;
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const ddmm = (d: Date) => `${pad(d.getDate())}/${pad(d.getMonth() + 1)}`;
+const dayStartMs = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
 
 // Colour class from a stored state (true = done, 'failed', 'na', else nothing yet).
 function cls(state: unknown, future: boolean): string {
@@ -31,25 +35,29 @@ function periodState(tracker: Tracker, habit: string, days: string[]): unknown {
 
 const MONTHS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
 
-const HabitYearHeatmap: React.FC<{ habit: string; cadence: Cadence; year: number; tracker: Tracker }> = ({ habit, cadence, year, tracker }) => {
+const HabitYearHeatmap: React.FC<{ habit: string; cadence: Cadence; year: number; tracker: Tracker; since?: Date }> = ({ habit, cadence, year, tracker, since }) => {
   const nowMs = Date.now();
+  const sinceMs = since ? dayStartMs(since) : -Infinity; // blank anything earlier than signup
 
   // ── Daily / quit: 7×53 day grid ──
   if (cadence === 'daily' || cadence === 'quit') {
     const start = new Date(year, 0, 1);
     start.setDate(start.getDate() - ((start.getDay() + 6) % 7)); // back to Monday on/before Jan 1
-    const cells: { cls: string }[] = [];
+    const cells: { cls: string; newYear: boolean }[] = [];
     const cursor = new Date(start);
     for (let i = 0; i < 371; i++) {
       const inYear = cursor.getFullYear() === year;
-      const future = cursor.getTime() > nowMs;
+      const t = cursor.getTime();
+      const future = t > nowMs;
+      const beforeJoin = t < sinceMs;
+      const newYear = inYear && cursor.getMonth() === 0 && cursor.getDate() === 1;
       const st = inYear ? tracker[ddmm(cursor)]?.habits[habit] : undefined;
-      cells.push({ cls: inYear ? cls(st, future) : 'hy-pad' });
+      cells.push({ cls: !inYear || beforeJoin ? 'hy-pad' : cls(st, future), newYear });
       cursor.setDate(cursor.getDate() + 1);
     }
     return (
       <div className="hy-grid hy-grid--daily">
-        {cells.map((c, i) => <span key={i} className={`hy-cell ${c.cls}`} />)}
+        {cells.map((c, i) => <span key={i} className={`hy-cell ${c.cls}${c.newYear ? ' hy-newyear' : ''}`} />)}
       </div>
     );
   }
@@ -65,17 +73,18 @@ const HabitYearHeatmap: React.FC<{ habit: string; cadence: Cadence; year: number
     return <div className="hy-grid hy-grid--year"><span className={`hy-cell hy-cell--wide ${cls(st, false)}`}>{year}</span></div>;
   }
 
-  // ── Monthly: 12 cells ──
+  // ── Monthly: 12 cells (January carries the new-year divider) ──
   if (cadence === 'monthly') {
     const cells = Array.from({ length: 12 }, (_, m) => {
       const dim = new Date(year, m + 1, 0).getDate();
       const days = Array.from({ length: dim }, (_, i) => `${pad(i + 1)}/${pad(m + 1)}`);
       const future = new Date(year, m, 1).getTime() > nowMs;
-      return cls(periodState(tracker, habit, days), future);
+      const beforeJoin = new Date(year, m + 1, 0).getTime() < sinceMs; // whole month before signup
+      return { cls: beforeJoin ? 'hy-pad' : cls(periodState(tracker, habit, days), future), newYear: m === 0 };
     });
     return (
       <div className="hy-grid hy-grid--monthly">
-        {cells.map((c, m) => <span key={m} className={`hy-cell hy-cell--labelled ${c}`}>{MONTHS[m]}</span>)}
+        {cells.map((c, m) => <span key={m} className={`hy-cell hy-cell--labelled ${c.cls}${c.newYear ? ' hy-newyear' : ''}`}>{MONTHS[m]}</span>)}
       </div>
     );
   }
@@ -92,8 +101,10 @@ const HabitYearHeatmap: React.FC<{ habit: string; cadence: Cadence; year: number
       d.setDate(d.getDate() + 1);
     }
     const weekStart = new Date(wStart); weekStart.setDate(wStart.getDate() + w * 7);
+    const weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate() + 6);
     const future = weekStart.getTime() > nowMs;
-    return anyInYear ? cls(periodState(tracker, habit, days), future) : 'hy-pad';
+    const beforeJoin = weekEnd.getTime() < sinceMs;
+    return anyInYear ? (beforeJoin ? 'hy-pad' : cls(periodState(tracker, habit, days), future)) : 'hy-pad';
   });
   return (
     <div className="hy-grid hy-grid--weekly">

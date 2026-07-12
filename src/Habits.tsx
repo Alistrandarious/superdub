@@ -1147,11 +1147,24 @@ const Habits: React.FC = () => {
   const [ht, setHt] = useState<HabitTracker>({});
   const [weather, setWeather] = useState<WeatherState | null>(null);
   const [scrolled, setScrolled] = useState(false);
+  // The pinned XP bar only appears once the hero's own XP bar has scrolled off the
+  // top — measured live so it mirrors that element rather than a magic pixel count.
+  const heroRef = useRef<HTMLDivElement>(null);
+  const onPageScroll = (e: React.UIEvent<HTMLElement>) => {
+    const sc = e.currentTarget;
+    const h = heroRef.current;
+    if (h) setScrolled(h.getBoundingClientRect().bottom <= sc.getBoundingClientRect().top + 8);
+    else setScrolled(sc.scrollTop > 40);
+  };
   const [loaded, setLoaded] = useState(false);
   const [newHabit, setNewHabit] = useState('');
   const [pendingRemove, setPendingRemove] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [featuredOpen, setFeaturedOpen] = useState(false);
+  // The Featured banner can be dismissed (X) and brought back from the cog's
+  // "Discover Habits". Persisted so it stays hidden across sessions until restored.
+  const [featuredDismissed, setFeaturedDismissed] = useState(() => localStorage.getItem('superdub.featured.dismissed') === '1');
+  const dismissFeatured = () => { setFeaturedDismissed(true); localStorage.setItem('superdub.featured.dismissed', '1'); };
   const [showDayOverlay, setShowDayOverlay] = useState(false);
   const [overlayDay, setOverlayDay] = useState<string | null>(null); // null = today; else a DD/MM key
   const [rewindDay, setRewindDay] = useState<string | null>(null); // null = today; else rewind cards to this DD/MM
@@ -1305,6 +1318,17 @@ const Habits: React.FC = () => {
     const handler = () => setAddOpen(true);
     window.addEventListener('superdub:open-add-habit', handler);
     return () => window.removeEventListener('superdub:open-add-habit', handler);
+  }, []);
+
+  // "Discover Habits" from the cog: un-dismiss the banner and open the sheet.
+  useEffect(() => {
+    const handler = () => {
+      setFeaturedDismissed(false);
+      localStorage.removeItem('superdub.featured.dismissed');
+      setFeaturedOpen(true);
+    };
+    window.addEventListener('superdub:show-featured', handler);
+    return () => window.removeEventListener('superdub:show-featured', handler);
   }, []);
 
   // Cache the check-in streak so the flame badge can show it on every page.
@@ -1700,7 +1724,7 @@ const Habits: React.FC = () => {
         </div>
       )}
 
-      <div className="habits-page-scroll" onScroll={e => setScrolled((e.target as HTMLElement).scrollTop > 40)}>
+      <div className="habits-page-scroll" onScroll={onPageScroll}>
         {/* Top bar: brand + weather + cog (shared header) */}
         <SuperdubHeader>
           {weather && (
@@ -1761,7 +1785,7 @@ const Habits: React.FC = () => {
 
         {/* User level hero — the XP ring at the top of Habits (also on Profile).
             Tapping it opens Profile (customization + a link to the full level map). */}
-        <LevelHeroRing onRingTap={() => setCustomizeOpen(o => !o)} />
+        <div ref={heroRef}><LevelHeroRing onRingTap={() => setCustomizeOpen(o => !o)} /></div>
         {/* Customization revealed in place under the ring, morphing open/closed. */}
         <div className={`hb-customize${customizeOpen ? ' open' : ''}`}>
           <div className="hb-customize-inner">
@@ -1826,14 +1850,23 @@ const Habits: React.FC = () => {
         {/* Your habits, cadence carousel (Daily · Weekly · Monthly · Yearly) */}
         <CadenceCarousel panels={cadencePanels} startIndex={CADENCE_ORDER.indexOf(focusHabit ? (habitCadence[focusHabit] ?? 'daily') : 'daily')} compact={scrolled} />
 
-        {/* Featured banner, tap to open & join (below the user's habits) */}
-        <button className="hb-featured" onClick={() => setFeaturedOpen(true)}>
-          <div className="hb-featured-text">
-            <span className="hb-featured-eyebrow">FEATURED</span>
-            <span className="hb-featured-cta">Discover habits to join →</span>
+        {/* Featured banner, tap to open & join (below the user's habits). Slides up
+            on appear so it settles gently as the carousel above reflows on swipe.
+            Dismissable with the X; bring it back from the cog's Discover Habits. */}
+        {!featuredDismissed && (
+          <div className="hb-featured-wrap">
+            <button className="hb-featured" onClick={() => setFeaturedOpen(true)}>
+              <div className="hb-featured-text">
+                <span className="hb-featured-eyebrow">FEATURED</span>
+                <span className="hb-featured-cta">Discover habits to join →</span>
+              </div>
+              <span className="hb-featured-icon"><WalkIc size={44} /></span>
+            </button>
+            <button className="hb-featured-x" onClick={dismissFeatured} aria-label="Hide featured habits">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+            </button>
           </div>
-          <span className="hb-featured-icon"><WalkIc size={44} /></span>
-        </button>
+        )}
 
         <div style={{ height: 100 }} />
       </div>

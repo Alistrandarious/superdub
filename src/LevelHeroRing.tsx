@@ -39,15 +39,16 @@ const LevelHeroRing: React.FC<{ to?: string; onRingTap?: () => void }> = ({ to =
         <LevelRing level={playerLevel.level} title={playerLevel.title} progress={playerLevel.progress} theme={theme} size={170} onClick={() => onRingTap ? onRingTap() : navigateWithTransition(navigate, to)} />
       </div>
       <div className="lvl-hero-xp">
+        {/* The XP count reads INSIDE the bar. Every level starts at 0: the bar reads
+            X / span for THIS level (e.g. 0 / 2000). No level tag on the bar — the
+            ring already shows the level. */}
         <div className="hb-xp-bar">
           <div className="hb-xp-fill" style={{ width: `${Math.max(2, playerLevel.progress * 100)}%`, background: `linear-gradient(90deg, ${theme.from}, ${theme.to})`, boxShadow: `0 0 10px ${theme.glow}` }} />
-        </div>
-        {/* Every level starts at 0: the bar reads X / span for THIS level (e.g. 0 / 2000). */}
-        <div className="lvl-hero-scale">
-          {playerLevel.xpForNext != null
-            ? <span>{Math.max(0, totalXP - playerLevel.xpForLevel).toLocaleString()} / {(playerLevel.xpForNext - playerLevel.xpForLevel).toLocaleString()} XP</span>
-            : <span>{totalXP.toLocaleString()} XP</span>}
-          <span>Lv {playerLevel.level}</span>
+          <span className="hb-xp-inbar">
+            {playerLevel.xpForNext != null
+              ? `${Math.max(0, totalXP - playerLevel.xpForLevel).toLocaleString()} / ${(playerLevel.xpForNext - playerLevel.xpForLevel).toLocaleString()} XP`
+              : `${totalXP.toLocaleString()} XP`}
+          </span>
         </div>
         {playerLevel.xpForNext != null ? (
           <p className="hb-xp-to">{(playerLevel.xpForNext - totalXP).toLocaleString()} XP to <span>{playerLevel.nextTitle}</span></p>

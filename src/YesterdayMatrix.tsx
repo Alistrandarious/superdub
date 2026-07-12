@@ -23,6 +23,7 @@ export interface YesterdayMatrixProps {
   maintenance?: number | null;       // what your body burns (TDEE)
   stepBurnKcal?: number | null;      // energy from yesterday's steps vs your average
   weightChangeKcal?: number | null;  // energy from the overnight weight change (negative = lost)
+  intakeCaveat?: string | null;      // shown when the estimate is floored / water-driven
 }
 
 const MOOD_LABEL = (m: number) => m >= 8.5 ? 'great' : m >= 6.5 ? 'good' : m >= 4.5 ? 'okay' : m >= 2.5 ? 'low' : 'rough';
@@ -57,7 +58,7 @@ const Ring: React.FC<{ pct: number; over: boolean; children: React.ReactNode }> 
 
 const YesterdayMatrix: React.FC<YesterdayMatrixProps> = ({
   intake, targetCalories, delta, steps, stepTarget, sleepHours, mood, habitsDone, habitsTotal, onLogSteps,
-  maintenance, stepBurnKcal, weightChangeKcal,
+  maintenance, stepBurnKcal, weightChangeKcal, intakeCaveat,
 }) => {
   const [explain, setExplain] = useState(false);
   const over = delta != null && delta > 0;
@@ -96,6 +97,7 @@ const YesterdayMatrix: React.FC<YesterdayMatrixProps> = ({
                 {stepBurnKcal ? ` · steps ${signed(stepBurnKcal)}` : ''}
               </span>
             )}
+            {intakeCaveat && <span className="ltm-caveat">{intakeCaveat}</span>}
           </>
         ) : targetCalories > 0 ? (
           // No estimate yet — still surface the daily goal so it's always visible.
