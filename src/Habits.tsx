@@ -12,6 +12,7 @@ import DailyLog from './DailyLog';
 import AnimatedFlame from './AnimatedFlame';
 import LevelHeroRing from './LevelHeroRing';
 import PinnedXpBar from './PinnedXpBar';
+import LevelCustomizer from './LevelCustomizer';
 import {
   MoonIc, CalendarIc, TrophyIc, WalkIc, BookIc, NoSmokeIc, MealIc, MoneyIc, HealthIc,
   SunIc, CloudSunIc, CloudIc, RainIc, SnowIc, StormIc, type IconProps,
@@ -1106,6 +1107,8 @@ const Habits: React.FC = () => {
   useEffect(() => {
     if (focusHabit) window.history.replaceState(null, '', window.location.pathname);
   }, [focusHabit]);
+  // Tapping the level ring reveals the customization pickers in place (no navigation).
+  const [customizeOpen, setCustomizeOpen] = useState(false);
   const cadenceRef = useRef<Record<string, Cadence>>({});
   useEffect(() => { cadenceRef.current = habitCadence; }, [habitCadence]);
   // Persist habit names + their cadence (objects), using the latest cadence map.
@@ -1729,7 +1732,13 @@ const Habits: React.FC = () => {
 
         {/* User level hero — the XP ring at the top of Habits (also on Profile).
             Tapping it opens Profile (customization + a link to the full level map). */}
-        <LevelHeroRing to="/profile" />
+        <LevelHeroRing onRingTap={() => setCustomizeOpen(o => !o)} />
+        {/* Customization revealed in place under the ring, morphing open/closed. */}
+        <div className={`hb-customize${customizeOpen ? ' open' : ''}`}>
+          <div className="hb-customize-inner">
+            {customizeOpen && <LevelCustomizer showHero={false} />}
+          </div>
+        </div>
 
         {/* Weekly strip, the simplified "Logging into Superdub" habit */}
         <div className={`hb-week${isPerfectWeek ? ' hb-week-gold' : ''}${weekCelebrating ? ' hb-week-celebrating' : ''}`}>

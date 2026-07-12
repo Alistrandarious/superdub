@@ -34,7 +34,6 @@ const DEFAULT_PROFILE: ProfileData = {
   dob: '', heightCm: '', weightKg: '', sex: 'male', activity: '1.55', steps: '',
 };
 const DEFAULT_TARGET: MacroSet = { calories: 2003, protein: 150, carbs: 200, fats: 67 };
-const DEFAULT_HABITS = ['Walking', 'Praying', 'Duolingo'];
 const GYM_MET_P: Record<string, number> = { light: 4, moderate: 6, hard: 8 };
 
 interface WeeklyActivity {
@@ -92,8 +91,6 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
   const [name, setName] = useState('');
   const [profile, setProfile] = useState<ProfileData>(DEFAULT_PROFILE);
   const [target, setTarget] = useState<MacroSet>(DEFAULT_TARGET);
-  const [habits, setHabits] = useState<string[]>(DEFAULT_HABITS);
-  const [newHabit, setNewHabit] = useState('');
   const [jobType, setJobType] = useState('desk');
   // Optional demographic / job / religion fields
   const [occupation, setOccupation] = useState('');
@@ -127,8 +124,6 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
   // Quick weight log
 
   // Avatar picker
-  const [avatarSeed, setAvatarSeed] = useState<string | null>(null);
-  const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
 
   // Unit preferences — persisted in localStorage (no server column)
   const [heightUnit, setHeightUnit] = useState<'cm' | 'ftin'>(
@@ -149,9 +144,9 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
 
   useEffect(() => {
     Promise.all([
-      api.getProfile(), api.getDietTarget(), api.getHabits(),
+      api.getProfile(), api.getDietTarget(),
       api.getWeightSettings(), api.getDietSettings(),
-    ]).then(([profileData, targetData, habitsData, wsData, settingsData]) => {
+    ]).then(([profileData, targetData, wsData, settingsData]) => {
       const ws = wsData as any;
       setWsRef(ws);
       if (ws.goalWeight) setGoalWeight(ws.goalWeight);
@@ -176,7 +171,6 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
       if (pa.gymIntensity) setGymIntensity(pa.gymIntensity as 'light' | 'moderate' | 'hard');
       if (pa.gymMinutes) setGymMinutes(Number(pa.gymMinutes));
       if (Array.isArray(pa.weeklyActivities)) setWeeklyActivities(pa.weeklyActivities);
-      if (pa.avatarSeed) setAvatarSeed(pa.avatarSeed);
       setOccupation(pa.occupation ?? '');
       setEthnicity(pa.ethnicity ?? '');
       setGenderIdentity(pa.genderIdentity ?? '');
@@ -195,8 +189,6 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
       const t = targetData as MacroSet;
       setTarget(t);
       setDraft({ calories: String(t.calories), protein: String(t.protein), carbs: String(t.carbs), fats: String(t.fats) });
-      const habitObjs = habitsData as { name: string }[];
-      setHabits(habitObjs.length > 0 ? habitObjs.map(h => h.name) : DEFAULT_HABITS);
       setLoaded(true);
     }).catch(() => setLoaded(true));
   }, []);
@@ -364,19 +356,6 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
     saveTrainingSettings(gymSessionsPerWeek, gymIntensity, gymMinutes, next);
   };
 
-  const addHabit = () => {
-    const h = newHabit.trim();
-    if (!h || habits.includes(h)) return;
-    const newHabits = [...habits, h];
-    setHabits(newHabits); setNewHabit('');
-    api.updateHabits(newHabits).catch(() => {});
-  };
-  const removeHabit = (h: string) => {
-    const newHabits = habits.filter(x => x !== h);
-    setHabits(newHabits);
-    api.updateHabits(newHabits).catch(() => {});
-  };
-
   // Persist a single demographic/job/religion field on change.
   const saveDemographic = (patch: Record<string, string>) => {
     api.updateProfile({ ...profileRef.current, name: nameRef.current, ...patch }).catch(() => {});
@@ -419,69 +398,13 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
           <button className="profile-level-link" onClick={() => navigate('/level')}>View all levels &amp; badges →</button>
         </div>
 
-        {/* Identity */}
-        <div className="profile-identity">
-          <button
-            className="profile-avatar avatar-btn"
-            onClick={() => setAvatarPickerOpen(true)}
-            aria-label="Change avatar"
-            title="Change avatar"
-          >
-            {avatarSeed ? (
-              <img
-                src={`https://api.dicebear.com/9.x/pixel-art/svg?seed=${encodeURIComponent(avatarSeed)}&size=80`}
-                alt="avatar"
-                className="profile-avatar-img"
-              />
-            ) : (
-              <span className="profile-avatar-initial">{name ? name.trim()[0].toUpperCase() : '?'}</span>
-            )}
-            <span className="profile-avatar-edit-badge">✎</span>
-          </button>
+        {/* Identity — just your name (avatar removed) */}
+        <div className="profile-identity profile-identity--noavatar">
           <div className="profile-identity-info">
             <input id="profile-name-field" className="profile-name-input" type="text" value={name} onChange={e => setName(e.target.value)} onBlur={() => scheduleProfileSave()} onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} placeholder="Your name" maxLength={40} />
             <label htmlFor="profile-name-field" className="profile-name-hint">Tap to edit</label>
           </div>
         </div>
-
-        {/* Avatar picker sheet */}
-        {avatarPickerOpen && (() => {
-          const AVATAR_SEEDS = [
-            'Felix', 'Midnight', 'Pixel', 'Nova', 'Orbit', 'Cipher', 'Blaze', 'Echo',
-            'Zara', 'Neon', 'Ghost', 'Storm',
-          ];
-          return (
-            <div className="hb-sheet-overlay" onClick={() => setAvatarPickerOpen(false)}>
-              <div className="hb-sheet avatar-picker-sheet" onClick={e => e.stopPropagation()}>
-                <div className="hb-sheet-grip" />
-                <div className="hb-sheet-head">
-                  <h3 className="hb-sheet-title">Choose Avatar</h3>
-                  <button className="hb-sheet-close" onClick={() => setAvatarPickerOpen(false)} aria-label="Close">✕</button>
-                </div>
-                <p className="hb-sheet-sub">Pick a pixel-art avatar for your profile.</p>
-                <div className="avatar-grid">
-                  {AVATAR_SEEDS.map(seed => (
-                    <button
-                      key={seed}
-                      className={`avatar-option ${avatarSeed === seed ? 'selected' : ''}`}
-                      onClick={() => {
-                        setAvatarSeed(seed);
-                        api.updateProfile({ avatarSeed: seed }).catch(() => {});
-                        setAvatarPickerOpen(false);
-                      }}
-                    >
-                      <img
-                        src={`https://api.dicebear.com/9.x/pixel-art/svg?seed=${encodeURIComponent(seed)}&size=64`}
-                        alt={seed}
-                        className="avatar-option-img"
-                      />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          );
-        })()}
 
         {(lastActiveAt || lastLoginAt || accountCreatedAt) && (
           <div className="profile-account-meta">
@@ -848,24 +771,6 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
             })()}
           </div>{/* end plan-macros-section */}
         </div>{/* end Plan diet-section */}
-
-        {/* ── Habits ── */}
-        <div className="diet-section">
-          <h2 className="diet-heading">Habits</h2>
-          <ul className="habit-list">
-            {habits.map(h => (
-              <li key={h} className="habit-item">
-                <span>{h}</span>
-                <button className="habit-remove" onClick={() => removeHabit(h)}>✕</button>
-              </li>
-            ))}
-          </ul>
-          <div className="habit-add">
-            <input type="text" value={newHabit} onChange={e => setNewHabit(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && addHabit()} placeholder="New habit name" className="habit-add-input" />
-            <button className="habit-add-btn" onClick={addHabit}>+</button>
-          </div>
-        </div>
 
         {/* ── More menu ── */}
         <div className="more-menu">

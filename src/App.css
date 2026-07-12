@@ -2500,7 +2500,8 @@ h1, h2, h3, h4, .sora {
 .goal-reached-btn:disabled { opacity: 0.5; cursor: default; }
 
 /* ── Profile background (demographics) selects ── */
-.bg-fields { display: flex; flex-direction: column; gap: 14px; }
+/* Two columns so the optional background fields take up far less vertical space. */
+.bg-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
 .bg-select {
   width: 100%;
   font-family: 'Sora', sans-serif;
@@ -4700,6 +4701,14 @@ h1, h2, h3, h4, .sora {
 .habits-page-scroll .lvl-hero-bloom { display: none; }
 .habits-page-scroll .lvl-hero-ring { animation: none; }
 .habits-page-scroll .lvl-hero { padding-top: 10px; }
+/* Customization revealed in place under the ring (grid-rows collapse, smooth morph). */
+.hb-customize {
+  display: grid; grid-template-rows: 0fr; opacity: 0;
+  margin: 0 12px;
+  transition: grid-template-rows 0.34s cubic-bezier(0.22,1,0.36,1), opacity 0.28s ease;
+}
+.hb-customize.open { grid-template-rows: 1fr; opacity: 1; }
+.hb-customize-inner { overflow: hidden; min-height: 0; }
 
 /* Habits home hero: relocated level + settings (replaces header bar) */
 /* =====================================================================

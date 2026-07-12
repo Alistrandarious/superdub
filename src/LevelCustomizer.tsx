@@ -50,7 +50,9 @@ const rewardMark = (r: (typeof PLAYER_LEVELS)[number]['reward']) => {
   return <span className="asc-diamond" />;
 };
 
-const LevelCustomizer: React.FC = () => {
+// `showHero` renders the level ring hero above the pickers (Profile). The Habits
+// page reveals this panel in place under its own ring, so it passes showHero={false}.
+const LevelCustomizer: React.FC<{ showHero?: boolean }> = ({ showHero = true }) => {
   const { playerLevel } = useXP();
 
   const [earlyAdopter, setEarlyAdopter] = useState(false);
@@ -117,7 +119,7 @@ const LevelCustomizer: React.FC = () => {
   return (
     <>
       {/* Hero — the ring floats on a theme-coloured bloom; tap through to the full ladder */}
-      <LevelHeroRing />
+      {showHero && <LevelHeroRing />}
 
       {playerLevel.nextReward && (
         <div className="next-reward-card">
