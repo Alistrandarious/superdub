@@ -193,4 +193,21 @@ export const api = {
     request('/global/contribute', { method: 'POST', body: JSON.stringify({ xp }) }),
   uncontributeGlobal: () =>
     request('/global/uncontribute', { method: 'POST' }),
+
+  // ── Friends / social ──
+  getFriends: (): Promise<{
+    friends: { id: number; name: string; email: string; streak: number | null; doneDays: number | null; lastActive: string | null; sharedHabits: string[]; shares: boolean }[];
+    incoming: { id: number; name: string; email: string }[];
+    outgoing: { id: number; name: string; email: string }[];
+  }> => request('/friends'),
+  sendFriendRequest: (email: string): Promise<{ ok: true; status: 'pending' | 'accepted' }> =>
+    request('/friends/request', { method: 'POST', body: JSON.stringify({ email }) }),
+  respondFriend: (userId: number, action: 'accept' | 'decline') =>
+    request('/friends/respond', { method: 'POST', body: JSON.stringify({ userId, action }) }),
+  removeFriend: (userId: number) => request(`/friends/${userId}`, { method: 'DELETE' }),
+  getFriendSettings: (): Promise<{ shareActivity: boolean }> => request('/friends/settings'),
+  setFriendSettings: (shareActivity: boolean) =>
+    request('/friends/settings', { method: 'POST', body: JSON.stringify({ shareActivity }) }),
+  setHabitShare: (name: string, shared: boolean) =>
+    request('/friends/habit-share', { method: 'POST', body: JSON.stringify({ name, shared }) }),
 };

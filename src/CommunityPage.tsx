@@ -2,6 +2,7 @@ import React from 'react';
 import './App.css';
 import SuperdubHeader from './SuperdubHeader';
 import GlobalHabitCard from './GlobalHabitCard';
+import FriendsPanel from './FriendsPanel';
 import { pageTheme, GOLD } from './theme';
 
 // Global & Friends — the community tab. Houses this month's shared Global habit
@@ -26,13 +27,7 @@ const CommunityPage: React.FC = () => {
           Log a good deed
         </button>
 
-        <section className="community-friends">
-          <span className="community-eyebrow">FRIENDS</span>
-          <div className="community-soon">
-            <p className="community-soon-title">Friends are coming soon</p>
-            <p className="community-soon-sub">You'll be able to add friends, cheer each other on, and climb the habit together.</p>
-          </div>
-        </section>
+        <FriendsPanel />
       </div>
     </div>
   );

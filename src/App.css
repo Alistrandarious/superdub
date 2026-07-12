@@ -5364,6 +5364,52 @@ h1, h2, h3, h4, .sora {
 .community-soon-title { margin: 0; font-family: var(--font-ui); font-weight: 700; font-size: 0.92rem; color: #EAF2EE; }
 .community-soon-sub { margin: 6px 0 0; font-family: var(--font-ui); font-size: 0.78rem; line-height: 1.45; color: rgba(255,255,255,0.5); }
 
+/* ── Friends ── */
+.friends { display: flex; flex-direction: column; gap: 10px; margin: 4px; }
+.friends-add { display: flex; gap: 8px; }
+.friends-add-input {
+  flex: 1; min-width: 0; padding: 10px 12px; border-radius: var(--r-md);
+  background: var(--glass-bg); border: 1px solid var(--glass-border); color: #E8ECF4;
+  font-family: var(--font-ui); font-size: 0.86rem;
+}
+.friends-add-btn {
+  padding: 10px 16px; border-radius: var(--r-md); border: none; cursor: pointer;
+  font-family: var(--font-ui); font-weight: 700; font-size: 0.86rem; color: #1a1008;
+  background: var(--grad-ascension);
+}
+.friends-add-btn:disabled { opacity: 0.5; }
+.friends-msg { margin: 0; font-family: var(--font-ui); font-size: 0.78rem; color: rgba(255,255,255,0.6); }
+.friends-group { display: flex; flex-direction: column; gap: 8px; }
+.friends-sublabel { font-family: var(--font-data); font-size: 0.56rem; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.45); }
+.friend-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 10px 12px; border-radius: var(--r-md);
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+}
+.friend-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.friend-name { font-family: var(--font-ui); font-weight: 600; font-size: 0.9rem; color: #E8ECF4; }
+.friend-stats { font-family: var(--font-data); font-size: 0.6rem; color: rgba(255,255,255,0.5); }
+.friend-habits { font-family: var(--font-ui); font-size: 0.7rem; color: rgba(255,224,138,0.7); }
+.friend-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.friend-accept, .friend-decline, .friend-remove {
+  border: none; cursor: pointer; font-family: var(--font-ui); font-weight: 700; font-size: 0.72rem;
+  padding: 6px 10px; border-radius: var(--r-pill);
+}
+.friend-accept { background: rgba(47,210,126,0.18); color: #2FD27E; }
+.friend-decline, .friend-remove { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.55); }
+.friends-empty { margin: 0; font-family: var(--font-ui); font-size: 0.82rem; color: rgba(255,255,255,0.5); }
+.friends-share {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer;
+  padding: 12px 14px; border-radius: var(--r-md); margin-top: 4px;
+  background: var(--glass-bg); border: 1px solid var(--glass-border); color: #E8ECF4;
+  font-family: var(--font-ui); font-size: 0.84rem; font-weight: 600;
+}
+.friends-share-knob { position: relative; width: 40px; height: 22px; border-radius: 999px; background: rgba(255,255,255,0.14); flex-shrink: 0; transition: background 0.2s; }
+.friends-share-knob::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform 0.2s; }
+.friends-share.on .friends-share-knob { background: #2FD27E; }
+.friends-share.on .friends-share-knob::after { transform: translateX(18px); }
+.friends-note { margin: 0; font-family: var(--font-ui); font-size: 0.72rem; line-height: 1.4; color: rgba(255,255,255,0.4); }
+
 /* ── Daily Log — the "Daily Superdub" vitals strip ──────────── */
 .daily-log { margin: 16px 16px 4px; }
 .daily-log-head {
@@ -7517,6 +7563,28 @@ h1, h2, h3, h4, .sora {
   border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;
   padding: 4px 8px; font-family: 'Sora', sans-serif; font-size: 0.72rem; cursor: pointer;
 }
+
+/* Per-habit share-with-friends toggle (off by default). */
+.hcard-share {
+  display: flex; align-items: center; gap: 8px; margin-top: 8px; width: 100%;
+  padding: 8px 10px; border-radius: 8px; cursor: pointer;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
+}
+.hcard-share-text {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'Sora', sans-serif; font-size: 0.72rem; color: rgba(255,255,255,0.6);
+}
+.hcard-share.on .hcard-share-text { color: var(--theme); }
+.hcard-share-knob {
+  margin-left: auto; position: relative; width: 36px; height: 20px; border-radius: 999px;
+  background: rgba(255,255,255,0.14); flex-shrink: 0; transition: background 0.2s;
+}
+.hcard-share-knob::after {
+  content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px;
+  border-radius: 50%; background: #fff; transition: transform 0.2s;
+}
+.hcard-share.on .hcard-share-knob { background: var(--theme); }
+.hcard-share.on .hcard-share-knob::after { transform: translateX(16px); }
 
 /* Cadence calendar — one cell per period (weeks / months / year) for non-daily
    habits, shown in place of the daily month grid. */

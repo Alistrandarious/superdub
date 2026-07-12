@@ -528,9 +528,11 @@ const HabitCard: React.FC<{
   onSetReminder: (habit: string, hour: number | null) => void;
   schedule?: string | null;
   onSetSchedule: (habit: string, schedule: string | null) => void;
+  sharedWithFriends?: boolean;
+  onToggleShare: (habit: string, shared: boolean) => void;
   dragHandle?: React.ReactNode;
   focused?: boolean;
-}> = ({ habit, stats, weekDays, ht, today, cadence, onToggleDay, onEditDay, onRequestRemove, startDate, starred, onToggleStar, dueDate, onSetDueDate, reminderHour, onSetReminder, schedule, onSetSchedule, dragHandle, focused }) => {
+}> = ({ habit, stats, weekDays, ht, today, cadence, onToggleDay, onEditDay, onRequestRemove, startDate, starred, onToggleStar, dueDate, onSetDueDate, reminderHour, onSetReminder, schedule, onSetSchedule, sharedWithFriends, onToggleShare, dragHandle, focused }) => {
   const [histOpen, setHistOpen] = useState(false);
   const [monthOffset, setMonthOffset] = useState(0); // 0 = this month, -1 = last month …
   // Shrink the name font when it wraps to more than one line. Measured at the base
@@ -876,6 +878,23 @@ const HabitCard: React.FC<{
           ))}
         </select>
       </div>
+
+      {/* Share with friends — off by default. When on, accepted friends can see this
+          habit's name in their friends list. Streaks/logins are governed separately by
+          the global "share my activity" toggle on the Global tab. */}
+      <button
+        type="button"
+        className={`hcard-share${sharedWithFriends ? ' on' : ''}`}
+        onClick={e => { e.stopPropagation(); onToggleShare(habit, !sharedWithFriends); }}
+        role="switch"
+        aria-checked={!!sharedWithFriends}
+      >
+        <span className="hcard-share-text">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          {sharedWithFriends ? 'Shared with friends' : 'Share with friends'}
+        </span>
+        <span className="hcard-share-knob" />
+      </button>
       </div>
       </div>
     </div>
@@ -1122,6 +1141,7 @@ const Habits: React.FC = () => {
   const [dueDates, setDueDates] = useState<Record<string, string | null>>({}); // 'YYYY-MM-DD' per habit
   const [reminderHours, setReminderHours] = useState<Record<string, number | null>>({}); // local hour 0-23 per habit
   const [schedules, setSchedules] = useState<Record<string, string | null>>({}); // scheduling anchor per non-daily habit
+  const [shared, setShared] = useState<Record<string, boolean>>({}); // per-habit share-with-friends opt-in
   const [newQuitStart, setNewQuitStart] = useState<string>(() => toLocalDatetimeValue(new Date()));
   const [xpCarry, setXpCarry] = useState<Record<string, number>>({});
   const [ht, setHt] = useState<HabitTracker>({});
@@ -1201,7 +1221,8 @@ const Habits: React.FC = () => {
       const dues: Record<string, string | null> = {};
       const rems: Record<string, number | null> = {};
       const scheds: Record<string, string | null> = {};
-      loadedHabits.forEach(h => { dates[h.name] = h.startDate; cad[h.name] = ((h as any).cadence as Cadence) || 'daily'; quits[h.name] = (h as any).quitStartedAt ?? null; stars[h.name] = !!(h as any).starred; dues[h.name] = (h as any).dueDate ?? null; rems[h.name] = (h as any).reminderHour ?? null; scheds[h.name] = (h as any).schedule ?? null; });
+      const shares: Record<string, boolean> = {};
+      loadedHabits.forEach(h => { dates[h.name] = h.startDate; cad[h.name] = ((h as any).cadence as Cadence) || 'daily'; quits[h.name] = (h as any).quitStartedAt ?? null; stars[h.name] = !!(h as any).starred; dues[h.name] = (h as any).dueDate ?? null; rems[h.name] = (h as any).reminderHour ?? null; scheds[h.name] = (h as any).schedule ?? null; shares[h.name] = !!(h as any).sharedWithFriends; });
       cad[MANDATORY_HABIT] = 'daily';
       setHabitCadence(cad);
       setQuitStarts(quits);
@@ -1209,6 +1230,7 @@ const Habits: React.FC = () => {
       setDueDates(dues);
       setReminderHours(rems);
       setSchedules(scheds);
+      setShared(shares);
       cadenceRef.current = cad;
 
       // Mandatory habit is always present in state.
@@ -1420,6 +1442,11 @@ const Habits: React.FC = () => {
     api.setHabitSchedule(name, schedule).catch(() => {});
   }, []);
 
+  const handleToggleShare = useCallback((name: string, sharedNow: boolean) => {
+    setShared(prev => ({ ...prev, [name]: sharedNow }));
+    api.setHabitShare(name, sharedNow).catch(() => setShared(prev => ({ ...prev, [name]: !sharedNow })));
+  }, []);
+
   // Reorder within one cadence group: rebuild the global habits array, keeping
   // members of other groups in their existing slots, then persist (positions).
   const commitGroupReorder = useCallback((newOrder: string[]) => {
@@ -1501,6 +1528,8 @@ const Habits: React.FC = () => {
         onSetReminder={handleSetReminder}
         schedule={schedules[habit] ?? null}
         onSetSchedule={handleSetSchedule}
+        sharedWithFriends={shared[habit]}
+        onToggleShare={handleToggleShare}
         dragHandle={handle}
         focused={habit === focusHabit}
       />

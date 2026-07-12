@@ -19,10 +19,10 @@ router.get('/graveyard', requireAuth as any, async (req: AuthRequest, res: Respo
 router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
     const { rows } = await pool.query(
-      "SELECT name, start_date, COALESCE(cadence, 'daily') AS cadence, quit_started_at, COALESCE(starred, FALSE) AS starred, due_date::text AS due_date, reminder_hour, schedule FROM habits WHERE user_id = $1 AND (archived = FALSE OR archived IS NULL) ORDER BY position",
+      "SELECT name, start_date, COALESCE(cadence, 'daily') AS cadence, quit_started_at, COALESCE(starred, FALSE) AS starred, due_date::text AS due_date, reminder_hour, schedule, COALESCE(shared_with_friends, FALSE) AS shared_with_friends FROM habits WHERE user_id = $1 AND (archived = FALSE OR archived IS NULL) ORDER BY position",
       [req.userId]
     );
-    res.json(rows.map((r: any) => ({ name: r.name, startDate: r.start_date, cadence: r.cadence, quitStartedAt: r.quit_started_at, starred: r.starred, dueDate: r.due_date, reminderHour: r.reminder_hour, schedule: r.schedule ?? null })));
+    res.json(rows.map((r: any) => ({ name: r.name, startDate: r.start_date, cadence: r.cadence, quitStartedAt: r.quit_started_at, starred: r.starred, dueDate: r.due_date, reminderHour: r.reminder_hour, schedule: r.schedule ?? null, sharedWithFriends: r.shared_with_friends })));
   } catch {
     res.status(500).json({ error: 'Server error' });
   }

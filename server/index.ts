@@ -17,6 +17,7 @@ import pushRoutes from './routes/push';
 import goalsRoutes from './routes/goals';
 import globalRoutes from './routes/global';
 import journalRoutes from './routes/journal';
+import friendsRoutes from './routes/friends';
 import { sendPush, pushEnabled } from './services/push';
 import { reminderDue, scheduleMatchesToday } from './reminderSchedule';
 import { pool } from './db';
@@ -43,6 +44,7 @@ app.use('/api/push', pushRoutes);
 app.use('/api/goals', goalsRoutes);
 app.use('/api/global', globalRoutes);
 app.use('/api/journal', journalRoutes);
+app.use('/api/friends', friendsRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
@@ -338,6 +340,22 @@ const migrations = [
     xp      INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (user_id, day)
   )`,
+  // ── Friends / social ───────────────────────────────────────────────────────
+  // Phone captured for a later phone-connect flow (SMS verification not built yet).
+  `ALTER TABLE profile ADD COLUMN IF NOT EXISTS phone TEXT`,
+  // Global opt-out: friends may see your streaks + login activity when TRUE.
+  `ALTER TABLE profile ADD COLUMN IF NOT EXISTS share_activity BOOLEAN DEFAULT TRUE`,
+  // Per-habit opt-in: a habit is only visible to friends when this is TRUE.
+  `ALTER TABLE habits ADD COLUMN IF NOT EXISTS shared_with_friends BOOLEAN DEFAULT FALSE`,
+  `CREATE TABLE IF NOT EXISTS friendships (
+    requester_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    addressee_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    status       TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','accepted','blocked')),
+    created_at   TIMESTAMPTZ DEFAULT NOW(),
+    PRIMARY KEY (requester_id, addressee_id),
+    CHECK (requester_id <> addressee_id)
+  )`,
+  `CREATE INDEX IF NOT EXISTS friendships_addressee_idx ON friendships (addressee_id, status)`,
 ];
 (async () => {
   for (const sql of migrations) {
