@@ -7075,6 +7075,21 @@ h1, h2, h3, h4, .sora {
 }
 .dub-checkin-btn:active { transform: scale(0.98); }
 .dub-section { padding: 12px; }
+/* Dub's room — a cozy scene with Dub sitting on the rug */
+.dub-room { margin: 22px 16px 0; }
+.dub-room-eyebrow {
+  display: block; font-family: var(--font-data); font-size: 0.6rem; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 8px;
+}
+.dub-room-stage {
+  position: relative; border-radius: var(--r-card); overflow: hidden;
+  border: 1px solid var(--glass-border);
+}
+.dub-room-svg { display: block; width: 100%; height: auto; }
+.dub-room-pet {
+  position: absolute; left: 50%; bottom: 9%; transform: translateX(-50%);
+  filter: drop-shadow(0 7px 10px rgba(0,0,0,0.5));
+}
 .dub-section-title {
   font-family: 'Space Mono', monospace; font-size: 0.66rem; font-weight: 700;
   letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.5);

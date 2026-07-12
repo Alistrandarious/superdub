@@ -4,6 +4,7 @@ import { api } from './api';
 import { buildCoachReport, type CoachReport as Report } from './coach';
 import { buildHabitInsights, type DubInsight } from './dubInsights';
 import DubMascot, { getMascot, type MascotSpecies } from './DubMascot';
+import DubRoom from './DubRoom';
 import SuperdubHeader from './SuperdubHeader';
 import { pageTheme, GROWTH } from './theme';
 import { dubPronouns, getDubGender, dubHas, type DubGender } from './dubPronouns';
@@ -194,7 +195,9 @@ const DubPage: React.FC = () => {
           )}
         </section>
 
-        <div style={{ height: 100 }} />
+        {/* Dub's room — his own cozy space at the bottom of the page */}
+        <DubRoom species={species} />
+        <div style={{ height: 90 }} />
       </div>
     </div>
   );
