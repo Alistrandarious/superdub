@@ -809,7 +809,9 @@ const HabitCard: React.FC<{
         </div>
       )}
 
-      {(() => {
+      {/* A one-off due date only makes sense for non-daily habits. A daily habit
+          runs every day, so it just gets a time reminder (below), not a due day. */}
+      {!isDaily && (() => {
         const localToday = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
         const overdue = !!dueDate && dueDate < localToday && !currentDone;
         return (
