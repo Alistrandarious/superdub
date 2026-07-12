@@ -15,7 +15,7 @@ const CommunityPage: React.FC = () => {
       <div className="page-content community-content">
         <div className="community-intro">
           <span className="community-eyebrow">GLOBAL &amp; FRIENDS</span>
-          <p className="community-sub">Climb one shared habit with every Superdubber, and soon, with your friends.</p>
+          <p className="community-sub">Climb one shared habit with every Superdubber, and cheer on the friends you add.</p>
         </div>
 
         <GlobalHabitCard />
