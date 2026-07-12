@@ -17,7 +17,9 @@ function navigateWithTransition(navigate: ReturnType<typeof useNavigate>, to: st
   else doNav();
 }
 
-const LevelHeroRing: React.FC = () => {
+// `to` is where tapping the ring goes. Default is the level ladder (/level); the
+// Habits page sends it to /profile (customization, which links on to the ladder).
+const LevelHeroRing: React.FC<{ to?: string }> = ({ to = '/level' }) => {
   const navigate = useNavigate();
   const { totalXP, playerLevel } = useXP();
 
@@ -33,7 +35,7 @@ const LevelHeroRing: React.FC = () => {
     <div className="lvl-hero" style={{ '--hero-glow': theme.glow, '--hero-from': theme.from, '--hero-to': theme.to } as React.CSSProperties}>
       <div className="lvl-hero-bloom" />
       <div className="lvl-hero-ring">
-        <LevelRing level={playerLevel.level} title={playerLevel.title} progress={playerLevel.progress} theme={theme} size={170} onClick={() => navigateWithTransition(navigate, '/level')} />
+        <LevelRing level={playerLevel.level} title={playerLevel.title} progress={playerLevel.progress} theme={theme} size={170} onClick={() => navigateWithTransition(navigate, to)} />
       </div>
       <div className="lvl-hero-xp">
         <div className="hb-xp-bar">

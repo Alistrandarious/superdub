@@ -1657,8 +1657,9 @@ const Habits: React.FC = () => {
           </div>
         )}
 
-        {/* User level hero — the XP ring at the top of Habits (also on Profile). */}
-        <LevelHeroRing />
+        {/* User level hero — the XP ring at the top of Habits (also on Profile).
+            Tapping it opens Profile (customization + a link to the full level map). */}
+        <LevelHeroRing to="/profile" />
 
         {/* Weekly strip, the simplified "Logging into Superdub" habit */}
         <div className={`hb-week${isPerfectWeek ? ' hb-week-gold' : ''}${weekCelebrating ? ' hb-week-celebrating' : ''}`}>

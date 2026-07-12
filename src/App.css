@@ -4672,7 +4672,14 @@ h1, h2, h3, h4, .sora {
   display: flex;
   flex-direction: column;
   padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  scrollbar-width: none;           /* Firefox: hide scrollbar, keep scrolling */
+  -ms-overflow-style: none;        /* old Edge */
 }
+.habits-page-scroll::-webkit-scrollbar { display: none; }  /* WebKit: hide scrollbar */
+
+/* Level hero on Habits: inset the XP bar to the 18px gutter so it lines up with
+   the check-in circles (.hb-week) below instead of running edge to edge. */
+.habits-page-scroll .lvl-hero-xp { max-width: none; padding: 0 18px; }
 
 /* Habits home hero: relocated level + settings (replaces header bar) */
 /* =====================================================================
