@@ -1671,11 +1671,11 @@ const Habits: React.FC = () => {
                 disabled={isFuture}
                 onClick={() => {
                   if (isFuture) return;
-                  // Today reopens the check-in popup; a past day rewinds the cards to it.
-                  if (isToday) { setRewindDay(null); openDayOverlay(); }
-                  else setRewindDay(key);
+                  // Every day just points the log/cards to it — today no longer pops
+                  // the check-in overlay (that still auto-opens on its own schedule).
+                  setRewindDay(isToday ? null : key);
                 }}
-                aria-label={`${label}: ${state ?? 'not logged'}, ${isToday ? 'view this day' : 'rewind to this day'}`}
+                aria-label={`${label}: ${state ?? 'not logged'}, ${isToday ? 'go to today' : 'rewind to this day'}`}
               >
                 <span className="hb-week-dow">{label}</span>
                 <div

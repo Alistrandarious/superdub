@@ -1479,13 +1479,13 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     return `Yesterday you ate about ${verdict.intake.toLocaleString()} kcal, ${Math.abs(verdict.delta).toLocaleString()} ${verdict.delta <= 0 ? 'under' : 'over'} your ${targetCalories.toLocaleString()} target.${zone}${wk}`;
   })();
 
-  // Story panels: Yesterday (retrospective KPIs) first, then a placeholder Today,
-  // the charts in the middle, and a scrollable Stats panel last. Tabs/notes stay
-  // index-aligned with the slides; Dub's top bar shows each note.
-  const storyTabs = ['Yesterday', 'Today', 'Weight Plan', ...chartMeta.map(m => m.name), 'Stats'];
+  // Story panels: Today first, then Yesterday (retrospective KPIs), the charts in
+  // the middle, and a scrollable Stats panel last. Tabs/notes stay index-aligned
+  // with the slides; Dub's top bar shows each note.
+  const storyTabs = ['Today', 'Yesterday', 'Weight Plan', ...chartMeta.map(m => m.name), 'Stats'];
   const storyNotes: (string | null)[] = [
-    liveVerdict,
     "Here is what is due today and coming up this week. Knock them out one at a time.",
+    liveVerdict,
     "Your live plan for today. The steps to hit and where your weight is heading.",
     ...chartMeta.map(m => m.note),
     null,
@@ -1793,46 +1793,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="dashboard-story">
       <ChartCarousel tabs={storyTabs} notes={storyNotes}>
 
-      {/* ── Panel 0 · Yesterday, retrospective KPIs fill the locked height.
-             Dub's yesterday-verdict rides in the carousel's top bar (note 0). ── */}
-      <div className="story-panel story-panel--intro">
-
-      <YesterdayMatrix
-        intake={verdict?.intake ?? null}
-        targetCalories={targetCalories}
-        delta={verdict?.delta ?? null}
-        steps={ySteps}
-        stepTarget={stepTarget}
-        sleepHours={ySleep}
-        mood={yMood}
-        habitsDone={yHabitsDone}
-        habitsTotal={realHabits.length}
-        onLogSteps={() => window.dispatchEvent(new CustomEvent('superdub:show-step-entry', { detail: { date: yesterdayISO } }))}
-      />
-
-      {renderStarStrip(yesterdayKey)}
-
-      {/* ── Cohort onboarding banner (shown once after signup) ── */}
-      {cohortMsg && !cohortDismissed && (
-        <div className="cohort-banner">
-          <div className="cohort-banner-inner">
-            <div className="cohort-banner-header">
-              <span className="cohort-banner-icon"><UsersIc size={16} /></span>
-              <span className="cohort-banner-label">Expert Coach · Community Cohort</span>
-              <button className="cohort-banner-dismiss" onClick={() => {
-                setCohortDismissed(true);
-                localStorage.setItem('superdub:cohort-dismissed', '1');
-              }}>✕</button>
-            </div>
-            {cohortName && <div className="cohort-banner-name">{cohortName}</div>}
-            <p className="cohort-banner-msg">{cohortMsg}</p>
-          </div>
-        </div>
-      )}
-
-      </div>{/* /Yesterday panel */}
-
-      {/* ── Panel · Today — to-dos due this week + weekly/monthly habits about to lapse ── */}
+      {/* ── Panel 0 · Today — to-dos due this week + weekly/monthly habits about to lapse ── */}
       <div className="story-panel today-feed">
         <div className="plan-hero-head today-feed-head">
           <span className="today-soon-eyebrow">TODAY</span>
@@ -1904,6 +1865,45 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           </div>
         )}
       </div>
+
+      {/* ── Panel 1 · Yesterday, retrospective KPIs fill the locked height.
+             Dub's yesterday-verdict rides in the carousel's top bar (note 1). ── */}
+      <div className="story-panel story-panel--intro">
+
+      <YesterdayMatrix
+        intake={verdict?.intake ?? null}
+        targetCalories={targetCalories}
+        delta={verdict?.delta ?? null}
+        steps={ySteps}
+        stepTarget={stepTarget}
+        sleepHours={ySleep}
+        mood={yMood}
+        habitsDone={yHabitsDone}
+        habitsTotal={realHabits.length}
+        onLogSteps={() => window.dispatchEvent(new CustomEvent('superdub:show-step-entry', { detail: { date: yesterdayISO } }))}
+      />
+
+      {renderStarStrip(yesterdayKey)}
+
+      {/* ── Cohort onboarding banner (shown once after signup) ── */}
+      {cohortMsg && !cohortDismissed && (
+        <div className="cohort-banner">
+          <div className="cohort-banner-inner">
+            <div className="cohort-banner-header">
+              <span className="cohort-banner-icon"><UsersIc size={16} /></span>
+              <span className="cohort-banner-label">Expert Coach · Community Cohort</span>
+              <button className="cohort-banner-dismiss" onClick={() => {
+                setCohortDismissed(true);
+                localStorage.setItem('superdub:cohort-dismissed', '1');
+              }}>✕</button>
+            </div>
+            {cohortName && <div className="cohort-banner-name">{cohortName}</div>}
+            <p className="cohort-banner-msg">{cohortMsg}</p>
+          </div>
+        </div>
+      )}
+
+      </div>{/* /Yesterday panel */}
 
       {/* ── Panel · Weight Plan — gauge + weekly chart + steps, or a start-plan prompt ── */}
       <div className="story-panel today-plan">
