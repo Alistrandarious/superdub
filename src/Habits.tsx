@@ -526,7 +526,8 @@ const HabitCard: React.FC<{
   schedule?: string | null;
   onSetSchedule: (habit: string, schedule: string | null) => void;
   dragHandle?: React.ReactNode;
-}> = ({ habit, stats, weekDays, ht, today, cadence, onToggleDay, onEditDay, onRequestRemove, startDate, starred, onToggleStar, dueDate, onSetDueDate, reminderHour, onSetReminder, schedule, onSetSchedule, dragHandle }) => {
+  focused?: boolean;
+}> = ({ habit, stats, weekDays, ht, today, cadence, onToggleDay, onEditDay, onRequestRemove, startDate, starred, onToggleStar, dueDate, onSetDueDate, reminderHour, onSetReminder, schedule, onSetSchedule, dragHandle, focused }) => {
   const [histOpen, setHistOpen] = useState(false);
   const [monthOffset, setMonthOffset] = useState(0); // 0 = this month, -1 = last month …
   // Shrink the name font when it wraps to more than one line. Measured at the base
@@ -558,7 +559,12 @@ const HabitCard: React.FC<{
   };
   const currentUnit = units.find(u => u.isCurrent) ?? units[0];
   const accent = CADENCE_META[cadence].color;
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(!!focused);
+  const cardRef = useRef<HTMLDivElement>(null);
+  // Deep-linked from the Today feed: expand + scroll this card into view once.
+  useEffect(() => {
+    if (focused) cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [focused]);
   const currentDone = isDaily ? todayState === 'done' : !!currentUnit?.done;
   // What the header circle shows. Daily reflects today's full state (done/failed/na)
   // so it mirrors the weekday circles' double-tap / long-press. Non-daily units only
@@ -598,7 +604,8 @@ const HabitCard: React.FC<{
 
   return (
     <div
-      className={`hcard ${expanded ? 'hcard--expanded' : 'hcard--collapsed'} ${hasDanger ? 'hcard-danger' : hasWarning ? 'hcard-warning' : ''}`}
+      ref={cardRef}
+      className={`hcard ${expanded ? 'hcard--expanded' : 'hcard--collapsed'} ${hasDanger ? 'hcard-danger' : hasWarning ? 'hcard-warning' : ''}${focused ? ' hcard--focused' : ''}`}
       style={{ '--theme': accent, '--theme-dim': `${accent}66`, '--theme-glow': `${accent}22` } as React.CSSProperties}
     >
       {/* Header — top row: circle + name; bottom row: level · chevron · streak.
@@ -1082,6 +1089,14 @@ const Habits: React.FC = () => {
   const [habits, setHabits] = useState<string[]>([]);
   const [habitCadence, setHabitCadence] = useState<Record<string, Cadence>>({});
   const [newHabitCadence, setNewHabitCadence] = useState<Cadence>('daily');
+  const [newHabitSchedule, setNewHabitSchedule] = useState<string | null>(null); // day/date the new habit runs on
+  // Deep-link from the Today feed (/?habit=Name): focus + expand that habit's card.
+  const [focusHabit] = useState<string | null>(() => {
+    try { return new URLSearchParams(window.location.search).get('habit'); } catch { return null; }
+  });
+  useEffect(() => {
+    if (focusHabit) window.history.replaceState(null, '', window.location.pathname);
+  }, [focusHabit]);
   const cadenceRef = useRef<Record<string, Cadence>>({});
   useEffect(() => { cadenceRef.current = habitCadence; }, [habitCadence]);
   // Persist habit names + their cadence (objects), using the latest cadence map.
@@ -1348,9 +1363,15 @@ const Habits: React.FC = () => {
       Promise.resolve(persistHabits(updated, { [n]: 'quit' })).then(() => api.setQuitStart(n, startedAtISO).catch(() => {}));
     } else {
       persistHabits(updated, { [n]: newHabitCadence });
+      // Persist the chosen run-day (weekly/monthly/yearly) alongside the new habit.
+      if (newHabitSchedule) {
+        setSchedules(prev => ({ ...prev, [n]: newHabitSchedule }));
+        api.setHabitSchedule(n, newHabitSchedule).catch(() => {});
+      }
     }
     setNewHabit('');
     setNewHabitCadence('daily');
+    setNewHabitSchedule(null);
     setNewQuitStart(toLocalDatetimeValue(new Date()));
     setAddOpen(false);
   };
@@ -1469,6 +1490,7 @@ const Habits: React.FC = () => {
         schedule={schedules[habit] ?? null}
         onSetSchedule={handleSetSchedule}
         dragHandle={handle}
+        focused={habit === focusHabit}
       />
     );
     const cards = isQuit
@@ -1566,6 +1588,41 @@ const Habits: React.FC = () => {
                 );
               })}
             </div>
+            {(newHabitCadence === 'weekly' || newHabitCadence === 'monthly' || newHabitCadence === 'yearly') && (
+              <>
+                <p className="hb-sheet-sub" style={{ marginTop: 16, marginBottom: 8 }}>Which day?</p>
+                <div className="hcard-schedule" onClick={e => e.stopPropagation()}>
+                  <span className="hcard-schedule-text">
+                    <CalendarIc size={12} />
+                    {scheduleLabel(newHabitCadence, newHabitSchedule) ?? 'Runs any day'}
+                  </span>
+                  {newHabitCadence === 'weekly' && (
+                    <select className="hcard-schedule-select" value={newHabitSchedule ?? ''} onChange={e => setNewHabitSchedule(e.target.value || null)}>
+                      <option value="">Any day</option>
+                      {WEEKDAYS_FULL.map((d, i) => <option key={i} value={String(i)}>{d}</option>)}
+                    </select>
+                  )}
+                  {newHabitCadence === 'monthly' && (
+                    <select className="hcard-schedule-select" value={newHabitSchedule ?? ''} onChange={e => setNewHabitSchedule(e.target.value || null)}>
+                      <option value="">Any day</option>
+                      {Array.from({ length: 31 }, (_, i) => <option key={i} value={String(i + 1)}>Day {i + 1}</option>)}
+                    </select>
+                  )}
+                  {newHabitCadence === 'yearly' && (
+                    <input
+                      type="date"
+                      className="hcard-schedule-input"
+                      value={newHabitSchedule ? `${YEAR}-${String(parseInt(newHabitSchedule.split('-')[0], 10)).padStart(2, '0')}-${String(parseInt(newHabitSchedule.split('-')[1], 10)).padStart(2, '0')}` : ''}
+                      onChange={e => {
+                        if (!e.target.value) { setNewHabitSchedule(null); return; }
+                        const [, mo, dd] = e.target.value.split('-');
+                        setNewHabitSchedule(`${parseInt(mo, 10)}-${parseInt(dd, 10)}`);
+                      }}
+                    />
+                  )}
+                </div>
+              </>
+            )}
             {newHabitCadence === 'quit' && (
               <>
                 <p className="hb-sheet-sub" style={{ marginTop: 16, marginBottom: 8 }}>When did you quit?</p>
@@ -1716,7 +1773,7 @@ const Habits: React.FC = () => {
         )}
 
         {/* Your habits, cadence carousel (Daily · Weekly · Monthly · Yearly) */}
-        <CadenceCarousel panels={cadencePanels} startIndex={CADENCE_ORDER.indexOf('daily')} compact={scrolled} />
+        <CadenceCarousel panels={cadencePanels} startIndex={CADENCE_ORDER.indexOf(focusHabit ? (habitCadence[focusHabit] ?? 'daily') : 'daily')} compact={scrolled} />
 
         {/* Featured banner, tap to open & join (below the user's habits) */}
         <button className="hb-featured" onClick={() => setFeaturedOpen(true)}>

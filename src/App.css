@@ -2008,7 +2008,17 @@ h1, h2, h3, h4, .sora {
 .today-feed-head { display: flex; align-items: center; gap: 10px; }
 .today-feed-head .plan-hero-edit { margin-left: auto; }
 .today-feed-list { display: flex; flex-direction: column; gap: 8px; }
-.today-feed-sublabel { font-family: var(--font-data); font-size: 0.56rem; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.45); margin-bottom: 2px; }
+.today-feed-sublabel { font-family: var(--font-data); font-size: 0.56rem; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.45); }
+/* "Due this week" row with the Lists shortcut inline (replaces the old panel head) */
+.today-due-head { display: flex; align-items: baseline; justify-content: space-between; }
+.today-lists-link {
+  background: none; border: none; cursor: pointer; padding: 0;
+  font-family: var(--font-data); font-size: 0.6rem; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--theme, #2E8BFF);
+}
+.today-lists-link:active { opacity: 0.7; }
+/* Habit rows carry a left accent in their cadence colour (set inline). */
+.today-feed-item--habit { padding-left: 10px; }
 .today-feed-item {
   display: flex; align-items: center; gap: 10px; width: 100%;
   padding: 12px 14px; border-radius: 12px; cursor: pointer; text-align: left;
@@ -6197,6 +6207,13 @@ h1, h2, h3, h4, .sora {
 .hcard { padding: 14px 16px; gap: 0; }
 /* Collapsed card — left accent line in cadence colour */
 .hcard--collapsed { border-left-color: var(--theme); }
+/* Deep-linked from Today: a one-shot accent pulse so the card is easy to spot. */
+.hcard--focused { animation: hcard-focus-pulse 1.6s ease 1; }
+@keyframes hcard-focus-pulse {
+  0%   { box-shadow: 0 0 0 0 var(--theme-dim, rgba(47,210,126,0.5)); }
+  35%  { box-shadow: 0 0 0 4px var(--theme-dim, rgba(47,210,126,0.45)); }
+  100% { box-shadow: 0 0 0 0 rgba(0,0,0,0); }
+}
 
 /* Collapsed summary row — name · streak · XP · chevron */
 .hcard-summary {

@@ -1817,12 +1817,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
       {/* ── Panel 0 · Today — to-dos due this week + weekly/monthly habits about to lapse ── */}
       <div className="story-panel today-feed">
-        <div className="plan-hero-head today-feed-head">
-          <span className="today-soon-eyebrow">TODAY</span>
-          <span className="plan-hero-title">At a glance</span>
-          <button className="plan-hero-edit" onClick={() => navigate('/tasks')}>Lists →</button>
-        </div>
-
         {/* At-a-glance targets: step goal, bedtime, and (on a plan) calorie target */}
         <div className="today-glance">
           <div className="today-glance-tile">
@@ -1854,6 +1848,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           </button>
         )}
 
+        {/* Due this week, with the Lists shortcut inline */}
+        <div className="today-due-head">
+          <span className="today-feed-sublabel">Due this week</span>
+          <button className="today-lists-link" onClick={() => navigate('/tasks')}>Lists →</button>
+        </div>
         {todayFeedCount === 0 ? (
           <div className="today-feed-empty">
             <CalendarIc size={26} />
@@ -1861,7 +1860,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           </div>
         ) : (
           <div className="today-feed-list">
-            <span className="today-feed-sublabel">Due this week</span>
             {dueTasks.map(t => {
               const overdue = t.dueDate! < todayISOv;
               const when = t.dueDate === todayISOv
@@ -1876,7 +1874,12 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               );
             })}
             {pendingHabits.map(({ name, cad, overdue, when }) => (
-              <button key={name} className={`today-feed-item today-feed-item--habit${overdue ? ' overdue' : ''}`} onClick={() => navigate('/')}>
+              <button
+                key={name}
+                className={`today-feed-item today-feed-item--habit${overdue ? ' overdue' : ''}`}
+                style={{ borderLeft: `3px solid ${CADENCE_META[cad].color}` }}
+                onClick={() => navigate(`/?habit=${encodeURIComponent(name)}`)}
+              >
                 <span className="today-feed-ico" style={{ color: CADENCE_META[cad].color }}>
                   <span className="today-feed-dot" style={{ background: CADENCE_META[cad].color }} />
                 </span>
