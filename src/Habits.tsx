@@ -561,9 +561,10 @@ const HabitCard: React.FC<{
   const accent = CADENCE_META[cadence].color;
   const [expanded, setExpanded] = useState(!!focused);
   const cardRef = useRef<HTMLDivElement>(null);
-  // Deep-linked from the Today feed: expand + scroll this card into view once.
+  // Deep-linked from the Today feed: expand + jump straight to this card (no scroll
+  // animation — 'auto' takes you there instantly).
   useEffect(() => {
-    if (focused) cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (focused) cardRef.current?.scrollIntoView({ behavior: 'auto', block: 'center' });
   }, [focused]);
   const currentDone = isDaily ? todayState === 'done' : !!currentUnit?.done;
   // What the header circle shows. Daily reflects today's full state (done/failed/na)
@@ -733,39 +734,44 @@ const HabitCard: React.FC<{
         </button>
       </div>
 
-      {/* Week strip — hidden while the calendar is open so we show one or the other,
-          never both (the calendar is the fuller view). */}
-      {!histOpen && (isDaily ? (
-        <div className="hcard-week">
-          {weekDays.map(({ key, label, isFuture, isToday }) => (
-            <DayCircle
-              key={key}
-              label={label}
-              displayState={dayState(key)}          // auto-fail past due days
-              rawState={ht[key]?.[habit] ?? null}    // toggles act on what's stored
-              isFuture={isFuture}
-              isToday={isToday}
-              onSetState={s => onToggleDay(habit, key, s)}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className={`hcard-week hcard-week--${units.length}`} style={{ ['--cad' as any]: accent }}>
-          {units.map(u => (
-            <div key={u.key} className={`hcard-day cad-unit ${u.done ? 'done' : ''} ${u.isFuture ? 'future' : ''} ${u.isCurrent ? 'is-today' : ''}`}>
-              <button
-                className="hcard-day-circle"
-                disabled={u.isFuture}
-                onClick={() => !u.isFuture && toggleUnit(u)}
-                aria-label={`${u.label}: ${u.done ? 'done' : 'blank'}`}
-              >
-                {u.done && <span className="hcard-day-tick"><CheckSVG size={15} strokeWidth={2} /></span>}
-              </button>
-              <span className="hcard-day-label">{u.label}</span>
+      {/* Week strip — collapses (slides up) as the calendar opens and slides back
+          down as it closes, mirroring the calendar's own grid-rows slide so only
+          one is visible at a time and both animate symmetrically. */}
+      <div className={`hcard-week-wrap${!histOpen ? ' open' : ''}`}>
+        <div className="hcard-week-collapse">
+          {isDaily ? (
+            <div className="hcard-week">
+              {weekDays.map(({ key, label, isFuture, isToday }) => (
+                <DayCircle
+                  key={key}
+                  label={label}
+                  displayState={dayState(key)}          // auto-fail past due days
+                  rawState={ht[key]?.[habit] ?? null}    // toggles act on what's stored
+                  isFuture={isFuture}
+                  isToday={isToday}
+                  onSetState={s => onToggleDay(habit, key, s)}
+                />
+              ))}
             </div>
-          ))}
+          ) : (
+            <div className={`hcard-week hcard-week--${units.length}`} style={{ ['--cad' as any]: accent }}>
+              {units.map(u => (
+                <div key={u.key} className={`hcard-day cad-unit ${u.done ? 'done' : ''} ${u.isFuture ? 'future' : ''} ${u.isCurrent ? 'is-today' : ''}`}>
+                  <button
+                    className="hcard-day-circle"
+                    disabled={u.isFuture}
+                    onClick={() => !u.isFuture && toggleUnit(u)}
+                    aria-label={`${u.label}: ${u.done ? 'done' : 'blank'}`}
+                  >
+                    {u.done && <span className="hcard-day-tick"><CheckSVG size={15} strokeWidth={2} /></span>}
+                  </button>
+                  <span className="hcard-day-label">{u.label}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      ))}
+      </div>
 
       {/* Calendar replaces the week strip when open. Always mounted inside a grid-rows
           collapser so both open AND close animate smoothly (no unmount pop). */}

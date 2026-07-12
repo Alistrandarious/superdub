@@ -13442,6 +13442,19 @@ details[open] .plan-explainer-summary::before { content: '▾  '; }
   grid-template-rows: 1fr;
   opacity: 1;
 }
+/* Week strip uses the same collapser, opened inversely, so opening the calendar
+   slides the week strip up while the calendar slides down (and vice versa). */
+.hcard-week-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 0.32s cubic-bezier(0.22,1,0.36,1), opacity 0.24s ease;
+}
+.hcard-week-wrap.open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+.hcard-week-collapse { overflow: hidden; min-height: 0; }
 .hcard-history {
   overflow: hidden;
   min-height: 0;
