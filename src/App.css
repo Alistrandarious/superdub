@@ -2035,9 +2035,9 @@ h1, h2, h3, h4, .sora {
   display: flex; flex-direction: column; align-items: center; gap: 3px;
   padding: 12px 8px;
   background: var(--glass-bg); border: 1px solid var(--glass-border);
-  border-radius: 14px;
+  border-radius: var(--r-lg);
 }
-.tg-ico { display: inline-flex; margin-bottom: 1px; color: #FFD233; }
+.tg-ico { display: inline-flex; margin-bottom: 1px; color: var(--theme, #FFB928); }
 .tg-ico--step { color: #2FD27E; }
 .tg-ico--cal { color: #FF8A00; }
 .tg-ico--bed { color: #8B5CF6; }
@@ -2049,7 +2049,7 @@ h1, h2, h3, h4, .sora {
   display: flex; flex-direction: column; gap: 3px; text-align: left;
   padding: 12px 14px; cursor: pointer; color: inherit;
   background: rgba(47,210,126,0.08); border: 1px solid rgba(47,210,126,0.28);
-  border-radius: 14px;
+  border-radius: var(--r-lg);
   transition: transform 0.12s ease, border-color 0.15s ease;
 }
 .today-focus:active { transform: scale(0.99); }
@@ -5278,9 +5278,9 @@ h1, h2, h3, h4, .sora {
   color: rgba(255,255,255,0.6);
 }
 .community-deed-btn {
-  align-self: stretch; padding: 14px; border-radius: 14px; cursor: pointer;
+  align-self: stretch; padding: 14px; border-radius: var(--r-lg); cursor: pointer;
   font-family: var(--font-ui); font-size: 0.9rem; font-weight: 700; color: #1a1008;
-  background: linear-gradient(135deg, #FFE08A, #FFB020); border: none;
+  background: var(--grad-ascension); border: none;
   box-shadow: 0 4px 16px rgba(255,185,40,0.35); transition: transform 0.15s;
 }
 .community-deed-btn:active { transform: scale(0.98); }
@@ -5362,7 +5362,7 @@ h1, h2, h3, h4, .sora {
 }
 .global-habit-fill {
   display: block; height: 100%; border-radius: 999px;
-  background: linear-gradient(90deg, #FFE08A, #FFB020);
+  background: linear-gradient(90deg, #FFB928, #FFE08A);
   box-shadow: 0 0 10px rgba(255,185,40,0.5);
   transition: width 0.6s cubic-bezier(0.22,1,0.36,1);
 }
@@ -5371,7 +5371,7 @@ h1, h2, h3, h4, .sora {
 }
 .global-habit-total { font-family: var(--font-data); font-weight: 700; font-size: 0.9rem; color: #F0F4FF; }
 .global-habit-total span { color: rgba(255,255,255,0.4); font-size: 0.72rem; font-weight: 700; }
-.global-habit-pct { font-family: var(--font-data); font-weight: 700; font-size: 0.9rem; color: #FFD233; }
+.global-habit-pct { font-family: var(--font-data); font-weight: 700; font-size: 0.9rem; color: var(--theme, #FFB928); }
 .global-habit-mine {
   margin-top: 8px; font-family: var(--font-ui); font-size: 0.72rem; color: rgba(255,224,138,0.75);
 }

@@ -10,6 +10,7 @@ import CadenceCarousel from './CadenceCarousel';
 import SuperdubHeader from './SuperdubHeader';
 import DailyLog from './DailyLog';
 import AnimatedFlame from './AnimatedFlame';
+import LevelHeroRing from './LevelHeroRing';
 import {
   MoonIc, CalendarIc, TrophyIc, WalkIc, BookIc, NoSmokeIc, MealIc, MoneyIc, HealthIc,
   SunIc, CloudSunIc, CloudIc, RainIc, SnowIc, StormIc, type IconProps,
@@ -1656,7 +1657,8 @@ const Habits: React.FC = () => {
           </div>
         )}
 
-        {/* Level ring + XP moved to Profile; Coach + Global now live in their own tabs. */}
+        {/* User level hero — the XP ring at the top of Habits (also on Profile). */}
+        <LevelHeroRing />
 
         {/* Weekly strip, the simplified "Logging into Superdub" habit */}
         <div className={`hb-week${isPerfectWeek ? ' hb-week-gold' : ''}${weekCelebrating ? ' hb-week-celebrating' : ''}`}>
