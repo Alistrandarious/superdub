@@ -11,6 +11,7 @@ import SuperdubHeader from './SuperdubHeader';
 import DailyLog from './DailyLog';
 import AnimatedFlame from './AnimatedFlame';
 import LevelHeroRing from './LevelHeroRing';
+import PinnedXpBar from './PinnedXpBar';
 import {
   MoonIc, CalendarIc, TrophyIc, WalkIc, BookIc, NoSmokeIc, MealIc, MoneyIc, HealthIc,
   SunIc, CloudSunIc, CloudIc, RainIc, SnowIc, StormIc, type IconProps,
@@ -20,7 +21,7 @@ import { quitProgress, quitElapsed, toLocalDatetimeValue } from './quit';
 import { moveItem, applyGroupReorder } from './reorder';
 import {
   HABIT_LEVEL_TIERS as LEVEL_TIERS, HABIT_LEVEL_RATES as LEVEL_RATES,
-  MAX_HABIT_LEVEL as MAX_LEVEL, habitLevelFromDays as levelFromDays, habitXPForDoneDays,
+  MAX_HABIT_LEVEL as MAX_LEVEL, habitLevelFromDays as levelFromDays, habitXPForDoneDays, cadenceXpMultiplier,
 } from './levels';
 
 export type Cadence = 'daily' | 'weekly' | 'monthly' | 'yearly' | 'quit';
@@ -198,6 +199,7 @@ function computeHabitStats(
   today: string,
   startDate?: string | null,
   carryDays: number = 0, // done-days from previous calendar years (server aggregate)
+  cadenceMult: number = 1, // weekly/monthly/yearly earn more XP per completion
 ): HabitStats {
   const todayIdx = ALL_DAYS.indexOf(today);
   if (todayIdx < 0) {
@@ -222,7 +224,7 @@ function computeHabitStats(
   for (let i = startIdx; i <= todayIdx; i++) {
     if (ht[ALL_DAYS[i]]?.[habit] === 'done') totalDays++;
   }
-  const totalXP = habitXPForDoneDays(totalDays);
+  const totalXP = habitXPForDoneDays(totalDays, cadenceMult);
 
   // Consecutive misses (done=null or failed) before today. 'na' days are neutral
   // skips — they don't count as a miss and don't end the run.
@@ -261,13 +263,13 @@ function computeHabitStats(
   // ── Level (persistent, total-days driven) ──
   const level = levelFromDays(totalDays);
   const maxed = level >= MAX_LEVEL;
-  const xpPerDay = LEVEL_RATES[Math.min(level - 1, LEVEL_RATES.length - 1)];
+  const xpPerDay = Math.round(LEVEL_RATES[Math.min(level - 1, LEVEL_RATES.length - 1)] * cadenceMult);
   const curThreshold = LEVEL_TIERS[level - 1];
   const nextLevelAt = maxed ? LEVEL_TIERS[MAX_LEVEL - 1] : LEVEL_TIERS[level];
   const daysToNext = Math.max(0, nextLevelAt - totalDays);
   const band = nextLevelAt - curThreshold;
   const levelProgress = maxed ? 1 : (band > 0 ? Math.min((totalDays - curThreshold) / band, 1) : 1);
-  const nextRate = maxed ? xpPerDay : LEVEL_RATES[level];
+  const nextRate = maxed ? xpPerDay : Math.round(LEVEL_RATES[level] * cadenceMult);
 
   return { streak, totalDays, totalXP, level, xpPerDay, nextLevelAt, daysToNext, levelProgress, nextRate, maxed, misses };
 }
@@ -627,9 +629,6 @@ const HabitCard: React.FC<{
           <span ref={nameRef} className={`hcard-name${nameWrapped ? ' hcard-name--wrapped' : ''}`}>{habit}</span>
           <div className="hcard-head-meta">
             <span className="hcard-level-badge" title={`Level ${stats.level}, ${stats.totalDays} days logged · +${stats.xpPerDay} XP per day`}>LV{stats.level}</span>
-            <span className={`hcard-chevron ${expanded ? 'open' : ''}`} aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
-            </span>
             {stats.streak > 0 ? (
               <span className="hcard-streak-mini on"><span className="hsm-ico"><AnimatedFlame size={12} /></span>{stats.streak}d</span>
             ) : daysSinceDone === null ? (
@@ -660,6 +659,10 @@ const HabitCard: React.FC<{
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
           </button>
         </div>
+        {/* Expand affordance, far right so it reads as "open this card" */}
+        <span className={`hcard-chevron hcard-chevron--right ${expanded ? 'open' : ''}`} aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
+        </span>
       </div>
 
 
@@ -1478,7 +1481,7 @@ const Habits: React.FC = () => {
     const renderHabitCard = (habit: string, handle?: React.ReactNode) => (
       <HabitCard
         habit={habit}
-        stats={computeHabitStats(habit, ht, today, startDates[habit], xpCarry[habit] ?? 0)}
+        stats={computeHabitStats(habit, ht, today, startDates[habit], xpCarry[habit] ?? 0, cadenceXpMultiplier(cad))}
         weekDays={weekDays}
         ht={ht}
         today={activeDay}
@@ -1672,6 +1675,10 @@ const Habits: React.FC = () => {
             <span className="hb-weather"><WeatherIc code={weather.code} size={14} />{weather.temp}°</span>
           )}
         </SuperdubHeader>
+
+        {/* Pinned XP bar — slides in once you scroll to the habits, so you watch XP
+            grow in its own container as you tick them. */}
+        <PinnedXpBar visible={scrolled} />
 
         {showInstall && (
           <div className={`pwa-banner${installClosing ? ' closing' : ''}`}>

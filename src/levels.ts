@@ -15,19 +15,23 @@ export const HABIT_LEVEL_TIERS = [0, 7, 14, 30, 60, 100, 200, 365]; // total day
 export const HABIT_LEVEL_RATES = [10, 15, 20, 25, 30, 35, 40, 50];  // XP per completion at each level
 export const MAX_HABIT_LEVEL = HABIT_LEVEL_TIERS.length;
 
+// Non-daily habits are harder to keep, so each completion is worth more XP.
+export const CADENCE_XP_MULT: Record<string, number> = { daily: 1, quit: 1, weekly: 2, monthly: 4, yearly: 8 };
+export const cadenceXpMultiplier = (cadence?: string): number => CADENCE_XP_MULT[cadence ?? 'daily'] ?? 1;
+
 export const habitLevelFromDays = (days: number) =>
   HABIT_LEVEL_TIERS.filter(t => days >= t).length; // 1..8
 
 // Total XP a habit has earned given how many days it's been completed. XP only
 // depends on the COUNT of completions (each paid at the rate of the level you'd
-// reached), so it's order-independent.
-export function habitXPForDoneDays(totalDoneDays: number): number {
+// reached), so it's order-independent. `mult` scales it by cadence.
+export function habitXPForDoneDays(totalDoneDays: number, mult = 1): number {
   let xp = 0;
   for (let n = 1; n <= totalDoneDays; n++) {
     const lvl = habitLevelFromDays(n);
     xp += HABIT_LEVEL_RATES[Math.min(lvl - 1, HABIT_LEVEL_RATES.length - 1)];
   }
-  return xp;
+  return Math.round(xp * mult);
 }
 
 export type RewardKind = 'theme' | 'milestone' | 'flair';

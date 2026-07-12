@@ -41,9 +41,12 @@ const LevelHeroRing: React.FC<{ to?: string }> = ({ to = '/level' }) => {
         <div className="hb-xp-bar">
           <div className="hb-xp-fill" style={{ width: `${Math.max(2, playerLevel.progress * 100)}%`, background: `linear-gradient(90deg, ${theme.from}, ${theme.to})`, boxShadow: `0 0 10px ${theme.glow}` }} />
         </div>
+        {/* Every level starts at 0: the bar reads X / span for THIS level (e.g. 0 / 2000). */}
         <div className="lvl-hero-scale">
-          <span>{totalXP.toLocaleString()} XP</span>
-          <span>{playerLevel.xpForNext != null ? playerLevel.xpForNext.toLocaleString() : 'MAX'}</span>
+          {playerLevel.xpForNext != null
+            ? <span>{Math.max(0, totalXP - playerLevel.xpForLevel).toLocaleString()} / {(playerLevel.xpForNext - playerLevel.xpForLevel).toLocaleString()} XP</span>
+            : <span>{totalXP.toLocaleString()} XP</span>}
+          <span>Lv {playerLevel.level}</span>
         </div>
         {playerLevel.xpForNext != null ? (
           <p className="hb-xp-to">{(playerLevel.xpForNext - totalXP).toLocaleString()} XP to <span>{playerLevel.nextTitle}</span></p>
