@@ -42,8 +42,8 @@ router.post('/', requireAuth as any, async (req: AuthRequest, res: Response) => 
     if (adherence !== undefined && adherence !== null && !['below', 'about', 'above'].includes(adherence)) {
       return res.status(400).json({ error: 'adherence must be below, about, or above' });
     }
-    if (mood !== undefined && mood !== null && (mood < 1 || mood > 5)) {
-      return res.status(400).json({ error: 'mood must be 1–5' });
+    if (mood !== undefined && mood !== null && (mood < 1 || mood > 10)) {
+      return res.status(400).json({ error: 'mood must be 1–10' });
     }
     if (sleepHours !== undefined && sleepHours !== null && (sleepHours < 0 || sleepHours > 24)) {
       return res.status(400).json({ error: 'sleepHours must be 0–24' });

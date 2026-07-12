@@ -78,7 +78,7 @@ const SleepCandleChart: React.FC<{
         formatter={(_v: any, _n: any, p: any) => {
           const d = p?.payload as SleepCandle;
           if (!d || d.bedVal == null) return ['', ''];
-          const moodTxt = d.mood != null ? ` · mood ${d.mood}/5` : '';
+          const moodTxt = d.mood != null ? ` · mood ${d.mood}/10` : '';
           return [`${d.bedtime} → ${d.waketime} (${d.hours.toFixed(1)}h)${moodTxt}`, 'Sleep'];
         }}
       />

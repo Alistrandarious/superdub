@@ -12,7 +12,6 @@ import { promptEnabled } from './promptPrefs';
 const EVENING_KEY = 'superdub.evening.checkin';   // value = YYYY-MM-DD when done
 const ENABLED_KEY = 'superdub.checkin.enabled';   // 'false' = disabled
 const todayISO = () => new Date().toISOString().slice(0, 10);
-const to5 = (v: number) => Math.max(1, Math.min(5, Math.round(v / 2))); // 1–10 → 1–5
 const isEnabled = () => localStorage.getItem(ENABLED_KEY) !== 'false';
 
 // 5-point eating scale → the 3-value enum the plan engine understands.
@@ -63,7 +62,7 @@ const EveningPrompt: React.FC = () => {
     setSaving(true); setError(null);
     try {
       await api.submitCheckIn({
-        ...(moodOn ? { mood: to5(mood) } : {}),
+        ...(moodOn ? { mood } : {}),  // stored 1–10, matching the slider
         adherence: adherenceEnum(adherenceLevel),
         adherenceLevel,
       });

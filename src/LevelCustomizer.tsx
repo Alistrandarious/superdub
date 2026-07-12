@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { flushSync } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
 import { api } from './api';
 import { useXP } from './XPContext';
-import LevelRing from './LevelRing';
+import LevelHeroRing from './LevelHeroRing';
 import DubMascot, { getMascot, MASCOT_KEY, type MascotSpecies } from './DubMascot';
 import { getDubGender, DUB_GENDER_KEY, type DubGender } from './dubPronouns';
 import {
-  PLAYER_LEVELS, RING_THEMES, getRingTheme, getSelectedThemeId,
+  PLAYER_LEVELS, RING_THEMES, getSelectedThemeId,
   SELECTED_THEME_KEY, type RingTheme,
   isUnlocked, unlockLabel, EARLY_ADOPTER_BEFORE, type UnlockCtx, globalWhiteEarned,
   DUB_COLORS, DUB_COLOR_KEY, getDubColor,
@@ -15,19 +13,12 @@ import {
   BACKGROUNDS, BACKGROUND_KEY, getBackground, type Background,
 } from './levels';
 
-// The level hero + all cosmetic/companion customization, lifted out of LevelPage so
-// it lives on Profile (identity + customization). Every picker writes localStorage +
-// dispatches a custom event; nothing hits the server. The deep ladder/badges/habit
-// record stay on /level.
+// The cosmetic/companion customization, plus the shared level hero (LevelHeroRing).
+// Lifted out of LevelPage so it lives on Profile (identity + customization). Every
+// picker writes localStorage + dispatches a custom event; nothing hits the server.
+// The deep ladder/badges/habit record stay on /level.
 
 const CAT_UNLOCK_LEVEL = 2;
-
-function navigateWithTransition(navigate: any, to: string) {
-  const doNav = () => navigate(to);
-  const startVT = (document as any).startViewTransition?.bind(document);
-  if (startVT) startVT(() => flushSync(doNav));
-  else doNav();
-}
 
 const LockIc: React.FC<{ size?: number }> = ({ size = 11 }) => (
   <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-label="Locked">
@@ -60,8 +51,7 @@ const rewardMark = (r: (typeof PLAYER_LEVELS)[number]['reward']) => {
 };
 
 const LevelCustomizer: React.FC = () => {
-  const navigate = useNavigate();
-  const { totalXP, playerLevel } = useXP();
+  const { playerLevel } = useXP();
 
   const [earlyAdopter, setEarlyAdopter] = useState(false);
   useEffect(() => {
@@ -73,7 +63,6 @@ const LevelCustomizer: React.FC = () => {
   const ctx: UnlockCtx = { level: playerLevel.level, streak: dayStreak, earlyAdopter, globalWhite: globalWhiteEarned() };
 
   const [themeId, setThemeId] = useState(getSelectedThemeId);
-  const theme = getRingTheme(themeId);
   const equipTheme = (t: RingTheme) => {
     if (!isUnlocked(t.unlock, ctx)) return;
     localStorage.setItem(SELECTED_THEME_KEY, t.id);
@@ -128,26 +117,7 @@ const LevelCustomizer: React.FC = () => {
   return (
     <>
       {/* Hero — the ring floats on a theme-coloured bloom; tap through to the full ladder */}
-      <div className="lvl-hero" style={{ '--hero-glow': theme.glow, '--hero-from': theme.from, '--hero-to': theme.to } as React.CSSProperties}>
-        <div className="lvl-hero-bloom" />
-        <div className="lvl-hero-ring">
-          <LevelRing level={playerLevel.level} title={playerLevel.title} progress={playerLevel.progress} theme={theme} size={170} onClick={() => navigateWithTransition(navigate, '/level')} />
-        </div>
-        <div className="lvl-hero-xp">
-          <div className="hb-xp-bar">
-            <div className="hb-xp-fill" style={{ width: `${Math.max(2, playerLevel.progress * 100)}%`, background: `linear-gradient(90deg, ${theme.from}, ${theme.to})`, boxShadow: `0 0 10px ${theme.glow}` }} />
-          </div>
-          <div className="lvl-hero-scale">
-            <span>{totalXP.toLocaleString()} XP</span>
-            <span>{playerLevel.xpForNext != null ? playerLevel.xpForNext.toLocaleString() : 'MAX'}</span>
-          </div>
-          {playerLevel.xpForNext != null ? (
-            <p className="hb-xp-to">{(playerLevel.xpForNext - totalXP).toLocaleString()} XP to <span>{playerLevel.nextTitle}</span></p>
-          ) : (
-            <p className="hb-xp-to">Max level, you legend.</p>
-          )}
-        </div>
-      </div>
+      <LevelHeroRing />
 
       {playerLevel.nextReward && (
         <div className="next-reward-card">

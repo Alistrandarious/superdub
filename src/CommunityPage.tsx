@@ -2,6 +2,7 @@ import React from 'react';
 import './App.css';
 import SuperdubHeader from './SuperdubHeader';
 import GlobalHabitCard from './GlobalHabitCard';
+import LevelHeroRing from './LevelHeroRing';
 import { pageTheme, GOLD } from './theme';
 
 // Global & Friends — the community tab. Houses this month's shared Global habit
@@ -16,6 +17,8 @@ const CommunityPage: React.FC = () => {
           <span className="community-eyebrow">GLOBAL &amp; FRIENDS</span>
           <p className="community-sub">Climb one shared habit with every Superdubber — and soon, with your friends.</p>
         </div>
+
+        <LevelHeroRing />
 
         <GlobalHabitCard />
 

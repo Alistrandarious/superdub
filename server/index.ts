@@ -211,7 +211,12 @@ const migrations = [
     UNIQUE (user_id, date)
   )`,
   `CREATE INDEX IF NOT EXISTS daily_checkins_user_idx ON daily_checkins (user_id, date DESC)`,
-  `ALTER TABLE daily_checkins ADD COLUMN IF NOT EXISTS mood INTEGER CHECK (mood BETWEEN 1 AND 5)`,
+  `ALTER TABLE daily_checkins ADD COLUMN IF NOT EXISTS mood INTEGER CHECK (mood BETWEEN 1 AND 10)`,
+  // Mood moved from a compressed 1–5 to the true 1–10 the slider shows. Re-point the
+  // CHECK on existing DBs (the ADD COLUMN above is a no-op once the column exists).
+  // Old rows stay 1–5 — still valid under 1–10, just read low.
+  `ALTER TABLE daily_checkins DROP CONSTRAINT IF EXISTS daily_checkins_mood_check`,
+  `ALTER TABLE daily_checkins ADD CONSTRAINT daily_checkins_mood_check CHECK (mood IS NULL OR mood BETWEEN 1 AND 10)`,
   `ALTER TABLE daily_checkins ADD COLUMN IF NOT EXISTS workout_done BOOLEAN`,
   `ALTER TABLE daily_checkins ADD COLUMN IF NOT EXISTS workout_intensity TEXT CHECK (workout_intensity IN ('light','moderate','intense','very_intense'))`,
   `ALTER TABLE daily_checkins ADD COLUMN IF NOT EXISTS workout_duration_min INTEGER CHECK (workout_duration_min > 0)`,

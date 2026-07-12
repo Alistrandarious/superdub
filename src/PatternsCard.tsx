@@ -16,7 +16,7 @@ const DOW_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const METRICS: { key: MetricKey; label: string; color: string; fmt: (v: number) => string }[] = [
   { key: 'steps',     label: 'Steps',  color: '#2E8BFF', fmt: v => Math.round(v).toLocaleString() },
   { key: 'habitRate', label: 'Habits', color: '#2FD27E', fmt: v => `${Math.round(v * 100)}%` },
-  { key: 'mood',      label: 'Mood',   color: '#FFB928', fmt: v => `${v.toFixed(1)}/5` },
+  { key: 'mood',      label: 'Mood',   color: '#FFB928', fmt: v => `${v.toFixed(1)}/10` },
 ];
 
 function strength(r: number): string {

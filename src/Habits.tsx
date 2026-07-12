@@ -319,14 +319,15 @@ interface WeatherState { temp: number; code: number; city: string; }
 // Mini month calendar for one habit — tappable past days for backfill
 const MINI_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const MINI_DOW = ['M','T','W','T','F','S','S'];
-const MiniMonthHeatmap: React.FC<{
+export const MiniMonthHeatmap: React.FC<{
   habit: string;
   year: number;
   monthIdx: number;
   ht: HabitTracker;
-  onEdit: (habit: string, day: string, cur: HabitState) => void;
+  onEdit?: (habit: string, day: string, cur: HabitState) => void;
   startDate?: string | null;
-}> = ({ habit, year, monthIdx, ht, onEdit, startDate }) => {
+  readOnly?: boolean;
+}> = ({ habit, year, monthIdx, ht, onEdit, startDate, readOnly }) => {
   const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
   const daysInMonth = new Date(year, monthIdx + 1, 0).getDate();
   const firstDow = (new Date(year, monthIdx, 1).getDay() + 6) % 7; // Mon=0
@@ -355,8 +356,8 @@ const MiniMonthHeatmap: React.FC<{
             <button
               key={c.ddmm}
               className={`mini-hm-cell ${c.state === 'done' ? 'done' : c.state === 'failed' ? 'failed' : c.state === 'na' ? 'na' : c.undeclared ? 'undeclared' : ''} ${c.future ? 'future' : ''}`}
-              disabled={c.future}
-              onClick={() => !c.future && onEdit(habit, c.ddmm, c.state)}
+              disabled={c.future || readOnly}
+              onClick={() => { if (!c.future && !readOnly) onEdit?.(habit, c.ddmm, c.state); }}
               title={`${c.ddmm}: ${c.state ?? (c.undeclared ? 'not reported' : 'blank')}`}
             >{c.d}</button>
           )
@@ -378,10 +379,11 @@ const CheckSVG: React.FC<{ size?: number; strokeWidth?: number }> = ({ size = 14
 // period's representative day through the honesty-gated editor.
 // ponytail: a period toggle only edits its representative day (latest past day),
 // not every day in the bucket — keeps the tap simple; full-bucket clear is a later upgrade.
-const CadenceCalendar: React.FC<{
+export const CadenceCalendar: React.FC<{
   habit: string; cadence: Cadence; year: number; monthIdx: number;
-  ht: HabitTracker; onEdit: (habit: string, day: string, cur: HabitState) => void;
-}> = ({ habit, cadence, year, monthIdx, ht, onEdit }) => {
+  ht: HabitTracker; onEdit?: (habit: string, day: string, cur: HabitState) => void;
+  readOnly?: boolean;
+}> = ({ habit, cadence, year, monthIdx, ht, onEdit, readOnly }) => {
   const pad = (n: number) => String(n).padStart(2, '0');
   const todayMs = (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); })();
   const dnum = (ddmm: string) => new Date(year, parseInt(ddmm.slice(3)) - 1, parseInt(ddmm.slice(0, 2))).getTime();
@@ -420,8 +422,8 @@ const CadenceCalendar: React.FC<{
         <button
           key={c.key}
           className={`cadence-cal-cell ${c.done ? 'done' : c.failed ? 'failed' : c.na ? 'na' : ''} ${c.future ? 'future' : ''}`}
-          disabled={c.future || !c.repDay}
-          onClick={() => { if (!c.future && c.repDay) onEdit(habit, c.repDay, ht[c.repDay]?.[habit] ?? null); }}
+          disabled={c.future || !c.repDay || readOnly}
+          onClick={() => { if (!c.future && c.repDay && !readOnly) onEdit?.(habit, c.repDay, ht[c.repDay]?.[habit] ?? null); }}
           aria-label={`${c.label}: ${c.done ? 'done' : c.failed ? 'missed' : c.na ? 'not applicable' : 'blank'}`}
         >
           <span className="cadence-cal-tick">{c.done ? <CheckSVG size={13} strokeWidth={2} /> : c.failed ? '✕' : c.na ? '–' : ''}</span>
@@ -616,7 +618,9 @@ const HabitCard: React.FC<{
           <span ref={nameRef} className={`hcard-name${nameWrapped ? ' hcard-name--wrapped' : ''}`}>{habit}</span>
           <div className="hcard-head-meta">
             <span className="hcard-level-badge" title={`Level ${stats.level}, ${stats.totalDays} days logged · +${stats.xpPerDay} XP per day`}>LV{stats.level}</span>
-            <span className={`hcard-chevron ${expanded ? 'open' : ''}`}>▾</span>
+            <span className={`hcard-chevron ${expanded ? 'open' : ''}`} aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
+            </span>
             {stats.streak > 0 ? (
               <span className="hcard-streak-mini on"><span className="hsm-ico"><AnimatedFlame size={12} /></span>{stats.streak}d</span>
             ) : daysSinceDone === null ? (
@@ -721,7 +725,9 @@ const HabitCard: React.FC<{
         </button>
       </div>
 
-      {isDaily ? (
+      {/* Week strip — hidden while the calendar is open so we show one or the other,
+          never both (the calendar is the fuller view). */}
+      {!histOpen && (isDaily ? (
         <div className="hcard-week">
           {weekDays.map(({ key, label, isFuture, isToday }) => (
             <DayCircle
@@ -751,9 +757,9 @@ const HabitCard: React.FC<{
             </div>
           ))}
         </div>
-      )}
+      ))}
 
-      {/* Calendar expands below the week strip. Always mounted inside a grid-rows
+      {/* Calendar replaces the week strip when open. Always mounted inside a grid-rows
           collapser so both open AND close animate smoothly (no unmount pop). */}
       <div className={`hcard-history-wrap${histOpen ? ' open' : ''}`}>
         <div className="hcard-history">

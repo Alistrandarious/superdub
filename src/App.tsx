@@ -32,9 +32,9 @@ import ChartCarousel from './ChartCarousel';
 import YesterdayMatrix from './YesterdayMatrix';
 import GoalSheet from './GoalSheet';
 import SleepCandleChart, { hhmmToAxis, type SleepCandle } from './SleepCandleChart';
-import { CADENCE_ORDER, CADENCE_META, type Cadence } from './Habits';
+import { CADENCE_ORDER, CADENCE_META, type Cadence, MiniMonthHeatmap, CadenceCalendar } from './Habits';
 import { scheduledDateInPeriod } from './habitSchedule';
-import { UsersIc, AppleIc, CalendarIc } from './icons';
+import { UsersIc, AppleIc, CalendarIc, WalkIc, MoonIc } from './icons';
 
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -691,6 +691,26 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const renderChartPager = () => (
     <div className="chart-pager"><span className="chart-pager-label">{chartWindowLabel}</span></div>
   );
+  // Week / 1M / Goal / All range picker — shared across every chart (one global
+  // chartRange), rendered per-chart so each carries its own toggle. ponytail: the
+  // range is intentionally global, so switching it moves all charts together.
+  const renderRangeGroup = () => (
+    <div className="chart-range-group">
+      {RANGE_ORDER.map(r => {
+        const enabled = rangeAvailable(r);
+        return (
+          <button
+            key={r}
+            disabled={!enabled}
+            className={`chart-range-btn ${chartRange === r ? 'active' : ''}${enabled ? '' : ' chart-range-btn--locked'}`}
+            onClick={() => enabled && setChartRange(r)}
+          >
+            {RANGE_LABEL[r]}
+          </button>
+        );
+      })}
+    </div>
+  );
 
   // Step chart data — one bar per day for current chartRange
   const stepChartData = useMemo(() =>
@@ -759,6 +779,30 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     const avg = (a: number[]) => a.length ? Math.round((a.reduce((x, y) => x + y, 0) / a.length) * 10) / 10 : null;
     return { avg7: avg(v7), avg30: avg(v30), n: v30.length };
   }, [moodByDate]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Per-habit heatmaps (Stats) ── reuse the Habits-page heatmaps read-only.
+  // Adapt the tracker's true/'failed'/'na' into the shared 'done'/'failed'/'na' shape.
+  const heatmapHt = useMemo(() => {
+    const ht: Record<string, Record<string, 'done' | 'failed' | 'na'>> = {};
+    for (const [ddmm, d] of Object.entries(tracker)) {
+      const row: Record<string, 'done' | 'failed' | 'na'> = {};
+      for (const h of habits) {
+        const s = (d as any)?.habits?.[h];
+        if (s === true) row[h] = 'done';
+        else if (s === 'failed') row[h] = 'failed';
+        else if (s === 'na') row[h] = 'na';
+      }
+      ht[ddmm] = row;
+    }
+    return ht;
+  }, [tracker, habits]);
+  const habitsByCadence = useMemo(() => {
+    const g: Record<Cadence, string[]> = { quit: [], daily: [], weekly: [], monthly: [], yearly: [] };
+    for (const h of habits) g[habitCadence[h] ?? 'daily'].push(h);
+    return g;
+  }, [habits, habitCadence]);
+  const hmYear = now.getFullYear();
+  const hmMonth = now.getMonth();
 
   // How much history exists → grey out ranges we don't have data for yet
   const daysSinceCreation = Math.max(1, Math.floor((now.getTime() - accountCreatedDate.getTime()) / 86400000) + 1);
@@ -1468,7 +1512,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   // whose period closes within 3 days and hasn't been done yet.
   const pad2 = (n: number) => String(n).padStart(2, '0');
   const isoOf = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-  const ddmmOf = (d: Date) => `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}`;
   const todayISOv = isoOf(now);
   const weekAheadISO = (() => { const d = new Date(now); d.setDate(d.getDate() + 7); return isoOf(d); })();
   const dueTasks = tasks
@@ -1502,6 +1545,30 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     return [{ name: h, cad, overdue, when }];
   });
   const todayFeedCount = dueTasks.length + pendingHabits.length;
+
+  // ── Today at-a-glance extras: a habit to focus on + a recommended bedtime ──
+  // Focus = today's not-yet-done daily habit with the weakest 14-day record (the
+  // most neglected one), so Today nudges the habit that needs it most.
+  const focusHabit = (() => {
+    const pending = habits.filter(h => (habitCadence[h] ?? 'daily') === 'daily' && tracker[todayKey]?.habits[h] !== true);
+    if (pending.length === 0) return null;
+    const last14 = Array.from({ length: 14 }, (_, i) => { const d = new Date(now); d.setDate(now.getDate() - i); return `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}`; });
+    let worst = pending[0], worstDone = Infinity;
+    for (const h of pending) {
+      const done = last14.filter(k => tracker[k]?.habits[h] === true).length;
+      if (done < worstDone) { worstDone = done; worst = h; }
+    }
+    return { name: worst, done14: worstDone };
+  })();
+  // Recommended bedtime = 8h before the recent average wake time (fallback 07:00),
+  // matching the sleep chart's 8h goal line.
+  const bedtimeRec = (() => {
+    const toMin = (hhmm: string) => { const [h, m] = hhmm.split(':').map(Number); return (h || 0) * 60 + (m || 0); };
+    const wakes = Object.values(sleepTimesByDate).map(t => t.waketime).filter(Boolean).slice(-7);
+    const wakeMin = wakes.length ? Math.round(wakes.reduce((a, w) => a + toMin(w), 0) / wakes.length) : 7 * 60;
+    const bedMin = (wakeMin - 8 * 60 + 1440) % 1440;
+    return `${pad2(Math.floor(bedMin / 60))}:${pad2(bedMin % 60)}`;
+  })();
 
   // Starred habits (set on the Habits page) with their state for a given day.
   const renderStarStrip = (dayKey: string) => {
@@ -1769,9 +1836,41 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="story-panel today-feed">
         <div className="plan-hero-head today-feed-head">
           <span className="today-soon-eyebrow">TODAY</span>
-          <span className="plan-hero-title">Due this week</span>
+          <span className="plan-hero-title">At a glance</span>
           <button className="plan-hero-edit" onClick={() => navigate('/tasks')}>Lists →</button>
         </div>
+
+        {/* At-a-glance targets: step goal, bedtime, and (on a plan) calorie target */}
+        <div className="today-glance">
+          <div className="today-glance-tile">
+            <span className="tg-ico tg-ico--step"><WalkIc size={16} /></span>
+            <span className="tg-val">{effectiveStepTarget.toLocaleString()}</span>
+            <span className="tg-lbl">step goal</span>
+          </div>
+          {planGoal && targetCalories > 0 && (
+            <div className="today-glance-tile">
+              <span className="tg-ico tg-ico--cal"><AppleIc size={15} /></span>
+              <span className="tg-val">{targetCalories.toLocaleString()}</span>
+              <span className="tg-lbl">kcal target</span>
+            </div>
+          )}
+          <div className="today-glance-tile">
+            <span className="tg-ico tg-ico--bed"><MoonIc size={15} /></span>
+            <span className="tg-val">{bedtimeRec}</span>
+            <span className="tg-lbl">bedtime</span>
+          </div>
+        </div>
+
+        {/* Habit focus — the daily habit most in need of attention today */}
+        {focusHabit && (
+          <button className="today-focus" onClick={() => navigate('/')}>
+            <span className="today-focus-eyebrow">HABIT FOCUS</span>
+            <span className="today-focus-text">
+              Focus on <strong>{focusHabit.name}</strong> today{focusHabit.done14 === 0 ? ", you haven't hit it in two weeks" : focusHabit.done14 <= 3 ? ', it could use some love' : ''}.
+            </span>
+          </button>
+        )}
+
         {todayFeedCount === 0 ? (
           <div className="today-feed-empty">
             <CalendarIc size={26} />
@@ -1779,6 +1878,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           </div>
         ) : (
           <div className="today-feed-list">
+            <span className="today-feed-sublabel">Due this week</span>
             {dueTasks.map(t => {
               const overdue = t.dueDate! < todayISOv;
               const when = t.dueDate === todayISOv
@@ -1858,8 +1958,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 </div>
               )}
             </div>
-
-            {renderStarStrip(todayKey)}
           </>
         ) : (
           <div className="plan-start-prompt">
@@ -2056,7 +2154,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
       {/* ── Habits Chart, completion bars, split out from the weight chart ── */}
       {habits.length > 0 && (
-        <section className="chart-section">
+        <section className="chart-section chart-section--habits">
           <div className="chart-title-row">
             <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#2FD27E' }} />Habits<span className="chart-title-cad" style={{ color: CADENCE_META[chartCadence].color }}>{CADENCE_META[chartCadence].label}</span></h3>
             <div className="chart-cog-wrap">
@@ -2098,21 +2196,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 </>
               )}
             </div>
-            <div className="chart-range-group">
-              {RANGE_ORDER.map(r => {
-                const enabled = rangeAvailable(r);
-                return (
-                  <button
-                    key={r}
-                    disabled={!enabled}
-                    className={`chart-range-btn ${chartRange === r ? 'active' : ''}${enabled ? '' : ' chart-range-btn--locked'}`}
-                    onClick={() => enabled && setChartRange(r)}
-                  >
-                    {RANGE_LABEL[r]}
-                  </button>
-                );
-              })}
-            </div>
+            {renderRangeGroup()}
           </div>
           {renderChartPager()}
           <div className="chart-section-inner">
@@ -2163,6 +2247,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                   {effectiveStepTarget !== stepTarget && <span className="step-target-adjusted"> · energy-adj</span>}
                 </span>
               </div>
+              {renderRangeGroup()}
               {renderChartPager()}
               {coachingMsg?.advisableSteps != null && coachingMsg.advisableSteps !== effectiveStepTarget && (
                 <span className="step-advisable">
@@ -2238,6 +2323,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#FF8A00' }} />Estimated Intake</h3>
                 {targetCalories > 0 && <span className="chart-title-target">{targetCalories.toLocaleString()} kcal target</span>}
               </div>
+              {renderRangeGroup()}
               {renderChartPager()}
               {calorieHasData && (
                 <div className="step-chart-stats">
@@ -2328,6 +2414,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             )}
             </DraggableChart>
           )}
+          {!(sleepCandleHasData || sleepHasData) && (
+            <p className="walk-empty" style={{ margin: '8px 16px 4px' }}>
+              No sleep logged for this range yet. Add it in the morning check-in (bed &rarr; wake) and it charts here beside your mood.
+            </p>
+          )}
 
           {moodHasData && (
             <DraggableChart disabled onPage={pageBy}>
@@ -2341,13 +2432,13 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 </defs>
                 <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
                 <XAxis dataKey="day" stroke="rgba(255,255,255,0.1)" tick={chartXTick} interval={displayInterval} tickLine={false} height={36} padding={{ left: 6, right: 6 }} />
-                <YAxis stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} width={34} axisLine={false} tickLine={false} domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} />
+                <YAxis stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} width={34} axisLine={false} tickLine={false} domain={[1, 10]} ticks={[2, 4, 6, 8, 10]} />
                 <Tooltip
                   cursor={{ stroke: 'rgba(255,255,255,0.15)' }}
                   contentStyle={{ background: '#161006', border: '1px solid #3a2f14', borderRadius: 10, fontSize: 12 }}
                   labelStyle={{ color: '#caa' }}
                   itemStyle={{ color: '#E8ECF4' }}
-                  formatter={(v: any) => [`${v} / 5`, 'Mood']}
+                  formatter={(v: any) => [`${v} / 10`, 'Mood']}
                 />
                 <Area type="monotone" dataKey="mood" stroke="none" fill="url(#moodFill)" connectNulls isAnimationActive={false} legendType="none" />
                 <Line type="monotone" dataKey="mood" name="Mood" stroke={TEAL} strokeWidth={2.5} dot={{ r: 3, fill: '#0E0E14', stroke: TEAL, strokeWidth: 2 }} connectNulls isAnimationActive={false} />
@@ -2446,14 +2537,14 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         <div className="kpi-group">
           <div className="kpi-card kpi-row-layout">
             <span className="kpi-label">Mood (7d)</span>
-            <span className={`kpi-value ${moodStats.avg7 != null ? (moodStats.avg7 >= 3.5 ? 'kpi-good' : moodStats.avg7 <= 2.4 ? 'kpi-bad' : '') : ''}`}>
-              {moodStats.avg7 != null ? <>{moodStats.avg7}<span className="kpi-unit">/5</span></> : '—'}
+            <span className={`kpi-value ${moodStats.avg7 != null ? (moodStats.avg7 >= 7 ? 'kpi-good' : moodStats.avg7 <= 4.8 ? 'kpi-bad' : '') : ''}`}>
+              {moodStats.avg7 != null ? <>{moodStats.avg7}<span className="kpi-unit">/10</span></> : '—'}
             </span>
           </div>
           <div className="kpi-card kpi-row-layout">
             <span className="kpi-label">Mood (30d)</span>
             <span className="kpi-value">
-              {moodStats.avg30 != null ? <>{moodStats.avg30}<span className="kpi-unit">/5</span></> : '—'}
+              {moodStats.avg30 != null ? <>{moodStats.avg30}<span className="kpi-unit">/10</span></> : '—'}
             </span>
           </div>
           <div className="kpi-card kpi-row-layout">
@@ -2462,6 +2553,27 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           </div>
         </div>
       </div>
+
+      {/* ── Per-habit heatmaps, grouped by cadence — the sexy calendars from the
+             Habits page, read-only, so Stats shows each habit's rhythm at a glance ── */}
+      {habits.length > 0 && (
+        <section className="report-card habit-heatmaps-section">
+          <p className="report-eyebrow">Habit heatmaps · {MONTH_SHORT[hmMonth]} {hmYear}</p>
+          {CADENCE_ORDER.filter(cad => habitsByCadence[cad].length > 0).map(cad => (
+            <div key={cad} className="hhm-group">
+              <p className="hhm-group-label" style={{ color: CADENCE_META[cad].color }}>{CADENCE_META[cad].label}</p>
+              {habitsByCadence[cad].map(h => (
+                <div key={h} className="hhm-habit">
+                  <span className="hhm-habit-name">{h}</span>
+                  {(cad === 'daily' || cad === 'quit')
+                    ? <MiniMonthHeatmap habit={h} year={hmYear} monthIdx={hmMonth} ht={heatmapHt} readOnly />
+                    : <CadenceCalendar habit={h} cadence={cad} year={hmYear} monthIdx={hmMonth} ht={heatmapHt} readOnly />}
+                </div>
+              ))}
+            </div>
+          ))}
+        </section>
+      )}
 
 
       {/* Weekly Recap moved to the Habits page (Sunday only, under the gold circles) */}

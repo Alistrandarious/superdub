@@ -1938,6 +1938,11 @@ h1, h2, h3, h4, .sora {
 .chart-fill { flex: 1; min-height: 0; overflow: hidden; }
 /* Sleep & Mood stacks two charts — split the height between them. */
 .cc-slide-viz > .chart-section--sleepmood .chart-fill { flex: 1 1 50%; min-height: 0; }
+/* Habits slide carries a cadence list BELOW the chart in the same locked column.
+   Guard the chart a real height so it isn't crushed to 0 (flex-collapse pitfall),
+   and let the list give way by scrolling instead of stealing the canvas. */
+.cc-slide-viz > .chart-section--habits .chart-section-inner { min-height: 160px; }
+.cc-slide-viz > .chart-section--habits .cadence-habit-list { flex: 0 1 auto; min-height: 0; overflow-y: auto; }
 /* Chips moved below the visualization space — now the last row before BottomNav,
    so it carries the safe-area inset. Pagination dots were removed entirely. */
 .cc-tabs--under {
@@ -2003,6 +2008,7 @@ h1, h2, h3, h4, .sora {
 .today-feed-head { display: flex; align-items: center; gap: 10px; }
 .today-feed-head .plan-hero-edit { margin-left: auto; }
 .today-feed-list { display: flex; flex-direction: column; gap: 8px; }
+.today-feed-sublabel { font-family: var(--font-data); font-size: 0.56rem; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.45); margin-bottom: 2px; }
 .today-feed-item {
   display: flex; align-items: center; gap: 10px; width: 100%;
   padding: 12px 14px; border-radius: 12px; cursor: pointer; text-align: left;
@@ -2021,6 +2027,35 @@ h1, h2, h3, h4, .sora {
   padding: 40px 20px; color: rgba(255,255,255,0.4); text-align: center;
 }
 .today-feed-empty p { font-family: var(--font-ui); font-size: 0.82rem; line-height: 1.5; max-width: 240px; }
+
+/* Today at-a-glance target tiles — step goal, bedtime, and (on a plan) kcal target */
+.today-glance { display: flex; gap: 8px; }
+.today-glance-tile {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 12px 8px;
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  border-radius: 14px;
+}
+.tg-ico { display: inline-flex; margin-bottom: 1px; color: #FFD233; }
+.tg-ico--step { color: #2FD27E; }
+.tg-ico--cal { color: #FF8A00; }
+.tg-ico--bed { color: #8B5CF6; }
+.tg-val { font-family: var(--font-data); font-size: 1.05rem; font-weight: 700; color: #E8ECF4; }
+.tg-lbl { font-family: var(--font-data); font-size: 0.56rem; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.45); }
+
+/* Habit focus recommendation */
+.today-focus {
+  display: flex; flex-direction: column; gap: 3px; text-align: left;
+  padding: 12px 14px; cursor: pointer; color: inherit;
+  background: rgba(47,210,126,0.08); border: 1px solid rgba(47,210,126,0.28);
+  border-radius: 14px;
+  transition: transform 0.12s ease, border-color 0.15s ease;
+}
+.today-focus:active { transform: scale(0.99); }
+.today-focus-eyebrow { font-family: var(--font-data); font-size: 0.56rem; letter-spacing: 0.1em; text-transform: uppercase; color: #2FD27E; }
+.today-focus-text { font-family: var(--font-ui); font-size: 0.86rem; line-height: 1.45; color: #E8ECF4; }
+.today-focus-text strong { color: #6EF3AE; font-weight: 700; }
 
 /* ── Weight Plan start prompt (shown when no goal is set) ── */
 .plan-start-prompt {
@@ -5385,6 +5420,7 @@ h1, h2, h3, h4, .sora {
   font-size: 3.6rem;
   line-height: 1;
   flex-shrink: 0;
+  color: #fff;
   filter: drop-shadow(0 6px 16px rgba(0,0,0,0.45));
 }
 
@@ -5696,6 +5732,7 @@ h1, h2, h3, h4, .sora {
   width: 40px;
   text-align: center;
   flex-shrink: 0;
+  color: #fff;
 }
 .hb-feat-text { flex: 1; min-width: 0; }
 .hb-feat-name {
@@ -6211,8 +6248,10 @@ h1, h2, h3, h4, .sora {
 .hcard-done-mini.done { background: var(--theme); border-color: var(--theme); color: #07120B; }
 .hcard-chevron {
   flex-shrink: 0;
-  color: rgba(255,255,255,0.3);
-  font-size: 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.35);
   transition: transform 0.25s ease;
 }
 .hcard-chevron.open { transform: rotate(180deg); }
@@ -11295,6 +11334,8 @@ h3, h4,
   margin-bottom: 10px;
   padding: 0 4px;
 }
+/* Range toggle gets its own full-width line under the step/intake title. */
+.step-chart-header .chart-range-group { flex-basis: 100%; padding: 2px 2px 0; }
 .step-chart-eyebrow {
   font-family: var(--font-ui, 'Sora', sans-serif);
   font-size: 0.7rem;
@@ -11314,6 +11355,24 @@ h3, h4,
 .step-stat-val { color: rgba(255,255,255,0.8); font-weight: 700; }
 .step-stat-sep { opacity: 0.3; }
 .consistency-section { margin-top: 4px; }
+
+/* Per-habit heatmaps (Stats) — cadence groups wrapping the reused Habits-page
+   calendars (.mini-hm / .cadence-cal bring their own grid styling). */
+.habit-heatmaps-section { margin-top: 14px; }
+.hhm-group + .hhm-group { margin-top: 20px; }
+.hhm-group-label {
+  font-family: var(--font-data, 'Space Mono', monospace);
+  font-size: 0.6rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  margin: 0 0 10px;
+}
+.hhm-habit { margin-bottom: 14px; }
+.hhm-habit:last-child { margin-bottom: 0; }
+.hhm-habit-name {
+  display: block;
+  font-family: var(--font-ui, 'Sora', sans-serif);
+  font-size: 0.82rem; font-weight: 600; color: #E8ECF4;
+  margin-bottom: 4px;
+}
 
 /* ── Walking stats ── */
 .walk-card { margin-top: 12px; }
