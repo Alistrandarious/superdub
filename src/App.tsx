@@ -17,7 +17,7 @@ import './App.css';
 import { api } from './api';
 import { BUILD_TAG } from './version';
 import { kcalPerStep as kcalPerStepFor, stepsToKm, estimateIntakeKcal } from './energy';
-import { loggingNow } from './day';
+import { loggingNow, getLoggingDay } from './day';
 import { useNavigate } from 'react-router-dom';
 import { pageTheme, GROWTH, HEALTH, TEAL } from './theme';
 import PlanGauge from './PlanGauge';
@@ -33,6 +33,7 @@ import YesterdayMatrix from './YesterdayMatrix';
 import GoalSheet from './GoalSheet';
 import SleepCandleChart, { hhmmToAxis, type SleepCandle } from './SleepCandleChart';
 import { CADENCE_ORDER, CADENCE_META, type Cadence, MiniMonthHeatmap, CadenceCalendar } from './Habits';
+import { isSystemHabit, DAILY_LOG_HABITS, FULL_DAILY_LOG } from './systemHabits';
 import { scheduledDateInPeriod } from './habitSchedule';
 import { UsersIc, AppleIc, CalendarIc, WalkIc, MoonIc } from './icons';
 
@@ -577,6 +578,23 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   // Keep a ref to latest tracker for debounced saves
   const trackerRef = useRef(tracker);
   useEffect(() => { trackerRef.current = tracker; }, [tracker]);
+
+  // Full-set bonus: once every daily-log system habit is done for today, award the
+  // "Full daily log" habit (one-time). Marking it re-fires tracker-updated, but the
+  // already-done guard stops any loop.
+  // ponytail: keys off getLoggingDay to match the per-log marks; during the pre-2 AM
+  // grace window the mandatory login (marked on the raw calendar day) can lag, so the
+  // bonus may miss that rare window — upgrade path is unifying all marks on one key.
+  useEffect(() => {
+    const day = getLoggingDay();
+    const th = tracker[day]?.habits;
+    if (!th) return;
+    if (DAILY_LOG_HABITS.every(h => th[h] === true) && th[FULL_DAILY_LOG] !== true) {
+      api.toggleTrackerHabit(day, FULL_DAILY_LOG, 'done')
+        .then(() => window.dispatchEvent(new CustomEvent('superdub:tracker-updated')))
+        .catch(() => {});
+    }
+  }, [tracker]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const savePending = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
@@ -1200,27 +1218,31 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       const steps = parseInt(tracker[ddmm]?.steps ?? '') || 0;
       return { ddmm, date, w, ema, steps };
     });
-    // Yesterday's estimated intake (same energy-balance math as the chart)
+    // Yesterday's estimated intake (same energy-balance math as the chart).
+    // The weight trend is anchored at TODAY's weigh-in, not yesterday's: the
+    // morning-after weight is exactly what reflects yesterday's eating, so today's
+    // drop pulls this figure down. Steps + the day label stay yesterday's.
     const WIN = 7;
-    const yi = rows.length - 2;
+    const yi = rows.length - 2;   // yesterday — steps + label
+    const ti = rows.length - 1;   // today — the weigh-in that reflects yesterday's eating
     const r = rows[yi];
+    const tRow = rows[ti];
     let intake: number | null = null;
-    // Require a RECENT real weigh-in (within 3 days of the estimated day). The EMA
-    // carries the last weight forward indefinitely, so a stale weigh-in would keep
-    // "estimating" ≈maintenance and read as "over" — misleading when you haven't
-    // weighed in lately. No recent weigh-in ⇒ no estimate.
+    // Require a RECENT real weigh-in (within 3 days of today). The EMA carries the
+    // last weight forward indefinitely, so a stale weigh-in would keep "estimating"
+    // ≈maintenance and read as "over" — misleading. No recent weigh-in ⇒ no estimate.
     const RECENCY = 3;
-    const recentWeighIn = rows.slice(Math.max(0, yi - RECENCY), yi + 1).some(x => x.w != null);
-    if (r && r.ema != null && recentWeighIn) {
-      const j = Math.max(0, yi - WIN);
-      const wForBmr = r.ema ?? startWeight;
+    const recentWeighIn = rows.slice(Math.max(0, ti - RECENCY), ti + 1).some(x => x.w != null);
+    if (tRow && tRow.ema != null && recentWeighIn) {
+      const j = Math.max(0, ti - WIN);
+      const wForBmr = r?.ema ?? tRow.ema ?? startWeight;
       const dayBmr = (10 * wForBmr) + (6.25 * ht) - (5 * ag) + sexConst;
       intake = estimateIntakeKcal({
         maintenance: dayBmr * al,
-        stepDev: walkAvg > 0 ? (r.steps - walkAvg) * kcalPerStep : 0,
-        emaNow: r.ema,
+        stepDev: walkAvg > 0 ? ((r?.steps ?? 0) - walkAvg) * kcalPerStep : 0,
+        emaNow: tRow.ema,
         emaThen: rows[j].ema,
-        spanDays: yi - j,
+        spanDays: ti - j,
       });
     }
     if (intake == null) return null;
@@ -1395,7 +1417,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
   // Join per-day signals (steps, habit completion, mood) for the Patterns card.
   const patternDays = useMemo<PatternDay[]>(() => {
-    const realHabits = habits.filter(h => h !== 'Logging into Superdub');
+    const realHabits = habits.filter(h => !isSystemHabit(h));
     const out: PatternDay[] = [];
     for (const ddmm of ALL_DAYS) {
       const d = tracker[ddmm];
@@ -1463,7 +1485,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const yMood = moodByDate[yesterdayISO] ?? null;
   // Yesterday's habit tally counts only daily habits — weekly/monthly/yearly are
   // closed on their own cadence, not "yesterday" (matches the Habits check-in popup).
-  const realHabits = habits.filter(h => h !== 'Logging into Superdub' && (habitCadence[h] ?? 'daily') === 'daily');
+  const realHabits = habits.filter(h => !isSystemHabit(h) && (habitCadence[h] ?? 'daily') === 'daily');
   const yHabitsDone = realHabits.filter(h => yData?.habits[h] === true).length;
   // Retrospective verdict — a clean prose read on YESTERDAY's closing metrics
   // (estimated intake vs target, safe-zone status, the week's actual change).

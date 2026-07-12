@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import { api, StepEntry as StepEntryRow } from './api';
-import { getLoggingISO } from './day';
+import { getLoggingISO, getLoggingDay } from './day';
+import { LOGGED_STEPS } from './systemHabits';
 
 // YYYY-MM-DD for the date <input> (local time). Uses the logging day so a
 // pre-2 AM entry defaults to yesterday, matching where habits/weight land.
@@ -100,6 +101,13 @@ const StepEntry: React.FC = () => {
     setError(null);
     try {
       await api.addSteps(date, n, 'manual');
+      // Logging TODAY's steps earns XP via the "Logged steps" system habit. Only
+      // today counts — backfilling past days shouldn't farm XP.
+      if (date === todayISO()) {
+        api.toggleTrackerHabit(getLoggingDay(), LOGGED_STEPS, 'done')
+          .then(() => window.dispatchEvent(new CustomEvent('superdub:tracker-updated')))
+          .catch(() => {});
+      }
       window.dispatchEvent(new CustomEvent('superdub:tracker-updated'));
       // Stay open so you can log several days in a row: refresh the calendar +
       // hint, clear the input, and flash a tick that clears itself.

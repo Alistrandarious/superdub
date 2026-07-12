@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import { api } from './api';
 import { promptEnabled } from './promptPrefs';
+import { getLoggingDay } from './day';
+import { EVENING_REFLECTION } from './systemHabits';
 
 // ── Evening reflection — the sleek end-of-day step: how the day felt (mood) and
 // whether eating landed on plan. Time-locked to the evening (6 PM+, once/day) so
@@ -66,6 +68,10 @@ const EveningPrompt: React.FC = () => {
         adherence: adherenceEnum(adherenceLevel),
         adherenceLevel,
       });
+      // Evening reflection earns XP via its system habit.
+      api.toggleTrackerHabit(getLoggingDay(), EVENING_REFLECTION, 'done')
+        .then(() => window.dispatchEvent(new CustomEvent('superdub:tracker-updated')))
+        .catch(() => {});
       localStorage.setItem(EVENING_KEY, todayISO());
       window.dispatchEvent(new CustomEvent('superdub:tracker-updated'));
       window.dispatchEvent(new CustomEvent('superdub:checkin-done'));

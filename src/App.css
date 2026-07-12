@@ -7672,6 +7672,10 @@ h1, h2, h3, h4, .sora {
 .bottom-nav--six .bottom-nav-item { padding: 8px 2px 6px; gap: 2px; }
 .bottom-nav--six .bottom-nav-icon { width: 20px; height: 20px; }
 .bottom-nav--six .bottom-nav-label { font-size: 0.54rem; letter-spacing: 0.02em; }
+/* Five uniform tabs — a touch roomier now that "Kit" is gone. */
+.bottom-nav--five .bottom-nav-item { padding: 8px 3px 6px; gap: 3px; }
+.bottom-nav--five .bottom-nav-icon { width: 22px; height: 22px; }
+.bottom-nav--five .bottom-nav-label { font-size: 0.58rem; letter-spacing: 0.02em; }
 
 .bottom-nav-item {
   flex: 1;

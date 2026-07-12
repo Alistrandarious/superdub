@@ -4,6 +4,8 @@ import { api } from './api';
 import WeightInput from './WeightInput';
 import { useWeightUnit, formatWeightKg } from './weightUnit';
 import { promptEnabled } from './promptPrefs';
+import { getLoggingDay } from './day';
+import { WEIGHED_IN } from './systemHabits';
 
 const CHECKIN_KEY = 'superdub.weight.checkin';
 const SNOOZE_KEY = 'superdub.weight.snooze';   // timestamp (ms) to re-ask after "Ask me later"
@@ -121,6 +123,10 @@ const DailyCheckIn: React.FC = () => {
     try {
       await api.updateTrackerDay(todayStr(), { weight: parsed });
       await api.updateProfile({ weightKg: parsed }).catch(() => {});
+      // Logging your weight earns XP via the "Weighed in" system habit.
+      api.toggleTrackerHabit(getLoggingDay(), WEIGHED_IN, 'done')
+        .then(() => window.dispatchEvent(new CustomEvent('superdub:tracker-updated')))
+        .catch(() => {});
       window.dispatchEvent(new CustomEvent('superdub:tracker-updated'));
       window.dispatchEvent(new CustomEvent('superdub:checkin-done'));
       setDone(true);

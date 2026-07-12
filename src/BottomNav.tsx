@@ -29,7 +29,7 @@ const BottomNav: React.FC = () => {
   const goTo = (path: string) => navigate(path);
 
   return (
-    <nav className="bottom-nav bottom-nav--six" style={{ ['--nav-glow' as any]: navGlow }}>
+    <nav className="bottom-nav bottom-nav--five" style={{ ['--nav-glow' as any]: navGlow }}>
       {/* Habits */}
       <button className={`bottom-nav-item${isActive('/') ? ' active' : ''}`} onClick={() => goTo('/')} aria-label="Habits">
         <span className="bottom-nav-icon" style={{ color: habitsColor }}>
@@ -84,17 +84,6 @@ const BottomNav: React.FC = () => {
           </svg>
         </span>
         <span className="bottom-nav-label">Lists</span>
-      </button>
-
-      {/* Success Kit */}
-      <button className={`bottom-nav-item${isActive('/success-kit') ? ' active' : ''}`} onClick={() => goTo('/success-kit')} aria-label="Success Kit">
-        <span className="bottom-nav-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-          </svg>
-        </span>
-        <span className="bottom-nav-label">Kit</span>
       </button>
     </nav>
   );

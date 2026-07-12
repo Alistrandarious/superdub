@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import { api } from './api';
-import { getLoggingISO } from './day';
+import { getLoggingISO, getLoggingDay } from './day';
+import { WEIGHED_IN } from './systemHabits';
 import { useWeightUnit, formatWeightKg } from './weightUnit';
 import WeightInput from './WeightInput';
 
@@ -71,8 +72,14 @@ const WeightEntry: React.FC = () => {
     try {
       await api.updateTrackerDay(isoToDDMM(date), { weight: String(parsed) });
       // Only sync the profile's "current" weight when logging today, so editing a
-      // past day never overwrites your latest reading.
-      if (date === todayISO()) await api.updateProfile({ weightKg: parsed }).catch(() => {});
+      // past day never overwrites your latest reading. Logging today also earns XP
+      // via the "Weighed in" system habit (past-day backfill shouldn't farm XP).
+      if (date === todayISO()) {
+        await api.updateProfile({ weightKg: parsed }).catch(() => {});
+        api.toggleTrackerHabit(getLoggingDay(), WEIGHED_IN, 'done')
+          .then(() => window.dispatchEvent(new CustomEvent('superdub:tracker-updated')))
+          .catch(() => {});
+      }
       window.dispatchEvent(new CustomEvent('superdub:tracker-updated'));
       window.dispatchEvent(new CustomEvent('superdub:checkin-done'));
       setDone(true);

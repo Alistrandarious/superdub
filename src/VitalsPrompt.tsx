@@ -3,6 +3,8 @@ import './App.css';
 import { api } from './api';
 import SleepRangeSlider, { axisToHHMM, DEFAULT_BED, DEFAULT_WAKE } from './SleepRangeSlider';
 import { promptEnabled } from './promptPrefs';
+import { getLoggingDay } from './day';
+import { MORNING_VITALS } from './systemHabits';
 
 // ── Vitals prompt — the sleek morning "how did you sleep & feel?" step from the
 // prompt-system spec. One focused pop-up (not the old combined check-in): a
@@ -56,7 +58,7 @@ const VitalsPrompt: React.FC = () => {
       window.removeEventListener('superdub:checkin-done', morningAuto);
       if (t) clearTimeout(t);
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const dismiss = () => { localStorage.setItem(VITALS_KEY, todayISO()); setShow(false); };
 
@@ -72,6 +74,10 @@ const VitalsPrompt: React.FC = () => {
           sleepBedtime: axisToHHMM(bed), sleepWaketime: axisToHHMM(wake),
         } : {}),
       });
+      // Morning vitals earns XP via its system habit.
+      api.toggleTrackerHabit(getLoggingDay(), MORNING_VITALS, 'done')
+        .then(() => window.dispatchEvent(new CustomEvent('superdub:tracker-updated')))
+        .catch(() => {});
       localStorage.setItem(VITALS_KEY, todayISO());
       window.dispatchEvent(new CustomEvent('superdub:tracker-updated'));
       window.dispatchEvent(new CustomEvent('superdub:checkin-done'));

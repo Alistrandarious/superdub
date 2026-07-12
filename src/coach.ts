@@ -6,6 +6,8 @@
 // adherence analysis for habits.
 // =====================================================================
 
+import { isSystemHabit } from './systemHabits';
+
 export interface WeighIn { day: string; weight: number; } // day = 'DD/MM'
 export interface TrackerHabitRow { day: string; habit_name: string; state: string | null; }
 export interface HabitMeta { name: string; startDate: string | null; cadence?: string; }
@@ -21,7 +23,6 @@ export interface CoachReport {
 }
 
 const YEAR = new Date().getFullYear();
-const MANDATORY_HABIT = 'Logging into Superdub';
 
 function ddmmToEpochDay(ddmm: string): number {
   const [d, m] = ddmm.split('/').map(Number);
@@ -209,7 +210,7 @@ export function buildCoachReport(
     (map[row.day] ??= {})[row.habit_name] = row.state ?? null;
   }
 
-  const daily = habits.filter(h => (h.cadence ?? 'daily') === 'daily' && h.name !== MANDATORY_HABIT);
+  const daily = habits.filter(h => (h.cadence ?? 'daily') === 'daily' && !isSystemHabit(h.name));
   const analyses = daily.map(h => analyseHabit(h.name, h.startDate, map, allDays, todayIdx))
     .filter(a => a.elapsed >= 2);
 

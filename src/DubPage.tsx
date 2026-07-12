@@ -7,9 +7,9 @@ import DubMascot, { getMascot, type MascotSpecies } from './DubMascot';
 import SuperdubHeader from './SuperdubHeader';
 import { pageTheme, GROWTH } from './theme';
 import { dubPronouns, getDubGender, dubHas, type DubGender } from './dubPronouns';
+import { isSystemHabit } from './systemHabits';
 
 const YEAR = new Date().getFullYear();
-const MANDATORY_HABIT = 'Logging into Superdub';
 
 function buildAllDays(): string[] {
   const d: string[] = [];
@@ -90,10 +90,10 @@ const DubPage: React.FC = () => {
         }
         // count of days with any real signal — gates the "keep logging" state
         const signalDays = new Set<string>([...Object.keys(stepsByDay), ...Object.keys(weightByDay), ...Object.keys(moodByDay)]);
-        for (const row of ((tracker.habits ?? []) as any[])) if (row.state) signalDays.add(row.day);
+        for (const row of ((tracker.habits ?? []) as any[])) if (row.state && !isSystemHabit(row.habit_name)) signalDays.add(row.day);
         setDataDays(signalDays.size);
 
-        const realHabits = (habits as any[]).map(h => h.name).filter((n: string) => n !== MANDATORY_HABIT);
+        const realHabits = (habits as any[]).map(h => h.name).filter((n: string) => !isSystemHabit(n));
         setInsights(buildHabitInsights({
           habits: realHabits,
           trackerHabits: (tracker.habits ?? []) as any,

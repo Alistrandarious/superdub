@@ -34,7 +34,6 @@ const PrivacyPolicy = lazy(() => import('./PrivacyPolicy'));
 const MathsPage = lazy(() => import('./MathsPage'));
 const LevelPage = lazy(() => import('./LevelPage'));
 const ArchivedHabits = lazy(() => import('./ArchivedHabits'));
-const SuccessKit = lazy(() => import('./SuccessKit'));
 const PlanPage = lazy(() => import('./PlanPage'));
 const CommunityPage = lazy(() => import('./CommunityPage'));
 
@@ -112,7 +111,6 @@ function AppRouter() {
         <Route path="/maths" element={<MathsPage />} />
         <Route path="/level" element={<LevelPage />} />
         <Route path="/archived" element={<ArchivedHabits />} />
-        <Route path="/success-kit" element={<SuccessKit />} />
         <Route path="/plan" element={<PlanPage />} />
         <Route path="/community" element={<CommunityPage />} />
       </Routes>
