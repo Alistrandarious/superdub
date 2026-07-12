@@ -4690,6 +4690,11 @@ h1, h2, h3, h4, .sora {
 /* Level hero on Habits: inset the XP bar to the 18px gutter so it lines up with
    the check-in circles (.hb-week) below instead of running edge to edge. */
 .habits-page-scroll .lvl-hero-xp { max-width: none; padding: 0 18px; }
+/* Match the older Habits look: the level ring sits flat (no floating bob or the
+   glow bloom that belongs to the Profile hero). */
+.habits-page-scroll .lvl-hero-bloom { display: none; }
+.habits-page-scroll .lvl-hero-ring { animation: none; }
+.habits-page-scroll .lvl-hero { padding-top: 10px; }
 
 /* Habits home hero: relocated level + settings (replaces header bar) */
 /* =====================================================================
