@@ -6,10 +6,11 @@ export interface PatternDay {
   dow: number;              // 0 = Monday … 6 = Sunday
   steps: number | null;
   habitRate: number | null; // 0..1 of habits done that day
-  mood: number | null;      // 1..5
+  mood: number | null;      // 1..10
+  sleep: number | null;     // hours slept
 }
 
-type MetricKey = 'steps' | 'habitRate' | 'mood';
+type MetricKey = 'steps' | 'habitRate' | 'mood' | 'sleep';
 
 const DOW_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -17,6 +18,7 @@ const METRICS: { key: MetricKey; label: string; color: string; fmt: (v: number) 
   { key: 'steps',     label: 'Steps',  color: '#2E8BFF', fmt: v => Math.round(v).toLocaleString() },
   { key: 'habitRate', label: 'Habits', color: '#2FD27E', fmt: v => `${Math.round(v * 100)}%` },
   { key: 'mood',      label: 'Mood',   color: '#FFB928', fmt: v => `${v.toFixed(1)}/10` },
+  { key: 'sleep',     label: 'Sleep',  color: '#8B5CF6', fmt: v => `${v.toFixed(1)}h` },
 ];
 
 function strength(r: number): string {
@@ -84,7 +86,34 @@ const PatternsCard: React.FC<{ days: PatternDay[] }> = ({ days }) => {
           : `Busy-habit days tend to be lower-step days (${strength(stepsHabits)} link).`,
       });
 
-    return out.sort((a, b) => Math.abs(b.r) - Math.abs(a.r)).slice(0, 2);
+    const sleepMood = pearson(pairUp('sleep', 'mood'));
+    if (sleepMood != null && Math.abs(sleepMood) >= 0.25)
+      out.push({
+        r: sleepMood,
+        text: sleepMood > 0
+          ? `You feel better after a longer night's sleep (${strength(sleepMood)} link).`
+          : `More sleep tracks with a lower mood for you (${strength(sleepMood)} link).`,
+      });
+
+    const sleepHabits = pearson(pairUp('sleep', 'habitRate'));
+    if (sleepHabits != null && Math.abs(sleepHabits) >= 0.25)
+      out.push({
+        r: sleepHabits,
+        text: sleepHabits > 0
+          ? `Well-rested days are your stronger habit days (${strength(sleepHabits)} link).`
+          : `You close more habits on shorter-sleep days (${strength(sleepHabits)} link).`,
+      });
+
+    const sleepSteps = pearson(pairUp('sleep', 'steps'));
+    if (sleepSteps != null && Math.abs(sleepSteps) >= 0.3)
+      out.push({
+        r: sleepSteps,
+        text: sleepSteps > 0
+          ? `You walk more on well-rested days (${strength(sleepSteps)} link).`
+          : `Higher-step days follow shorter sleep for you (${strength(sleepSteps)} link).`,
+      });
+
+    return out.sort((a, b) => Math.abs(b.r) - Math.abs(a.r)).slice(0, 4);
   }, [days]);
 
   // No active goal — patterns don't apply; stay hidden.

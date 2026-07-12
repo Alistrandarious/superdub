@@ -15,13 +15,18 @@ export interface YesterdayMatrixProps {
   steps: number;
   stepTarget: number;
   sleepHours: number | null;
-  mood: number | null;            // 1–5
+  mood: number | null;            // 1–10
   habitsDone: number;
   habitsTotal: number;
   onLogSteps?: () => void;         // tap the Steps cell to log yesterday's steps
+  // Calorie breakdown (all kcal). intake ≈ maintenance + stepBurn + weightChangeKcal.
+  maintenance?: number | null;       // what your body burns (TDEE)
+  stepBurnKcal?: number | null;      // energy from yesterday's steps vs your average
+  weightChangeKcal?: number | null;  // energy from the overnight weight change (negative = lost)
 }
 
-const MOOD_LABEL = (m: number) => m >= 4.5 ? 'great' : m >= 3.5 ? 'good' : m >= 2.5 ? 'okay' : m >= 1.5 ? 'low' : 'rough';
+const MOOD_LABEL = (m: number) => m >= 8.5 ? 'great' : m >= 6.5 ? 'good' : m >= 4.5 ? 'okay' : m >= 2.5 ? 'low' : 'rough';
+const signed = (n: number) => `${n > 0 ? '+' : n < 0 ? '−' : ''}${Math.abs(n).toLocaleString()}`;
 
 // SVG progress ring; `over` flips it to the danger gradient (over target = warning).
 const Ring: React.FC<{ pct: number; over: boolean; children: React.ReactNode }> = ({ pct, over, children }) => {
@@ -52,6 +57,7 @@ const Ring: React.FC<{ pct: number; over: boolean; children: React.ReactNode }> 
 
 const YesterdayMatrix: React.FC<YesterdayMatrixProps> = ({
   intake, targetCalories, delta, steps, stepTarget, sleepHours, mood, habitsDone, habitsTotal, onLogSteps,
+  maintenance, stepBurnKcal, weightChangeKcal,
 }) => {
   const [explain, setExplain] = useState(false);
   const over = delta != null && delta > 0;
@@ -83,6 +89,13 @@ const YesterdayMatrix: React.FC<YesterdayMatrixProps> = ({
             {delta != null
               ? <span className={over ? 'ltm-alert' : 'ltm-sub good'}>est. {Math.abs(delta).toLocaleString()} {over ? 'over' : 'under'} your target</span>
               : <span className="ltm-sub">vs {targetCalories.toLocaleString()} target</span>}
+            {maintenance != null && (
+              <span className="ltm-breakdown">
+                maint {maintenance.toLocaleString()}
+                {weightChangeKcal != null ? ` · weight ${signed(weightChangeKcal)}` : ''}
+                {stepBurnKcal ? ` · steps ${signed(stepBurnKcal)}` : ''}
+              </span>
+            )}
           </>
         ) : targetCalories > 0 ? (
           // No estimate yet — still surface the daily goal so it's always visible.
@@ -131,7 +144,7 @@ const YesterdayMatrix: React.FC<YesterdayMatrixProps> = ({
         )}
         <div className="ltm-bar"><span className="ltm-bar-fill" style={{ width: `${Math.min(100, sleepPct * 100)}%` }} /></div>
         {mood != null
-          ? <span className="ltm-sub">mood <strong className="ltm-energy">{MOOD_LABEL(mood)}</strong> ({mood}/5)</span>
+          ? <span className="ltm-sub">mood <strong className="ltm-energy">{MOOD_LABEL(mood)}</strong> ({mood}/10)</span>
           : <span className="ltm-sub ltm-empty">no mood logged</span>}
       </div>
 

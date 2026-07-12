@@ -1908,6 +1908,8 @@ h1, h2, h3, h4, .sora {
   transition: transform 0.12s ease, border-color 0.15s ease;
 }
 .cc-dubbar:active { transform: scale(0.99); }
+.cc-dubbar--static { cursor: default; }
+.cc-dubbar--static:active { transform: none; }
 .cc-dubbar-pet { flex-shrink: 0; }
 .cc-dubbar-text {
   margin: 0; flex: 1; min-width: 0;
@@ -2243,6 +2245,7 @@ h1, h2, h3, h4, .sora {
 .ltm-bar-fill.behind { background: rgba(255,255,255,0.22); }
 /* Sub caption */
 .ltm-sub { font-family: var(--font-ui); font-size: 0.58rem; line-height: 1.3; color: rgba(255,255,255,0.5); margin-top: 6px; }
+.ltm-breakdown { font-family: var(--font-data); font-size: 0.5rem; letter-spacing: 0.02em; line-height: 1.3; color: rgba(255,255,255,0.38); margin-top: 3px; }
 .ltm-sub.good { color: #FFD233; }
 .ltm-sub.warn { color: rgba(255,255,255,0.45); }
 .ltm-sub.ltm-empty { color: rgba(255,255,255,0.32); }
@@ -2660,7 +2663,9 @@ h1, h2, h3, h4, .sora {
 /* step/intake headers use the shared title row with their own stats below */
 .step-chart-header .chart-title-row { padding: 4px 6px 6px; }
 .chart-title { margin-right: auto; }                 /* push range group + cog to the right */
-.chart-title-row .chart-range-group { order: 2; }
+/* Range buttons drop onto their own full-width row under the title, evenly spaced. */
+.chart-title-row .chart-range-group { order: 2; flex-basis: 100%; gap: 8px; margin-top: 8px; }
+.chart-title-row .chart-range-btn { flex: 1; text-align: center; padding: 4px 10px; }
 .chart-cog-wrap { position: relative; order: 3; }    /* cog sits on the far right */
 .chart-cog-btn {
   display: flex; align-items: center; justify-content: center;
@@ -11407,6 +11412,34 @@ h3, h4,
   margin-bottom: 4px;
 }
 
+/* Year heatmap — granularity by cadence (daily grid / weekly / monthly / yearly). */
+.hy-grid { display: grid; gap: 2px; }
+.hy-grid--daily {
+  grid-template-rows: repeat(7, 8px); grid-auto-flow: column; grid-auto-columns: 8px;
+  overflow-x: auto; padding-bottom: 2px; scrollbar-width: none;
+}
+.hy-grid--daily::-webkit-scrollbar { display: none; }
+.hy-grid--weekly { grid-template-columns: repeat(26, 1fr); grid-auto-rows: 10px; }
+.hy-grid--monthly { grid-template-columns: repeat(12, 1fr); }
+.hy-grid--year { grid-template-columns: 1fr; }
+.hy-cell { border-radius: 2px; background: rgba(255,255,255,0.05); }
+.hy-grid--daily .hy-cell { width: 8px; height: 8px; }
+.hy-cell--labelled {
+  height: 20px; display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-data); font-size: 0.5rem; color: rgba(255,255,255,0.55);
+}
+.hy-cell--wide {
+  height: 28px; display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-data); font-size: 0.7rem; font-weight: 700; color: rgba(255,255,255,0.7);
+}
+.hy-done { background: #2FD27E; }
+.hy-failed { background: #FF5470; }
+.hy-na { background: rgba(159,178,204,0.5); }
+.hy-off { background: rgba(255,255,255,0.05); }
+.hy-future { background: rgba(255,255,255,0.02); }
+.hy-pad { background: transparent; }
+.hy-cell--labelled.hy-done, .hy-cell--wide.hy-done { color: #08110B; }
+
 /* ── Walking stats ── */
 .walk-card { margin-top: 12px; }
 .walk-kpi-row {
@@ -12709,7 +12742,13 @@ html.superdub-night .app {
   -webkit-overflow-scrolling: touch;
   background: #0e0e14;
   padding-bottom: 90px;
+  scrollbar-width: none;            /* hide scrollbar, keep scrolling */
+  -ms-overflow-style: none;
+  /* Soft the hard cutoff at the bottom (the fade sits in the 90px bottom padding). */
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 56px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 56px), transparent);
 }
+.plan-page::-webkit-scrollbar { display: none; }
 
 .plan-page-header {
   display: flex;

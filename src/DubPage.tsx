@@ -31,6 +31,7 @@ const DubPage: React.FC = () => {
   const [report, setReport] = useState<Report | null>(null);
   const [insights, setInsights] = useState<DubInsight[]>([]);
   const [dataDays, setDataDays] = useState(0);
+  const [advisableSteps, setAdvisableSteps] = useState<number | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [species, setSpecies] = useState<MascotSpecies>(getMascot);
   const [gender, setGender] = useState<DubGender>(getDubGender);
@@ -46,13 +47,15 @@ const DubPage: React.FC = () => {
   useEffect(() => {
     (async () => {
       try {
-        const [tracker, habits, plan, moods, journal] = await Promise.all([
+        const [tracker, habits, plan, moods, journal, coaching] = await Promise.all([
           api.getTracker(),
           api.getHabits(),
           api.getPlanStatus().catch(() => null),
           api.getCheckInHistory(180).catch(() => ({ entries: [] as any[] })),
           api.getJournal().catch(() => [] as any[]),
+          api.getCoachingMessage().catch(() => null),
         ]);
+        setAdvisableSteps((coaching as any)?.advisableSteps ?? null);
 
         // ── Coaching report (same inputs as the post-weigh-in modal) ──
         const weights = (tracker.days ?? [])
@@ -135,6 +138,19 @@ const DubPage: React.FC = () => {
             </button>
           </div>
         </div>
+
+        {/* Steps nudge — moved here from the Progress step chart so Dub owns coaching */}
+        {advisableSteps != null && (
+          <section className="dub-section">
+            <div className="coach-line coach-line--neutral">
+              <span className="coach-line-ico">🚶</span>
+              <div className="coach-line-text">
+                <span className="coach-line-title">Steps today</span>
+                <span className="coach-line-body">Aim for about {advisableSteps.toLocaleString()} steps today.</span>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Coaching read — the same lines the weigh-in report shows */}
         {report && report.lines.length > 0 && (

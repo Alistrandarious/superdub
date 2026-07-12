@@ -217,6 +217,20 @@ const migrations = [
   // Old rows stay 1–5 — still valid under 1–10, just read low.
   `ALTER TABLE daily_checkins DROP CONSTRAINT IF EXISTS daily_checkins_mood_check`,
   `ALTER TABLE daily_checkins ADD CONSTRAINT daily_checkins_mood_check CHECK (mood IS NULL OR mood BETWEEN 1 AND 10)`,
+  // One-time flags so data migrations run exactly once (a bare UPDATE in this array
+  // would re-run every boot).
+  `CREATE TABLE IF NOT EXISTS meta_flags (key TEXT PRIMARY KEY, applied_at TIMESTAMPTZ DEFAULT NOW())`,
+  // Rescale mood rows written BEFORE the 1–10 switch (v2.369, committed 2026-07-12
+  // 19:26 UTC). Those were stored compressed as round(v/2); double them back (cap 10).
+  // Guarded + cut off by created_at so rows already on the 1–10 scale are untouched.
+  `DO $$
+   BEGIN
+     IF NOT EXISTS (SELECT 1 FROM meta_flags WHERE key = 'mood_rescale_1to10_v1') THEN
+       UPDATE daily_checkins SET mood = LEAST(mood * 2, 10)
+         WHERE mood IS NOT NULL AND created_at < TIMESTAMPTZ '2026-07-12 19:26:48+00';
+       INSERT INTO meta_flags (key) VALUES ('mood_rescale_1to10_v1');
+     END IF;
+   END $$`,
   `ALTER TABLE daily_checkins ADD COLUMN IF NOT EXISTS workout_done BOOLEAN`,
   `ALTER TABLE daily_checkins ADD COLUMN IF NOT EXISTS workout_intensity TEXT CHECK (workout_intensity IN ('light','moderate','intense','very_intense'))`,
   `ALTER TABLE daily_checkins ADD COLUMN IF NOT EXISTS workout_duration_min INTEGER CHECK (workout_duration_min > 0)`,
