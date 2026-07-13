@@ -16,6 +16,12 @@ const ENABLED_KEY = 'superdub.checkin.enabled';   // 'false' = disabled
 const todayISO = () => new Date().toISOString().slice(0, 10);
 const isEnabled = () => localStorage.getItem(ENABLED_KEY) !== 'false';
 
+// True when the reflection is about to auto-show (evening, not done, enabled).
+// Habits checks this so its day overlay waits its turn instead of stacking on top;
+// 'superdub:evening-closed' / 'superdub:checkin-done' then let it open.
+export const eveningPending = () =>
+  isEnabled() && localStorage.getItem(EVENING_KEY) !== todayISO() && new Date().getHours() >= 18;
+
 // 5-point eating scale → the 3-value enum the plan engine understands.
 function adherenceEnum(level: number): 'below' | 'about' | 'above' {
   return level <= -1 ? 'below' : level >= 1 ? 'above' : 'about';
@@ -56,7 +62,12 @@ const EveningPrompt: React.FC = () => {
     return () => { window.removeEventListener('superdub:show-evening', open); if (t) clearTimeout(t); };
   }, []);
 
-  const dismiss = () => { localStorage.setItem(EVENING_KEY, todayISO()); setShow(false); };
+  const dismiss = () => {
+    localStorage.setItem(EVENING_KEY, todayISO());
+    setShow(false);
+    // Skipping still hands the stage over to the deferred habit overlay.
+    window.dispatchEvent(new CustomEvent('superdub:evening-closed'));
+  };
 
   const canSave = (moodOn ? moodTouched : true) && adherenceLevel !== null;
   const save = async () => {

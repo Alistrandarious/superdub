@@ -14,6 +14,7 @@ import LevelHeroRing from './LevelHeroRing';
 import PinnedXpBar from './PinnedXpBar';
 import LevelCustomizer from './LevelCustomizer';
 import LevelLadder from './LevelLadder';
+import { eveningPending } from './EveningPrompt';
 import {
   MoonIc, CalendarIc, TrophyIc, WalkIc, BookIc, NoSmokeIc, MealIc, MoneyIc, HealthIc,
   SunIc, CloudSunIc, CloudIc, RainIc, SnowIc, StormIc, type IconProps,
@@ -1301,19 +1302,27 @@ const Habits: React.FC = () => {
     );
   }, []);
 
-  // Show habit overlay when habits are first loaded + 6-hour threshold has passed
+  // Show habit overlay when habits are first loaded + 6-hour threshold has passed.
+  // If the evening reflection is about to auto-show, wait our turn — it hands over
+  // via checkin-done (saved) or evening-closed (skipped) so the popups run one by one.
   useEffect(() => {
-    if (loaded && shouldAutoRefresh()) openDayOverlay();
+    if (loaded && shouldAutoRefresh() && !eveningPending()) openDayOverlay();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loaded]);
 
-  // Show/refresh the habit overlay after a check-in (weigh-in, vitals, evening).
+  // Show/refresh the habit overlay after a check-in (weigh-in, vitals, evening),
+  // or once a skipped evening reflection closes and the overlay was still due.
   // NOT on superdub:tracker-updated, which also fires for step logging and would
   // wrongly pop this long overlay every time you log steps.
   useEffect(() => {
     const handler = () => openDayOverlay();
+    const deferred = () => { if (shouldAutoRefresh()) openDayOverlay(); };
     window.addEventListener('superdub:checkin-done', handler);
-    return () => window.removeEventListener('superdub:checkin-done', handler);
+    window.addEventListener('superdub:evening-closed', deferred);
+    return () => {
+      window.removeEventListener('superdub:checkin-done', handler);
+      window.removeEventListener('superdub:evening-closed', deferred);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -1352,7 +1361,7 @@ const Habits: React.FC = () => {
   // Fallback: check every 5 minutes if 6 hours have passed
   useEffect(() => {
     const id = setInterval(() => {
-      if (shouldAutoRefresh()) openDayOverlay();
+      if (shouldAutoRefresh() && !eveningPending()) openDayOverlay();
     }, 5 * 60 * 1000);
     return () => clearInterval(id);
   // eslint-disable-next-line react-hooks/exhaustive-deps
