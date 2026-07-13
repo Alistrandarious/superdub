@@ -93,18 +93,10 @@ const YesterdayMatrix: React.FC<YesterdayMatrixProps> = ({
               <span className={`ltm-ring-range${over ? ' over' : ''}`}>{(intakeLow / 1000).toFixed(1)}–{(intakeHigh / 1000).toFixed(1)}k</span>
               <span className="ltm-ring-unit">kcal</span>
             </Ring>
-            <span className={over ? 'ltm-alert' : 'ltm-sub good'}>
+            <span className={`ltm-sub${over ? ' warn' : ' good'}`}>
               vs {targetCalories.toLocaleString()} target
-              {adherenceLevel != null ? ` · you ate ${ADH_LABEL(adherenceLevel)}` : ''}
+              {adherenceLevel != null ? ` · ate ${ADH_LABEL(adherenceLevel)}` : ''}
             </span>
-            {maintenance != null && (
-              <span className="ltm-breakdown">
-                burned ~{(maintenance + (stepBurnKcal ?? 0) + (gymBurnKcal ?? 0)).toLocaleString()} (maint {maintenance.toLocaleString()}
-                {stepBurnKcal ? ` · steps ${signed(stepBurnKcal)}` : ''}
-                {gymBurnKcal ? ` · gym +${gymBurnKcal.toLocaleString()}` : ''})
-              </span>
-            )}
-            {wide && <span className="ltm-caveat">big overnight swing, mostly water, so the band is wide</span>}
           </>
         ) : targetCalories > 0 ? (
           // No estimate yet — still surface the daily goal so it's always visible.
@@ -116,9 +108,16 @@ const YesterdayMatrix: React.FC<YesterdayMatrixProps> = ({
         )}
         {explain && (
           <button className="ltm-explain" onClick={() => setExplain(false)}>
-            A range, not the food you logged: your body's burn (maintenance, steps, gym)
-            set against your weigh-in and your evening “eating vs target”. One day's scale
-            move is mostly water, so we show a band, not a false-precise number.
+            {maintenance != null ? (
+              <>
+                Burned ~{(maintenance + (stepBurnKcal ?? 0) + (gymBurnKcal ?? 0)).toLocaleString()} kcal
+                (maintenance {maintenance.toLocaleString()}{stepBurnKcal ? `, steps ${signed(stepBurnKcal)}` : ''}{gymBurnKcal ? `, gym +${gymBurnKcal.toLocaleString()}` : ''}),
+                set against your weigh-in and evening “eating vs target”.
+                {wide ? ' Your scale jumped overnight — mostly water — so the band is wide.' : ' One day’s scale move is mostly water, so it’s a band, not a single number.'}
+              </>
+            ) : (
+              <>A range from your body’s burn set against your weigh-in and evening “eating vs target”. One day’s scale move is mostly water, so it’s a band, not a single number.</>
+            )}
           </button>
         )}
       </div>
