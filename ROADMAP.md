@@ -49,6 +49,13 @@ Ali seeds this epic — add concrete wants as rows, they interleave with the deb
 | ID | Task | Files | Size | Tier | Acceptance | Status |
 |---|---|---|---|---|---|---|
 | E4.1 | aria-labels on symbol/icon-only buttons, per file (text buttons already have accessible names — the button-count audit overstated) | per file | S ×n | haiku | Every symbol-only button labelled; text buttons skipped; zero visual change | [~] Profile.tsx done v2.403 2026-07-13 (3 symbol buttons); other files remain |
+| E4.2 | Fix Habits chart header cramming: drop the nowrap override so range chips wrap to their own row, cog stays top-right | src/App.css | S | fable | Title+cog on row 1, chips on row 2 at 400px | [x] done v2.404 2026-07-13 |
+| E4.3 | Dub mascot clipped in the Progress dubbar: find the clipping ancestor, give the pet headroom | src/App.css, ChartCarousel.tsx | S | fable | Dub unclipped at 46px, all 3 species | [x] done v2.404 2026-07-13 — root cause was 4px baseline descender mis-centering the pet |
+| E4.4 | Stats-slide scroll fade without :has() (device support): ChartCarousel adds a modifier class instead | src/ChartCarousel.tsx, App.css | S | fable | Fade shows on stats slides, lifts at scroll end, no :has() | [x] done v2.404 2026-07-13 — also fixed fade-end latching (page fades were vanishing) |
+| E4.5 | Dub page: room spans to the top, insights scroll right below; chat + "!" badge unchanged | src/DubPage.tsx, DubRoom.tsx, App.css | M | fable | Room hero at top, insights visible beneath | [ ] |
+| E4.6 | Ring tap swaps Habits page: customization + full level ladder replace the list; tap again restores | src/Habits.tsx, LevelPage.tsx, new LevelLadder.tsx, App.css | M | fable | Habits list hidden while open; ladder shared with /level | [ ] |
+| E4.7 | Bottom nav: Habits as the raised center circle, tinted by the customization color | src/BottomNav.tsx, App.css | S | sonnet | Order Progress·Dub·Habits·Global·Lists; circle uses habitsColor | [ ] |
+| E4.8 | Friend detail sheet: profile info, nudge (rate-limited push), share-a-habit picker, remove | server/routes/friends.ts, services/push.ts, index.ts, src/api.ts, FriendsPanel.tsx, App.css | M/L | fable+sonnet | Tap friend opens sheet; nudge gated by friendship + 4h limit; share uses all-friends flag | [ ] |
 
 ## Icebox
 

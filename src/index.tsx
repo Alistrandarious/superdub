@@ -73,20 +73,32 @@ function AppRouter() {
     };
   }, [authed]);
 
-  // Bottom-fade lifter: the scroll fade hints "more below", so it should vanish
-  // once a scroller actually reaches its end (and come back when you scroll up).
-  // One delegated capture-phase listener covers every faded scroller in the app.
-  // ponytail: containers that never fire a scroll (content fits) keep the fade;
-  // fixing that needs a ResizeObserver per scroller — not worth it yet.
+  // Bottom-fade lifter: the scroll fade hints "more below", so it lifts when a
+  // scroller can't scroll or is at its end, and returns when you scroll up.
+  // A scroll-only listener LATCHED fade-end wrong (a scroll event while content
+  // was short/still loading marked the page "at bottom" forever, killing the
+  // gradient), so a slow sweep re-evaluates every faded scroller as content
+  // grows. ponytail: 1.5s polling over per-scroller ResizeObservers — a 6-element
+  // querySelectorAll; upgrade if it ever shows in a profile.
   useEffect(() => {
     const SEL = '.habits-page-scroll, .tasks-content, .diet-content, .profile-content, .cc-slide-viz, .plan-page';
+    const apply = (el: HTMLElement) => {
+      const canScroll = el.scrollHeight > el.clientHeight + 4;
+      el.classList.toggle('fade-end', !canScroll || el.scrollTop + el.clientHeight >= el.scrollHeight - 2);
+    };
     const onScroll = (e: Event) => {
       const el = e.target as HTMLElement;
-      if (!el?.classList || !el.matches(SEL)) return;
-      el.classList.toggle('fade-end', el.scrollTop + el.clientHeight >= el.scrollHeight - 2);
+      if (el?.classList && el.matches(SEL)) apply(el);
     };
+    const sweep = () => document.querySelectorAll<HTMLElement>(SEL).forEach(apply);
     document.addEventListener('scroll', onScroll, true);
-    return () => document.removeEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', sweep);
+    const timer = setInterval(sweep, 1500);
+    return () => {
+      document.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('resize', sweep);
+      clearInterval(timer);
+    };
   }, []);
 
   // Deep-link from a push notification: ?prompt=weight|exercise opens the

@@ -1912,7 +1912,9 @@ h1, h2, h3, h4, .sora {
 .cc-dubbar:active { transform: scale(0.99); }
 .cc-dubbar--static { cursor: default; }
 .cc-dubbar--static:active { transform: none; }
-.cc-dubbar-pet { flex-shrink: 0; }
+/* line-height 0: without it the inline span adds ~4px of baseline descender under
+   the mascot, shoving his head up into the bar's top border (the "cut off" look). */
+.cc-dubbar-pet { flex-shrink: 0; line-height: 0; }
 .cc-dubbar-text {
   margin: 0; flex: 1; min-width: 0;
   font-family: var(--font-ui); font-size: 0.8rem; line-height: 1.45; color: rgba(255,255,255,0.72);
@@ -1930,8 +1932,9 @@ h1, h2, h3, h4, .sora {
 .cc-slide-viz::-webkit-scrollbar { display: none; }
 /* The bottom fade only makes sense where content actually scrolls — the tall
    Stats panels. On the height-locked Today/Yesterday/Plan panels it just dimmed
-   the last row (the KPIs on Yesterday), so scope it to the scrolling slides. */
-.cc-slide-viz:has(> .story-panel--stats) {
+   the last row (the KPIs on Yesterday). ChartCarousel adds the --fade class per
+   slide (a :has() selector broke on older Safari, so it's flagged in JS). */
+.cc-slide-viz--fade {
   -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent);
   mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent);
 }
@@ -2702,12 +2705,10 @@ h1, h2, h3, h4, .sora {
 /* Range buttons drop onto their own full-width row under the title, evenly spaced. */
 .chart-title-row .chart-range-group { order: 2; flex-basis: 100%; gap: 8px; margin-top: 8px; }
 .chart-title-row .chart-range-btn { flex: 1; text-align: center; padding: 4px 10px; }
-.chart-cog-wrap { position: relative; order: 3; }    /* cog sits on the far right */
-/* Habits chart: keep the cadence cog pinned top-right, in line with the title —
-   don't let the title + cadence label wrap it onto a second row on narrow widths. */
-.chart-section--habits .chart-title-row { flex-wrap: nowrap; }
+/* Cog rides row 1 beside the title (order BEFORE the range group — order 3 would
+   wrap it onto its own third row); the range chips then break to their own row. */
+.chart-cog-wrap { position: relative; order: 1; margin-left: auto; flex-shrink: 0; }
 .chart-section--habits .chart-title { min-width: 0; }
-.chart-section--habits .chart-cog-wrap { margin-left: auto; align-self: center; flex-shrink: 0; }
 .chart-cog-btn {
   display: flex; align-items: center; justify-content: center;
   width: 30px; height: 30px;

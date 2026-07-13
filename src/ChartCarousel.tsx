@@ -42,19 +42,26 @@ const ChartCarousel: React.FC<{
   return (
     <div className="chart-carousel">
       <div className="cc-track" ref={trackRef} onScroll={onScroll}>
-        {slides.map((child, i) => (
-          <div className="cc-slide" key={i}>
-            {/* Dub's read of THIS slide — a quiet caption, not a button. */}
-            {notes[i] && (
-              <div className="cc-dubbar cc-dubbar--static">
-                <span className="cc-dubbar-pet"><DubMascot size={46} mood="happy" species={species} /></span>
-                <p className="cc-dubbar-text">{notes[i]}</p>
-              </div>
-            )}
-            {/* Height-locked visualization, fills the rest; swipe here pages. */}
-            <div className="cc-slide-viz">{child}</div>
-          </div>
-        ))}
+        {slides.map((child, i) => {
+          // Tall Stats panels scroll, so they get the bottom fade. Flagged with a
+          // class here (not CSS :has(), which older Safari lacks).
+          const fades = React.isValidElement(child)
+            && typeof (child.props as any)?.className === 'string'
+            && (child.props as any).className.includes('story-panel--stats');
+          return (
+            <div className="cc-slide" key={i}>
+              {/* Dub's read of THIS slide — a quiet caption, not a button. */}
+              {notes[i] && (
+                <div className="cc-dubbar cc-dubbar--static">
+                  <span className="cc-dubbar-pet"><DubMascot size={46} mood="happy" species={species} /></span>
+                  <p className="cc-dubbar-text">{notes[i]}</p>
+                </div>
+              )}
+              {/* Height-locked visualization, fills the rest; swipe here pages. */}
+              <div className={`cc-slide-viz${fades ? ' cc-slide-viz--fade' : ''}`}>{child}</div>
+            </div>
+          );
+        })}
       </div>
 
       <div className="cc-tabs cc-tabs--under" ref={tabsRef}>
