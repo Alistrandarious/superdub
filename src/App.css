@@ -4702,6 +4702,18 @@ h1, h2, h3, h4, .sora {
 }
 .habits-page-scroll::-webkit-scrollbar { display: none; }  /* WebKit: hide scrollbar */
 
+/* Blend content out toward the bottom bar on the main scroll views, so nothing hard
+   clips at the edge. The 40px fade sits inside each view's bottom padding (≥48px), so
+   the last real element is never dimmed — only content mid-scroll fades as it leaves.
+   Same idea as .plan-page's mask. */
+.habits-page-scroll,
+.tasks-content,
+.diet-content,
+.profile-content {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent);
+}
+
 /* Level hero on Habits: inset the XP bar to the 18px gutter so it lines up with
    the check-in circles (.hb-week) below instead of running edge to edge. */
 .habits-page-scroll .lvl-hero-xp { max-width: none; padding: 0 18px; }
