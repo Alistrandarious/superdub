@@ -54,7 +54,7 @@ Ali seeds this epic — add concrete wants as rows, they interleave with the deb
 | E4.4 | Stats-slide scroll fade without :has() (device support): ChartCarousel adds a modifier class instead | src/ChartCarousel.tsx, App.css | S | fable | Fade shows on stats slides, lifts at scroll end, no :has() | [x] done v2.404 2026-07-13 — also fixed fade-end latching (page fades were vanishing) |
 | E4.5 | Dub page: room spans to the top, insights scroll right below; chat + "!" badge unchanged | src/DubPage.tsx, DubRoom.tsx, App.css | M | fable | Room hero at top, insights visible beneath | [x] done v2.405 2026-07-13 |
 | E4.6 | Ring tap swaps Habits page: customization + full level ladder replace the list; tap again restores | src/Habits.tsx, LevelPage.tsx, new LevelLadder.tsx, App.css | M | fable | Habits list hidden while open; ladder shared with /level | [x] done v2.406 2026-07-13 |
-| E4.7 | Bottom nav: Habits as the raised center circle, tinted by the customization color | src/BottomNav.tsx, App.css | S | sonnet | Order Progress·Dub·Habits·Global·Lists; circle uses habitsColor | [ ] |
+| E4.7 | Bottom nav: Habits as the raised center circle, tinted by the customization color | src/BottomNav.tsx, App.css | S | sonnet | Order Progress·Dub·Habits·Global·Lists; circle uses habitsColor | [x] done v2.407 2026-07-13 |
 | E4.8 | Friend detail sheet: profile info, nudge (rate-limited push), share-a-habit picker, remove | server/routes/friends.ts, services/push.ts, index.ts, src/api.ts, FriendsPanel.tsx, App.css | M/L | fable+sonnet | Tap friend opens sheet; nudge gated by friendship + 4h limit; share uses all-friends flag | [ ] |
 
 ## Icebox

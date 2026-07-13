@@ -29,17 +29,7 @@ const BottomNav: React.FC = () => {
   const goTo = (path: string) => navigate(path);
 
   return (
-    <nav className="bottom-nav bottom-nav--five" style={{ ['--nav-glow' as any]: navGlow }}>
-      {/* Habits */}
-      <button className={`bottom-nav-item${isActive('/') ? ' active' : ''}`} onClick={() => goTo('/')} aria-label="Habits">
-        <span className="bottom-nav-icon" style={{ color: habitsColor }}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-          </svg>
-        </span>
-        <span className="bottom-nav-label">Habits</span>
-      </button>
-
+    <nav className="bottom-nav bottom-nav--five" style={{ ['--nav-glow' as any]: navGlow, ['--habits-c' as any]: habitsColor, ['--habits-c-glow' as any]: habitsColor + '73' }}>
       {/* Progress */}
       <button className={`bottom-nav-item${isActive('/dashboard') ? ' active' : ''}`} onClick={() => goTo('/dashboard')} aria-label="Progress">
         <span className="bottom-nav-icon">
@@ -61,6 +51,15 @@ const BottomNav: React.FC = () => {
           </svg>
         </span>
         <span className="bottom-nav-label">Dub</span>
+      </button>
+
+      {/* Habits — raised center circle */}
+      <button className={`bottom-nav-item bottom-nav-center${isActive('/') ? ' active' : ''}`} onClick={() => goTo('/')} aria-label="Habits">
+        <span className="bottom-nav-center-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+          </svg>
+        </span>
       </button>
 
       {/* Global & Friends */}
