@@ -73,6 +73,22 @@ function AppRouter() {
     };
   }, [authed]);
 
+  // Bottom-fade lifter: the scroll fade hints "more below", so it should vanish
+  // once a scroller actually reaches its end (and come back when you scroll up).
+  // One delegated capture-phase listener covers every faded scroller in the app.
+  // ponytail: containers that never fire a scroll (content fits) keep the fade;
+  // fixing that needs a ResizeObserver per scroller — not worth it yet.
+  useEffect(() => {
+    const SEL = '.habits-page-scroll, .tasks-content, .diet-content, .profile-content, .cc-slide-viz, .plan-page';
+    const onScroll = (e: Event) => {
+      const el = e.target as HTMLElement;
+      if (!el?.classList || !el.matches(SEL)) return;
+      el.classList.toggle('fade-end', el.scrollTop + el.clientHeight >= el.scrollHeight - 2);
+    };
+    document.addEventListener('scroll', onScroll, true);
+    return () => document.removeEventListener('scroll', onScroll, true);
+  }, []);
+
   // Deep-link from a push notification: ?prompt=weight|exercise opens the
   // matching overlay (the SW lands us here). Strip the param so a refresh
   // won't repeat.

@@ -34,14 +34,18 @@ const axisToClock = (v: number): string => {
 const SleepIBar = (props: any) => {
   const { x, y, width, height } = props;
   // Nights without both times come through as a null span → nothing to draw.
-  if (!Number.isFinite(y) || !Number.isFinite(height) || height <= 0) return null;
+  // NOTE: recharts computes height = scale(start) − scale(end); on our REVERSED
+  // Y axis that's negative (y arrives as the bottom edge), so normalize instead
+  // of rejecting — rejecting height < 0 is what blanked the whole chart.
+  if (!Number.isFinite(y) || !Number.isFinite(height) || height === 0) return null;
+  const top = height < 0 ? y + height : y;
+  const bottom = top + Math.abs(height);
   const cx = x + width / 2;
   const tick = Math.max(width / 2, 4);
-  const bottom = y + height;
   return (
     <g stroke="#8B5CF6" strokeWidth={2} strokeLinecap="round">
-      <line x1={cx} y1={y} x2={cx} y2={bottom} />
-      <line x1={cx - tick} y1={y} x2={cx + tick} y2={y} />
+      <line x1={cx} y1={top} x2={cx} y2={bottom} />
+      <line x1={cx - tick} y1={top} x2={cx + tick} y2={top} />
       <line x1={cx - tick} y1={bottom} x2={cx + tick} y2={bottom} />
     </g>
   );

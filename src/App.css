@@ -4744,6 +4744,13 @@ h1, h2, h3, h4, .sora {
   -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent);
   mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent);
 }
+/* At the very end of a scroll there's nothing left to hint at — lift the fade.
+   (.fade-end is toggled by the delegated scroll listener in index.tsx; the
+   !important must beat every per-scroller mask rule, including :has ones.) */
+.fade-end {
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
+}
 
 /* Level hero on Habits: inset the XP bar to the 18px gutter so it lines up with
    the check-in circles (.hb-week) below instead of running edge to edge. */
