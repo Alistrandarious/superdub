@@ -1925,6 +1925,8 @@ h1, h2, h3, h4, .sora {
   flex: 1; min-height: 0; display: flex; flex-direction: column;
   overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;
   padding: 10px 0;
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent);
 }
 .cc-slide-viz::-webkit-scrollbar { display: none; }
 
@@ -2006,7 +2008,7 @@ h1, h2, h3, h4, .sora {
    flex-shrink:0 so the column-flex viz shell doesn't crush it (see the flex
    collapse pitfall). ── */
 .cc-slide-viz > .today-feed {
-  flex-shrink: 0; margin: 0 16px; display: flex; flex-direction: column; gap: 12px;
+  flex: 0 1 auto; margin: 0 16px; display: flex; flex-direction: column; gap: 12px;
 }
 .today-feed-head { display: flex; align-items: center; gap: 10px; }
 .today-feed-head .plan-hero-edit { margin-left: auto; }
@@ -2037,7 +2039,7 @@ h1, h2, h3, h4, .sora {
 .today-feed-item.overdue .today-feed-when { color: #FF9DAC; }
 .today-feed-empty {
   display: flex; flex-direction: column; align-items: center; gap: 12px;
-  padding: 40px 20px; color: rgba(255,255,255,0.4); text-align: center;
+  padding: 20px 20px; color: rgba(255,255,255,0.4); text-align: center;
 }
 .today-feed-empty p { font-family: var(--font-ui); font-size: 0.82rem; line-height: 1.5; max-width: 240px; }
 
