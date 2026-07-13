@@ -16,7 +16,7 @@ the app keeps improving on both fronts.
 
 | ID | Task | Files | Size | Tier | Acceptance | Status |
 |---|---|---|---|---|---|---|
-| E0.1 | `npm run check` runs all 13 `*.check.ts` (src + server) via tsx, exits 1 on any assert failure | package.json, scripts/ | S | sonnet | `npm run check` exits 0 clean; breaking one assert exits 1 | [ ] |
+| E0.1 | `npm run check` runs all 13 `*.check.ts` (src + server) via tsx, exits 1 on any assert failure | package.json, scripts/ | S | sonnet | `npm run check` exits 0 clean; breaking one assert exits 1 | [x] done v2.401 2026-07-13 |
 | E0.2 | Hygiene: gitignore the personal files at root (never tracked, keep them that way); rename `PROMPT_SYSTEM_DESIGN.MD` → `.md` | .gitignore, root | S | fable | `git status` never shows the personal files; rename cased right on Windows | [ ] |
 
 ## Epic 1 — Type safety & hygiene
