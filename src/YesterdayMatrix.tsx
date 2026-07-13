@@ -33,6 +33,16 @@ const MOOD_LABEL = (m: number) => m >= 8.5 ? 'great' : m >= 6.5 ? 'good' : m >= 
 const ADH_LABEL = (l: number) => l <= -2 ? 'well under' : l === -1 ? 'under' : l === 0 ? 'about right' : l === 1 ? 'over' : 'well over';
 const signed = (n: number) => `${n > 0 ? '+' : n < 0 ? '−' : ''}${Math.abs(n).toLocaleString()}`;
 
+// Each cell carries its chart slide's accent (Intake flame, Steps blue, Sleep violet,
+// Habits green) so the Yesterday grid reads as a legend for the charts that follow.
+export const KPI_ACCENT = { cal: '#FF8A00', steps: '#2E8BFF', vitals: '#8B5CF6', habits: '#2FD27E' } as const;
+const cellStyle = (c: string) => ({ ['--cell' as any]: c }) as React.CSSProperties;
+
+// Tiny goal-hit tick, shown beside the eyebrow when the cell's goal was met.
+const WinTick: React.FC = () => (
+  <svg className="ltm-win-tick" viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" aria-label="goal hit"><polyline points="20 6 9 17 4 12" /></svg>
+);
+
 const YesterdayMatrix: React.FC<YesterdayMatrixProps> = ({
   intake, intakeLow, intakeHigh, wide, targetCalories, delta, steps, stepTarget, sleepHours, mood, habitsDone, habitsTotal, onLogSteps,
   maintenance, stepBurnKcal, gymBurnKcal, adherenceLevel,
@@ -45,12 +55,16 @@ const YesterdayMatrix: React.FC<YesterdayMatrixProps> = ({
   const sleepBounded = sleepHours != null ? Math.max(0, Math.min(12, sleepHours)) : null;
   const sleepPct = sleepBounded != null ? sleepBounded / 12 : 0;
   const habitPct = habitsTotal > 0 ? habitsDone / habitsTotal : 0;
+  // Wins — did each metric hit its goal yesterday? Drives the tick + tinted cell.
+  const winCal = delta != null && delta <= 0;
+  const winSleep = sleepBounded != null && sleepBounded >= 7;
+  const winHabits = habitsTotal > 0 && habitsDone === habitsTotal;
 
   return (
     <div className="ltm">
       {/* Calories eaten */}
-      <div className="ltm-cell">
-        <span className="ltm-eyebrow">CALORIES</span>
+      <div className={`ltm-cell${winCal ? ' ltm-cell--win' : ''}`} style={cellStyle(KPI_ACCENT.cal)}>
+        <span className="ltm-eyebrow">CALORIES{winCal && <WinTick />}</span>
         {/* Tap-to-explain — the number is an estimate from weight + steps, not
             logged food; nothing else on screen says so. */}
         <button className="ltm-info" onClick={() => setExplain(v => !v)} aria-label="How is this worked out?">
@@ -97,18 +111,18 @@ const YesterdayMatrix: React.FC<YesterdayMatrixProps> = ({
 
       {/* Steps taken — tap to log yesterday's steps */}
       {onLogSteps ? (
-        <button className="ltm-cell ltm-cell-btn" onClick={onLogSteps} aria-label="Log yesterday's steps">
-          <span className="ltm-eyebrow">STEPS</span>
-          <div className="ltm-metric">{steps.toLocaleString()}{stepsHit && <span className="ltm-metric-unit"> ✓</span>}</div>
+        <button className={`ltm-cell ltm-cell-btn${stepsHit ? ' ltm-cell--win' : ''}`} style={cellStyle(KPI_ACCENT.steps)} onClick={onLogSteps} aria-label="Log yesterday's steps">
+          <span className="ltm-eyebrow">STEPS{stepsHit && <WinTick />}</span>
+          <div className="ltm-metric">{steps.toLocaleString()}</div>
           <div className="ltm-bar"><span className="ltm-bar-fill" style={{ width: `${Math.min(100, stepPct * 100)}%` }} /></div>
           <span className={`ltm-sub${stepsHit ? ' good' : ''}`}>
             {steps > 0 ? `of ${stepTarget.toLocaleString()} target${stepsHit ? ' · hit' : ''}` : 'tap to log steps'}
           </span>
         </button>
       ) : (
-        <div className="ltm-cell">
-          <span className="ltm-eyebrow">STEPS</span>
-          <div className="ltm-metric">{steps.toLocaleString()}{stepsHit && <span className="ltm-metric-unit"> ✓</span>}</div>
+        <div className={`ltm-cell${stepsHit ? ' ltm-cell--win' : ''}`} style={cellStyle(KPI_ACCENT.steps)}>
+          <span className="ltm-eyebrow">STEPS{stepsHit && <WinTick />}</span>
+          <div className="ltm-metric">{steps.toLocaleString()}</div>
           <div className="ltm-bar"><span className="ltm-bar-fill" style={{ width: `${Math.min(100, stepPct * 100)}%` }} /></div>
           <span className={`ltm-sub${stepsHit ? ' good' : ''}`}>
             {steps > 0 ? `of ${stepTarget.toLocaleString()} target${stepsHit ? ' · hit' : ''}` : 'no steps logged'}
@@ -117,8 +131,8 @@ const YesterdayMatrix: React.FC<YesterdayMatrixProps> = ({
       )}
 
       {/* Vitals, sleep + mood */}
-      <div className="ltm-cell">
-        <span className="ltm-eyebrow">VITALS</span>
+      <div className={`ltm-cell${winSleep ? ' ltm-cell--win' : ''}`} style={cellStyle(KPI_ACCENT.vitals)}>
+        <span className="ltm-eyebrow">VITALS{winSleep && <WinTick />}</span>
         {sleepBounded != null ? (
           <div className="ltm-metric">{sleepBounded % 1 === 0 ? sleepBounded : sleepBounded.toFixed(1)}<span className="ltm-metric-unit">h slept</span></div>
         ) : (
@@ -131,8 +145,8 @@ const YesterdayMatrix: React.FC<YesterdayMatrixProps> = ({
       </div>
 
       {/* Habits closed */}
-      <div className="ltm-cell">
-        <span className="ltm-eyebrow">HABITS</span>
+      <div className={`ltm-cell${winHabits ? ' ltm-cell--win' : ''}`} style={cellStyle(KPI_ACCENT.habits)}>
+        <span className="ltm-eyebrow">HABITS{winHabits && <WinTick />}</span>
         {habitsTotal > 0 ? (
           <>
             <div className="ltm-metric">{habitsDone}<span className="ltm-metric-unit">/ {habitsTotal}</span></div>

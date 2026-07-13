@@ -29,14 +29,14 @@ import CogMenu from './CogMenu';
 import PatternsCard, { PatternDay } from './PatternsCard';
 import ChartCarousel from './ChartCarousel';
 // DubProgressSummary retired from the Today panel — the live verdict text now carries Dub's read.
-import YesterdayMatrix from './YesterdayMatrix';
+import YesterdayMatrix, { KPI_ACCENT } from './YesterdayMatrix';
 import GoalSheet from './GoalSheet';
 import SleepCandleChart, { hhmmToAxis, type SleepCandle } from './SleepCandleChart';
 import { CADENCE_ORDER, CADENCE_META, type Cadence } from './Habits';
 import HabitYearHeatmap from './HabitYearHeatmap';
 import { isSystemHabit, DAILY_LOG_HABITS, FULL_DAILY_LOG } from './systemHabits';
 import { scheduledDateInPeriod } from './habitSchedule';
-import { UsersIc, AppleIc, CalendarIc, WalkIc, MoonIc } from './icons';
+import { UsersIc, AppleIc, CalendarIc } from './icons';
 
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -1589,22 +1589,28 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     return `${pad2(Math.floor(bedMin / 60))}:${pad2(bedMin % 60)}`;
   })();
 
-  // Starred habits (set on the Habits page) with their state for a given day.
+  // Today's live numbers for the scoreboard grid (same metrics as Yesterday's grid,
+  // but in motion — steps so far + habits closed so far).
+  const tSteps = parseInt(tracker[todayKey]?.steps ?? '') || 0;
+  const tHabitsDone = realHabits.filter(h => tracker[todayKey]?.habits[h] === true).length;
+
+  // Starred habits (set on the Habits page) as compact state chips for a given day —
+  // a wrap row instead of full-width rows, so Today stays light.
   const renderStarStrip = (dayKey: string) => {
     const stars = starredHabits.filter(h => realHabits.includes(h));
     if (stars.length === 0) return null;
     return (
       <div className="star-strip">
         <span className="star-strip-eyebrow">STARRED</span>
-        <div className="star-strip-rows">
+        <div className="star-chips">
           {stars.map(h => {
             const st = tracker[dayKey]?.habits[h];
             const cls = st === true ? 'done' : st === 'failed' ? 'missed' : st === 'na' ? 'na' : 'blank';
             return (
-              <div key={h} className={`star-strip-item star-strip-item--${cls}`}>
-                <span className="star-strip-ico">{st === true ? '✓' : st === 'failed' ? '✕' : st === 'na' ? '–' : '·'}</span>
-                <span className="star-strip-name">{h}</span>
-              </div>
+              <button key={h} className={`star-chip star-chip--${cls}`} onClick={() => navigate(`/?habit=${encodeURIComponent(h)}`)}>
+                <span className="star-chip-ico">{st === true ? '✓' : st === 'failed' ? '✕' : st === 'na' ? '–' : '·'}</span>
+                <span className="star-chip-name">{h}</span>
+              </button>
             );
           })}
         </div>
@@ -1814,24 +1820,42 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
       {/* ── Panel 0 · Today — to-dos due this week + weekly/monthly habits about to lapse ── */}
       <div className="story-panel today-feed">
-        {/* At-a-glance targets: step goal, bedtime, and (on a plan) calorie target */}
-        <div className="today-glance">
-          <div className="today-glance-tile">
-            <span className="tg-ico tg-ico--step"><WalkIc size={16} /></span>
-            <span className="tg-val">{effectiveStepTarget.toLocaleString()}</span>
-            <span className="tg-lbl">step goal</span>
-          </div>
+        {/* Live scoreboard — the same four metrics as Yesterday's grid, but in motion.
+            Steps + habits fill through the day; kcal budget and bedtime are the aims. */}
+        <div className="ltm ltm--today">
+          <button
+            className="ltm-cell ltm-cell-btn"
+            style={{ ['--cell' as any]: KPI_ACCENT.steps }}
+            onClick={() => window.dispatchEvent(new CustomEvent('superdub:show-step-entry'))}
+            aria-label="Log today's steps"
+          >
+            <span className="ltm-eyebrow">STEPS</span>
+            <div className="ltm-metric">{tSteps.toLocaleString()}</div>
+            <div className="ltm-bar"><span className="ltm-bar-fill" style={{ width: `${Math.min(100, effectiveStepTarget > 0 ? (tSteps / effectiveStepTarget) * 100 : 0)}%` }} /></div>
+            <span className="ltm-sub">{tSteps > 0 ? `of ${effectiveStepTarget.toLocaleString()} goal` : 'tap to log steps'}</span>
+          </button>
+          <button
+            className="ltm-cell ltm-cell-btn"
+            style={{ ['--cell' as any]: KPI_ACCENT.habits }}
+            onClick={() => navigate('/')}
+            aria-label="Open habits"
+          >
+            <span className="ltm-eyebrow">HABITS</span>
+            <div className="ltm-metric">{tHabitsDone}<span className="ltm-metric-unit">/ {realHabits.length}</span></div>
+            <div className="ltm-bar"><span className="ltm-bar-fill" style={{ width: `${realHabits.length > 0 ? Math.min(100, (tHabitsDone / realHabits.length) * 100) : 0}%` }} /></div>
+            <span className="ltm-sub">{realHabits.length === 0 ? 'add a habit to track it' : tHabitsDone === realHabits.length ? 'all done · clean sweep' : 'done so far today'}</span>
+          </button>
           {planGoal && targetCalories > 0 && (
-            <div className="today-glance-tile">
-              <span className="tg-ico tg-ico--cal"><AppleIc size={15} /></span>
-              <span className="tg-val">{targetCalories.toLocaleString()}</span>
-              <span className="tg-lbl">kcal target</span>
+            <div className="ltm-cell" style={{ ['--cell' as any]: KPI_ACCENT.cal }}>
+              <span className="ltm-eyebrow">BUDGET</span>
+              <div className="ltm-metric">{targetCalories.toLocaleString()}<span className="ltm-metric-unit">kcal</span></div>
+              <span className="ltm-sub">today's target intake</span>
             </div>
           )}
-          <div className="today-glance-tile">
-            <span className="tg-ico tg-ico--bed"><MoonIc size={15} /></span>
-            <span className="tg-val">{bedtimeRec}</span>
-            <span className="tg-lbl">bedtime</span>
+          <div className="ltm-cell" style={{ ['--cell' as any]: KPI_ACCENT.vitals }}>
+            <span className="ltm-eyebrow">BEDTIME</span>
+            <div className="ltm-metric">{bedtimeRec}</div>
+            <span className="ltm-sub">for a full 8 hours</span>
           </div>
         </div>
 
