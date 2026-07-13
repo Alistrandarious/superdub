@@ -41,18 +41,25 @@ const HabitYearHeatmap: React.FC<{ habit: string; cadence: Cadence; year: number
 
   // ── Daily / quit: 7×53 day grid ──
   if (cadence === 'daily' || cadence === 'quit') {
-    const start = new Date(year, 0, 1);
-    start.setDate(start.getDate() - ((start.getDay() + 6) % 7)); // back to Monday on/before Jan 1
+    // Anchor the grid at SIGNUP (the Monday of that week) and run a full year
+    // forward, so it reads left→right from day one instead of after a hollow
+    // January. Days ahead of today are empty grey boxes; the first day of a new
+    // calendar year (e.g. 2027) carries a thin grey divider.
+    const anchor = since ?? new Date(year, 0, 1);
+    const start = new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate());
+    start.setDate(start.getDate() - ((start.getDay() + 6) % 7)); // back to Monday on/before signup
     const cells: { cls: string; newYear: boolean }[] = [];
     const cursor = new Date(start);
-    for (let i = 0; i < 371; i++) {
-      const inYear = cursor.getFullYear() === year;
+    for (let i = 0; i < 53 * 7; i++) {
       const t = cursor.getTime();
       const future = t > nowMs;
       const beforeJoin = t < sinceMs;
-      const newYear = inYear && cursor.getMonth() === 0 && cursor.getDate() === 1;
-      const st = inYear ? tracker[ddmm(cursor)]?.habits[habit] : undefined;
-      cells.push({ cls: !inYear || beforeJoin ? 'hy-pad' : cls(st, future), newYear });
+      const newYear = cursor.getMonth() === 0 && cursor.getDate() === 1;
+      // tracker keys are DD/MM (year-agnostic). Every day past today is still
+      // `future` here, so next-year cells render empty and never collide with
+      // this year's data. ponytail: true multi-year history needs year-keyed data.
+      const st = tracker[ddmm(cursor)]?.habits[habit];
+      cells.push({ cls: beforeJoin ? 'hy-pad' : cls(st, future), newYear });
       cursor.setDate(cursor.getDate() + 1);
     }
     return (

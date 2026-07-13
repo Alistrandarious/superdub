@@ -2740,7 +2740,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       {habits.length > 0 && (
       <div className="story-panel story-panel--stats">
         <section className="report-card habit-heatmaps-section">
-          <p className="report-eyebrow">Habit heatmaps · {hmYear}</p>
+          <p className="report-eyebrow">Habit heatmaps · your first year</p>
           {CADENCE_ORDER.filter(cad => cad !== 'quit' && habitsByCadence[cad].length > 0).map(cad => (
             <div key={cad} className="hhm-group">
               <p className="hhm-group-label" style={{ color: CADENCE_META[cad].color }}>{CADENCE_META[cad].label}</p>
