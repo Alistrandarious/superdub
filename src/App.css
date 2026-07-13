@@ -4769,6 +4769,8 @@ h1, h2, h3, h4, .sora {
 }
 .hb-customize.open { grid-template-rows: 1fr; opacity: 1; }
 .hb-customize-inner { overflow: hidden; min-height: 0; }
+/* The level-up guide (shared ladder) under the customization pickers */
+.hb-customize-ladder { margin-top: 18px; padding-bottom: 8px; }
 
 /* Habits home hero: relocated level + settings (replaces header bar) */
 /* =====================================================================

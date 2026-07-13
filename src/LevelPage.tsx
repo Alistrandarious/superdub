@@ -4,7 +4,8 @@ import { api } from './api';
 import { useXP } from './XPContext';
 import SuperdubHeader from './SuperdubHeader';
 import { pageTheme, GOLD } from './theme';
-import { PLAYER_LEVELS, RING_THEMES, habitXPForDoneDays } from './levels';
+import { habitXPForDoneDays } from './levels';
+import LevelLadder from './LevelLadder';
 
 const YEAR = new Date().getFullYear();
 
@@ -208,44 +209,13 @@ const LevelPage: React.FC = () => {
 
   const earnedBadges = badges.filter(b => b.earned).length;
 
-  // Reward glyph for the ladder: theme rewards show their actual gradient
-  // swatch; milestones & flair get the violet rank diamond (guide: violet =
-  // rare rank accent). No emoji.
-  const rewardMark = (r: (typeof PLAYER_LEVELS)[number]['reward']) => {
-    if (r.kind === 'theme' && r.themeId) {
-      const t = RING_THEMES.find(x => x.id === r.themeId);
-      if (t) return <span className="asc-swatch" style={{ background: `linear-gradient(135deg, ${t.from}, ${t.to})` }} />;
-    }
-    return <span className="asc-diamond" />;
-  };
-
   return (
     <div className="app flush" style={pageTheme(GOLD)}>
       <div className="page-content level-page-content">
         {/* Header scrolls with the page, nothing on this page needs to stay pinned */}
         <SuperdubHeader />
-        {/* ── The Ladder, every level as a stop on a gold spine ── */}
-        <section className="asc-section">
-          <Eyebrow sub={`you're LV${playerLevel.level} of ${PLAYER_LEVELS.length}`}>THE LADDER</Eyebrow>
-          <div className="asc-ladder">
-            {PLAYER_LEVELS.map((lv, i) => {
-              const reached = playerLevel.level >= i + 1;
-              const current = playerLevel.level === i + 1;
-              return (
-                <div key={i} className={`asc-ladder-row${current ? ' current' : ''}${reached ? ' reached' : ' locked'}`}>
-                  <span className="asc-ladder-node" />
-                  <span className="asc-ladder-lv">LV{i + 1}</span>
-                  <div className="asc-ladder-info">
-                    <span className="asc-ladder-title">{lv.title}</span>
-                    <span className="asc-ladder-reward">{lv.reward.label}</span>
-                  </div>
-                  <span className="asc-ladder-mark">{reached || current ? rewardMark(lv.reward) : <LockIc />}</span>
-                  <span className="asc-ladder-xp">{lv.xp.toLocaleString()}</span>
-                </div>
-              );
-            })}
-          </div>
-        </section>
+        {/* ── The Ladder — shared with the Habits ring reveal (LevelLadder) ── */}
+        <LevelLadder />
 
         {/* ── Badges, medals, not emoji ── */}
         <section className="asc-section">

@@ -13,6 +13,7 @@ import AnimatedFlame from './AnimatedFlame';
 import LevelHeroRing from './LevelHeroRing';
 import PinnedXpBar from './PinnedXpBar';
 import LevelCustomizer from './LevelCustomizer';
+import LevelLadder from './LevelLadder';
 import {
   MoonIc, CalendarIc, TrophyIc, WalkIc, BookIc, NoSmokeIc, MealIc, MoneyIc, HealthIc,
   SunIc, CloudSunIc, CloudIc, RainIc, SnowIc, StormIc, type IconProps,
@@ -1789,13 +1790,20 @@ const Habits: React.FC = () => {
         {/* User level hero — the XP ring at the top of Habits (also on Profile).
             Tapping it opens Profile (customization + a link to the full level map). */}
         <div ref={heroRef}><LevelHeroRing onRingTap={() => setCustomizeOpen(o => !o)} /></div>
-        {/* Customization revealed in place under the ring, morphing open/closed. */}
+        {/* Ring tap SWAPS the page: customization + the level ladder replace the
+            habits content below the ring; tapping the ring again brings it back. */}
         <div className={`hb-customize${customizeOpen ? ' open' : ''}`}>
           <div className="hb-customize-inner">
-            {customizeOpen && <LevelCustomizer showHero={false} />}
+            {customizeOpen && (
+              <>
+                <LevelCustomizer showHero={false} />
+                <div className="hb-customize-ladder"><LevelLadder /></div>
+              </>
+            )}
           </div>
         </div>
 
+        {!customizeOpen && <>
         {/* Weekly strip, the simplified "Logging into Superdub" habit */}
         <div className={`hb-week${isPerfectWeek ? ' hb-week-gold' : ''}${weekCelebrating ? ' hb-week-celebrating' : ''}`}>
           {weekDays.map(({ key, label, isFuture, isToday }) => {
@@ -1871,6 +1879,8 @@ const Habits: React.FC = () => {
             </button>
           </div>
         )}
+
+        </>}
 
         <div style={{ height: 100 }} />
       </div>
