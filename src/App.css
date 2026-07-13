@@ -7252,7 +7252,7 @@ h1, h2, h3, h4, .sora {
   letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 8px;
 }
 .dub-room-stage {
-  position: relative; border-radius: var(--r-card); overflow: hidden;
+  position: relative; border-radius: var(--r-card); overflow: visible;
   border: 1px solid var(--glass-border);
 }
 .dub-room-svg { display: block; width: 100%; height: auto; }
