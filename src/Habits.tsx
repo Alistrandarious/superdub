@@ -1575,8 +1575,31 @@ const Habits: React.FC = () => {
           renderItem={(name, handle) => renderHabitCard(name, handle)}
         />
       );
+    const featuredForCadence = FEATURED.filter(f => f.cadence === cad && !habits.includes(f.name));
     const content = list.length === 0 ? (
       <div className="hb-rows">
+        {featuredForCadence.length > 0 && (
+          <div className="cadx-featured-on" style={{ '--featured-accent': featuredForCadence[0].accent } as React.CSSProperties}>
+            <p className="cadx-featured-on-label">Featured on</p>
+            <div className="cadx-featured-on-list">
+              {featuredForCadence.map(f => (
+                <button
+                  key={f.id}
+                  className="cadx-featured-on-item"
+                  onClick={() => handleAddFeatured(f.name, f.cadence)}
+                  style={{ '--featured-accent': f.accent } as React.CSSProperties}
+                >
+                  <span className="cadx-featured-on-item-icon">{React.createElement(f.icon, { size: 18 })}</span>
+                  <div className="cadx-featured-on-item-text">
+                    <p className="cadx-featured-on-item-name">{f.name}</p>
+                    <p className="cadx-featured-on-item-tag">{CADENCE_META[f.cadence].label}</p>
+                  </div>
+                  <button className="cadx-featured-on-item-join" onClick={e => { e.stopPropagation(); handleAddFeatured(f.name, f.cadence); }}>Join</button>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <button className="hcard hcard-add" onClick={() => { setNewHabitCadence(cad); setAddOpen(true); }} aria-label={addLabel}>
           <span className="hcard-add-plus" style={{ color: meta.color }}>+</span>
           <span className="hcard-add-label">{addLabel}</span>
@@ -1584,6 +1607,28 @@ const Habits: React.FC = () => {
       </div>
     ) : (
       <div className="hb-rows">
+        {featuredForCadence.length > 0 && (
+          <div className="cadx-featured-on" style={{ '--featured-accent': featuredForCadence[0].accent } as React.CSSProperties}>
+            <p className="cadx-featured-on-label">Featured on</p>
+            <div className="cadx-featured-on-list">
+              {featuredForCadence.map(f => (
+                <button
+                  key={f.id}
+                  className="cadx-featured-on-item"
+                  onClick={() => handleAddFeatured(f.name, f.cadence)}
+                  style={{ '--featured-accent': f.accent } as React.CSSProperties}
+                >
+                  <span className="cadx-featured-on-item-icon">{React.createElement(f.icon, { size: 18 })}</span>
+                  <div className="cadx-featured-on-item-text">
+                    <p className="cadx-featured-on-item-name">{f.name}</p>
+                    <p className="cadx-featured-on-item-tag">{CADENCE_META[f.cadence].label}</p>
+                  </div>
+                  <button className="cadx-featured-on-item-join" onClick={e => { e.stopPropagation(); handleAddFeatured(f.name, f.cadence); }}>Join</button>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         {cards}
         <button className="hcard-add hcard-add--mini" onClick={() => { setNewHabitCadence(cad); setAddOpen(true); }} aria-label={addLabel}>
           <span className="hcard-add-plus" style={{ color: meta.color }}>+</span>

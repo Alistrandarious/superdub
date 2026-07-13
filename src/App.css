@@ -5529,6 +5529,88 @@ h1, h2, h3, h4, .sora {
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+.cadx-featured-on {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 18px;
+  margin: 0 0 12px;
+  opacity: 1;
+  transform: translateY(0);
+  animation: featured-on-swipe 0.4s cubic-bezier(0.22,1,0.36,1) both;
+}
+@keyframes featured-on-swipe {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.cadx-featured-on-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: rgba(255,255,255,0.35);
+  font-weight: 600;
+  margin: 0;
+}
+.cadx-featured-on-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cadx-featured-on-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: background 0.2s;
+}
+.cadx-featured-on-item:hover {
+  background: rgba(255,255,255,0.08);
+}
+.cadx-featured-on-item:active {
+  transform: scale(0.98);
+}
+.cadx-featured-on-item-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+.cadx-featured-on-item-text {
+  flex: 1;
+  min-width: 0;
+}
+.cadx-featured-on-item-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+}
+.cadx-featured-on-item-tag {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--featured-accent, #2E8BFF);
+  opacity: 0.9;
+  margin: 2px 0 0;
+}
+.cadx-featured-on-item-join {
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--featured-accent, #2E8BFF);
+  background: transparent;
+  color: var(--featured-accent, #2E8BFF);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+.cadx-featured-on-item-join:hover {
+  background: rgba(255,255,255,0.08);
+}
 .hb-featured {
   display: flex;
   align-items: center;
