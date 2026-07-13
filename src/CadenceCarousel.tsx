@@ -10,8 +10,15 @@ export interface CarouselPanel {
 
 // Cadence switcher: a big title + a little coloured carousel of chips, with the
 // habit list sliding purely along the X axis (no skew/rotate/scale) as you swipe.
-const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number; compact?: boolean }> = ({ panels, startIndex = 0, compact = false }) => {
+const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number; compact?: boolean; onIndexChange?: (index: number) => void }> = ({ panels, startIndex = 0, compact = false, onIndexChange }) => {
   const [index, setIndex] = useState(startIndex);
+  // Notify the parent whenever the active panel changes (drives the featured
+  // banner's swipe-up replay). Skips the initial mount so it only fires on swipe.
+  const mounted = useRef(false);
+  useEffect(() => {
+    if (mounted.current) onIndexChange?.(index);
+    else mounted.current = true;
+  }, [index]); // eslint-disable-line react-hooks/exhaustive-deps
   const [dragPx, setDragPx] = useState(0);
   const [dragging, setDragging] = useState(false);
   const vpRef = useRef<HTMLDivElement>(null);

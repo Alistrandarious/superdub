@@ -1164,6 +1164,9 @@ const Habits: React.FC = () => {
   // The Featured banner can be dismissed (X) and brought back from the cog's
   // "Discover Habits". Persisted so it stays hidden across sessions until restored.
   const [featuredDismissed, setFeaturedDismissed] = useState(() => localStorage.getItem('superdub.featured.dismissed') === '1');
+  // Bumped on every carousel swipe so the featured banner remounts and replays its
+  // swipe-up-from-the-bottom animation.
+  const [featuredSwipeKey, setFeaturedSwipeKey] = useState(0);
   const dismissFeatured = () => { setFeaturedDismissed(true); localStorage.setItem('superdub.featured.dismissed', '1'); };
   const [showDayOverlay, setShowDayOverlay] = useState(false);
   const [overlayDay, setOverlayDay] = useState<string | null>(null); // null = today; else a DD/MM key
@@ -1575,31 +1578,8 @@ const Habits: React.FC = () => {
           renderItem={(name, handle) => renderHabitCard(name, handle)}
         />
       );
-    const featuredForCadence = FEATURED.filter(f => f.cadence === cad && !habits.includes(f.name));
     const content = list.length === 0 ? (
       <div className="hb-rows">
-        {featuredForCadence.length > 0 && (
-          <div className="cadx-featured-on" style={{ '--featured-accent': featuredForCadence[0].accent } as React.CSSProperties}>
-            <p className="cadx-featured-on-label">Featured on</p>
-            <div className="cadx-featured-on-list">
-              {featuredForCadence.map(f => (
-                <button
-                  key={f.id}
-                  className="cadx-featured-on-item"
-                  onClick={() => handleAddFeatured(f.name, f.cadence)}
-                  style={{ '--featured-accent': f.accent } as React.CSSProperties}
-                >
-                  <span className="cadx-featured-on-item-icon">{React.createElement(f.icon, { size: 18 })}</span>
-                  <div className="cadx-featured-on-item-text">
-                    <p className="cadx-featured-on-item-name">{f.name}</p>
-                    <p className="cadx-featured-on-item-tag">{CADENCE_META[f.cadence].label}</p>
-                  </div>
-                  <button className="cadx-featured-on-item-join" onClick={e => { e.stopPropagation(); handleAddFeatured(f.name, f.cadence); }}>Join</button>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
         <button className="hcard hcard-add" onClick={() => { setNewHabitCadence(cad); setAddOpen(true); }} aria-label={addLabel}>
           <span className="hcard-add-plus" style={{ color: meta.color }}>+</span>
           <span className="hcard-add-label">{addLabel}</span>
@@ -1607,28 +1587,6 @@ const Habits: React.FC = () => {
       </div>
     ) : (
       <div className="hb-rows">
-        {featuredForCadence.length > 0 && (
-          <div className="cadx-featured-on" style={{ '--featured-accent': featuredForCadence[0].accent } as React.CSSProperties}>
-            <p className="cadx-featured-on-label">Featured on</p>
-            <div className="cadx-featured-on-list">
-              {featuredForCadence.map(f => (
-                <button
-                  key={f.id}
-                  className="cadx-featured-on-item"
-                  onClick={() => handleAddFeatured(f.name, f.cadence)}
-                  style={{ '--featured-accent': f.accent } as React.CSSProperties}
-                >
-                  <span className="cadx-featured-on-item-icon">{React.createElement(f.icon, { size: 18 })}</span>
-                  <div className="cadx-featured-on-item-text">
-                    <p className="cadx-featured-on-item-name">{f.name}</p>
-                    <p className="cadx-featured-on-item-tag">{CADENCE_META[f.cadence].label}</p>
-                  </div>
-                  <button className="cadx-featured-on-item-join" onClick={e => { e.stopPropagation(); handleAddFeatured(f.name, f.cadence); }}>Join</button>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
         {cards}
         <button className="hcard-add hcard-add--mini" onClick={() => { setNewHabitCadence(cad); setAddOpen(true); }} aria-label={addLabel}>
           <span className="hcard-add-plus" style={{ color: meta.color }}>+</span>
@@ -1893,13 +1851,14 @@ const Habits: React.FC = () => {
         )}
 
         {/* Your habits, cadence carousel (Daily · Weekly · Monthly · Yearly) */}
-        <CadenceCarousel panels={cadencePanels} startIndex={CADENCE_ORDER.indexOf(focusHabit ? (habitCadence[focusHabit] ?? 'daily') : 'daily')} compact={scrolled} />
+        <CadenceCarousel panels={cadencePanels} startIndex={CADENCE_ORDER.indexOf(focusHabit ? (habitCadence[focusHabit] ?? 'daily') : 'daily')} compact={scrolled} onIndexChange={() => setFeaturedSwipeKey(k => k + 1)} />
 
-        {/* Featured banner, tap to open & join (below the user's habits). Slides up
-            on appear so it settles gently as the carousel above reflows on swipe.
+        {/* Featured banner, tap to open & join (below the user's habits). Swipes up
+            from the bottom (0 → 100% opacity) each time you swipe the carousel above —
+            the changing key remounts it so the CSS animation replays.
             Dismissable with the X; bring it back from the cog's Discover Habits. */}
         {!featuredDismissed && (
-          <div className="hb-featured-wrap">
+          <div key={featuredSwipeKey} className="hb-featured-wrap">
             <button className="hb-featured" onClick={() => setFeaturedOpen(true)}>
               <div className="hb-featured-text">
                 <span className="hb-featured-eyebrow">FEATURED</span>
