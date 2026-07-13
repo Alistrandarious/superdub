@@ -5226,17 +5226,25 @@ h1, h2, h3, h4, .sora {
   background: rgba(10,11,16,0.62);
   -webkit-backdrop-filter: blur(16px) saturate(160%); backdrop-filter: blur(16px) saturate(160%);
   border: 1px solid var(--glass-border);
-  border-bottom: none;
-  border-radius: 14px 14px 0 0;
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.35);
   transform: translateY(-14px); opacity: 0;
   max-height: 0; padding: 0 12px; margin-top: 0;
   overflow: hidden; pointer-events: none;
-  transition: opacity 0.25s ease, transform 0.25s ease, max-height 0.25s ease, padding 0.25s ease, margin 0.25s ease;
+  transition: opacity 0.25s ease, transform 0.25s ease, max-height 0.25s ease, padding 0.25s ease, margin 0.25s ease, border-radius 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .hb-pinned-xp.show {
   transform: translateY(0); opacity: 1;
   max-height: 48px; padding: 8px 12px; margin-top: 6px;
   pointer-events: auto;
+}
+/* Docked: shed the bottom edge so it fuses with the dotrow into one capsule.
+   Transparent border + squared corners (not border:none) so it morphs, not snaps.
+   The dotrow below carries the capsule's single shadow — no band at the seam. */
+.hb-pinned-xp.docked {
+  border-bottom-color: transparent;
+  border-bottom-left-radius: 0; border-bottom-right-radius: 0;
+  box-shadow: none;
 }
 /* The inner bar is the SAME element as the hero's, stretched to fill the pill. */
 .hb-pinned-xp .hb-xp-bar { flex: 1; }
@@ -5807,10 +5815,15 @@ h1, h2, h3, h4, .sora {
   background: rgba(10,11,16,0.62);
   -webkit-backdrop-filter: blur(16px) saturate(160%); backdrop-filter: blur(16px) saturate(160%);
   border: 1px solid var(--glass-border);
-  border-top: none;
-  border-radius: 0 0 14px 14px;
-  box-shadow: 0 10px 24px rgba(0,0,0,0.4);
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.35);
   animation: cadx-dock-in 0.25s ease backwards;
+  transition: border-radius 0.2s ease, border-color 0.2s ease;
+}
+/* Docked flush under the pill: shed the top edge to complete the seamless join. */
+.cadx--docked .cadx-header {
+  border-top-color: transparent;
+  border-top-left-radius: 0; border-top-right-radius: 0;
 }
 @keyframes cadx-dock-in { from { opacity: 0; transform: translateY(-8px); } }
 .cadx--compact .cadx-title { display: none; }

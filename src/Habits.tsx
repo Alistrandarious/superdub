@@ -1149,14 +1149,23 @@ const Habits: React.FC = () => {
   const [ht, setHt] = useState<HabitTracker>({});
   const [weather, setWeather] = useState<WeatherState | null>(null);
   const [scrolled, setScrolled] = useState(false);
+  // `docked` = the cadence dotrow has reached its sticky top and sits flush under
+  // the pinned XP pill, so the two fuse into one seamless glass capsule. Until
+  // then each stays a complete standalone pill (they're ~370px apart in flow).
+  const [docked, setDocked] = useState(false);
   // The pinned XP bar only appears once the hero's own XP bar has scrolled off the
   // top — measured live so it mirrors that element rather than a magic pixel count.
   const heroRef = useRef<HTMLDivElement>(null);
+  const cadTopRef = useRef<HTMLDivElement>(null);
   const onPageScroll = (e: React.UIEvent<HTMLElement>) => {
     const sc = e.currentTarget;
+    const scTop = sc.getBoundingClientRect().top;
     const h = heroRef.current;
-    if (h) setScrolled(h.getBoundingClientRect().bottom <= sc.getBoundingClientRect().top + 8);
+    if (h) setScrolled(h.getBoundingClientRect().bottom <= scTop + 8);
     else setScrolled(sc.scrollTop > 40);
+    // Dock once the carousel's top reaches the header's sticky offset (37px).
+    const c = cadTopRef.current;
+    if (c) setDocked(c.getBoundingClientRect().top <= scTop + 38);
   };
   const [loaded, setLoaded] = useState(false);
   const [newHabit, setNewHabit] = useState('');
@@ -1747,7 +1756,7 @@ const Habits: React.FC = () => {
 
         {/* Pinned XP bar — slides in once you scroll to the habits, so you watch XP
             grow in its own container as you tick them. */}
-        <PinnedXpBar visible={scrolled} />
+        <PinnedXpBar visible={scrolled} docked={docked} />
 
         {showInstall && (
           <div className={`pwa-banner${installClosing ? ' closing' : ''}`}>
@@ -1867,8 +1876,11 @@ const Habits: React.FC = () => {
           </div>
         )}
 
+        {/* Zero-height sentinel: marks the carousel's top so onPageScroll can tell
+            when its sticky header has docked flush under the pinned XP pill. */}
+        <div ref={cadTopRef} aria-hidden="true" style={{ height: 0 }} />
         {/* Your habits, cadence carousel (Daily · Weekly · Monthly · Yearly) */}
-        <CadenceCarousel panels={cadencePanels} startIndex={CADENCE_ORDER.indexOf(focusHabit ? (habitCadence[focusHabit] ?? 'daily') : 'daily')} compact={scrolled} onIndexChange={() => setFeaturedSwipeKey(k => k + 1)} />
+        <CadenceCarousel panels={cadencePanels} startIndex={CADENCE_ORDER.indexOf(focusHabit ? (habitCadence[focusHabit] ?? 'daily') : 'daily')} compact={scrolled} docked={docked} onIndexChange={() => setFeaturedSwipeKey(k => k + 1)} />
 
         {/* Featured banner, tap to open & join (below the user's habits). Swipes up
             from the bottom (0 → 100% opacity) each time you swipe the carousel above —

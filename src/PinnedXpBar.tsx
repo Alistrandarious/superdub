@@ -5,7 +5,7 @@ import { getRingTheme, getSelectedThemeId } from './levels';
 // A compact XP bar that pins to the top of the Habits page once you scroll down to
 // the habit list, so you watch your XP grow in its own container as you tick habits.
 // The fill animates on width change, and a brief pulse fires whenever XP increases.
-const PinnedXpBar: React.FC<{ visible: boolean }> = ({ visible }) => {
+const PinnedXpBar: React.FC<{ visible: boolean; docked?: boolean }> = ({ visible, docked }) => {
   const { totalXP, playerLevel } = useXP();
   const [themeId, setThemeId] = useState(getSelectedThemeId);
   useEffect(() => {
@@ -33,7 +33,7 @@ const PinnedXpBar: React.FC<{ visible: boolean }> = ({ visible }) => {
 
   return (
     <div
-      className={`hb-pinned-xp${visible ? ' show' : ''}${grew ? ' grew' : ''}`}
+      className={`hb-pinned-xp${visible ? ' show' : ''}${docked ? ' docked' : ''}${grew ? ' grew' : ''}`}
       style={{ '--pxp-from': theme.from, '--pxp-to': theme.to, '--pxp-glow': theme.glow } as React.CSSProperties}
       aria-hidden={!visible}
     >
