@@ -33,33 +33,6 @@ const MOOD_LABEL = (m: number) => m >= 8.5 ? 'great' : m >= 6.5 ? 'good' : m >= 
 const ADH_LABEL = (l: number) => l <= -2 ? 'well under' : l === -1 ? 'under' : l === 0 ? 'about right' : l === 1 ? 'over' : 'well over';
 const signed = (n: number) => `${n > 0 ? '+' : n < 0 ? '−' : ''}${Math.abs(n).toLocaleString()}`;
 
-// SVG progress ring; `over` flips it to the danger gradient (over target = warning).
-const Ring: React.FC<{ pct: number; over: boolean; children: React.ReactNode }> = ({ pct, over, children }) => {
-  const R = 34, C = 2 * Math.PI * R;
-  const dash = Math.max(0, Math.min(1, pct)) * C;
-  return (
-    <svg viewBox="0 0 80 80" className="ltm-ring">
-      <defs>
-        <linearGradient id="ym-gold" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#FFD233" /><stop offset="100%" stopColor="#FF8A00" />
-        </linearGradient>
-        <linearGradient id="ym-over" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#FFD233" /><stop offset="100%" stopColor="#E0A21E" />
-        </linearGradient>
-      </defs>
-      <circle cx="40" cy="40" r={R} className="ltm-ring-track" />
-      <circle
-        cx="40" cy="40" r={R} className="ltm-ring-fill"
-        stroke={over ? 'url(#ym-over)' : 'url(#ym-gold)'}
-        strokeDasharray={`${dash} ${C}`} transform="rotate(-90 40 40)"
-      />
-      <foreignObject x="6" y="6" width="68" height="68">
-        <div className="ltm-ring-center">{children}</div>
-      </foreignObject>
-    </svg>
-  );
-};
-
 const YesterdayMatrix: React.FC<YesterdayMatrixProps> = ({
   intake, intakeLow, intakeHigh, wide, targetCalories, delta, steps, stepTarget, sleepHours, mood, habitsDone, habitsTotal, onLogSteps,
   maintenance, stepBurnKcal, gymBurnKcal, adherenceLevel,
@@ -88,12 +61,12 @@ const YesterdayMatrix: React.FC<YesterdayMatrixProps> = ({
         {intake != null && intakeLow != null && intakeHigh != null ? (
           <>
             {/* A RANGE, not a false-precise number — one day's intake can't be pinned
-                from one weigh-in. Ring fill tracks the central guess vs target. */}
-            <Ring pct={intakePct} over={over}>
-              <span className={`ltm-ring-range${over ? ' over' : ''}`}>{(intakeLow / 1000).toFixed(1)}–{(intakeHigh / 1000).toFixed(1)}k</span>
-              <span className="ltm-ring-unit">kcal</span>
-            </Ring>
-            <span className={`ltm-sub${over ? ' warn' : ' good'}`}>
+                from one weigh-in. Shown big like the other cells; ⓘ has the breakdown. */}
+            <div className={`ltm-metric ltm-metric--range${over ? ' over' : ''}`}>
+              {(intakeLow / 1000).toFixed(1)}–{(intakeHigh / 1000).toFixed(1)}k<span className="ltm-metric-unit">kcal</span>
+            </div>
+            <div className="ltm-bar"><span className="ltm-bar-fill" style={{ width: `${Math.min(100, intakePct * 100)}%` }} /></div>
+            <span className={over ? 'ltm-alert' : 'ltm-sub good'}>
               vs {targetCalories.toLocaleString()} target
               {adherenceLevel != null ? ` · ate ${ADH_LABEL(adherenceLevel)}` : ''}
             </span>
