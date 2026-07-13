@@ -396,7 +396,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
                       <span className="aer-name">{a.name}</span>
                       <span className="aer-detail">{a.sessionsPerWeek}×/week · {a.minutesPerSession} min · {a.intensity}{currentKg > 0 ? ` · ~${bps} kcal/session` : ''}</span>
                     </div>
-                    <button className="aer-remove" onClick={() => removeActivity(a.id)} title="Remove">✕</button>
+                    <button className="aer-remove" aria-label="Remove activity" onClick={() => removeActivity(a.id)} title="Remove">✕</button>
                   </div>
                 );
               })}
@@ -408,9 +408,9 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
                     <div className="aaf-col">
                       <label className="aaf-label">Sessions/week</label>
                       <div className="training-sessions-row" style={{ gap: 6 }}>
-                        <button className="training-step-btn" onClick={() => setNewActivitySessions(Math.max(1, newActivitySessions - 1))}>−</button>
+                        <button className="training-step-btn" aria-label="Fewer sessions per week" onClick={() => setNewActivitySessions(Math.max(1, newActivitySessions - 1))}>−</button>
                         <span className="training-step-val">{newActivitySessions}</span>
-                        <button className="training-step-btn" onClick={() => setNewActivitySessions(Math.min(7, newActivitySessions + 1))}>+</button>
+                        <button className="training-step-btn" aria-label="More sessions per week" onClick={() => setNewActivitySessions(Math.min(7, newActivitySessions + 1))}>+</button>
                       </div>
                     </div>
                     <div className="aaf-col">

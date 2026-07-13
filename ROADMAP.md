@@ -48,7 +48,7 @@ Ali seeds this epic — add concrete wants as rows, they interleave with the deb
 
 | ID | Task | Files | Size | Tier | Acceptance | Status |
 |---|---|---|---|---|---|---|
-| E4.1 | aria-labels: Profile.tsx first (23 buttons / 0 labels), then per-file toward full coverage | src/Profile.tsx, then per file | S ×n | haiku | Every icon-only button labelled; text buttons skipped; zero visual change | [ ] |
+| E4.1 | aria-labels on symbol/icon-only buttons, per file (text buttons already have accessible names — the button-count audit overstated) | per file | S ×n | haiku | Every symbol-only button labelled; text buttons skipped; zero visual change | [~] Profile.tsx done v2.403 2026-07-13 (3 symbol buttons); other files remain |
 
 ## Icebox
 
