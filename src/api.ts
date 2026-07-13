@@ -15,6 +15,230 @@ export interface StepEntry {
   recorded_at: string;
 }
 
+// ── Shared response shapes (mirrors server/routes/*.ts res.json(...) payloads) ──
+
+export interface SignupCohort {
+  cohortName: string;
+  cohortSize: number;
+  baselineSteps: number;
+  baselineCalories: number;
+  onboardingMessage: string;
+}
+
+export interface ProfileResponse {
+  name?: string;
+  dob?: string;
+  heightCm?: string;
+  weightKg?: string;
+  sex?: string;
+  activity?: string;
+  steps?: string;
+  vestKg?: string;
+  jobType?: string;
+  gymFreq?: string;
+  walkFreq?: string;
+  // ponytail: DB column is INTEGER, but a caller does parseInt(profile.stepTarget) —
+  // typing this as number would break that call site (out of scope to fix), so it
+  // stays untyped here rather than shipping a type that's wrong for how it's used.
+  stepTarget?: any;
+  gymSessionsPerWeek?: number;
+  gymIntensity?: string;
+  gymMinutes?: number;
+  weeklyActivities?: unknown[];
+  avatarSeed?: string | null;
+  occupation?: string;
+  ethnicity?: string;
+  genderIdentity?: string;
+  country?: string;
+  relationshipStatus?: string;
+  religion?: string;
+  accountCreatedAt: string | null;
+  lastLoginAt: string | null;
+  lastActiveAt: string | null;
+}
+
+export interface TrackerDayRow {
+  day: string;
+  weight: string;
+  calories: string;
+  protein: string;
+  carbs: string;
+  fats: string;
+  steps: string;
+}
+export interface TrackerHabitRow {
+  day: string;
+  habit_name: string;
+  // ponytail: server can send null (no state and not legacy-done) — narrowed to
+  // string here because an existing caller (XPContext's computeXPFromRaw) already
+  // types this param as plain string and only ever does `=== 'done'`, so the null
+  // case behaves identically either way.
+  state: 'done' | 'failed' | 'na' | string;
+}
+export interface TrackerResponse {
+  days: TrackerDayRow[];
+  habits: TrackerHabitRow[];
+  xpCarry?: Record<string, number>;
+  year?: number;
+}
+
+export interface WeightSettingsResponse {
+  currentWeight?: string;
+  goalWeight?: string;
+  lossPerWeek?: string;
+  timeDays?: string;
+  height?: string;
+  age?: string;
+  activityLevel?: string;
+}
+
+export interface DietTargetResponse {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fats: number;
+}
+export interface DietSettingsResponse {
+  lockProtein: boolean;
+  lockCarbs: boolean;
+  lockFats: boolean;
+  calorieLock: boolean;
+  goal: string;
+}
+export interface DietPlanRow {
+  id: string;
+  label: string;
+  meals: unknown;
+  totals: unknown;
+}
+
+export interface SmartGoal {
+  id: string;
+  title: string;
+  specific: string;
+  measurable: string;
+  achievable: string;
+  relevant: string;
+  timeBound: string;
+  done: boolean;
+}
+
+export interface TaskRow {
+  id: string;
+  text: string;
+  done: boolean;
+  type: string;
+  dueDate: string | null;
+}
+
+// TDEE/stall/goal shapes mirror server/services/{tdeeEstimator,plateauPredictor,planEngine}.ts
+// (re-declared here rather than imported — api.ts is frontend-only and those are server modules).
+export interface PlanTDEEEstimate {
+  observedTDEE: number | null;
+  blendedTDEE: number;
+  formulaTDEE: number;
+  confidence: number;
+  intakeUsed: number;
+  intakeIsLogged: boolean;
+}
+export interface PlanStallSignal {
+  risk: 'none' | 'low' | 'medium' | 'high';
+  score: number;
+  message: string;
+  factors: string[];
+  action: string;
+}
+export interface PlanGoal {
+  id: string;
+  goalType: 'lose' | 'gain' | 'maintain';
+  startWeight: number;
+  startDate: string;
+  targetWeight: number;
+  targetDate: string;
+  ratePctBw: number;
+}
+export interface PlanTargetHistoryEntry {
+  id: string;
+  calories: number;
+  previousCalories: number | null;
+  reason: string;
+  effectiveFrom: string;
+}
+export type PlanStatusResponse =
+  | { active: false }
+  | {
+      active: true;
+      tdee: PlanTDEEEstimate | null;
+      stall: PlanStallSignal | null;
+      goal: PlanGoal;
+      currentTarget: { calories: number; reason: string; effectiveFrom: string } | null;
+      history: PlanTargetHistoryEntry[];
+    };
+export interface CreatePlanGoalResponse {
+  ok: true;
+  goalId: string;
+  goalType: 'lose' | 'gain' | 'maintain';
+  startWeight: number;
+  initialCalories: number;
+  bmrFloor: number;
+  tdee: number;
+  ratePctBw: number;
+  rateKgPerWk: number;
+}
+export interface PlanCycleResponse {
+  ran: boolean;
+  reason?: string;
+  currentCalories?: number;
+  daysUntilNext?: number;
+  adjusted?: boolean;
+  newCalories?: number;
+  prevCalories?: number;
+  // ponytail: the server only sends onTrack/actualSlope/targetSlope/flaggedDays when
+  // ran/adjusted actually happened (early-return branches like "next cycle in N days"
+  // omit them) — kept non-optional here because an existing caller (PlanPage's
+  // CycleData) already assumed they're always present; that pre-existing assumption
+  // is unchanged by this typing pass.
+  onTrack: boolean;
+  actualSlope: number | null;
+  targetSlope: number;
+  flaggedDays: string[];
+  bmrFloor?: number;
+  metabolicProtection?: boolean;
+  goalReached?: boolean;
+  goalType?: 'lose' | 'gain' | 'maintain';
+  targetWeight?: number;
+  latestWeight?: number;
+}
+export interface ResolvePlanReachedResponse {
+  ok: true;
+  note?: string;
+  switched?: 'maintain';
+  dismissed?: boolean;
+}
+
+export type ChurnRisk = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+export type TrendStatus = 'ahead' | 'on-track' | 'behind' | 'none';
+
+export interface RecentCheckInRow {
+  date: string;
+  energy: number | null;
+  adherence: string | null;
+  mood: number | null;
+}
+export interface RecentCheckInsResponse {
+  checkins: RecentCheckInRow[];
+  churnRisk: ChurnRisk;
+  today: { energy: number; adherence: string | null } | null;
+}
+export interface CoachingResponse {
+  message: string;
+  churnRisk: ChurnRisk;
+  trend: TrendStatus;
+  todayEnergy: number | null;
+  workoutCalories: number | null;
+  advisableSteps: number;
+}
+
 function getToken() {
   return localStorage.getItem('superdub.token');
 }
@@ -31,7 +255,7 @@ export function isLoggedIn() {
   return !!getToken();
 }
 
-async function request(path: string, options: RequestInit = {}) {
+async function request<T = any>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
   const res = await fetch(`${BASE}${path}`, {
     ...options,
@@ -48,106 +272,109 @@ async function request(path: string, options: RequestInit = {}) {
 
 export const api = {
   // auth
-  signup: (body: object) => request('/auth/signup', { method: 'POST', body: JSON.stringify(body) }),
-  login: (body: object) => request('/auth/login', { method: 'POST', body: JSON.stringify(body) }),
-  me: () => request('/auth/me'),
+  signup: (body: object): Promise<{ token: string; userId: number; cohort: SignupCohort }> =>
+    request('/auth/signup', { method: 'POST', body: JSON.stringify(body) }),
+  login: (body: object): Promise<{ token: string; userId: number }> =>
+    request('/auth/login', { method: 'POST', body: JSON.stringify(body) }),
+  me: (): Promise<{ profile: Record<string, unknown> | null; habits: string[]; weightSettings: Record<string, unknown> | null }> =>
+    request('/auth/me'),
   googleAuth: (idToken: string): Promise<{ token?: string; userId?: number; needsOnboarding?: boolean; email?: string; name?: string }> =>
     request('/auth/google', { method: 'POST', body: JSON.stringify({ idToken }) }),
-  forgotPassword: (email: string) =>
+  forgotPassword: (email: string): Promise<{ ok: true }> =>
     request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
-  resetPassword: (email: string, code: string, newPassword: string) =>
+  resetPassword: (email: string, code: string, newPassword: string): Promise<{ token: string }> =>
     request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ email, code, newPassword }) }),
 
   // profile
-  getProfile: () => request('/profile'),
-  updateProfile: (data: object) => request('/profile', { method: 'PUT', body: JSON.stringify(data) }),
-  deleteAccount: () => request('/profile', { method: 'DELETE' }),
-  heartbeat: () => request('/profile/heartbeat', { method: 'POST' }),
+  getProfile: (): Promise<ProfileResponse> => request('/profile'),
+  updateProfile: (data: object): Promise<{ ok: true }> => request('/profile', { method: 'PUT', body: JSON.stringify(data) }),
+  deleteAccount: (): Promise<{ ok: true }> => request('/profile', { method: 'DELETE' }),
+  heartbeat: (): Promise<{ ok: true }> => request('/profile/heartbeat', { method: 'POST' }),
 
   // habits
   getHabits: (): Promise<{ name: string; startDate: string | null; cadence?: string; quitStartedAt?: string | null; starred?: boolean; dueDate?: string | null; reminderHour?: number | null; schedule?: string | null }[]> => request('/habits'),
-  updateHabits: (habits: (string | { name: string; cadence: string })[]) =>
+  updateHabits: (habits: (string | { name: string; cadence: string })[]): Promise<{ ok: true }> =>
     request('/habits', { method: 'PUT', body: JSON.stringify({ habits }) }),
-  setQuitStart: (name: string, startedAt: string) =>
+  setQuitStart: (name: string, startedAt: string): Promise<{ ok: true }> =>
     request('/habits/quit-start', { method: 'PATCH', body: JSON.stringify({ name, startedAt }) }),
-  setHabitStar: (name: string, starred: boolean) =>
+  setHabitStar: (name: string, starred: boolean): Promise<{ ok: true }> =>
     request('/habits/star', { method: 'PATCH', body: JSON.stringify({ name, starred }) }),
-  setHabitDueDate: (name: string, dueDate: string | null) =>
+  setHabitDueDate: (name: string, dueDate: string | null): Promise<{ ok: true }> =>
     request('/habits/due-date', { method: 'PATCH', body: JSON.stringify({ name, dueDate }) }),
-  setHabitReminder: (name: string, hour: number | null) =>
+  setHabitReminder: (name: string, hour: number | null): Promise<{ ok: true }> =>
     request('/habits/reminder', { method: 'PATCH', body: JSON.stringify({ name, hour }) }),
-  setHabitSchedule: (name: string, schedule: string | null) =>
+  setHabitSchedule: (name: string, schedule: string | null): Promise<{ ok: true }> =>
     request('/habits/schedule', { method: 'PATCH', body: JSON.stringify({ name, schedule }) }),
-  archiveHabit: (name: string) => request(`/habits/${encodeURIComponent(name)}`, { method: 'DELETE' }),
-  restoreHabit: (name: string) => request(`/habits/${encodeURIComponent(name)}/restore`, { method: 'POST' }),
-  deleteHabitPermanently: (name: string) => request(`/habits/${encodeURIComponent(name)}/permanent`, { method: 'DELETE' }),
+  archiveHabit: (name: string): Promise<{ ok: true }> => request(`/habits/${encodeURIComponent(name)}`, { method: 'DELETE' }),
+  restoreHabit: (name: string): Promise<{ ok: true }> => request(`/habits/${encodeURIComponent(name)}/restore`, { method: 'POST' }),
+  deleteHabitPermanently: (name: string): Promise<{ ok: true }> => request(`/habits/${encodeURIComponent(name)}/permanent`, { method: 'DELETE' }),
   getGraveyard: (): Promise<{ name: string; startDate: string | null }[]> => request('/habits/graveyard'),
 
   // tracker
-  getTracker: (): Promise<{ days: any[]; habits: any[]; xpCarry?: Record<string, number>; year?: number }> => request('/tracker'),
-  updateTrackerDay: (day: string, data: object) =>
+  getTracker: (): Promise<TrackerResponse> => request('/tracker'),
+  updateTrackerDay: (day: string, data: object): Promise<{ ok: true }> =>
     request('/tracker', { method: 'PATCH', body: JSON.stringify({ day, ...data }) }),
-  toggleTrackerHabit: (day: string, habitName: string, state: 'done' | 'failed' | 'na' | null) =>
+  toggleTrackerHabit: (day: string, habitName: string, state: 'done' | 'failed' | 'na' | null): Promise<{ ok: true }> =>
     request('/tracker/habit', { method: 'PATCH', body: JSON.stringify({ day, habitName, state }) }),
 
   // steps (provenance-aware)
   getSteps: (day?: string): Promise<{ entries: StepEntry[] }> =>
     request(`/steps${day ? `?day=${encodeURIComponent(day)}` : ''}`),
-  addSteps: (day: string, steps: number, source: StepSource = 'manual') =>
+  addSteps: (day: string, steps: number, source: StepSource = 'manual'): Promise<{ ok: true; day: string }> =>
     request('/steps', { method: 'POST', body: JSON.stringify({ day, steps, source }) }),
-  bulkSteps: (entries: { day: string; source: StepSource; steps: number }[]) =>
+  bulkSteps: (entries: { day: string; source: StepSource; steps: number }[]): Promise<{ ok: true; written: number }> =>
     request('/steps/bulk', { method: 'POST', body: JSON.stringify({ entries }) }),
 
   // tasks & lists
-  getTasks: () => request('/tasks'),
-  createTask: (id: string, text: string, dueDate?: string) =>
+  getTasks: (): Promise<TaskRow[]> => request('/tasks'),
+  createTask: (id: string, text: string, dueDate?: string): Promise<{ ok: true }> =>
     request('/tasks', { method: 'POST', body: JSON.stringify({ id, text, type: 'todo', dueDate }) }),
-  createShoppingItem: (id: string, text: string) =>
+  createShoppingItem: (id: string, text: string): Promise<{ ok: true }> =>
     request('/tasks', { method: 'POST', body: JSON.stringify({ id, text, type: 'shopping' }) }),
-  updateTask: (id: string, done: boolean) =>
+  updateTask: (id: string, done: boolean): Promise<{ ok: true }> =>
     request(`/tasks/${id}`, { method: 'PUT', body: JSON.stringify({ done }) }),
-  deleteTask: (id: string) => request(`/tasks/${id}`, { method: 'DELETE' }),
+  deleteTask: (id: string): Promise<{ ok: true }> => request(`/tasks/${id}`, { method: 'DELETE' }),
 
   // journal (free text + optional mood 1..5; feeds Dub)
   getJournal: (): Promise<{ id: string; body: string; mood: number | null; createdAt: string }[]> => request('/journal'),
-  createJournalEntry: (id: string, body: string, mood: number | null) =>
+  createJournalEntry: (id: string, body: string, mood: number | null): Promise<{ ok: true }> =>
     request('/journal', { method: 'POST', body: JSON.stringify({ id, body, mood }) }),
-  deleteJournalEntry: (id: string) => request(`/journal/${id}`, { method: 'DELETE' }),
+  deleteJournalEntry: (id: string): Promise<{ ok: true }> => request(`/journal/${id}`, { method: 'DELETE' }),
 
   // SMART goals
-  getGoals: () => request('/goals'),
-  createGoal: (goal: object) => request('/goals', { method: 'POST', body: JSON.stringify(goal) }),
-  updateGoal: (id: string, data: object) => request(`/goals/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  deleteGoal: (id: string) => request(`/goals/${id}`, { method: 'DELETE' }),
+  getGoals: (): Promise<SmartGoal[]> => request('/goals'),
+  createGoal: (goal: object): Promise<{ ok: true }> => request('/goals', { method: 'POST', body: JSON.stringify(goal) }),
+  updateGoal: (id: string, data: object): Promise<{ ok: true }> => request(`/goals/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteGoal: (id: string): Promise<{ ok: true }> => request(`/goals/${id}`, { method: 'DELETE' }),
 
   // diet
-  getDietTarget: () => request('/diet/target'),
-  updateDietTarget: (data: object) =>
+  getDietTarget: (): Promise<DietTargetResponse> => request('/diet/target'),
+  updateDietTarget: (data: object): Promise<{ ok: true }> =>
     request('/diet/target', { method: 'PUT', body: JSON.stringify(data) }),
-  getDietSettings: () => request('/diet/settings'),
-  updateDietSettings: (data: object) =>
+  getDietSettings: (): Promise<DietSettingsResponse> => request('/diet/settings'),
+  updateDietSettings: (data: object): Promise<{ ok: true }> =>
     request('/diet/settings', { method: 'PUT', body: JSON.stringify(data) }),
-  getDietPlans: () => request('/diet/plans'),
-  createDietPlan: (plan: object) =>
+  getDietPlans: (): Promise<DietPlanRow[]> => request('/diet/plans'),
+  createDietPlan: (plan: object): Promise<{ ok: true }> =>
     request('/diet/plans', { method: 'POST', body: JSON.stringify(plan) }),
-  deleteDietPlan: (id: string) => request(`/diet/plans/${id}`, { method: 'DELETE' }),
-  renameDietPlan: (id: string, label: string) =>
+  deleteDietPlan: (id: string): Promise<{ ok: true }> => request(`/diet/plans/${id}`, { method: 'DELETE' }),
+  renameDietPlan: (id: string, label: string): Promise<{ ok: true }> =>
     request(`/diet/plans/${id}`, { method: 'PATCH', body: JSON.stringify({ label }) }),
 
   // weight settings
-  getWeightSettings: () => request('/weight-settings'),
-  updateWeightSettings: (data: object) =>
+  getWeightSettings: (): Promise<WeightSettingsResponse> => request('/weight-settings'),
+  updateWeightSettings: (data: object): Promise<{ ok: true }> =>
     request('/weight-settings', { method: 'PUT', body: JSON.stringify(data) }),
 
   // plan engine
-  getPlanStatus: () => request('/plan/status'),
-  createPlanGoal: (targetWeight: number, targetDate: string) =>
+  getPlanStatus: (): Promise<PlanStatusResponse> => request('/plan/status'),
+  createPlanGoal: (targetWeight: number, targetDate: string): Promise<CreatePlanGoalResponse> =>
     request('/plan/goal', { method: 'POST', body: JSON.stringify({ targetWeight, targetDate }) }),
-  abandonPlanGoal: () => request('/plan/goal', { method: 'DELETE' }),
-  patchPlanStartDate: (startDate: string) =>
+  abandonPlanGoal: (): Promise<{ ok: true }> => request('/plan/goal', { method: 'DELETE' }),
+  patchPlanStartDate: (startDate: string): Promise<{ ok: true }> =>
     request('/plan/goal/start-date', { method: 'PATCH', body: JSON.stringify({ startDate }) }),
-  runPlanCycle: () => request('/plan/cycle', { method: 'POST' }),
-  resolvePlanReached: (action: 'maintain' | 'dismiss') =>
+  runPlanCycle: (): Promise<PlanCycleResponse> => request('/plan/cycle', { method: 'POST' }),
+  resolvePlanReached: (action: 'maintain' | 'dismiss'): Promise<ResolvePlanReachedResponse> =>
     request('/plan/resolve-reached', { method: 'POST', body: JSON.stringify({ action }) }),
 
   // AI key
@@ -165,33 +392,34 @@ export const api = {
     sleepBedtime?: string;
     sleepWaketime?: string;
     adherenceLevel?: number;
-  }) => request('/checkin', { method: 'POST', body: JSON.stringify(data) }),
-  getRecentCheckIns: () => request('/checkin/recent'),
+  }): Promise<{ ok: true; xpAwarded: number; workoutCalories: number | null }> =>
+    request('/checkin', { method: 'POST', body: JSON.stringify(data) }),
+  getRecentCheckIns: (): Promise<RecentCheckInsResponse> => request('/checkin/recent'),
   getCheckInHistory: (days = 90): Promise<{ entries: { date: string; energy: number | null; mood: number | null; adherence: string | null; adherenceLevel: number | null; workoutIntensity: string | null; workoutDurationMin: number | null; sleep: number | null; bedtime: string | null; waketime: string | null }[] }> =>
     request(`/checkin/history?days=${days}`),
-  getCoachingMessage: () => request('/checkin/coaching'),
-  getWeeklyIntention: (weekStart: string) =>
+  getCoachingMessage: (): Promise<CoachingResponse> => request('/checkin/coaching'),
+  getWeeklyIntention: (weekStart: string): Promise<{ intention: string | null }> =>
     request(`/checkin/weekly-intention?weekStart=${encodeURIComponent(weekStart)}`),
-  saveWeeklyIntention: (weekStart: string, intention: string) =>
+  saveWeeklyIntention: (weekStart: string, intention: string): Promise<{ ok: true }> =>
     request('/checkin/weekly-intention', { method: 'POST', body: JSON.stringify({ weekStart, intention }) }),
 
   // push notifications
   getVapidKey: (): Promise<{ key: string }> => request('/push/vapid-public-key'),
   pushSubscribe: (subscription: any, tzOffsetMinutes: number, reminderHour?: number, workoutHour?: number | null, eveningHour?: number) =>
     request('/push/subscribe', { method: 'POST', body: JSON.stringify({ subscription, tzOffsetMinutes, reminderHour, workoutHour, eveningHour }) }),
-  pushUnsubscribe: (endpoint?: string) =>
+  pushUnsubscribe: (endpoint?: string): Promise<{ ok: true }> =>
     request('/push/unsubscribe', { method: 'POST', body: JSON.stringify({ endpoint }) }),
-  pushSetReminderTime: (hour: number) =>
+  pushSetReminderTime: (hour: number): Promise<{ ok: true; hour: number }> =>
     request('/push/reminder-time', { method: 'POST', body: JSON.stringify({ hour }) }),
-  pushSetPromptTimes: (times: { workoutHour?: number | null; eveningHour?: number }) =>
+  pushSetPromptTimes: (times: { workoutHour?: number | null; eveningHour?: number }): Promise<{ ok: true }> =>
     request('/push/prompt-times', { method: 'POST', body: JSON.stringify(times) }),
 
   // community global habit (this month's shared XP goal)
   getGlobalHabit: (): Promise<{ month: string; title: string; habit: string; goal: number; total: number; contributors: number; mine: number; myDays: number; doneToday: boolean }> =>
     request('/global'),
-  contributeGlobal: (xp: number) =>
+  contributeGlobal: (xp: number): Promise<{ ok: true }> =>
     request('/global/contribute', { method: 'POST', body: JSON.stringify({ xp }) }),
-  uncontributeGlobal: () =>
+  uncontributeGlobal: (): Promise<{ ok: true }> =>
     request('/global/uncontribute', { method: 'POST' }),
 
   // ── Friends / social ──
@@ -202,12 +430,12 @@ export const api = {
   }> => request('/friends'),
   sendFriendRequest: (email: string): Promise<{ ok: true; status: 'pending' | 'accepted' }> =>
     request('/friends/request', { method: 'POST', body: JSON.stringify({ email }) }),
-  respondFriend: (userId: number, action: 'accept' | 'decline') =>
+  respondFriend: (userId: number, action: 'accept' | 'decline'): Promise<{ ok: true }> =>
     request('/friends/respond', { method: 'POST', body: JSON.stringify({ userId, action }) }),
-  removeFriend: (userId: number) => request(`/friends/${userId}`, { method: 'DELETE' }),
+  removeFriend: (userId: number): Promise<{ ok: true }> => request(`/friends/${userId}`, { method: 'DELETE' }),
   getFriendSettings: (): Promise<{ shareActivity: boolean }> => request('/friends/settings'),
-  setFriendSettings: (shareActivity: boolean) =>
+  setFriendSettings: (shareActivity: boolean): Promise<{ ok: true; shareActivity: boolean }> =>
     request('/friends/settings', { method: 'POST', body: JSON.stringify({ shareActivity }) }),
-  setHabitShare: (name: string, shared: boolean) =>
+  setHabitShare: (name: string, shared: boolean): Promise<{ ok: true }> =>
     request('/friends/habit-share', { method: 'POST', body: JSON.stringify({ name, shared }) }),
 };
