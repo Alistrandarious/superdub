@@ -2148,28 +2148,48 @@ h1, h2, h3, h4, .sora {
 
 /* ── Sleep "between" slider — two thumbs on a 6pm→6pm track ── */
 .srs { padding: 4px 0 2px; }
-.srs-readout {
-  display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;
-  font-family: var(--font-data); font-size: 0.82rem; font-weight: 700; color: #FFE08A;
+/* Violet "I" visual — echoes the sleep candlestick; annotated with the three
+   readings the night gives you: to-bed time, wake time, and length between. */
+.srs-viz {
+  display: flex; align-items: stretch; gap: 16px;
+  min-height: 96px; margin-bottom: 16px; padding: 2px 6px 0;
 }
-.srs-end { display: flex; flex-direction: column; }
-.srs-end--r { text-align: right; }
-.srs-end-cap { font-size: 0.5rem; letter-spacing: 0.14em; color: rgba(255,255,255,0.35); margin-bottom: 2px; }
-.srs-dur { font-size: 0.7rem; color: #FFD233; }
+.srs-i { position: relative; width: 20px; flex-shrink: 0; }
+.srs-i::before {
+  content: ''; position: absolute; left: 50%; top: 7px; bottom: 7px; width: 3px;
+  transform: translateX(-50%); border-radius: 2px;
+  background: #8B5CF6; box-shadow: 0 0 10px rgba(139,92,246,0.7);
+}
+.srs-i-cap {
+  position: absolute; left: 1px; right: 1px; height: 3px; border-radius: 2px;
+  background: #8B5CF6; box-shadow: 0 0 8px rgba(139,92,246,0.6);
+}
+.srs-i-cap--top { top: 7px; }
+.srs-i-cap--bot { bottom: 7px; }
+.srs-viz-rows { flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+.srs-viz-row { display: flex; align-items: baseline; justify-content: space-between; }
+.srs-cap {
+  font-family: var(--font-data); font-size: 0.56rem; font-weight: 700;
+  letter-spacing: 0.14em; color: rgba(196,181,253,0.7);
+}
+.srs-time { font-family: var(--font-data); font-size: 0.9rem; font-weight: 700; color: #EDE9FE; }
+.srs-viz-row--len { align-items: baseline; gap: 6px; }
+.srs-len { font-family: var(--font-data); font-size: 1.5rem; font-weight: 800; color: #A78BFA; line-height: 1; }
+.srs-len-sub { font-family: var(--font-data); font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(196,181,253,0.55); }
 .srs-track {
   position: relative; height: 12px; border-radius: 999px;
   background: rgba(255,255,255,0.08); margin: 0 11px; touch-action: none;
 }
 .srs-band {
   position: absolute; top: 0; bottom: 0; border-radius: 999px;
-  background: linear-gradient(90deg, #7C3AED, #FFB020);  /* night → morning */
-  box-shadow: 0 0 12px rgba(255,185,40,0.25);
+  background: linear-gradient(90deg, #6D28D9, #A78BFA);  /* deep night → dawn violet */
+  box-shadow: 0 0 12px rgba(139,92,246,0.35);
 }
 .srs-thumb {
   position: absolute; top: 50%; width: 22px; height: 22px; padding: 0;
   transform: translate(-50%, -50%); border-radius: 50%; cursor: grab;
-  background: linear-gradient(135deg, #FFE08A, #FF8A00);
-  border: 2px solid #0E0E14; box-shadow: 0 0 10px rgba(255,185,40,0.55); touch-action: none;
+  background: linear-gradient(135deg, #C4B5FD, #7C3AED);
+  border: 2px solid #0E0E14; box-shadow: 0 0 10px rgba(139,92,246,0.6); touch-action: none;
 }
 .srs-thumb:active { cursor: grabbing; }
 .srs-thumb::before { content: ''; position: absolute; inset: -11px; border-radius: 50%; } /* 44px hit target */
@@ -9610,19 +9630,20 @@ h1, h2, h3, h4, .sora {
   width: 1px; background: var(--glass-border, rgba(255,255,255,0.08)); align-self: stretch;
 }
 .checkin-actions {
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  width: 100%; margin-top: 22px;
 }
 .checkin-save-btn {
-  width: 100%; padding: 17px; border-radius: 14px; border: none;
-  font-size: 1.1rem; font-weight: 800; font-family: inherit;
+  width: 100%; padding: 15px 20px; border-radius: 14px; border: none;
+  font-size: 1.05rem; font-weight: 800; font-family: inherit; line-height: 1.2;
   background: var(--theme, #2E8BFF); color: #000;
   cursor: pointer; transition: opacity 0.15s; letter-spacing: 0.01em;
 }
 .checkin-save-btn:active { opacity: 0.75; }
 .checkin-save-btn:disabled { opacity: 0.5; cursor: default; }
 .checkin-skip-btn {
-  background: none; border: none; color: #444; font-size: 0.75rem;
-  font-family: inherit; cursor: pointer; padding: 6px 12px;
+  background: none; border: none; color: #666; font-size: 0.78rem;
+  font-family: inherit; cursor: pointer; padding: 10px 16px;
   transition: color 0.15s;
 }
 .checkin-skip-btn:hover { color: #666; }

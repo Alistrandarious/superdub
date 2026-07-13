@@ -67,10 +67,27 @@ const SleepRangeSlider: React.FC<{
 
   return (
     <div className="srs">
-      <div className="srs-readout">
-        <span className="srs-end"><span className="srs-end-cap">BED</span>{axisToLabel(bed)}</span>
-        <span className="srs-dur">{hoursLabel}h asleep</span>
-        <span className="srs-end srs-end--r"><span className="srs-end-cap">WOKE</span>{axisToLabel(wake)}</span>
+      {/* The night as a violet "I" — same motif as the sleep chart — annotated with
+          bedtime (top cap), wake time (bottom cap) and the length between them. */}
+      <div className="srs-viz">
+        <div className="srs-i" aria-hidden="true">
+          <span className="srs-i-cap srs-i-cap--top" />
+          <span className="srs-i-cap srs-i-cap--bot" />
+        </div>
+        <div className="srs-viz-rows">
+          <div className="srs-viz-row">
+            <span className="srs-cap">TO BED</span>
+            <span className="srs-time">{axisToLabel(bed)}</span>
+          </div>
+          <div className="srs-viz-row srs-viz-row--len">
+            <span className="srs-len">{hoursLabel}h</span>
+            <span className="srs-len-sub">asleep</span>
+          </div>
+          <div className="srs-viz-row">
+            <span className="srs-cap">WOKE</span>
+            <span className="srs-time">{axisToLabel(wake)}</span>
+          </div>
+        </div>
       </div>
       <div className="srs-track" ref={trackRef} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
         <div className="srs-band" style={{ left: `${pct(bed)}%`, width: `${pct(wake) - pct(bed)}%` }} />
