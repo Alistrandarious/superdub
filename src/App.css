@@ -5545,6 +5545,7 @@ h1, h2, h3, h4, .sora {
   padding: 10px 12px; border-radius: var(--r-md);
   background: var(--glass-bg); border: 1px solid var(--glass-border);
 }
+.friend-row--card { width: 100%; text-align: left; cursor: pointer; font: inherit; color: inherit; }
 .friend-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .friend-name { font-family: var(--font-ui); font-weight: 600; font-size: 0.9rem; color: #E8ECF4; }
 .friend-stats { font-family: var(--font-data); font-size: 0.6rem; color: rgba(255,255,255,0.5); }
@@ -5568,6 +5569,53 @@ h1, h2, h3, h4, .sora {
 .friends-share.on .friends-share-knob { background: #2FD27E; }
 .friends-share.on .friends-share-knob::after { transform: translateX(18px); }
 .friends-note { margin: 0; font-family: var(--font-ui); font-size: 0.72rem; line-height: 1.4; color: rgba(255,255,255,0.4); }
+
+/* ── Friend detail sheet ── */
+.fdetail { border-top: 2px solid rgba(255,185,40,0.4); }
+.fdetail-name { display: block; font-family: var(--font-ui); font-weight: 700; font-size: 1.15rem; color: #E8ECF4; }
+.fdetail-email { display: block; font-family: var(--font-ui); font-size: 0.78rem; color: rgba(255,255,255,0.5); margin-top: 2px; }
+.fdetail-since { display: block; font-family: var(--font-data); font-size: 0.66rem; color: rgba(255,185,40,0.7); margin-top: 6px; }
+.fdetail-stats { display: flex; gap: 8px; margin: 16px 0; }
+.fdetail-stat { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 6px; border-radius: var(--r-md); background: var(--glass-bg); border: 1px solid var(--glass-border); }
+.fdetail-stat-val { font-family: var(--font-data); font-weight: 700; font-size: 1.05rem; color: #FFE08A; }
+.fdetail-stat-label { font-family: var(--font-ui); font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(255,255,255,0.45); }
+.fdetail-private { margin: 16px 0; font-family: var(--font-ui); font-size: 0.82rem; color: rgba(255,255,255,0.5); }
+.fdetail-shares { margin: 0 0 16px; }
+.fdetail-shares-label { display: block; font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.45); margin-bottom: 6px; }
+.fdetail-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.fdetail-chip { padding: 4px 10px; border-radius: var(--r-pill); background: rgba(255,185,40,0.12); border: 1px solid rgba(255,185,40,0.25); color: #FFE08A; font-family: var(--font-ui); font-size: 0.72rem; }
+.fdetail-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.fdetail-nudge-btn {
+  width: 100%; padding: 13px 16px; border-radius: var(--r-lg); border: none; cursor: pointer;
+  font-family: var(--font-ui); font-weight: 700; font-size: 0.9rem; color: #1a1008;
+  background: var(--grad-ascension);
+}
+.fdetail-nudge-btn:disabled { opacity: 0.6; cursor: default; }
+.fdetail-nudge-note { margin: -2px 0 0; font-family: var(--font-ui); font-size: 0.72rem; color: rgba(255,255,255,0.5); text-align: center; }
+.fdetail-nudge-error { color: #ff453a; }
+.fdetail-share-btn {
+  width: 100%; padding: 12px 16px; border-radius: var(--r-lg); cursor: pointer;
+  background: var(--glass-bg); border: 1px solid var(--glass-border); color: #E8ECF4;
+  font-family: var(--font-ui); font-weight: 600; font-size: 0.86rem;
+}
+.fdetail-picker { display: flex; flex-direction: column; gap: 6px; padding: 4px 2px 2px; }
+.fdetail-picker-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 9px 12px; border-radius: var(--r-md); border: 1px solid var(--glass-border);
+  background: var(--glass-bg); color: #E8ECF4; font-family: var(--font-ui); font-size: 0.82rem;
+  cursor: pointer; width: 100%; text-align: left;
+}
+.fdetail-picker-knob { position: relative; width: 34px; height: 19px; border-radius: 999px; background: rgba(255,255,255,0.14); flex-shrink: 0; transition: background 0.2s; }
+.fdetail-picker-knob::after { content: ''; position: absolute; top: 2px; left: 2px; width: 15px; height: 15px; border-radius: 50%; background: #fff; transition: transform 0.2s; }
+.fdetail-picker-row.on .fdetail-picker-knob { background: #FFB928; }
+.fdetail-picker-row.on .fdetail-picker-knob::after { transform: translateX(15px); }
+.fdetail-picker-loading { margin: 0; font-family: var(--font-ui); font-size: 0.78rem; color: rgba(255,255,255,0.5); }
+.fdetail-caveat { margin: 4px 0 0; font-family: var(--font-ui); font-size: 0.7rem; line-height: 1.4; color: rgba(255,255,255,0.4); }
+.fdetail-remove-btn {
+  align-self: center; background: none; border: none; cursor: pointer; margin-top: 6px;
+  font-family: var(--font-ui); font-size: 0.78rem; color: rgba(255,255,255,0.4);
+}
+.fdetail-remove-btn:hover { color: #ff453a; }
 
 /* ── Daily Log — the "Daily Superdub" vitals strip ──────────── */
 .daily-log { margin: 16px 16px 4px; }

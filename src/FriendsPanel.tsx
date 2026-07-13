@@ -11,8 +11,15 @@ function relTime(iso: string): string {
   if (h < 24) return `${h}h ago`;
   return `${Math.floor(h / 24)}d ago`;
 }
+function memberSinceLabel(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
 
 type FriendsData = Awaited<ReturnType<typeof api.getFriends>>;
+type FriendRow = FriendsData['friends'][number];
+type FriendProfile = Awaited<ReturnType<typeof api.getFriendProfile>>;
+type MyHabit = { name: string; sharedWithFriends?: boolean };
+type NudgeState = 'idle' | 'busy' | 'sent' | 'error';
 
 const FriendsPanel: React.FC = () => {
   const [data, setData] = useState<FriendsData | null>(null);
@@ -20,6 +27,16 @@ const FriendsPanel: React.FC = () => {
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [shareActivity, setShareActivity] = useState(true);
+
+  // Friend detail sheet: opened row's list data shows immediately, enriched by
+  // getFriendProfile once it lands.
+  const [openFriend, setOpenFriend] = useState<FriendRow | null>(null);
+  const [profile, setProfile] = useState<FriendProfile | null>(null);
+  const [nudgeState, setNudgeState] = useState<NudgeState>('idle');
+  const [nudgeDelivered, setNudgeDelivered] = useState(true);
+  const [nudgeError, setNudgeError] = useState<string | null>(null);
+  const [sharePicker, setSharePicker] = useState(false);
+  const [myHabits, setMyHabits] = useState<MyHabit[] | null>(null);
 
   const load = useCallback(() => {
     api.getFriends().then(setData).catch(() => {});
@@ -46,6 +63,47 @@ const FriendsPanel: React.FC = () => {
     const next = !shareActivity;
     setShareActivity(next);
     await api.setFriendSettings(next).catch(() => setShareActivity(!next));
+  };
+
+  const openSheet = (f: FriendRow) => {
+    setOpenFriend(f);
+    setProfile(null);
+    setNudgeState('idle'); setNudgeError(null); setNudgeDelivered(true);
+    setSharePicker(false); setMyHabits(null);
+    api.getFriendProfile(f.id).then(setProfile).catch(() => {});
+  };
+  const closeSheet = () => setOpenFriend(null);
+
+  const nudge = async () => {
+    if (!openFriend || nudgeState !== 'idle') return;
+    setNudgeState('busy');
+    try {
+      const r = await api.nudgeFriend(openFriend.id);
+      setNudgeDelivered(r.delivered);
+      setNudgeState('sent');
+    } catch (err: any) {
+      setNudgeError(err?.message ?? 'Could not nudge them.');
+      setNudgeState('error');
+    }
+  };
+
+  const openSharePicker = () => {
+    const next = !sharePicker;
+    setSharePicker(next);
+    if (next && myHabits === null) {
+      api.getHabits().then(hs => setMyHabits(hs.map(h => ({ name: h.name, sharedWithFriends: h.sharedWithFriends })))).catch(() => {});
+    }
+  };
+  const toggleHabitShare = async (name: string, current: boolean) => {
+    setMyHabits(hs => hs && hs.map(h => (h.name === name ? { ...h, sharedWithFriends: !current } : h)));
+    await api.setHabitShare(name, !current).catch(() => {
+      setMyHabits(hs => hs && hs.map(h => (h.name === name ? { ...h, sharedWithFriends: current } : h)));
+    });
+  };
+  const removeFromSheet = async () => {
+    if (!openFriend) return;
+    await remove(openFriend.id);
+    setOpenFriend(null);
   };
 
   return (
@@ -77,7 +135,7 @@ const FriendsPanel: React.FC = () => {
       {data && data.friends.length > 0 ? (
         <div className="friends-group">
           {data.friends.map(f => (
-            <div key={f.id} className="friend-row friend-row--card">
+            <button key={f.id} type="button" className="friend-row friend-row--card" onClick={() => openSheet(f)} aria-label={`View ${f.name}`}>
               <div className="friend-main">
                 <span className="friend-name">{f.name}</span>
                 <span className="friend-stats">
@@ -87,8 +145,7 @@ const FriendsPanel: React.FC = () => {
                 </span>
                 {f.sharedHabits.length > 0 && <span className="friend-habits">shares: {f.sharedHabits.join(', ')}</span>}
               </div>
-              <button className="friend-remove" onClick={() => remove(f.id)} aria-label="Remove friend">✕</button>
-            </div>
+            </button>
           ))}
         </div>
       ) : (
@@ -112,6 +169,78 @@ const FriendsPanel: React.FC = () => {
         <span className="friends-share-knob" />
       </button>
       <p className="friends-note">Friends never see a habit unless you share it. Turn sharing on from each habit's card.</p>
+
+      {openFriend && (() => {
+        const name = profile?.name ?? openFriend.name;
+        const email = profile?.email ?? openFriend.email;
+        const shares = profile?.shares ?? openFriend.shares;
+        const streak = profile?.streak ?? openFriend.streak;
+        const doneDays = profile?.doneDays ?? openFriend.doneDays;
+        const lastActive = profile?.lastActive ?? openFriend.lastActive;
+        const sharedHabits = profile?.sharedHabits ?? openFriend.sharedHabits;
+        return (
+          <div className="checkin-overlay" onClick={closeSheet}>
+            <div className="checkin-modal fdetail" onClick={e => e.stopPropagation()}>
+              <span className="fdetail-name">{name}</span>
+              <span className="fdetail-email">{email}</span>
+              {profile?.memberSince && <span className="fdetail-since">Superdubber since {memberSinceLabel(profile.memberSince)}</span>}
+
+              {shares ? (
+                <div className="fdetail-stats">
+                  <div className="fdetail-stat"><span className="fdetail-stat-val">{streak ?? 0}d</span><span className="fdetail-stat-label">streak</span></div>
+                  <div className="fdetail-stat"><span className="fdetail-stat-val">{doneDays ?? 0}</span><span className="fdetail-stat-label">days done</span></div>
+                  <div className="fdetail-stat"><span className="fdetail-stat-val">{lastActive ? relTime(lastActive) : '–'}</span><span className="fdetail-stat-label">last active</span></div>
+                </div>
+              ) : (
+                <p className="fdetail-private">They keep their activity private.</p>
+              )}
+
+              {sharedHabits.length > 0 && (
+                <div className="fdetail-shares">
+                  <span className="fdetail-shares-label">They share:</span>
+                  <div className="fdetail-chips">
+                    {sharedHabits.map(h => <span key={h} className="fdetail-chip">{h}</span>)}
+                  </div>
+                </div>
+              )}
+
+              <div className="fdetail-actions">
+                <button className="fdetail-nudge-btn" onClick={nudge} disabled={nudgeState !== 'idle'}>
+                  {nudgeState === 'sent' ? 'Nudge sent' : nudgeState === 'busy' ? 'Nudging…' : `Nudge ${name}`}
+                </button>
+                {nudgeState === 'sent' && !nudgeDelivered && (
+                  <p className="fdetail-nudge-note">They'll see it when notifications are on</p>
+                )}
+                {nudgeState === 'error' && nudgeError && (
+                  <p className="fdetail-nudge-note fdetail-nudge-error">{nudgeError}</p>
+                )}
+
+                <button className="fdetail-share-btn" onClick={openSharePicker}>Share a habit</button>
+                {sharePicker && (
+                  <div className="fdetail-picker">
+                    {myHabits === null ? (
+                      <p className="fdetail-picker-loading">Loading your habits…</p>
+                    ) : myHabits.length === 0 ? (
+                      <p className="fdetail-picker-loading">No habits yet.</p>
+                    ) : (
+                      myHabits.map(h => (
+                        <button key={h.name} type="button" className={`fdetail-picker-row${h.sharedWithFriends ? ' on' : ''}`}
+                          onClick={() => toggleHabitShare(h.name, !!h.sharedWithFriends)}>
+                          <span>{h.name}</span>
+                          <span className="fdetail-picker-knob" />
+                        </button>
+                      ))
+                    )}
+                    <p className="fdetail-caveat">Habits you share are visible to all your friends.</p>
+                  </div>
+                )}
+
+                <button className="fdetail-remove-btn" onClick={removeFromSheet}>Remove friend</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </section>
   );
 };

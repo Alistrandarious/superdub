@@ -356,6 +356,13 @@ const migrations = [
     CHECK (requester_id <> addressee_id)
   )`,
   `CREATE INDEX IF NOT EXISTS friendships_addressee_idx ON friendships (addressee_id, status)`,
+  // Friend nudges — one row per push, drives the per-friend rate limit (4h).
+  `CREATE TABLE IF NOT EXISTS friend_nudges (
+    from_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    to_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    sent_at  TIMESTAMPTZ DEFAULT NOW()
+  )`,
+  `CREATE INDEX IF NOT EXISTS friend_nudges_pair_idx ON friend_nudges (from_id, to_id, sent_at)`,
 ];
 (async () => {
   for (const sql of migrations) {

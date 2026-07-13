@@ -6,6 +6,7 @@
 // If they're absent, push is silently disabled so the rest of the app still runs.
 // ─────────────────────────────────────────────────────────────────────────────
 import webpush from 'web-push';
+import { pool } from '../db';
 
 const PUBLIC = process.env.VAPID_PUBLIC_KEY || '';
 const PRIVATE = process.env.VAPID_PRIVATE_KEY || '';
@@ -41,4 +42,18 @@ export async function sendPush(subscription: any, payload: PushPayload): Promise
     console.error('[push] send failed', code, err?.message);
     return true; // transient — keep the subscription
   }
+}
+
+// Push to every device a user has registered, pruning dead subscriptions.
+// Returns how many devices were actually reached (0 = user unreachable).
+export async function sendPushToUser(userId: number, payload: PushPayload): Promise<number> {
+  if (!pushEnabled) return 0;
+  const { rows } = await pool.query('SELECT id, subscription FROM push_subscriptions WHERE user_id = $1', [userId]);
+  let delivered = 0;
+  for (const r of rows) {
+    const ok = await sendPush(r.subscription, payload);
+    if (ok) delivered++;
+    else await pool.query('DELETE FROM push_subscriptions WHERE id = $1', [r.id]).catch(() => {});
+  }
+  return delivered;
 }

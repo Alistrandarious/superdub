@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import { pool } from '../db';
 import { requireAuth, AuthRequest } from '../middleware/auth';
+import { sendPushToUser } from '../services/push';
 
 // ── Friends / social ──────────────────────────────────────────────────────────
 // Connect by email (phone-connect is a later pass). Friends can see each other's
@@ -29,6 +30,18 @@ async function checkInStreak(userId: number): Promise<number> {
   if (!done.has(isoOf(d))) d.setDate(d.getDate() - 1); // not logged today yet → start at yesterday
   while (done.has(isoOf(d))) { streak++; d.setDate(d.getDate() - 1); }
   return streak;
+}
+
+// TRUE only when an ACCEPTED friendship exists between the two users, either
+// direction. Every read/action on another user's data goes through this gate.
+async function isAcceptedFriend(me: number, other: number): Promise<boolean> {
+  const { rows } = await pool.query(
+    `SELECT 1 FROM friendships
+      WHERE status = 'accepted'
+        AND ((requester_id = $1 AND addressee_id = $2) OR (requester_id = $2 AND addressee_id = $1))`,
+    [me, other],
+  );
+  return rows.length > 0;
 }
 
 // The permitted summary for a friend (already checked: accepted + share_activity on).
@@ -169,6 +182,67 @@ router.post('/settings', requireAuth as any, async (req: AuthRequest, res: Respo
     res.json({ ok: true, shareActivity: share });
   } catch (err: any) {
     console.error('[friends settings POST]', err?.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// GET /:userId/profile — the richer detail-sheet read for ONE accepted friend.
+// Same privacy gates as the list: friendship must be accepted, and the activity
+// fields only come through when the owner's share_activity is on.
+router.get('/:userId/profile', requireAuth as any, async (req: AuthRequest, res: Response) => {
+  try {
+    const me = req.userId!;
+    const other = Number(req.params.userId);
+    if (!other) return res.status(400).json({ error: 'Bad request.' });
+    if (!(await isAcceptedFriend(me, other))) return res.status(403).json({ error: 'Not friends.' });
+    const { rows } = await pool.query(
+      `SELECT u.email, u.created_at, u.last_active_at, p.name, COALESCE(p.share_activity, TRUE) AS share_activity
+         FROM users u LEFT JOIN profile p ON p.user_id = u.id WHERE u.id = $1`,
+      [other],
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Not found.' });
+    const r = rows[0];
+    const base = { id: other, name: r.name || r.email.split('@')[0], email: r.email, memberSince: r.created_at };
+    if (!r.share_activity) return res.json({ ...base, shares: false, streak: null, doneDays: null, sharedHabits: [], lastActive: null });
+    const summary = await friendSummary(other);
+    res.json({ ...base, shares: true, ...summary, lastActive: r.last_active_at });
+  } catch (err: any) {
+    console.error('[friends profile]', err?.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /:userId/nudge — send a friend a push. Gated by accepted friendship and
+// rate-limited to one nudge per friend per 4 hours (friend_nudges table).
+const NUDGE_WINDOW_HOURS = 4;
+router.post('/:userId/nudge', requireAuth as any, async (req: AuthRequest, res: Response) => {
+  try {
+    const me = req.userId!;
+    const other = Number(req.params.userId);
+    if (!other) return res.status(400).json({ error: 'Bad request.' });
+    if (!(await isAcceptedFriend(me, other))) return res.status(403).json({ error: 'Not friends.' });
+    const recent = await pool.query(
+      `SELECT 1 FROM friend_nudges WHERE from_id = $1 AND to_id = $2 AND sent_at > NOW() - INTERVAL '${NUDGE_WINDOW_HOURS} hours'`,
+      [me, other],
+    );
+    if (recent.rows.length > 0) {
+      return res.status(429).json({ error: 'You nudged them recently. Give it a few hours.' });
+    }
+    const { rows: meRows } = await pool.query(
+      `SELECT u.email, p.name FROM users u LEFT JOIN profile p ON p.user_id = u.id WHERE u.id = $1`,
+      [me],
+    );
+    const myName = meRows[0]?.name || meRows[0]?.email?.split('@')[0] || 'A friend';
+    await pool.query('INSERT INTO friend_nudges (from_id, to_id) VALUES ($1, $2)', [me, other]);
+    const delivered = await sendPushToUser(other, {
+      title: 'Superdub',
+      body: `${myName} gave you a nudge. Keep your streak alive.`,
+      url: '/community',
+      tag: 'friend-nudge',
+    });
+    res.json({ ok: true, delivered: delivered > 0 });
+  } catch (err: any) {
+    console.error('[friends nudge]', err?.message);
     res.status(500).json({ error: 'Server error' });
   }
 });

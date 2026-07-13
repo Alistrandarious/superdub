@@ -292,7 +292,7 @@ export const api = {
   heartbeat: (): Promise<{ ok: true }> => request('/profile/heartbeat', { method: 'POST' }),
 
   // habits
-  getHabits: (): Promise<{ name: string; startDate: string | null; cadence?: string; quitStartedAt?: string | null; starred?: boolean; dueDate?: string | null; reminderHour?: number | null; schedule?: string | null }[]> => request('/habits'),
+  getHabits: (): Promise<{ name: string; startDate: string | null; cadence?: string; quitStartedAt?: string | null; starred?: boolean; dueDate?: string | null; reminderHour?: number | null; schedule?: string | null; sharedWithFriends?: boolean }[]> => request('/habits'),
   updateHabits: (habits: (string | { name: string; cadence: string })[]): Promise<{ ok: true }> =>
     request('/habits', { method: 'PUT', body: JSON.stringify({ habits }) }),
   setQuitStart: (name: string, startedAt: string): Promise<{ ok: true }> =>
@@ -438,4 +438,11 @@ export const api = {
     request('/friends/settings', { method: 'POST', body: JSON.stringify({ shareActivity }) }),
   setHabitShare: (name: string, shared: boolean): Promise<{ ok: true }> =>
     request('/friends/habit-share', { method: 'POST', body: JSON.stringify({ name, shared }) }),
+  getFriendProfile: (userId: number): Promise<{
+    id: number; name: string; email: string; memberSince: string; shares: boolean;
+    streak: number | null; doneDays: number | null; sharedHabits: string[]; lastActive: string | null;
+  }> => request(`/friends/${userId}/profile`),
+  // 429 (nudged too recently) surfaces as a thrown Error with the server message.
+  nudgeFriend: (userId: number): Promise<{ ok: true; delivered: boolean }> =>
+    request(`/friends/${userId}/nudge`, { method: 'POST' }),
 };
