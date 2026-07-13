@@ -4791,17 +4791,15 @@ h1, h2, h3, h4, .sora {
   align-items: center;
   gap: 10px;
 }
-/* Uniform header chips: same height, vertically centred */
+/* Bare header controls — no chip/circle chrome, just clean icons + values, kept at a
+   36px tap height and centred. */
 .hb-weather {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   height: 36px;
   box-sizing: border-box;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 999px;
-  padding: 0 13px;
+  padding: 0 2px;
   font-size: 0.8rem;
   font-weight: 600;
   color: #D0D0DC;
@@ -4810,17 +4808,16 @@ h1, h2, h3, h4, .sora {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
+  width: 32px;
   height: 36px;
   box-sizing: border-box;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: none;
+  border: none;
   color: #B0B0C0;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  transition: color 0.15s;
 }
-.hb-cog:hover { background: rgba(255,255,255,0.09); color: #fff; }
+.hb-cog:hover { color: #fff; }
 /* Dub coach button in the header */
 .hb-dub-btn {
   display: flex; align-items: center; justify-content: center;
@@ -6663,15 +6660,13 @@ h1, h2, h3, h4, .sora {
 .streak-flame {
   display: inline-flex; align-items: center; justify-content: center; gap: 3px;
   height: 36px; box-sizing: border-box;
-  background: rgba(255,138,60,0.12);
-  border: 1px solid rgba(255,138,60,0.25);
-  border-radius: var(--r-pill);
-  padding: 0 12px 0 10px;
+  background: none; border: none;
+  padding: 0 2px;
   cursor: pointer; flex-shrink: 0;
-  transition: transform 0.1s, box-shadow 0.2s;
+  transition: transform 0.1s;
 }
 .streak-flame:active { transform: scale(0.94); }
-.streak-flame.hot { box-shadow: 0 0 12px -2px rgba(255,138,60,0.5); }
+.streak-flame.hot { box-shadow: none; }
 .streak-flame-ico { display: inline-flex; align-items: center; }
 .streak-flame-num { font-family: 'Sora', sans-serif; font-weight: 900; font-size: 0.85rem; color: #FF8A3C; }
 
