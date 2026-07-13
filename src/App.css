@@ -6791,6 +6791,11 @@ h1, h2, h3, h4, .sora {
 .dub--concerned .dub-tongue { animation: none; }
 .dub--concerned .dub-antenna-tip { fill: #FFB928; filter: drop-shadow(0 0 4px #FFB928); }
 .dub--neutral .dub-tail { animation-duration: 0.7s; }
+/* wizard — the wand sways and its star (and the hat tip) twinkle */
+@keyframes dub-wand { 0%,100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+.dub-wand { transform-origin: 98px 104px; animation: dub-wand 3.2s ease-in-out infinite; }
+@keyframes dub-twinkle { 0%,100% { opacity: 0.7; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1.12); } }
+.dub-hat-star { transform-origin: 67px 4px; animation: dub-twinkle 2.2s ease-in-out infinite; }
 
 .hb-ring-wrap { position: relative; display: inline-flex; }
 
@@ -7034,7 +7039,7 @@ h1, h2, h3, h4, .sora {
 .lvl-collapse-body .diet-heading { font-size: 0.82rem; color: rgba(255,255,255,0.7); }
 
 /* Companion picker (Level page cosmetics) */
-.companion-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.companion-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .companion-card {
   display: flex; flex-direction: column; align-items: center; gap: 8px;
   padding: 14px 10px; cursor: pointer;
@@ -7227,8 +7232,23 @@ h1, h2, h3, h4, .sora {
 }
 .dub-checkin-btn:active { transform: scale(0.98); }
 .dub-section { padding: 12px; }
-/* Dub's room — a cozy scene with Dub sitting on the rug */
-.dub-room { margin: 22px 16px 0; }
+/* Dub's thoughts — the scrollable region above his docked room */
+.dub-scroll {
+  flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden;
+  display: flex; flex-direction: column;
+  scrollbar-width: none; -ms-overflow-style: none;
+  padding-bottom: 6px;
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+}
+.dub-scroll::-webkit-scrollbar { display: none; }
+/* Dub's room — a cozy scene, docked at the bottom above the nav and locked in place */
+.dub-room {
+  flex-shrink: 0;
+  margin: 4px 16px calc(80px + env(safe-area-inset-bottom, 0px));
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
 .dub-room-eyebrow {
   display: block; font-family: var(--font-data); font-size: 0.6rem; font-weight: 700;
   letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 8px;

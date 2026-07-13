@@ -125,8 +125,9 @@ const DubPage: React.FC = () => {
 
   return (
     <div className="app flush" style={pageTheme(GROWTH, '0D')}>
-      <div className="habits-page-scroll">
-        <SuperdubHeader />
+      <SuperdubHeader />
+      {/* Dub's thoughts scroll here; his room stays docked at the bottom (below). */}
+      <div className="dub-scroll">
 
         {/* Hero — Dub + a check-in button (opens the coach report modal) */}
         <div className="dub-hero">
@@ -195,10 +196,10 @@ const DubPage: React.FC = () => {
           )}
         </section>
 
-        {/* Dub's room — his own cozy space at the bottom of the page */}
-        <DubRoom species={species} />
-        <div style={{ height: 90 }} />
       </div>
+
+      {/* Dub's room — docked to the bottom, locked in place while thoughts scroll above */}
+      <DubRoom species={species} />
     </div>
   );
 };

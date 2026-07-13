@@ -19,6 +19,7 @@ import {
 // The deep ladder/badges/habit record stay on /level.
 
 const CAT_UNLOCK_LEVEL = 2;
+const WIZARD_REFERRALS = 3;
 
 const LockIc: React.FC<{ size?: number }> = ({ size = 11 }) => (
   <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-label="Locked">
@@ -73,9 +74,18 @@ const LevelCustomizer: React.FC<{ showHero?: boolean }> = ({ showHero = true }) 
   };
 
   const [species, setSpecies] = useState<MascotSpecies>(getMascot);
+  // ponytail: "referrals" = accepted friends on this account. Ceiling: it counts
+  // friends however they were added, not verified new-signup referrals. Upgrade
+  // path is a real referral column on the server once that flow exists.
+  const [friendCount, setFriendCount] = useState(0);
+  useEffect(() => {
+    api.getFriends().then(f => setFriendCount(f.friends.length)).catch(() => {});
+  }, []);
   const catUnlocked = playerLevel.level >= CAT_UNLOCK_LEVEL;
+  const wizardUnlocked = friendCount >= WIZARD_REFERRALS;
   const pickSpecies = (s: MascotSpecies) => {
     if (s === 'cat' && !catUnlocked) return;
+    if (s === 'wizard' && !wizardUnlocked) return;
     setSpecies(s);
     localStorage.setItem(MASCOT_KEY, s);
     window.dispatchEvent(new CustomEvent('superdub:mascot-changed'));
@@ -176,6 +186,18 @@ const LevelCustomizer: React.FC<{ showHero?: boolean }> = ({ showHero = true }) 
               {!catUnlocked && <span className="companion-lock"><LockIc size={14} /></span>}
             </span>
             <span className="companion-name">{catUnlocked ? `Dub the cat${species === 'cat' ? ' ✓' : ''}` : 'Cat · LV2'}</span>
+          </button>
+          <button
+            className={`companion-card${species === 'wizard' ? ' active' : ''}${wizardUnlocked ? '' : ' locked'}`}
+            onClick={() => pickSpecies('wizard')}
+            disabled={!wizardUnlocked}
+            title={wizardUnlocked ? 'Dub the wizard' : `Refer ${WIZARD_REFERRALS} friends to unlock (${friendCount}/${WIZARD_REFERRALS})`}
+          >
+            <span className="companion-pet">
+              <DubMascot size={66} mood="happy" species="wizard" />
+              {!wizardUnlocked && <span className="companion-lock"><LockIc size={14} /></span>}
+            </span>
+            <span className="companion-name">{wizardUnlocked ? `Dub the wizard${species === 'wizard' ? ' ✓' : ''}` : `Wizard · ${friendCount}/${WIZARD_REFERRALS} friends`}</span>
           </button>
         </div>
         <div className="dub-gender-row">
