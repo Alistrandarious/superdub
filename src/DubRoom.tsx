@@ -2,11 +2,11 @@ import React from 'react';
 import DubMascot, { type MascotSpecies } from './DubMascot';
 
 // ── Dub's room ────────────────────────────────────────────────────────────────
-// A cozy little scene docked at the bottom of the Dub page: a warm rug on a wood
-// floor, a shelf, a plant, and Dub sitting in his own space. The window MAPS THE
-// TIME OF DAY — a bright sky + sun by day, a warm dusk, or the moon + stars at
-// night — so his room tracks the real world hour. Pure SVG scene; the mascot
-// itself is the existing DubMascot, so Dub's colour/species choices carry through.
+// A cozy scene docked at the bottom third of the Dub page. The window MAPS THE
+// TIME OF DAY — bright sky + sun by day, a warm dusk, moon + stars at night. Dub
+// sits on the rug inside the SVG (a foreignObject) so he scales with the room and
+// stays glued to the rug at any height. Tap Dub to chat: a "!" badge sits by his
+// head — gold when he has fresh info, grey once you've seen it.
 
 type Phase = 'day' | 'dusk' | 'night';
 function timePhase(hour: number): Phase {
@@ -22,7 +22,7 @@ const SKY: Record<Phase, { inner: string; outer: string }> = {
   night: { inner: '#2E3A6E', outer: '#141A33' },
 };
 
-const DubRoom: React.FC<{ species: MascotSpecies }> = ({ species }) => {
+const DubRoom: React.FC<{ species: MascotSpecies; hasNew: boolean; onChat: () => void }> = ({ species, hasNew, onChat }) => {
   const phase = timePhase(new Date().getHours());
   const sky = SKY[phase];
   const sun = phase !== 'night';
@@ -67,12 +67,10 @@ const DubRoom: React.FC<{ species: MascotSpecies }> = ({ species }) => {
               <rect x="30" y="26" width="86" height="86" fill="url(#dr-sky)" />
               {sun ? (
                 <>
-                  {/* soft sun halo + disc; sits lower and warmer at dusk */}
                   <circle cx="88" cy={phase === 'dusk' ? 74 : 50} r="22" fill="url(#dr-sun)" opacity="0.35" />
                   <circle cx="88" cy={phase === 'dusk' ? 74 : 50} r="12" fill="url(#dr-sun)" />
                   {phase === 'day' && (
                     <g fill="none" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" opacity="0.85">
-                      {/* two soft clouds */}
                       <path d="M40 88 q4 -8 12 -6 q4 -8 12 -3 q7 0 5 9" />
                       <path d="M58 44 q3 -6 9 -4 q3 -5 9 -2" opacity="0.6" />
                     </g>
@@ -80,7 +78,6 @@ const DubRoom: React.FC<{ species: MascotSpecies }> = ({ species }) => {
                 </>
               ) : (
                 <>
-                  {/* crescent moon (a sky-coloured disc bites the lit one) + stars */}
                   <circle cx="88" cy="52" r="13" fill="#FFE9A8" />
                   <circle cx="82" cy="48" r="11" fill="url(#dr-sky)" />
                   <circle cx="52" cy="44" r="1.6" fill="#cfe0ff" />
@@ -89,7 +86,6 @@ const DubRoom: React.FC<{ species: MascotSpecies }> = ({ species }) => {
                 </>
               )}
             </g>
-            {/* frame + mullions on top of the sky */}
             <rect x="30" y="26" width="86" height="86" rx="10" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="2" />
             <line x1="73" y1="26" x2="73" y2="112" stroke="rgba(255,255,255,0.1)" strokeWidth="2" />
             <line x1="30" y1="69" x2="116" y2="69" stroke="rgba(255,255,255,0.1)" strokeWidth="2" />
@@ -101,7 +97,6 @@ const DubRoom: React.FC<{ species: MascotSpecies }> = ({ species }) => {
             <rect x="204" y="40" width="9" height="18" rx="1.5" fill="#2FD27E" />
             <rect x="215" y="36" width="9" height="22" rx="1.5" fill="#2E8BFF" />
             <rect x="226" y="43" width="9" height="15" rx="1.5" fill="#FF8A00" />
-            {/* plant */}
             <rect x="250" y="44" width="18" height="14" rx="3" fill="#5a4632" />
             <path d="M259 44 C 252 30, 250 26, 254 22" fill="none" stroke="#2FD27E" strokeWidth="3" strokeLinecap="round" />
             <path d="M259 44 C 266 32, 270 30, 268 24" fill="none" stroke="#2FD27E" strokeWidth="3" strokeLinecap="round" />
@@ -117,10 +112,25 @@ const DubRoom: React.FC<{ species: MascotSpecies }> = ({ species }) => {
           <ellipse cx="160" cy="184" rx="62" ry="15.5" fill="#8E3444" />
           <ellipse cx="160" cy="184" rx="40" ry="10" fill="#A94055" />
           <ellipse cx="160" cy="184" rx="18" ry="4.5" fill="#C6566C" />
+
+          {/* Dub on the rug — tap to chat. In a foreignObject so he scales with the room. */}
+          <g className={`dub-room-dub${hasNew ? ' is-new' : ''}`} onClick={onChat} role="button" tabIndex={0}
+            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onChat(); } }}
+            aria-label="Chat to Dub" style={{ cursor: 'pointer' }}>
+            <foreignObject x="102" y="72" width="116" height="116">
+              <div style={{ width: '100%', height: '100%', filter: 'drop-shadow(0 7px 10px rgba(0,0,0,0.5))' }}>
+                <DubMascot size={116} mood="happy" species={species} />
+              </div>
+            </foreignObject>
+            {/* "!" notification badge by Dub's head */}
+            <circle className="dub-bang-dot" cx="188" cy="94" r="13" stroke="#141826" strokeWidth="2.5"
+              fill={hasNew ? '#FFC400' : '#8A8F9E'} />
+            <text x="188" y="100" textAnchor="middle" fontSize="16" fontWeight="800" fill="#141826"
+              fontFamily="'Sora', sans-serif" style={{ pointerEvents: 'none' }}>!</text>
+          </g>
         </svg>
-        {/* Dub himself, sitting on the rug */}
-        <div className="dub-room-pet"><DubMascot size={104} mood="happy" species={species} /></div>
       </div>
+      <button className="dub-room-chat" onClick={onChat}>Chat to Dub</button>
     </div>
   );
 };

@@ -11,6 +11,7 @@ import { dubPronouns, getDubGender, dubHas, type DubGender } from './dubPronouns
 import { isSystemHabit } from './systemHabits';
 
 const YEAR = new Date().getFullYear();
+const DUB_SEEN_KEY = 'superdub.dubSeen';
 
 function buildAllDays(): string[] {
   const d: string[] = [];
@@ -36,6 +37,7 @@ const DubPage: React.FC = () => {
   const [loaded, setLoaded] = useState(false);
   const [species, setSpecies] = useState<MascotSpecies>(getMascot);
   const [gender, setGender] = useState<DubGender>(getDubGender);
+  const [seen, setSeen] = useState(() => localStorage.getItem(DUB_SEEN_KEY) || '');
 
   useEffect(() => {
     const sync = () => { setSpecies(getMascot()); setGender(getDubGender()); };
@@ -44,6 +46,22 @@ const DubPage: React.FC = () => {
   }, []);
   const pn = dubPronouns(gender);
   const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+  // A signature of everything Dub currently "knows". Gold "!" until you tap him
+  // (which opens the chat and marks this exact read as seen), then it goes grey
+  // and only relights when the report, insights, or step nudge actually change.
+  const dubSig = JSON.stringify({
+    h: report?.headline ?? '',
+    l: (report?.lines ?? []).map(l => l.title),
+    i: insights.map(x => x.habit + '|' + x.text),
+    s: advisableSteps,
+  });
+  const hasNew = loaded && dubSig !== seen;
+  const chatToDub = () => {
+    window.dispatchEvent(new CustomEvent('superdub:show-coach'));
+    localStorage.setItem(DUB_SEEN_KEY, dubSig);
+    setSeen(dubSig);
+  };
 
   useEffect(() => {
     (async () => {
@@ -135,7 +153,7 @@ const DubPage: React.FC = () => {
           <div className="dub-hero-text">
             <span className="coach-eyebrow">DUB · YOUR COACH</span>
             <h2 className="dub-hero-headline">{report ? report.headline : "Hey, I'm Dub"}</h2>
-            <button className="dub-checkin-btn" onClick={() => window.dispatchEvent(new CustomEvent('superdub:show-coach'))}>
+            <button className="dub-checkin-btn" onClick={chatToDub}>
               Check in with Dub
             </button>
           </div>
@@ -198,8 +216,8 @@ const DubPage: React.FC = () => {
 
       </div>
 
-      {/* Dub's room — docked to the bottom, locked in place while thoughts scroll above */}
-      <DubRoom species={species} />
+      {/* Dub's room — docked to the bottom third, locked in place; tap Dub to chat */}
+      <DubRoom species={species} hasNew={hasNew} onChat={chatToDub} />
     </div>
   );
 };
