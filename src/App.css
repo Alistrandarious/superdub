@@ -5728,14 +5728,7 @@ h1, h2, h3, h4, .sora {
 }
 
 /* ── Cadence switcher: title + little coloured carousel + content ── */
-/* Sits on its own surface card, tucked under the XP bar. */
-.cadx {
-  margin: 6px 12px 0;
-  padding: 8px 10px 10px;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--r-card);
-}
+.cadx { padding: 6px 0 0; }
 .cadx-header {
   position: sticky; z-index: 20;
   /* Tuck below the pinned XP bar (≈48px pill + 6px margin) so the two never
