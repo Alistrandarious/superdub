@@ -15,6 +15,8 @@ the "Progress" page is `App.tsx`).
 | [UPDATE_ARTICLES.md](UPDATE_ARTICLES.md) | Each major update ships a Success Kit article | You shipped a feature and need its write-up |
 | [SUPERDUB_SPEC.md](SUPERDUB_SPEC.md) | Full product spec | You need the authoritative feature definition |
 | [AGENTS.md](AGENTS.md) | The "lazy senior dev" (Ponytail) coding rules | Before writing any code |
+| [ROADMAP.md](ROADMAP.md) | Prioritized backlog + live status | You're deciding what to build next |
+| [ORCHESTRATION.md](ORCHESTRATION.md) | Lead/worker agent workflow (specs, review, shipping) | You're running agents on this repo |
 | [CLAUDE.md](CLAUDE.md) | Repo entry point — points at all of the above | First contact |
 
 ## Feature → where it actually lives
