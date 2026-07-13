@@ -2669,6 +2669,11 @@ h1, h2, h3, h4, .sora {
 .chart-title-row .chart-range-group { order: 2; flex-basis: 100%; gap: 8px; margin-top: 8px; }
 .chart-title-row .chart-range-btn { flex: 1; text-align: center; padding: 4px 10px; }
 .chart-cog-wrap { position: relative; order: 3; }    /* cog sits on the far right */
+/* Habits chart: keep the cadence cog pinned top-right, in line with the title —
+   don't let the title + cadence label wrap it onto a second row on narrow widths. */
+.chart-section--habits .chart-title-row { flex-wrap: nowrap; }
+.chart-section--habits .chart-title { min-width: 0; }
+.chart-section--habits .chart-cog-wrap { margin-left: auto; align-self: center; flex-shrink: 0; }
 .chart-cog-btn {
   display: flex; align-items: center; justify-content: center;
   width: 30px; height: 30px;

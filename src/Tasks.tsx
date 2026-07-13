@@ -128,7 +128,9 @@ const Tasks: React.FC = () => {
     setTasks(prev => prev.filter(t => !(t.type === tab && t.done)));
   };
 
-  const visible = tasks.filter(t => t.type === tab);
+  // Completed items sink to the bottom so the list stays clean as you tick things
+  // off; insertion order is preserved within each group (Array.sort is stable).
+  const visible = tasks.filter(t => t.type === tab).sort((a, b) => (a.done === b.done ? 0 : a.done ? 1 : -1));
   const doneCount = visible.filter(t => t.done).length;
   const today = todayISO();
 
@@ -253,7 +255,9 @@ const Tasks: React.FC = () => {
                     onClick={() => toggleItem(task.id)}
                     style={{ borderColor: task.done ? accent : undefined, background: task.done ? accent : undefined }}
                   >
-                    {task.done && <span className="lists-check-tick">✓</span>}
+                    {task.done && (
+                      <svg className="lists-check-tick" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                    )}
                   </button>
                   <div className="lists-text-col">
                     <span className="lists-text">{task.text}</span>
@@ -263,7 +267,9 @@ const Tasks: React.FC = () => {
                       </span>
                     )}
                   </div>
-                  <button className="lists-remove" onClick={() => removeItem(task.id)}>✕</button>
+                  <button className="lists-remove" onClick={() => removeItem(task.id)} aria-label="Remove">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" /></svg>
+                  </button>
                 </li>
               ))}
             </ul>
