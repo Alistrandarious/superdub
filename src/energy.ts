@@ -24,6 +24,76 @@ export function stepsToKm(steps: number): number {
   return steps * STRIDE_M / 1000;
 }
 
+/** MET per workout intensity — kcal ≈ MET × kg × hours. Mirrors the server's
+ *  WORKOUT_MET (server/routes/checkin.ts). ponytail: duplicated because server/ and
+ *  src/ are separate builds and don't share modules; keep the two tables in sync. */
+export const WORKOUT_MET: Record<string, number> = {
+  light: 3.5,
+  moderate: 5.5,
+  intense: 8.0,
+  very_intense: 10.0,
+};
+
+/** Calories burned by a logged gym session (0 when not enough info). */
+export function workoutCalories(intensity: string | null | undefined, durationMin: number | null | undefined, weightKg: number): number {
+  if (!intensity || !durationMin || durationMin <= 0) return 0;
+  const met = WORKOUT_MET[intensity] ?? 5.5;
+  const kg = weightKg > 0 ? weightKg : 75;
+  return Math.round(met * kg * (durationMin / 60));
+}
+
+/**
+ * Honest daily-intake RANGE. One day's true intake can't be recovered from one day's
+ * weigh-in (day-to-day scale weight is mostly water/waste), so instead of a false-precise
+ * number we return a band built from what we DO know:
+ *   - expenditure  E = maintenance + step-deviation burn + gym burn
+ *   - the next-day weight change ΔW (only the plausible-fat part shifts the estimate;
+ *     the rest is water and only widens the band)
+ *   - the evening "eating vs target" self-report (adherenceLevel −2..+2)
+ * Width grows with the overnight swing and with disagreement between the two estimates,
+ * so a steady day reads tight and a big jump reads honestly wide. Returns null only when
+ * there's no usable signal at all.
+ * ponytail: FAT_CAP and the width constants are crude but bounded; tune against real data.
+ */
+export function estimateIntakeRange(opts: {
+  maintenance: number;                 // TDEE = BMR × activity
+  stepBurn: number;                    // (steps − avg) × kcalPerStep, may be negative
+  gymBurn: number;                     // workoutCalories(...), ≥ 0
+  weightDeltaKg: number | null;        // next-day − day weight; null if either weigh-in missing
+  adherenceLevel: number | null;       // −2..+2 self-report vs target; null if not logged
+  targetCalories: number;
+}): { low: number; central: number; high: number; wide: boolean } | null {
+  const { maintenance, stepBurn, gymBurn, weightDeltaKg, adherenceLevel, targetCalories } = opts;
+  if (!(maintenance > 0)) return null;
+
+  const FAT_CAP = 0.12;                 // kg/day of plausible real tissue change
+  const E = maintenance + stepBurn + gymBurn;
+
+  // Energy-balance estimate: only the bounded (real-fat) part of ΔW shifts intake; the
+  // overnight swing beyond FAT_CAP is water and instead feeds the band width below.
+  let ebIntake: number | null = null;
+  let waterK = 0;
+  if (weightDeltaKg != null) {
+    const realKg = Math.max(-FAT_CAP, Math.min(FAT_CAP, weightDeltaKg));
+    ebIntake = E + realKg * KCAL_PER_KG;
+    waterK = Math.max(0, Math.abs(weightDeltaKg) - FAT_CAP) * KCAL_PER_KG;
+  }
+
+  // Self-report estimate: target shifted by the −2..+2 "eating vs target" answer.
+  const OFFSET: Record<number, number> = { [-2]: -700, [-1]: -350, 0: 0, 1: 350, 2: 700 };
+  const srIntake = adherenceLevel != null ? targetCalories + (OFFSET[adherenceLevel] ?? 0) : null;
+
+  const signals = [ebIntake, srIntake].filter((v): v is number => v != null);
+  if (signals.length === 0) return null;   // no weigh-in and no self-report → no honest estimate
+  const central = signals.reduce((a, b) => a + b, 0) / signals.length;
+  const disagree = (ebIntake != null && srIntake != null) ? Math.abs(ebIntake - srIntake) / 2 : 0;
+
+  const half = Math.max(150, Math.min(650, 220 + 0.25 * waterK + 0.5 * disagree));
+  const low = Math.max(Math.round(central - half), Math.round(0.6 * maintenance));
+  const high = Math.round(central + half);
+  return { low, central: Math.round(central), high, wide: half >= 500 };
+}
+
 /**
  * Estimated daily intake, back-calculated from energy balance:
  *   intake ≈ maintenance (BMR×activity) + step-deviation burn + weight-trend energy.

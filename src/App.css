@@ -2233,6 +2233,9 @@ h1, h2, h3, h4, .sora {
 .ltm-ring-center { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .ltm-ring-num { font-family: var(--font-data); font-weight: 700; font-size: 0.94rem; line-height: 1; color: #FFE08A; }
 .ltm-ring-num.over { color: #FFD233; }
+/* Range form inside the ring, e.g. "1.8–2.3k" — smaller so the band fits on one line. */
+.ltm-ring-range { font-family: var(--font-data); font-weight: 700; font-size: 0.66rem; line-height: 1; letter-spacing: -0.01em; color: #FFE08A; white-space: nowrap; }
+.ltm-ring-range.over { color: #FFD233; }
 .ltm-ring-unit { font-family: var(--font-ui); font-size: 0.5rem; color: rgba(255,255,255,0.4); margin-top: 2px; }
 /* Metric line (steps / sleep) */
 .ltm-metric { font-family: var(--font-data); font-weight: 700; font-size: 1.35rem; line-height: 1; color: #F0F4FF; margin-top: 12px; }

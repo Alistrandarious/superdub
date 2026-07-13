@@ -1,6 +1,6 @@
 // Self-check for the intake estimator's clamps (run: npx tsx src/energy.check.ts)
 import assert from 'assert';
-import { estimateIntakeKcal } from './energy';
+import { estimateIntakeKcal, estimateIntakeRange, workoutCalories } from './energy';
 
 const MAINT = 2500; // typical maintenance (BMR × activity)
 
@@ -32,5 +32,34 @@ assert.strictEqual(
   null,
   'below floor → no estimate',
 );
+
+// ── workoutCalories = MET × kg × hours ──────────────────────────────────────────
+assert.strictEqual(workoutCalories('moderate', 60, 80), 440);   // 5.5 × 80 × 1
+assert.strictEqual(workoutCalories('intense', 30, 90), 360);    // 8.0 × 90 × 0.5
+assert.strictEqual(workoutCalories(null, 60, 80), 0);           // no session
+assert.strictEqual(workoutCalories('moderate', 0, 80), 0);      // zero duration
+
+// ── Intake RANGE: a big overnight drop widens the band, never floors to ~600 ─────
+// maintenance 2600, steps −150, gym +300, ΔW −0.4 kg, adherence −1, target 2200.
+const big = estimateIntakeRange({ maintenance: 2600, stepBurn: -150, gymBurn: 300, weightDeltaKg: -0.4, adherenceLevel: -1, targetCalories: 2200 })!;
+assert.strictEqual(big.central, 1838);
+assert.strictEqual(big.low, 1560);      // floored at 0.6 × maintenance, not the old 600
+assert.strictEqual(big.high, 2488);
+assert.strictEqual(big.wide, true);
+
+// ── A steady day reads tighter and not "wide" ───────────────────────────────────
+const steady = estimateIntakeRange({ maintenance: 2600, stepBurn: -150, gymBurn: 300, weightDeltaKg: -0.1, adherenceLevel: -1, targetCalories: 2200 })!;
+assert.strictEqual(steady.wide, false);
+assert.ok((steady.high - steady.low) < (big.high - big.low), 'steady band is tighter than the big-swing band');
+
+// ── No weigh-in AND no self-report ⇒ no honest estimate ─────────────────────────
+assert.strictEqual(
+  estimateIntakeRange({ maintenance: 2600, stepBurn: 0, gymBurn: 0, weightDeltaKg: null, adherenceLevel: null, targetCalories: 2200 }),
+  null,
+);
+
+// ── Self-report only (no weigh-in) centres on target + offset ───────────────────
+const srOnly = estimateIntakeRange({ maintenance: 2600, stepBurn: 0, gymBurn: 0, weightDeltaKg: null, adherenceLevel: 0, targetCalories: 2200 })!;
+assert.strictEqual(srOnly.central, 2200);
 
 console.log('energy.check.ts — all assertions passed');

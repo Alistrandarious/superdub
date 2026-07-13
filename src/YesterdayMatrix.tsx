@@ -9,9 +9,12 @@ import React, { useState } from 'react';
 // going over target (semantic per DESIGN_SYSTEM); muted obsidian for empty state.
 
 export interface YesterdayMatrixProps {
-  intake: number | null;          // yesterday's estimated kcal
+  intake: number | null;          // central estimate (mid of the range)
+  intakeLow?: number | null;      // range low
+  intakeHigh?: number | null;     // range high
+  wide?: boolean;                 // band is wide (big overnight swing → mostly water)
   targetCalories: number;
-  delta: number | null;           // intake − target (null when no estimate)
+  delta: number | null;           // central − target (null when no estimate)
   steps: number;
   stepTarget: number;
   sleepHours: number | null;
@@ -19,14 +22,15 @@ export interface YesterdayMatrixProps {
   habitsDone: number;
   habitsTotal: number;
   onLogSteps?: () => void;         // tap the Steps cell to log yesterday's steps
-  // Calorie breakdown (all kcal). intake ≈ maintenance + stepBurn + weightChangeKcal.
+  // Expenditure breakdown (all kcal): burned ≈ maintenance + stepBurn + gymBurn.
   maintenance?: number | null;       // what your body burns (TDEE)
   stepBurnKcal?: number | null;      // energy from yesterday's steps vs your average
-  weightChangeKcal?: number | null;  // energy from the overnight weight change (negative = lost)
-  intakeCaveat?: string | null;      // shown when the estimate is floored / water-driven
+  gymBurnKcal?: number | null;       // energy from a logged gym session
+  adherenceLevel?: number | null;    // −2..+2 evening "eating vs target" self-report
 }
 
 const MOOD_LABEL = (m: number) => m >= 8.5 ? 'great' : m >= 6.5 ? 'good' : m >= 4.5 ? 'okay' : m >= 2.5 ? 'low' : 'rough';
+const ADH_LABEL = (l: number) => l <= -2 ? 'well under' : l === -1 ? 'under' : l === 0 ? 'about right' : l === 1 ? 'over' : 'well over';
 const signed = (n: number) => `${n > 0 ? '+' : n < 0 ? '−' : ''}${Math.abs(n).toLocaleString()}`;
 
 // SVG progress ring; `over` flips it to the danger gradient (over target = warning).
@@ -57,8 +61,8 @@ const Ring: React.FC<{ pct: number; over: boolean; children: React.ReactNode }> 
 };
 
 const YesterdayMatrix: React.FC<YesterdayMatrixProps> = ({
-  intake, targetCalories, delta, steps, stepTarget, sleepHours, mood, habitsDone, habitsTotal, onLogSteps,
-  maintenance, stepBurnKcal, weightChangeKcal, intakeCaveat,
+  intake, intakeLow, intakeHigh, wide, targetCalories, delta, steps, stepTarget, sleepHours, mood, habitsDone, habitsTotal, onLogSteps,
+  maintenance, stepBurnKcal, gymBurnKcal, adherenceLevel,
 }) => {
   const [explain, setExplain] = useState(false);
   const over = delta != null && delta > 0;
@@ -81,36 +85,40 @@ const YesterdayMatrix: React.FC<YesterdayMatrixProps> = ({
             <circle cx="12" cy="12" r="10" /><line x1="12" y1="11" x2="12" y2="16" /><line x1="12" y1="8" x2="12.01" y2="8" />
           </svg>
         </button>
-        {intake != null ? (
+        {intake != null && intakeLow != null && intakeHigh != null ? (
           <>
+            {/* A RANGE, not a false-precise number — one day's intake can't be pinned
+                from one weigh-in. Ring fill tracks the central guess vs target. */}
             <Ring pct={intakePct} over={over}>
-              <span className={`ltm-ring-num${over ? ' over' : ''}`}>{intake.toLocaleString()}</span>
+              <span className={`ltm-ring-range${over ? ' over' : ''}`}>{(intakeLow / 1000).toFixed(1)}–{(intakeHigh / 1000).toFixed(1)}k</span>
               <span className="ltm-ring-unit">kcal</span>
             </Ring>
-            {delta != null
-              ? <span className={over ? 'ltm-alert' : 'ltm-sub good'}>est. {Math.abs(delta).toLocaleString()} {over ? 'over' : 'under'} your target</span>
-              : <span className="ltm-sub">vs {targetCalories.toLocaleString()} target</span>}
+            <span className={over ? 'ltm-alert' : 'ltm-sub good'}>
+              vs {targetCalories.toLocaleString()} target
+              {adherenceLevel != null ? ` · you ate ${ADH_LABEL(adherenceLevel)}` : ''}
+            </span>
             {maintenance != null && (
               <span className="ltm-breakdown">
-                maint {maintenance.toLocaleString()}
-                {weightChangeKcal != null ? ` · weight ${signed(weightChangeKcal)}` : ''}
+                burned ~{(maintenance + (stepBurnKcal ?? 0) + (gymBurnKcal ?? 0)).toLocaleString()} (maint {maintenance.toLocaleString()}
                 {stepBurnKcal ? ` · steps ${signed(stepBurnKcal)}` : ''}
+                {gymBurnKcal ? ` · gym +${gymBurnKcal.toLocaleString()}` : ''})
               </span>
             )}
-            {intakeCaveat && <span className="ltm-caveat">{intakeCaveat}</span>}
+            {wide && <span className="ltm-caveat">big overnight swing, mostly water, so the band is wide</span>}
           </>
         ) : targetCalories > 0 ? (
           // No estimate yet — still surface the daily goal so it's always visible.
           <><div className="ltm-metric">{targetCalories.toLocaleString()}<span className="ltm-metric-unit">kcal goal</span></div>
-            <span className="ltm-sub ltm-empty">log weight for today's estimate</span></>
+            <span className="ltm-sub ltm-empty">weigh in or log a check-in for an estimate</span></>
         ) : (
           <><div className="ltm-metric ltm-empty">—<span className="ltm-metric-unit">no goal set</span></div>
             <span className="ltm-sub ltm-empty">set your plan to see a goal</span></>
         )}
         {explain && (
           <button className="ltm-explain" onClick={() => setExplain(false)}>
-            An estimate from your weight trend and steps, not the food you logged.
-            “Over” means it’s above your {targetCalories > 0 ? `${targetCalories.toLocaleString()} kcal ` : ''}daily target.
+            A range, not the food you logged: your body's burn (maintenance, steps, gym)
+            set against your weigh-in and your evening “eating vs target”. One day's scale
+            move is mostly water, so we show a band, not a false-precise number.
           </button>
         )}
       </div>

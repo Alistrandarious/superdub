@@ -16,7 +16,7 @@ import {
 import './App.css';
 import { api } from './api';
 import { BUILD_TAG } from './version';
-import { kcalPerStep as kcalPerStepFor, stepsToKm, estimateIntakeKcal } from './energy';
+import { kcalPerStep as kcalPerStepFor, stepsToKm, estimateIntakeKcal, estimateIntakeRange, workoutCalories } from './energy';
 import { loggingNow, getLoggingDay } from './day';
 import { useNavigate } from 'react-router-dom';
 import { pageTheme, GROWTH, HEALTH, TEAL } from './theme';
@@ -297,6 +297,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const [moodByDate, setMoodByDate] = useState<Record<string, number>>({}); // ISO date → mood 1..5
   const [sleepByDate, setSleepByDate] = useState<Record<string, number>>({}); // ISO date → hours slept
   const [sleepTimesByDate, setSleepTimesByDate] = useState<Record<string, { bedtime: string; waketime: string }>>({}); // ISO → bed/wake 'HH:MM'
+  const [adherenceLevelByDate, setAdherenceLevelByDate] = useState<Record<string, number>>({}); // ISO → −2..+2 "eating vs target"
+  const [workoutByDate, setWorkoutByDate] = useState<Record<string, { intensity: string; durationMin: number }>>({}); // ISO → logged gym session
   const [newHabit, setNewHabit] = useState('');
   const [tracker, setTracker] = useState<Record<string, DayData>>(INITIAL_TRACKER);
   const [loaded, setLoaded] = useState(false);
@@ -507,14 +509,20 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         const m: Record<string, number> = {};
         const s: Record<string, number> = {};
         const t: Record<string, { bedtime: string; waketime: string }> = {};
+        const adh: Record<string, number> = {};
+        const wk: Record<string, { intensity: string; durationMin: number }> = {};
         for (const e of h.entries) {
           if (e.mood != null) m[e.date] = e.mood;
           if (e.sleep != null) s[e.date] = e.sleep;
           if (e.bedtime && e.waketime) t[e.date] = { bedtime: e.bedtime, waketime: e.waketime };
+          if (e.adherenceLevel != null) adh[e.date] = e.adherenceLevel;
+          if (e.workoutIntensity && e.workoutDurationMin) wk[e.date] = { intensity: e.workoutIntensity, durationMin: e.workoutDurationMin };
         }
         setMoodByDate(m);
         setSleepByDate(s);
         setSleepTimesByDate(t);
+        setAdherenceLevelByDate(adh);
+        setWorkoutByDate(wk);
       }).catch(() => {});
       Promise.allSettled([coaching, plan, moods]).then(() => setLoaded(true));
       // The adjustment cycle is slower and only affects minor styling — run it after reveal.
@@ -1202,57 +1210,34 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       const steps = parseInt(tracker[ddmm]?.steps ?? '') || 0;
       return { ddmm, date, w, ema, steps };
     });
-    // Yesterday's estimated intake, from the REAL overnight weight change + steps:
-    //   intake ≈ maintenance + step deviation + energy of (today − yesterday) weight.
-    // Uses the two actual consecutive weigh-ins (no EMA smoothing, no ±0.3 clamp) so
-    // a genuine loss shows through — a big drop reads as a low intake. Falls back to
-    // the smoothed trend only when we don't have both weigh-ins.
-    const WIN = 7;
-    const yi = rows.length - 2;   // yesterday — steps + label
+    // Yesterday's intake as an honest RANGE, not a false-precise single number. A single
+    // overnight weigh-in can't reveal a day's calories (it's mostly water/waste), so we
+    // build a band from what we actually know: expenditure (maintenance + step + gym burn),
+    // the bounded real-fat part of the overnight weight change, and the evening "eating vs
+    // target" self-report. The water-driven part of the swing only widens the band. Maths
+    // live in estimateIntakeRange() (energy.ts).
+    const yi = rows.length - 2;   // yesterday — steps, workout, self-report
     const ti = rows.length - 1;   // today — the morning-after weigh-in
     const r = rows[yi];
     const tRow = rows[ti];
-    let intake: number | null = null;
-    let maintenanceKcal: number | null = null;
-    let stepBurnKcal: number | null = null;
-    let weightChangeKcal: number | null = null;
-    let intakeCaveat: string | null = null;
     const yW = r?.w ?? null;
     const tW = tRow?.w ?? null;
-    if (yW != null && tW != null) {
-      maintenanceKcal = tdee > 0 ? tdee : Math.round(((10 * tW) + (6.25 * ht) - (5 * ag) + sexConst) * al);
-      stepBurnKcal = walkAvg > 0 ? Math.round(((r?.steps ?? 0) - walkAvg) * kcalPerStep) : 0;
-      // A single overnight weigh-in delta is mostly water/glycogen, not fat. Real
-      // tissue change tops out near ±0.35 kg/day even at aggressive deficits, so clamp
-      // the delta used for the energy estimate — otherwise a big water swing implies a
-      // nonsense intake (e.g. "0 kcal eaten"). The raw swing surfaces as a caveat.
-      const rawKg = tW - yW;                             // negative = lost weight
-      const MAX_KG = 0.35, FLOOR = 600;
-      const clampedKg = Math.max(-MAX_KG, Math.min(MAX_KG, rawKg));
-      weightChangeKcal = Math.round(clampedKg * 7700);
-      const rawIntake = maintenanceKcal + stepBurnKcal + weightChangeKcal;
-      intake = Math.max(FLOOR, rawIntake);              // never claim 0 eaten
-      if (Math.abs(rawKg) > MAX_KG) intakeCaveat = `You changed ${Math.abs(rawKg).toFixed(1)} kg overnight — most of that is water, so this is a rough low estimate.`;
-      else if (rawIntake < FLOOR) intakeCaveat = 'Your weigh-ins imply a very low intake, so this is floored — likely water, not that few calories.';
-    } else {
-      // Fallback: the smoothed estimate, needing a weigh-in within 3 days of today.
-      const RECENCY = 3;
-      const recentWeighIn = rows.slice(Math.max(0, ti - RECENCY), ti + 1).some(x => x.w != null);
-      if (tRow && tRow.ema != null && recentWeighIn) {
-        const j = Math.max(0, ti - WIN);
-        const wForBmr = r?.ema ?? tRow.ema ?? startWeight;
-        const dayBmr = (10 * wForBmr) + (6.25 * ht) - (5 * ag) + sexConst;
-        maintenanceKcal = Math.round(dayBmr * al);
-        intake = estimateIntakeKcal({
-          maintenance: dayBmr * al,
-          stepDev: walkAvg > 0 ? ((r?.steps ?? 0) - walkAvg) * kcalPerStep : 0,
-          emaNow: tRow.ema,
-          emaThen: rows[j].ema,
-          spanDays: ti - j,
-        });
-      }
-    }
-    if (intake == null) return null;
+    const yISO = r ? `${r.date.getFullYear()}-${String(r.date.getMonth() + 1).padStart(2, '0')}-${String(r.date.getDate()).padStart(2, '0')}` : '';
+    const maintenanceKcal = tdee > 0 ? tdee : Math.round(bmr * al);
+    const stepBurnKcal = walkAvg > 0 ? Math.round(((r?.steps ?? 0) - walkAvg) * kcalPerStep) : 0;
+    const yWorkout = workoutByDate[yISO] ?? null;
+    const gymBurnKcal = yWorkout ? workoutCalories(yWorkout.intensity, yWorkout.durationMin, startWeight) : 0;
+    const adherenceLevel = adherenceLevelByDate[yISO] ?? null;
+    const range = estimateIntakeRange({
+      maintenance: maintenanceKcal,
+      stepBurn: stepBurnKcal,
+      gymBurn: gymBurnKcal,
+      weightDeltaKg: yW != null && tW != null ? tW - yW : null,
+      adherenceLevel,
+      targetCalories,
+    });
+    if (range == null) return null;
+    const intake = range.central;
     const delta = intake - targetCalories;
 
     // Corridor status at the latest weigh-in (smoothed weight vs the gold band)
@@ -1268,7 +1253,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     // This week's actual change: first vs last weigh-in in the trailing 7 days
     const wk = rows.slice(-7).filter(x => x.w != null);
     const weekChange = wk.length >= 2 ? +(wk[wk.length - 1].w! - wk[0].w!).toFixed(1) : null;
-    return { intake, delta, zoneStatus, weekChange, maintenanceKcal, stepBurnKcal, weightChangeKcal, intakeCaveat };
+    return { intake, intakeLow: range.low, intakeHigh: range.high, wide: range.wide, delta, zoneStatus, weekChange, maintenanceKcal, stepBurnKcal, gymBurnKcal, adherenceLevel };
   })();
 
   // ── New KPIs for the Progress page ────────────────────────────────────────
@@ -1508,7 +1493,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     const wk = verdict.weekChange != null
       ? ` ${verdict.weekChange > 0 ? 'Up' : verdict.weekChange < 0 ? 'Down' : 'Flat'} ${Math.abs(kgToUnitValue(verdict.weekChange, unit)).toFixed(1)} ${unitLabel(unit)} this week.`
       : '';
-    return `Yesterday you ate about ${verdict.intake.toLocaleString()} kcal, ${Math.abs(verdict.delta).toLocaleString()} ${verdict.delta <= 0 ? 'under' : 'over'} your ${targetCalories.toLocaleString()} target.${zone}${wk}`;
+    return `Yesterday you ate roughly ${verdict.intakeLow.toLocaleString()} to ${verdict.intakeHigh.toLocaleString()} kcal, ${verdict.delta <= 0 ? 'around or under' : 'around or over'} your ${targetCalories.toLocaleString()} target.${zone}${wk}`;
   })();
 
   // Story panels: Today first, then Yesterday (retrospective KPIs), the charts in
@@ -1910,6 +1895,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
       <YesterdayMatrix
         intake={verdict?.intake ?? null}
+        intakeLow={verdict?.intakeLow ?? null}
+        intakeHigh={verdict?.intakeHigh ?? null}
+        wide={verdict?.wide ?? false}
         targetCalories={targetCalories}
         delta={verdict?.delta ?? null}
         steps={ySteps}
@@ -1920,8 +1908,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         habitsTotal={realHabits.length}
         maintenance={verdict?.maintenanceKcal ?? null}
         stepBurnKcal={verdict?.stepBurnKcal ?? null}
-        weightChangeKcal={verdict?.weightChangeKcal ?? null}
-        intakeCaveat={verdict?.intakeCaveat ?? null}
+        gymBurnKcal={verdict?.gymBurnKcal ?? null}
+        adherenceLevel={verdict?.adherenceLevel ?? null}
         onLogSteps={() => window.dispatchEvent(new CustomEvent('superdub:show-step-entry', { detail: { date: yesterdayISO } }))}
       />
 
