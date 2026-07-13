@@ -28,7 +28,6 @@ const DubRoom: React.FC<{ species: MascotSpecies; hasNew: boolean; onChat: () =>
   const sun = phase !== 'night';
   return (
     <div className="dub-room">
-      <span className="dub-room-eyebrow">DUB'S ROOM</span>
       <div className="dub-room-stage">
         <svg viewBox="0 0 320 210" className="dub-room-svg" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
           <defs>

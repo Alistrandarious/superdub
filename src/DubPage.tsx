@@ -7,6 +7,7 @@ import { getMascot, type MascotSpecies } from './DubMascot';
 import DubRoom from './DubRoom';
 import SuperdubHeader from './SuperdubHeader';
 import { pageTheme, GROWTH } from './theme';
+import { dubPronouns, getDubGender, dubHas, type DubGender } from './dubPronouns';
 import { isSystemHabit } from './systemHabits';
 
 const YEAR = new Date().getFullYear();
@@ -27,22 +28,25 @@ function todayKey() {
 }
 
 // Dub's home is just his room now — tap Dub to chat (the coach report opens with
-// everything he's spotted). The report/insights are still computed in the
-// background purely to drive the "!" badge: gold when there's something new to
-// hear, grey once you've tapped through.
+// everything he's spotted). The insights list also renders right under the room;
+// the "!" badge stays gold until you tap through, then greys until the read changes.
 const DubPage: React.FC = () => {
   const [report, setReport] = useState<Report | null>(null);
   const [insights, setInsights] = useState<DubInsight[]>([]);
+  const [dataDays, setDataDays] = useState(0);
   const [advisableSteps, setAdvisableSteps] = useState<number | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [species, setSpecies] = useState<MascotSpecies>(getMascot);
+  const [gender, setGender] = useState<DubGender>(getDubGender);
   const [seen, setSeen] = useState(() => localStorage.getItem(DUB_SEEN_KEY) || '');
 
   useEffect(() => {
-    const sync = () => setSpecies(getMascot());
+    const sync = () => { setSpecies(getMascot()); setGender(getDubGender()); };
     window.addEventListener('superdub:mascot-changed', sync);
     return () => window.removeEventListener('superdub:mascot-changed', sync);
   }, []);
+  const pn = dubPronouns(gender);
+  const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
   // A signature of everything Dub currently "knows". Gold "!" until you tap him
   // (which opens the chat and marks this exact read as seen), then it goes grey
@@ -107,6 +111,11 @@ const DubPage: React.FC = () => {
           if (moodByDay[key] == null) moodByDay[key] = j.mood;
         }
 
+        // count of days with any real signal — gates the "keep logging" state
+        const signalDays = new Set<string>([...Object.keys(stepsByDay), ...Object.keys(weightByDay), ...Object.keys(moodByDay)]);
+        for (const row of ((tracker.habits ?? []) as any[])) if (row.state && !isSystemHabit(row.habit_name)) signalDays.add(row.day);
+        setDataDays(signalDays.size);
+
         const realHabits = (habits as any[]).map(h => h.name).filter((n: string) => !isSystemHabit(n));
         setInsights(buildHabitInsights({
           habits: realHabits,
@@ -125,8 +134,42 @@ const DubPage: React.FC = () => {
   return (
     <div className="app flush" style={pageTheme(GROWTH, '0D')}>
       <SuperdubHeader />
-      {/* Just Dub's room — tap Dub to chat; the "!" badge flags fresh info */}
+      {/* Dub's room spans from the header down; tap Dub to chat ("!" flags fresh info) */}
       <DubRoom species={species} hasNew={hasNew} onChat={chatToDub} />
+
+      {/* Dub's insights, right under the room */}
+      <div className="dub-insights">
+        {advisableSteps != null && (
+          <div className="coach-line coach-line--neutral">
+            <span className="coach-line-ico">🚶</span>
+            <div className="coach-line-text">
+              <span className="coach-line-title">Steps today</span>
+              <span className="coach-line-body">Aim for about {advisableSteps.toLocaleString()} steps today.</span>
+            </div>
+          </div>
+        )}
+        <h3 className="dub-section-title">What {pn.subject} spotted</h3>
+        {insights.length > 0 ? (
+          <div className="coach-lines">
+            {insights.map((ins, i) => (
+              <div key={i} className="coach-line coach-line--neutral">
+                <span className="coach-line-ico">{ins.icon}</span>
+                <div className="coach-line-text">
+                  <span className="coach-line-title">{ins.habit}</span>
+                  <span className="coach-line-body">{ins.text}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="dub-empty">
+            {!loaded ? 'Having a look at your data…'
+              : dataDays < 10
+                ? `Keep logging. ${cap(pn.subject)} ${dubHas(gender)} enough to read patterns at 10 days of data (${dataDays}/10 so far).`
+                : `Nothing jumps out yet. Keep ticking your habits and ${pn.subject}'ll surface what's driving your steps, mood and weight.`}
+          </p>
+        )}
+      </div>
     </div>
   );
 };
