@@ -128,9 +128,8 @@ const Tasks: React.FC = () => {
     setTasks(prev => prev.filter(t => !(t.type === tab && t.done)));
   };
 
-  // Completed items sink to the bottom so the list stays clean as you tick things
-  // off; insertion order is preserved within each group (Array.sort is stable).
-  const visible = tasks.filter(t => t.type === tab).sort((a, b) => (a.done === b.done ? 0 : a.done ? 1 : -1));
+  // Items stay in place when marked done (insertion order preserved)
+  const visible = tasks.filter(t => t.type === tab);
   const doneCount = visible.filter(t => t.done).length;
   const today = todayISO();
 
