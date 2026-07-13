@@ -5216,16 +5216,18 @@ h1, h2, h3, h4, .sora {
   font-weight: 700;
 }
 
-/* Pinned XP bar — slides in when you scroll to the habits, pulses as XP grows. */
+/* Pinned XP bar — the TOP HALF of the scroll dock (the cadence dotrow docks
+   flush beneath it, .cadx--compact .cadx-header). Translucent glass instead of
+   an opaque solid, so every equipped background reads through it. */
 .hb-pinned-xp {
   position: sticky; top: 0; z-index: 30;
   display: flex; align-items: center; gap: 10px;
   margin: 0 12px;
-  background: rgba(14,14,20,0.96);
-  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  background: rgba(10,11,16,0.62);
+  -webkit-backdrop-filter: blur(16px) saturate(160%); backdrop-filter: blur(16px) saturate(160%);
   border: 1px solid var(--glass-border);
-  border-radius: var(--r-pill);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.45);
+  border-bottom: none;
+  border-radius: 14px 14px 0 0;
   transform: translateY(-14px); opacity: 0;
   max-height: 0; padding: 0 12px; margin-top: 0;
   overflow: hidden; pointer-events: none;
@@ -5238,6 +5240,13 @@ h1, h2, h3, h4, .sora {
 }
 /* The inner bar is the SAME element as the hero's, stretched to fill the pill. */
 .hb-pinned-xp .hb-xp-bar { flex: 1; }
+/* Entrance: the fill sweeps out to its true value each time the dock appears
+   (the animation replays whenever .show is re-added). */
+.hb-pinned-xp.show .hb-xp-fill {
+  animation: pxp-sweep 0.55s cubic-bezier(0.22,1,0.36,1) backwards;
+  transform-origin: left;
+}
+@keyframes pxp-sweep { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 .hb-pinned-xp.grew .hb-xp-bar { animation: pxp-pulse 0.9s ease; }
 @keyframes pxp-pulse {
   0%   { box-shadow: 0 0 0 0 var(--pxp-glow, rgba(47,210,126,0.6)); }
@@ -5779,17 +5788,31 @@ h1, h2, h3, h4, .sora {
 .cadx { padding: 6px 0 0; }
 .cadx-header {
   position: sticky; z-index: 20;
-  /* Tuck below the pinned XP bar (≈48px pill + 6px margin) so the two never
-     overlap when both are stuck to the top on scroll. */
-  top: 56px;
-  background: var(--glass-bg);   /* match the surface so the sticky bar reads clean */
+  /* Flush under the stuck XP pill: sticky pins its border box at 0 (margins
+     don't count when stuck), so 1 border + 8 pad + 20 bar + 8 pad = 37.
+     The pill only shows when scrolled, which is exactly when this header is
+     compact — the two always dock together. */
+  top: 37px;
+  /* Mid-page: paint NOTHING — transparent matches every equipped background.
+     The glass surface only appears in compact/docked mode below. */
+  background: transparent;
   padding: 4px 0 6px;
   transition: padding 0.2s ease;
 }
-/* Collapsed-on-scroll: hide the title, leave just the four colour dots */
+/* Scrolled/compact: the dotrow becomes the BOTTOM HALF of the scroll dock —
+   same translucent glass as the pinned XP pill, joined into one capsule. */
 .cadx--compact .cadx-header {
-  padding: 8px 0;
+  margin: 0 12px;
+  padding: 9px 12px 11px;
+  background: rgba(10,11,16,0.62);
+  -webkit-backdrop-filter: blur(16px) saturate(160%); backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid var(--glass-border);
+  border-top: none;
+  border-radius: 0 0 14px 14px;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.4);
+  animation: cadx-dock-in 0.25s ease backwards;
 }
+@keyframes cadx-dock-in { from { opacity: 0; transform: translateY(-8px); } }
 .cadx--compact .cadx-title { display: none; }
 .cadx-dotrow { display: flex; gap: 18px; justify-content: center; align-items: center; }
 .cadx-dot2 {
@@ -5798,6 +5821,24 @@ h1, h2, h3, h4, .sora {
   transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
 }
 .cadx-dot2.active { background: var(--chip); transform: scale(1.4); box-shadow: 0 0 10px -1px var(--chip); }
+/* Dots (and the label, riding last) stagger in as the dock forms. `translate`
+   rather than transform so the active dot's scale transition isn't fought;
+   old engines without `translate` just get the opacity fade. */
+.cadx--compact .cadx-dot2,
+.cadx--compact .cadx-active-label {
+  animation: cadx-dot-in 0.3s ease backwards;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+@keyframes cadx-dot-in {
+  from { opacity: 0; translate: 0 5px; }
+  to   { opacity: 1; translate: 0 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hb-pinned-xp.show .hb-xp-fill,
+  .cadx--compact .cadx-header,
+  .cadx--compact .cadx-dot2,
+  .cadx--compact .cadx-active-label { animation: none; }
+}
 
 /* ── Once-a-day swipe hint — bottom-to-top wave nudging the daily cards toward
    weekly, with the daily (green) + weekly (blue) dots lit together. ── */

@@ -109,12 +109,12 @@ const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number; 
             <button
               key={p.key}
               className={`cadx-dot2${i === index ? ' active' : ''}`}
-              style={{ ['--chip' as any]: p.color }}
+              style={{ ['--chip' as any]: p.color, ['--i' as any]: i }}
               onClick={() => go(i)}
               aria-label={p.label}
             />
           ))}
-          <span className="cadx-active-label" style={{ color: panels[index].color }}>
+          <span className="cadx-active-label" style={{ color: panels[index].color, ['--i' as any]: panels.length }}>
             {panels[index].label}
           </span>
         </div>
