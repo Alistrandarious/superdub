@@ -1926,10 +1926,15 @@ h1, h2, h3, h4, .sora {
   flex: 1; min-height: 0; display: flex; flex-direction: column;
   overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;
   padding: 10px 0;
+}
+.cc-slide-viz::-webkit-scrollbar { display: none; }
+/* The bottom fade only makes sense where content actually scrolls — the tall
+   Stats panels. On the height-locked Today/Yesterday/Plan panels it just dimmed
+   the last row (the KPIs on Yesterday), so scope it to the scrolling slides. */
+.cc-slide-viz:has(> .story-panel--stats) {
   -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent);
   mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent);
 }
-.cc-slide-viz::-webkit-scrollbar { display: none; }
 
 /* Chart-fill chain: the section and its wrappers grow to fill the viz so the
    graph canvas is as tall as possible. Headers (title/legend/pager) keep their
