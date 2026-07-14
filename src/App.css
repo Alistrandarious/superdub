@@ -5834,11 +5834,11 @@ h1, h2, h3, h4, .sora {
 .cadx { padding: 6px 0 0; }
 .cadx-header {
   position: sticky; z-index: 20;
-  /* Flush under the stuck XP pill: sticky pins its border box at 0 (margins
-     don't count when stuck), so 1 border + 8 pad + 20 bar + 8 pad = 37.
-     The pill only shows when scrolled, which is exactly when this header is
-     compact — the two always dock together. */
-  top: 37px;
+  /* Flush under the stuck XP pill: --dock-top is the pill's MEASURED stuck bottom
+     (set in Habits.tsx onPageScroll), so the dotrow abuts it exactly on any
+     device. A hardcoded value drifted a pixel or two on iOS and left the
+     reported "missing bar" gap. 37px is only the pre-scroll fallback. */
+  top: var(--dock-top, 37px);
   /* Mid-page: paint NOTHING — transparent matches every equipped background.
      The glass surface only appears in compact/docked mode below. */
   background: transparent;

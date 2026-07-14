@@ -1175,7 +1175,20 @@ const Habits: React.FC = () => {
     const h = heroRef.current;
     if (h) setScrolled(h.getBoundingClientRect().bottom <= scTop + 8);
     else setScrolled(sc.scrollTop > 40);
-    // Dock once the carousel's top reaches the header's sticky offset (37px).
+    // Measure the pinned XP pill's ACTUAL stuck bottom and hand it to the cadence
+    // header as --dock-top, so the dotrow docks flush beneath it on any device.
+    // A hardcoded top (was 37px) drifts a pixel or two on iOS Safari and opens
+    // the "missing bar" gap; measuring adapts to whatever the pill really renders.
+    // -1px biases to a sub-pixel overlap so a hairline gap can never show.
+    const pill = sc.querySelector<HTMLElement>('.hb-pinned-xp');
+    if (pill) {
+      const r = pill.getBoundingClientRect();
+      if (r.height >= 34) {                       // only once the pill has slid fully in
+        const dt = `${Math.round(r.bottom - scTop) - 1}px`;
+        if (sc.style.getPropertyValue('--dock-top') !== dt) sc.style.setProperty('--dock-top', dt);
+      }
+    }
+    // Dock once the carousel's top reaches the header's sticky offset.
     const c = cadTopRef.current;
     if (c) setDocked(c.getBoundingClientRect().top <= scTop + 38);
   };
