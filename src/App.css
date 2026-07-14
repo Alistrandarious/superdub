@@ -4774,8 +4774,9 @@ h1, h2, h3, h4, .sora {
   bottom: calc(-1 * var(--fade-drop, 0px));
   display: block; flex-shrink: 0;
   height: 48px; margin-top: -48px; z-index: 45; pointer-events: none;
-  background: linear-gradient(to bottom, rgba(10,11,16,0) 0%, rgba(10,11,16,0.45) 60%, rgba(10,11,16,0.82) 100%);
-  transition: opacity 0.25s ease;
+  background: linear-gradient(to bottom, rgba(10,11,16,0) 0%, rgba(10,11,16,0.28) 60%, rgba(10,11,16,0.55) 100%);
+  /* Slow, gentle fade-out when you reach the bottom (see .fade-end). */
+  transition: opacity 0.7s ease-out;
 }
 .habits-page-scroll { --fade-drop: calc(80px + env(safe-area-inset-bottom, 0px)); }
 .tasks-content, .diet-content, .profile-content { --fade-drop: calc(72px + env(safe-area-inset-bottom, 0px)); }
@@ -4783,7 +4784,7 @@ h1, h2, h3, h4, .sora {
 .plan-page { --fade-drop: 90px; }
 .plan-page::after {
   height: 96px; margin-top: -96px;
-  background: linear-gradient(to bottom, rgba(14,14,20,0) 0%, rgba(14,14,20,0.45) 60%, rgba(14,14,20,0.85) 100%);
+  background: linear-gradient(to bottom, rgba(14,14,20,0) 0%, rgba(14,14,20,0.28) 60%, rgba(14,14,20,0.58) 100%);
 }
 /* At the very end of a scroll there's nothing left to hint at — the strip fades
    out (.fade-end is toggled by the delegated scroll listener in index.tsx). */
