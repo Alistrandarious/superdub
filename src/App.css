@@ -7396,6 +7396,82 @@ h1, h2, h3, h4, .sora {
 .coach-hero-text { min-width: 0; }
 .coach-eyebrow { font-family: 'Space Mono', monospace; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.12em; color: #2FD27E; }
 .coach-headline { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.25rem; color: #fff; margin: 3px 0 0; line-height: 1.2; }
+/* ── Dub chat — the coach report grown into a conversation ── */
+.dchat-card {
+  display: flex; flex-direction: column;
+  max-height: 86vh; overflow: hidden; /* the message list scrolls, not the card */
+  padding-bottom: 12px;
+}
+.dchat-card .coach-hero { flex-shrink: 0; }
+.dchat-msgs {
+  flex: 1; min-height: 120px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 4px 2px 10px;
+  scrollbar-width: none;
+}
+.dchat-msgs::-webkit-scrollbar { display: none; }
+.dchat-msgs > * { flex-shrink: 0; }
+.dchat-bubble {
+  max-width: 86%; padding: 10px 13px; border-radius: 16px;
+  display: flex; flex-direction: column; gap: 3px;
+  animation: dchat-in 0.3s ease backwards;
+}
+@keyframes dchat-in { from { opacity: 0; transform: translateY(6px); } }
+.dchat-bubble--dub {
+  align-self: flex-start;
+  background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+  border-bottom-left-radius: 5px;
+  border-left: 3px solid rgba(255,255,255,0.15);
+}
+.dchat-bubble--good { border-left-color: #2FD27E; }
+.dchat-bubble--warn { border-left-color: #FFB928; }
+.dchat-bubble--neutral { border-left-color: #6C8BFF; }
+.dchat-bubble--you {
+  align-self: flex-end;
+  background: color-mix(in srgb, var(--theme, #2FD27E) 22%, transparent);
+  border: 1px solid color-mix(in srgb, var(--theme, #2FD27E) 40%, transparent);
+  border-bottom-right-radius: 5px;
+  color: #EAF6EF;
+}
+.dchat-line-title { font-family: var(--font-ui); font-weight: 700; font-size: 0.82rem; color: #E8ECF4; }
+.dchat-line-body { font-family: var(--font-ui); font-size: 0.8rem; line-height: 1.45; color: rgba(255,255,255,0.78); }
+.dchat-bubble--you .dchat-line-body { color: inherit; }
+/* typing: three bouncing dots, one fixed 400ms beat */
+.dchat-typing { flex-direction: row; gap: 5px; padding: 12px 14px; }
+.dchat-typing span {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: rgba(255,255,255,0.5);
+  animation: dchat-dot 0.9s ease-in-out infinite;
+}
+.dchat-typing span:nth-child(2) { animation-delay: 0.15s; }
+.dchat-typing span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes dchat-dot { 0%, 100% { transform: translateY(0); opacity: 0.5; } 50% { transform: translateY(-4px); opacity: 1; } }
+.dchat-chips {
+  flex-shrink: 0; display: flex; gap: 7px; overflow-x: auto;
+  padding: 10px 2px 4px; scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.dchat-chips::-webkit-scrollbar { display: none; }
+.dchat-chip {
+  flex: 0 0 auto; padding: 8px 13px; cursor: pointer;
+  background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+  border-radius: var(--r-pill); color: #DCE4F2;
+  font-family: var(--font-ui); font-size: 0.76rem; font-weight: 600;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+}
+.dchat-chip:active { transform: scale(0.96); }
+.dchat-chip:hover { border-color: var(--theme-dim, rgba(47,210,126,0.4)); }
+.dchat-chip:disabled { opacity: 0.5; cursor: default; }
+.dchat-foot {
+  flex-shrink: 0; margin: 8px 0 0; text-align: center;
+  font-family: var(--font-ui); font-size: 0.64rem; color: rgba(255,255,255,0.35);
+}
+.dchat-foot a { color: rgba(255,255,255,0.5); }
+@media (prefers-reduced-motion: reduce) {
+  .dchat-bubble { animation: none; }
+  .dchat-typing span { animation: none; }
+}
+
 .coach-lines { display: flex; flex-direction: column; gap: 8px; }
 .coach-line {
   display: flex; gap: 11px; align-items: flex-start;

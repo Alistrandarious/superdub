@@ -18,7 +18,7 @@ import { initStepSync } from './stepSync';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { XPProvider } from './XPContext';
 import LevelUpCelebration from './LevelUpCelebration';
-import CoachReport from './CoachReport';
+import DubChat from './DubChat';
 import BackgroundApplier from './BackgroundApplier';
 import NightSky from './NightSky';
 
@@ -165,7 +165,7 @@ function Root() {
         <DayBanner />
         <AppRouter />
         <LevelUpCelebration />
-        <CoachReport />
+        <DubChat />
       </XPProvider>
     </BrowserRouter>
   );

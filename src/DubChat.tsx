@@ -1,0 +1,237 @@
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
+import { api } from './api';
+import { buildCoachReport, type CoachReport as Report } from './coach';
+import { buildHabitInsights } from './dubInsights';
+import { buildQuestionBank, type DubData, type DubQuestion } from './dubQuestions';
+import { isSystemHabit } from './systemHabits';
+import { useXP } from './XPContext';
+import DubMascot, { getMascot, type MascotSpecies } from './DubMascot';
+
+const YEAR = new Date().getFullYear();
+function buildAllDays(): string[] {
+  const d: string[] = [];
+  for (let m = 0; m < 12; m++) {
+    const n = new Date(YEAR, m + 1, 0).getDate();
+    for (let day = 1; day <= n; day++) d.push(`${String(day).padStart(2, '0')}/${String(m + 1).padStart(2, '0')}`);
+  }
+  return d;
+}
+const ALL_DAYS = buildAllDays();
+function todayKey() {
+  const n = new Date();
+  return `${String(n.getDate()).padStart(2, '0')}/${String(n.getMonth() + 1).padStart(2, '0')}`;
+}
+
+interface Msg { from: 'dub' | 'you'; text: string }
+const TRAY_SIZE = 5;
+
+// Dub's chat. The old post-weigh-in coach report is the OPENING of a
+// conversation now: Dub's read arrives as bubbles, then tappable questions,
+// each answered instantly and deterministically from the user's own numbers
+// (buildQuestionBank in dubChat.ts). Same two triggers as the old report, so
+// the weigh-in flow and every "Talk to Dub" button land here.
+const DubChat: React.FC = () => {
+  const [report, setReport] = useState<Report | null>(null);
+  const [bank, setBank] = useState<DubQuestion[]>([]);
+  const [messages, setMessages] = useState<Msg[]>([]);
+  const [asked, setAsked] = useState<Set<string>>(new Set());
+  const [queue, setQueue] = useState<string[]>([]);   // followUps floated forward
+  const [typing, setTyping] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const [species, setSpecies] = useState<MascotSpecies>(getMascot);
+  const { totalXP } = useXP();
+  const msgsRef = useRef<HTMLDivElement>(null);
+  const typeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const sync = () => setSpecies(getMascot());
+    window.addEventListener('superdub:mascot-changed', sync);
+    return () => window.removeEventListener('superdub:mascot-changed', sync);
+  }, []);
+  useEffect(() => () => { if (typeTimer.current) clearTimeout(typeTimer.current); }, []);
+
+  const dismiss = useCallback(() => {
+    setClosing(true);
+    setTimeout(() => {
+      setReport(null); setClosing(false);
+      setBank([]); setMessages([]); setAsked(new Set()); setQueue([]); setTyping(false);
+    }, 300);
+  }, []);
+
+  const generate = useCallback(async (manual = false) => {
+    try {
+      const [tracker, habits, plan, moods, journal, coaching] = await Promise.all([
+        api.getTracker(),
+        api.getHabits(),
+        api.getPlanStatus().catch(() => null),
+        api.getCheckInHistory(90).catch(() => ({ entries: [] as any[] })),
+        api.getJournal().catch(() => [] as any[]),
+        api.getCoachingMessage().catch(() => null),
+      ]);
+      const weights = (tracker.days ?? [])
+        .filter((d: any) => d.weight)
+        .map((d: any) => ({ day: d.day, weight: Number(d.weight) }));
+      const goal = (plan && plan.active && plan.goal)
+        ? { goalType: plan.goal.goalType, targetWeight: plan.goal.targetWeight }
+        : null;
+      const r = buildCoachReport(weights, habits as any, (tracker.habits ?? []) as any, ALL_DAYS, todayKey(), goal);
+      if (!r && !manual) return; // auto-fire with no data: stay quiet, as before
+
+      // Insight inputs mirror DubPage's: steps/weight by day, mood by DD/MM.
+      const stepsByDay: Record<string, number> = {};
+      const weightByDay: Record<string, number> = {};
+      for (const d of (tracker.days ?? []) as any[]) {
+        const s = parseInt(d.steps ?? '', 10);
+        if (s > 0) stepsByDay[d.day] = s;
+        const w = Number(d.weight);
+        if (w > 0) weightByDay[d.day] = w;
+      }
+      const moodByDay: Record<string, number> = {};
+      const checkins: { date: string; sleep: number | null; mood: number | null }[] = [];
+      for (const e of ((moods as any).entries ?? [])) {
+        checkins.push({ date: e.date, sleep: e.sleep ?? null, mood: e.mood ?? null });
+        if (e.mood == null || !e.date) continue;
+        const parts = String(e.date).split('-');
+        if (parts.length === 3) moodByDay[`${parts[2]}/${parts[1]}`] = e.mood;
+      }
+      for (const j of (journal as any[])) {
+        if (j.mood == null || !j.createdAt) continue;
+        const d = new Date(j.createdAt);
+        if (isNaN(d.getTime())) continue;
+        const key = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+        if (moodByDay[key] == null) moodByDay[key] = j.mood;
+      }
+      const realHabits = (habits as any[]).map(h => h.name).filter((n: string) => !isSystemHabit(n));
+      const insights = buildHabitInsights({
+        habits: realHabits,
+        trackerHabits: (tracker.habits ?? []) as any,
+        stepsByDay, weightByDay, moodByDay,
+        allDays: ALL_DAYS, today: todayKey(),
+      });
+
+      const openingReport: Report = r ?? {
+        emoji: '👋', headline: "Hey, I'm Dub",
+        lines: [{ icon: '📈', title: 'Keep logging', tone: 'neutral', body: "Weigh in and tick your habits for a few days and I'll start spotting trends, wins and what's tripping you up." }],
+        closing: "I'll be here every time you weigh in. 🐶",
+      };
+      const data: DubData = {
+        weights, report: r, insights,
+        plan: plan ?? null, coaching: coaching ?? null,
+        checkins, totalXP, today: todayKey(),
+      };
+      setBank(buildQuestionBank(data));
+      setMessages([]); setAsked(new Set()); setQueue([]);
+      setReport(openingReport);
+    } catch {
+      // silent — coaching is a nicety, not critical
+    }
+  }, [totalXP]);
+
+  useEffect(() => {
+    const onCheckin = () => { setTimeout(() => generate(false), 1100); }; // let the check-in modal close first
+    const onShow = () => generate(true);
+    window.addEventListener('superdub:checkin-done', onCheckin);
+    window.addEventListener('superdub:show-coach', onShow);
+    return () => {
+      window.removeEventListener('superdub:checkin-done', onCheckin);
+      window.removeEventListener('superdub:show-coach', onShow);
+    };
+  }, [generate]);
+
+  const scrollDown = () => {
+    requestAnimationFrame(() => {
+      const el = msgsRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
+    });
+  };
+
+  const ask = (q: DubQuestion) => {
+    if (typing) return;
+    setAsked(prev => new Set(prev).add(q.id));
+    setQueue(prev => [...(q.followUps ?? []).filter(id => id !== q.id), ...prev]);
+    setMessages(prev => [...prev, { from: 'you', text: q.label }]);
+    scrollDown();
+    const reduce = typeof window !== 'undefined'
+      && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) {
+      setMessages(prev => [...prev, { from: 'dub', text: q.answer }]);
+      scrollDown();
+    } else {
+      setTyping(true);
+      scrollDown();
+      typeTimer.current = setTimeout(() => {
+        setTyping(false);
+        setMessages(prev => [...prev, { from: 'dub', text: q.answer }]);
+        scrollDown();
+      }, 400); // one fixed pause, never length-proportional
+    }
+  };
+
+  if (!report) return null;
+  const mood = report.lines.some(l => l.tone === 'warn') ? 'concerned'
+    : report.lines.some(l => l.tone === 'good') ? 'happy' : 'neutral';
+
+  // Tray: floated followUps first, then bank order; asked chips never return.
+  const unasked = bank.filter(q => !asked.has(q.id));
+  const floated = queue.map(id => unasked.find(q => q.id === id)).filter((q): q is DubQuestion => !!q);
+  const rest = unasked.filter(q => !queue.includes(q.id));
+  const tray = [...floated, ...rest].slice(0, TRAY_SIZE);
+
+  return (
+    <div className={`coach-overlay${closing ? ' closing' : ''}`} onClick={dismiss}>
+      <div className="coach-card dchat-card" onClick={e => e.stopPropagation()}>
+        <button className="coach-close" onClick={dismiss} aria-label="Close">✕</button>
+
+        <div className="coach-hero">
+          <DubMascot size={84} mood={mood as any} species={species} />
+          <div className="coach-hero-text">
+            <span className="coach-eyebrow">DUB · YOUR COACH</span>
+            <h2 className="coach-headline">{report.emoji} {report.headline}</h2>
+          </div>
+        </div>
+
+        <div className="dchat-msgs" ref={msgsRef}>
+          {/* Dub's opening read: the coach report as his first messages */}
+          {report.lines.map((l, i) => (
+            <div key={`r${i}`} className={`dchat-bubble dchat-bubble--dub dchat-bubble--${l.tone}`} style={{ animationDelay: `${i * 120}ms` }}>
+              <span className="dchat-line-title">{l.icon} {l.title}</span>
+              <span className="dchat-line-body">{l.body}</span>
+            </div>
+          ))}
+          {messages.length === 0 && !typing && (
+            <div className="dchat-bubble dchat-bubble--dub" style={{ animationDelay: `${report.lines.length * 120}ms` }}>
+              <span className="dchat-line-body">{report.closing}{bank.length > 0 ? ' Ask me anything below.' : ''}</span>
+            </div>
+          )}
+          {messages.map((m, i) => (
+            <div key={`m${i}`} className={`dchat-bubble dchat-bubble--${m.from}`}>
+              <span className="dchat-line-body">{m.text}</span>
+            </div>
+          ))}
+          {typing && (
+            <div className="dchat-bubble dchat-bubble--dub dchat-typing" aria-label="Dub is typing">
+              <span /><span /><span />
+            </div>
+          )}
+        </div>
+
+        {tray.length > 0 && (
+          <div className="dchat-chips">
+            {tray.map(q => (
+              <button key={q.id} className="dchat-chip" onClick={() => ask(q)} disabled={typing}>
+                {q.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <p className="dchat-foot">
+          All answers come from your own numbers. <Link to="/maths" onClick={dismiss}>See the maths</Link>
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default DubChat;

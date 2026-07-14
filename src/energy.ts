@@ -13,6 +13,10 @@ export const STRIDE_M = 0.75;
 /** Walking costs ≈ 0.5 kcal per kg of body weight per km. */
 export const KCAL_PER_KG_KM = 0.5;
 
+/** Plausible real tissue change per day, kg. Overnight scale moves beyond this
+ *  are water/waste, not fat. Shared by the intake band and Dub's chat answers. */
+export const FAT_CAP_KG_PER_DAY = 0.12;
+
 /** kcal burned per step at a given body weight (≈0.033 at 88 kg). */
 export function kcalPerStep(weightKg: number): number {
   const kg = weightKg > 0 ? weightKg : 75;
@@ -66,7 +70,7 @@ export function estimateIntakeRange(opts: {
   const { maintenance, stepBurn, gymBurn, weightDeltaKg, adherenceLevel, targetCalories } = opts;
   if (!(maintenance > 0)) return null;
 
-  const FAT_CAP = 0.12;                 // kg/day of plausible real tissue change
+  const FAT_CAP = FAT_CAP_KG_PER_DAY;   // kg/day of plausible real tissue change
   const E = maintenance + stepBurn + gymBurn;
 
   // Energy-balance estimate: only the bounded (real-fat) part of ΔW shifts intake; the

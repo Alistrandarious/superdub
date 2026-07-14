@@ -20,15 +20,18 @@ export interface CoachReport {
   lines: CoachLine[];
   closing: string;
   wantsWalk?: boolean;  // Dub is restless, nudge the user to get moving
+  // This week's tick tally (already computed for the wins pool) — the chat's
+  // "How's my week looking?" answer reads it rather than re-analysing.
+  weekStats?: { weekTicks: number; possibleTicks: number };
 }
 
 const YEAR = new Date().getFullYear();
 
-function ddmmToEpochDay(ddmm: string): number {
+export function ddmmToEpochDay(ddmm: string): number {
   const [d, m] = ddmm.split('/').map(Number);
   return Math.round(new Date(YEAR, (m || 1) - 1, d || 1).getTime() / 86400000);
 }
-function fmtDate(epochDay: number): string {
+export function fmtDate(epochDay: number): string {
   return new Date(epochDay * 86400000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
 // Stable "random" pick keyed to the day, so the wording is consistent within a day.
@@ -48,38 +51,60 @@ function regressionSlope(pts: { x: number; y: number }[]): number {
   return denom === 0 ? 0 : (n * sxy - sx * sy) / denom;
 }
 
-function weightLine(weights: WeighIn[], goal: Goal | null, seed: number): CoachLine | null {
+/** One source of pace truth for the coach report, the Dub chat and the daily
+ *  brief. This week's ACTUAL movement: first vs last weigh-in inside the
+ *  trailing 7 days (no extrapolation, the two numbers you can verify on the
+ *  chart), falling back to a 14-day regression when the week is too sparse.
+ *  `seed` is today's epoch day. Returns null with fewer than 2 clean weigh-ins. */
+export interface WeekPace {
+  hasWeek: boolean;                          // enough spread to call it a week
+  rate: number;                              // signed kg over the week (or regression per-week)
+  perWeek: number;                           // |rate| normalised to a full 7 days (for ETAs)
+  first: { x: number; y: number } | null;    // week window endpoints (epoch day, kg)
+  last: { x: number; y: number } | null;
+  latest: number;                            // most recent weigh-in, kg
+  prev: number | null;                       // the weigh-in before it, kg
+  count: number;                             // clean weigh-in count
+}
+export function weekPace(weights: WeighIn[], seed: number): WeekPace | null {
   const clean = weights
     .filter(w => w.weight > 0)
     .map(w => ({ x: ddmmToEpochDay(w.day), y: Number(w.weight) }))
     .sort((a, b) => a.x - b.x);
-  if (clean.length < 2) {
+  if (clean.length < 2) return null;
+  const win7 = clean.filter(p => p.x >= seed - 6 && p.x <= seed);
+  const first = win7[0] ?? null;
+  const last = win7.length > 0 ? win7[win7.length - 1] : null;
+  const weekSpan = win7.length >= 2 ? last!.x - first!.x : 0;
+  const hasWeek = weekSpan >= 3; // need points spread across the week to call it a week
+  const weekDelta = hasWeek ? last!.y - first!.y : null; // signed kg over this week
+  const regPerWeek = regressionSlope(clean.slice(-14)) * 7;
+  const rate = weekDelta != null ? weekDelta : regPerWeek;
+  const perWeek = hasWeek ? Math.abs(weekDelta!) / weekSpan * 7 : Math.abs(rate);
+  return {
+    hasWeek, rate, perWeek,
+    first: hasWeek ? first : null,
+    last: hasWeek ? last : null,
+    latest: clean[clean.length - 1].y,
+    prev: clean.length >= 2 ? clean[clean.length - 2].y : null,
+    count: clean.length,
+  };
+}
+
+function weightLine(weights: WeighIn[], goal: Goal | null, seed: number): CoachLine | null {
+  const wp = weekPace(weights, seed);
+  if (!wp) {
     return { icon: '⚖️', title: 'Building your trend', tone: 'neutral',
       body: 'A few more weigh-ins and I can show you exactly which way things are heading. Keep logging daily.' };
   }
-
-  // ── This week's ACTUAL movement: first vs last weigh-in inside the trailing
-  // 7 days. No regression, no extrapolation — the two numbers you can verify
-  // on the chart yourself. (seed is today's epoch day.)
-  const win7 = clean.filter(p => p.x >= seed - 6 && p.x <= seed);
-  const first = win7[0];
-  const last = win7[win7.length - 1];
-  const weekSpan = win7.length >= 2 ? last.x - first.x : 0;
-  const hasWeek = weekSpan >= 3; // need points spread across the week to call it a week
-  const weekDelta = hasWeek ? last.y - first.y : null; // signed kg over this week
-
-  // Fallback when the week is too sparse: 14-day regression, labelled as trend.
-  const regPerWeek = regressionSlope(clean.slice(-14)) * 7;
-
-  const rate = weekDelta != null ? weekDelta : regPerWeek;
-  const latest = clean[clean.length - 1].y;
+  const { hasWeek, rate, first, last, latest } = wp;
   const goalType = goal?.goalType ?? (goal?.targetWeight != null ? (goal.targetWeight < latest ? 'lose' : 'gain') : undefined);
 
   const absWk = Math.abs(rate);
   const plateau = absWk < 0.1;
   const losing = rate < 0;
   const weekWord = hasWeek ? 'this week' : 'lately';
-  const detail = hasWeek ? ` (${first.y.toFixed(1)} → ${last.y.toFixed(1)} kg since ${fmtDate(first.x)})` : '';
+  const detail = hasWeek ? ` (${first!.y.toFixed(1)} → ${last!.y.toFixed(1)} kg since ${fmtDate(first!.x)})` : '';
 
   // No goal — just describe the movement kindly.
   if (!goal || goal.targetWeight == null || !goalType || goalType === 'maintain') {
@@ -103,14 +128,13 @@ function weightLine(weights: WeighIn[], goal: Goal | null, seed: number): CoachL
       ], seed) };
   }
   if (goingRightWay) {
-    // ETA from this week's honest pace, normalised to a full 7 days.
-    const perWeek = hasWeek ? Math.abs(weekDelta!) / weekSpan * 7 : absWk;
-    const weeksToGoal = perWeek > 0 ? remaining / perWeek : Infinity;
+    // ETA from this week's honest pace, normalised to a full 7 days (weekPace).
+    const weeksToGoal = wp.perWeek > 0 ? remaining / wp.perWeek : Infinity;
     const etaStr = isFinite(weeksToGoal) && weeksToGoal < 104
       ? ` At this pace you'll hit ${target.toFixed(1)} kg around ${fmtDate(seed + Math.round(weeksToGoal * 7))}.`
       : '';
     return { icon: '📉', title: `${absWk.toFixed(1)} kg ${losing ? 'down' : 'up'} ${weekWord}, on track`, tone: 'good',
-      body: `${hasWeek ? `${first.y.toFixed(1)} → ${last.y.toFixed(1)} kg since ${fmtDate(first.x)}.` : ''}${etaStr} ${remaining.toFixed(1)} kg to go. Keep it steady.` };
+      body: `${hasWeek ? `${first!.y.toFixed(1)} → ${last!.y.toFixed(1)} kg since ${fmtDate(first!.x)}.` : ''}${etaStr} ${remaining.toFixed(1)} kg to go. Keep it steady.` };
   }
   // Moving the wrong way
   return { icon: '🧭', title: 'Drifting off course', tone: 'warn',
@@ -176,7 +200,7 @@ const TIPS: { match: RegExp; tip: string }[] = [
   { match: /duolingo|language|learn|study/i, tip: 'Do one lesson on your commute. Stack it onto something you already do.' },
   { match: /journal|write/i, tip: 'One sentence is a full entry today. Just open the page.' },
 ];
-function tipFor(name: string): string {
+export function tipFor(name: string): string {
   const hit = TIPS.find(t => t.match.test(name));
   return hit ? hit.tip : `Shrink it: do the tiniest possible version of "${name}" today, just to keep the chain alive.`;
 }
@@ -294,5 +318,5 @@ export function buildCoachReport(
   else if (warns > goods) { headline = pick(HEADLINES_TOUGH, seed); emoji = '🌱'; }
   else { headline = pick(HEADLINES_MIXED, seed); emoji = '💡'; }
 
-  return { emoji, headline, lines, closing: pick(CLOSING, seed), wantsWalk };
+  return { emoji, headline, lines, closing: pick(CLOSING, seed), wantsWalk, weekStats: { weekTicks, possibleTicks } };
 }

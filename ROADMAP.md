@@ -65,10 +65,25 @@ Ali seeds this epic — add concrete wants as rows, they interleave with the deb
 | E4.14 | Yesterday energy ledger: maintenance + activity vs usual = burned, net kcal vs intake, and a behaviour-based reliability verdict with kg/week pace | src/YesterdayMatrix.tsx, App.css | M | fable | Ledger row above the 2×2; verdict names missing behaviours; no false precision when weigh-in missing | [x] done v2.413 2026-07-14 |
 | E4.10 | Fix the dock's mid-scroll break: the two bars are ~370px apart so the capsule only joined at deep scroll, showing severed halves in between. Now each is a complete pill; they morph into one capsule only when a scroll-tracked `docked` flag confirms they're flush | src/Habits.tsx, PinnedXpBar.tsx, CadenceCarousel.tsx, App.css | M | fable | Never severed at any scroll pos; seamless join only when adjacent | [x] done v2.412 2026-07-13 |
 
+## Epic 5 — Dub, the USP
+
+Dub was a string lottery (~45 fixed phrases). This epic makes him the product: a
+deterministic conversation over the user's own numbers, present morning and night.
+
+| ID | Task | Files | Size | Tier | Acceptance | Status |
+|---|---|---|---|---|---|---|
+| E5.1 | Dub chat: the coach report becomes the opening of a conversation. Pure question bank (dubQuestions.ts) gated on data existing, answers from the real engines; typing beat fixed 400ms; voice rules asserted in CI | src/dubQuestions.ts, DubChat.tsx (was CoachReport), coach.ts (weekPace extracted), index.tsx, App.css, dubQuestions.check.ts | L | fable | All 4 triggers open the chat; chips gated; deterministic; voice lint in `npm run check` | [x] done v2.417 2026-07-14 |
+| E5.2 | Morning brief + evening debrief: pure composer (dubBrief.ts), brief card under the room, "!" badge covers it, brief chip in the chat | src/dubBrief.ts, DubPage.tsx, dubQuestions.ts, App.css, dubBrief.check.ts | M | sonnet | <12h morning, ≥18h evening, else day; missing data drops sentences; zero new fetches | [ ] |
+| E5.3 | Live room: dubDayState mapping drives mascot mood, a speech-bubble thought, and a sparkle celebrate state (no new mascot pose) | src/dubBrief.ts, DubRoom.tsx, DubPage.tsx, App.css | S/M | fable | Mood follows the mapping; clean sweep sparkles; bubble tappable to chat; reduced-motion safe | [ ] |
+
 ## Icebox
 
 Unprioritized ideas — promote to an epic with an ID when ready.
 
+- Dub brief as the push notification body (needs a server-side composer or shared module; energy.ts duplication precedent)
+- Weekly Dub letter: Sunday letter with the week's wins + one pattern, archived and rereadable
+- YesterdayMatrix "maintenance" label violates voice rule 3 (say "what your body burns") — tiny copy fix
+- AI Dub: swap the deterministic answers for a server-proxied LLM voicing the same engine numbers (dormant per-user key plumbing exists)
 - Referral flow: real invite links + signup attribution (currently the Wizard unlock counts accepted friends — see `LevelCustomizer.tsx` ponytail note)
 - App.css split (14,244 lines) into `src/styles/*.css`, move-only, phased per page (selector-count equality proof per phase)
 - App.tsx panel extraction (11 story panels, one per task, props-only)
