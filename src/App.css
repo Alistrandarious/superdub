@@ -4765,14 +4765,25 @@ h1, h2, h3, h4, .sora {
 .profile-content::after,
 .cc-slide-viz--fade::after,
 .plan-page::after {
-  content: ''; position: sticky; bottom: 0; display: block; flex-shrink: 0;
+  content: ''; position: sticky;
+  /* Pull the sticky pin DOWN by the container's own padding-bottom: a plain
+     bottom:0 sticks ABOVE the padding, floating the fade ~80px up into the
+     middle of the page (the reported black band). --fade-drop = padding-bottom,
+     set per container below; harness-confirmed this lands the strip flush at the
+     true visible bottom (gap 0). */
+  bottom: calc(-1 * var(--fade-drop, 0px));
+  display: block; flex-shrink: 0;
   height: 48px; margin-top: -48px; z-index: 45; pointer-events: none;
-  background: linear-gradient(to bottom, rgba(10,11,16,0) 0%, rgba(10,11,16,0.55) 55%, rgba(10,11,16,0.9) 100%);
+  background: linear-gradient(to bottom, rgba(10,11,16,0) 0%, rgba(10,11,16,0.45) 60%, rgba(10,11,16,0.82) 100%);
   transition: opacity 0.25s ease;
 }
+.habits-page-scroll { --fade-drop: calc(80px + env(safe-area-inset-bottom, 0px)); }
+.tasks-content, .diet-content, .profile-content { --fade-drop: calc(72px + env(safe-area-inset-bottom, 0px)); }
+.cc-slide-viz--fade { --fade-drop: 10px; }
+.plan-page { --fade-drop: 90px; }
 .plan-page::after {
   height: 96px; margin-top: -96px;
-  background: linear-gradient(to bottom, rgba(14,14,20,0) 0%, rgba(14,14,20,0.5) 55%, rgba(14,14,20,0.92) 100%);
+  background: linear-gradient(to bottom, rgba(14,14,20,0) 0%, rgba(14,14,20,0.45) 60%, rgba(14,14,20,0.85) 100%);
 }
 /* At the very end of a scroll there's nothing left to hint at — the strip fades
    out (.fade-end is toggled by the delegated scroll listener in index.tsx). */
