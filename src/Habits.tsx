@@ -462,6 +462,18 @@ const DayCircle: React.FC<{
     if (tapRef.current) clearTimeout(tapRef.current);
     if (longRef.current) clearTimeout(longRef.current);
   }, []);
+  // Celebrate the moment a day BECOMES done (not already-done cells on mount).
+  const prevDisplay = useRef(displayState);
+  const [pop, setPop] = useState(false);
+  useEffect(() => {
+    const was = prevDisplay.current;
+    prevDisplay.current = displayState;
+    if (was !== 'done' && displayState === 'done') {
+      setPop(true);
+      const t = setTimeout(() => setPop(false), 500);
+      return () => clearTimeout(t);
+    }
+  }, [displayState]);
   const cancelLong = () => { if (longRef.current) { clearTimeout(longRef.current); longRef.current = null; } };
   const handlePointerDown = () => {
     if (isFuture) return;
@@ -490,7 +502,7 @@ const DayCircle: React.FC<{
     }
   };
   return (
-    <div className={`hcard-day ${displayState === 'done' ? 'done' : ''} ${displayState === 'failed' ? 'failed' : ''} ${displayState === 'na' ? 'na' : ''} ${displayState === 'undeclared' ? 'undeclared' : ''} ${isFuture ? 'future' : ''} ${isToday ? 'is-today' : ''}`}>
+    <div className={`hcard-day ${displayState === 'done' ? 'done' : ''} ${displayState === 'failed' ? 'failed' : ''} ${displayState === 'na' ? 'na' : ''} ${displayState === 'undeclared' ? 'undeclared' : ''} ${isFuture ? 'future' : ''} ${isToday ? 'is-today' : ''}${pop ? ' pop' : ''}`}>
       <button
         className="hcard-day-circle"
         disabled={isFuture}

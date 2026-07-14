@@ -14,23 +14,23 @@ const CommunityPage: React.FC = () => {
     <div className="app flush" style={pageTheme(GOLD)}>
       <SuperdubHeader />
 
-      {/* Hero — a living planet, pinned to the top third */}
-      <div className="community-hero">
-        <span className="community-eyebrow">GLOBAL &amp; FRIENDS</span>
-        <div className="community-hero-stage">
-          <div className="community-hero-orb">
-            <span className="community-hero-orbit community-hero-orbit--a" />
-            <span className="community-hero-orbit community-hero-orbit--b" />
-            <GlobalPlanet size={220} />
+      <div className="page-content community-content">
+        {/* Hero — a living planet; scrolls with the page like everything else */}
+        <div className="community-hero">
+          <span className="community-eyebrow">GLOBAL &amp; FRIENDS</span>
+          <div className="community-hero-stage">
+            <div className="community-hero-orb">
+              <span className="community-hero-orbit community-hero-orbit--a" />
+              <span className="community-hero-orbit community-hero-orbit--b" />
+              <GlobalPlanet size={220} />
+            </div>
+          </div>
+          <div className="community-hero-copy">
+            <h2 className="community-hero-title">One planet, one habit</h2>
+            <p className="community-sub">Climb one shared habit with every Superdubber, and cheer on the friends you add.</p>
           </div>
         </div>
-        <div className="community-hero-copy">
-          <h2 className="community-hero-title">One planet, one habit</h2>
-          <p className="community-sub">Climb one shared habit with every Superdubber, and cheer on the friends you add.</p>
-        </div>
-      </div>
 
-      <div className="page-content community-content">
         <GlobalHabitCard />
 
         <button

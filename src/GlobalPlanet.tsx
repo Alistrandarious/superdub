@@ -20,6 +20,8 @@ const GlobalPlanet: React.FC<{ size?: number }> = ({ size = 34 }) => {
   const uid = useId().replace(/[:]/g, '');
   const oceanId = `gpo-${uid}`;
   const clipId = `gpc-${uid}`;
+  const limbId = `gpl-${uid}`;
+  const aurId = `gpa-${uid}`;
   const reduce = typeof window !== 'undefined'
     && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   return (
@@ -31,6 +33,19 @@ const GlobalPlanet: React.FC<{ size?: number }> = ({ size = 34 }) => {
           <stop offset="100%" stopColor="#0E357E" />
         </radialGradient>
         <clipPath id={clipId}><circle cx="50" cy="50" r="45" /></clipPath>
+        {/* Limb darkening — transparent core to a deep-space edge, sells the sphere. */}
+        <radialGradient id={limbId} cx="42%" cy="36%" r="72%">
+          <stop offset="0%" stopColor="rgba(3,9,28,0)" />
+          <stop offset="70%" stopColor="rgba(3,9,28,0)" />
+          <stop offset="100%" stopColor="rgba(3,9,28,0.55)" />
+        </radialGradient>
+        {/* Polar aurora sweep — teal into violet, fading at both ends. */}
+        <linearGradient id={aurId} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="rgba(47,210,126,0)" />
+          <stop offset="35%" stopColor="rgba(47,226,180,0.55)" />
+          <stop offset="70%" stopColor="rgba(139,92,246,0.45)" />
+          <stop offset="100%" stopColor="rgba(139,92,246,0)" />
+        </linearGradient>
       </defs>
       <circle cx="50" cy="50" r="45" fill={`url(#${oceanId})`} />
       <g clipPath={`url(#${clipId})`}>
@@ -51,16 +66,20 @@ const GlobalPlanet: React.FC<{ size?: number }> = ({ size = 34 }) => {
             />
           )}
         </g>
-        {/* Fixed latitude arcs, gently bowed to read as a sphere. */}
+        {/* Fixed latitude arcs, gently bowed to read as a sphere; equator brightest. */}
         <g fill="none" stroke="rgba(206,232,255,0.4)" strokeWidth="1">
           <path d="M12 34 Q50 30 88 34" />
-          <path d="M6 50 Q50 50 94 50" />
+          <path d="M6 50 Q50 50 94 50" stroke="rgba(206,232,255,0.6)" strokeWidth="1.4" />
           <path d="M12 66 Q50 70 88 66" />
         </g>
+        {/* Aurora shimmering over the north pole. */}
+        <path d="M22 22 Q50 8 78 22" fill="none" stroke={`url(#${aurId})`} strokeWidth="5" strokeLinecap="round" opacity="0.8" />
+        {/* Limb darkening over everything inside the sphere. */}
+        <circle cx="50" cy="50" r="45" fill={`url(#${limbId})`} />
       </g>
       {/* Atmosphere rim + soft glare. */}
       <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(206,232,255,0.38)" strokeWidth="1.5" />
-      <ellipse cx="37" cy="30" rx="15" ry="9" fill="rgba(255,255,255,0.16)" />
+      <ellipse cx="36" cy="28" rx="17" ry="10" fill="rgba(255,255,255,0.14)" />
     </svg>
   );
 };

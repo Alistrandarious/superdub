@@ -49,6 +49,32 @@ const YesterdayMatrix: React.FC<YesterdayMatrixProps> = ({
 }) => {
   const [explain, setExplain] = useState(false);
   const over = delta != null && delta > 0;
+
+  // ── Energy ledger: maintenance + activity = burned, set against the intake
+  // estimate for a NET figure, plus an honest read on how predictive it is.
+  // stepBurnKcal is steps burn RELATIVE to your usual day (maintenance already
+  // includes average activity), so the sum never double-counts.
+  const activityKcal = (stepBurnKcal ?? 0) + (gymBurnKcal ?? 0);
+  const burned = maintenance != null ? maintenance + activityKcal : null;
+  const net = burned != null && intake != null ? intake - burned : null;
+  // Reliability comes from behaviour: which inputs actually got logged yesterday.
+  const haveWeighIn = intake != null;               // the range needs the weigh-in pair
+  const haveSteps = steps > 0;
+  const haveReport = adherenceLevel != null;        // evening "eating vs target"
+  const reliable = haveWeighIn && haveSteps && haveReport && !wide;
+  const kgWk = net != null ? (net * 7) / 7700 : null;
+  const missing = [
+    !haveWeighIn ? 'weigh in daily' : null,
+    !haveSteps ? 'log steps' : null,
+    !haveReport ? 'do the evening check-in' : null,
+  ].filter(Boolean).join(', ');
+  const verdictText = net == null
+    ? 'Weigh in tomorrow morning to complete this picture.'
+    : reliable
+      ? Math.abs(kgWk!) < 0.05
+        ? 'Holding steady. Solid read: weight, steps and eating all logged.'
+        : `On pace to ${kgWk! < 0 ? 'lose' : 'gain'} about ${Math.abs(kgWk!).toFixed(1)} kg a week if this behaviour holds. Solid read: weight, steps and eating all logged.`
+      : `Take this loosely${wide ? ' (your scale jumped overnight, mostly water)' : ''}. To make it predictive: ${missing || 'keep logging daily'}.`;
   const intakePct = intake != null && targetCalories > 0 ? intake / targetCalories : 0;
   const stepsHit = steps >= stepTarget && steps > 0;
   const stepPct = stepTarget > 0 ? steps / stepTarget : 0;
@@ -61,7 +87,27 @@ const YesterdayMatrix: React.FC<YesterdayMatrixProps> = ({
   const winHabits = habitsTotal > 0 && habitsDone === habitsTotal;
 
   return (
-    <div className="ltm">
+    <div className={`ltm${maintenance != null ? ' ltm--energy' : ''}`}>
+      {/* Energy ledger — maintenance + activity = burned, vs intake for a net */}
+      {maintenance != null && (
+        <div className="ltm-energy-row">
+          <div className="ler-flow">
+            <span className="ler-item"><span className="ler-num">{maintenance.toLocaleString()}</span><span className="ler-lbl">maintenance</span></span>
+            <span className="ler-op">+</span>
+            <span className="ler-item"><span className="ler-num">{signed(activityKcal)}</span><span className="ler-lbl">activity vs usual</span></span>
+            <span className="ler-op">=</span>
+            <span className="ler-item"><span className="ler-num">{burned!.toLocaleString()}</span><span className="ler-lbl">burned</span></span>
+            {net != null && (
+              <>
+                <span className="ler-op">·</span>
+                <span className="ler-item"><span className={`ler-num${net < 0 ? ' deficit' : net > 0 ? ' surplus' : ''}`}>{signed(net)}</span><span className="ler-lbl">net kcal</span></span>
+              </>
+            )}
+          </div>
+          <span className={`ler-verdict${net != null && reliable ? ' good' : ''}`}>{verdictText}</span>
+        </div>
+      )}
+
       {/* Calories eaten */}
       <div className={`ltm-cell${winCal ? ' ltm-cell--win' : ''}`} style={cellStyle(KPI_ACCENT.cal)}>
         <span className="ltm-eyebrow">CALORIES{winCal && <WinTick />}</span>
