@@ -30,6 +30,42 @@ function sleepFmt(n: number): string {
 }
 const weightFmt = (n: number) => n.toFixed(1);
 
+// ── Dub's live day state — drives his mood, room and speech bubble ───────────
+// Priority mapping over the same sources as the brief; first match wins.
+export interface DubDayState {
+  mood: 'happy' | 'neutral' | 'concerned';
+  celebrate: boolean;                  // sparkles + brighter floor glow in the room
+  thought: string;                     // the one-liner in his speech bubble
+}
+export function dubDayState(src: BriefSources): DubDayState {
+  const wp = weekPace(src.weights, ddmmToEpochDay(src.today));
+  const plan = src.plan && src.plan.active ? src.plan : null;
+  // 1) Every daily habit closed today
+  if (src.habitsTotal > 0 && src.habitsDone === src.habitsTotal) {
+    return { mood: 'happy', celebrate: true, thought: `Clean sweep. All ${src.habitsTotal} closed.` };
+  }
+  // 2) Goal essentially reached
+  if (plan?.goal?.targetWeight != null && wp && Math.abs(wp.latest - plan.goal.targetWeight) <= 0.3) {
+    return { mood: 'happy', celebrate: true, thought: "You're at your goal weight." };
+  }
+  // 3) Plateau / stall risk / behind pace
+  const stallRisk = plan?.stall?.risk;
+  const plateau = src.report?.lines.some(l => l.icon === '🪨');
+  if (plateau || stallRisk === 'medium' || stallRisk === 'high' || src.coaching?.trend === 'behind') {
+    return { mood: 'concerned', celebrate: false, thought: "Scale's gone flat. Hold steady." };
+  }
+  // 4) The report leans warn — surface its sharpest worry
+  const warns = src.report?.lines.filter(l => l.tone === 'warn') ?? [];
+  const goods = src.report?.lines.filter(l => l.tone === 'good') ?? [];
+  if (warns.length > goods.length && warns[0]) {
+    return { mood: 'concerned', celebrate: false, thought: warns[0].title };
+  }
+  // 5) A live streak (the report's 🔥 win line — reuse, don't re-analyse)
+  const streakLine = src.report?.lines.find(l => l.icon === '🔥');
+  if (streakLine) return { mood: 'happy', celebrate: false, thought: `${streakLine.title} alive.` };
+  return { mood: 'neutral', celebrate: false, thought: 'Tap me for a chat.' };
+}
+
 export function buildBrief(src: BriefSources): { kind: 'morning' | 'evening' | 'day'; text: string } | null {
   const kind: 'morning' | 'evening' | 'day' = src.hour < 12 ? 'morning' : src.hour >= 18 ? 'evening' : 'day';
   const wp = weekPace(src.weights, ddmmToEpochDay(src.today));

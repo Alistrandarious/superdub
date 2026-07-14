@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import './App.css';
 import { api } from './api';
 import { buildCoachReport, type CoachReport as Report } from './coach';
-import { buildBrief } from './dubBrief';
+import { buildBrief, dubDayState, type DubDayState } from './dubBrief';
 import { buildHabitInsights, type DubInsight } from './dubInsights';
 import { getMascot, type MascotSpecies } from './DubMascot';
 import DubRoom from './DubRoom';
@@ -38,6 +38,7 @@ function isoOffset(daysAgo: number): string {
 const DubPage: React.FC = () => {
   const [report, setReport] = useState<Report | null>(null);
   const [brief, setBrief] = useState<{ kind: 'morning' | 'evening' | 'day'; text: string } | null>(null);
+  const [dayState, setDayState] = useState<DubDayState | null>(null);
   const [insights, setInsights] = useState<DubInsight[]>([]);
   const [dataDays, setDataDays] = useState(0);
   const [advisableSteps, setAdvisableSteps] = useState<number | null>(null);
@@ -145,14 +146,17 @@ const DubPage: React.FC = () => {
         const dailyHabits = (habits as any[]).filter(h => (h.cadence ?? 'daily') === 'daily' && !isSystemHabit(h.name));
         const doneToday = new Set(((tracker.habits ?? []) as any[])
           .filter((r: any) => r.day === todayKey() && r.state === 'done').map((r: any) => r.habit_name));
-        setBrief(buildBrief({
+        const briefSrc = {
           hour: new Date().getHours(),
           weights, today: todayKey(), report: rpt,
           plan: plan ?? null, coaching: coaching ?? null,
           sleepLastNight, adherenceToday,
           habitsDone: dailyHabits.filter(h => doneToday.has(h.name)).length,
           habitsTotal: dailyHabits.length,
-        }));
+        };
+        setBrief(buildBrief(briefSrc));
+        // Same sources drive Dub's live mood, room and speech-bubble thought.
+        setDayState(dubDayState(briefSrc));
       } catch {
         // coaching is a nicety, not critical
       } finally {
@@ -164,8 +168,14 @@ const DubPage: React.FC = () => {
   return (
     <div className="app flush" style={pageTheme(GROWTH, '0D')}>
       <SuperdubHeader />
-      {/* Dub's room spans from the header down; tap Dub to chat ("!" flags fresh info) */}
-      <DubRoom species={species} hasNew={hasNew} onChat={chatToDub} />
+      {/* Dub's room spans from the header down; tap Dub (or his thought) to chat.
+          His mood, glow and speech bubble follow the live day state. */}
+      <DubRoom
+        species={species} hasNew={hasNew} onChat={chatToDub}
+        mood={dayState?.mood ?? 'happy'}
+        celebrate={dayState?.celebrate ?? false}
+        thought={dayState?.thought ?? null}
+      />
 
       {brief && (
         <div className="dub-brief">

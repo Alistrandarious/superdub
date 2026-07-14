@@ -22,12 +22,21 @@ const SKY: Record<Phase, { inner: string; outer: string }> = {
   night: { inner: '#2E3A6E', outer: '#141A33' },
 };
 
-const DubRoom: React.FC<{ species: MascotSpecies; hasNew: boolean; onChat: () => void }> = ({ species, hasNew, onChat }) => {
+const DubRoom: React.FC<{
+  species: MascotSpecies;
+  hasNew: boolean;
+  onChat: () => void;
+  // Live day state (dubDayState): Dub's mood, a celebrate flag (sparkles +
+  // brighter glow) and the one-line thought in his speech bubble.
+  mood?: 'happy' | 'neutral' | 'concerned';
+  celebrate?: boolean;
+  thought?: string | null;
+}> = ({ species, hasNew, onChat, mood = 'happy', celebrate = false, thought = null }) => {
   const phase = timePhase(new Date().getHours());
   const sky = SKY[phase];
   const sun = phase !== 'night';
   return (
-    <div className="dub-room">
+    <div className={`dub-room${celebrate ? ' dub-room--celebrate' : ''}`}>
       <div className="dub-room-stage">
         <svg viewBox="0 0 320 210" className="dub-room-svg" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
           <defs>
@@ -102,8 +111,11 @@ const DubRoom: React.FC<{ species: MascotSpecies; hasNew: boolean; onChat: () =>
             <path d="M259 44 C 259 32, 259 28, 261 24" fill="none" stroke="#37E08C" strokeWidth="3" strokeLinecap="round" />
           </g>
 
-          {/* Warm floor glow under Dub */}
-          <ellipse cx="160" cy="182" rx="96" ry="26" fill="url(#dr-glow)" />
+          {/* Warm floor glow under Dub — mood-tinted: cooler and dimmer when
+              concerned, doubled up when celebrating */}
+          <ellipse cx="160" cy="182" rx="96" ry="26" fill="url(#dr-glow)"
+            opacity={mood === 'concerned' ? 0.45 : 1} />
+          {celebrate && <ellipse cx="160" cy="180" rx="110" ry="32" fill="url(#dr-glow)" className="dr-glow-boost" />}
 
           {/* Rug — concentric rounded rings */}
           <ellipse cx="160" cy="184" rx="86" ry="22" fill="#7A2E3B" />
@@ -118,7 +130,7 @@ const DubRoom: React.FC<{ species: MascotSpecies; hasNew: boolean; onChat: () =>
             aria-label="Chat to Dub" style={{ cursor: 'pointer' }}>
             <foreignObject x="102" y="72" width="116" height="116">
               <div style={{ width: '100%', height: '100%', filter: 'drop-shadow(0 7px 10px rgba(0,0,0,0.5))' }}>
-                <DubMascot size={116} mood="happy" species={species} />
+                <DubMascot size={116} mood={mood} species={species} />
               </div>
             </foreignObject>
             {/* "!" notification badge by Dub's head */}
@@ -127,6 +139,24 @@ const DubRoom: React.FC<{ species: MascotSpecies; hasNew: boolean; onChat: () =>
             <text x="188" y="100" textAnchor="middle" fontSize="16" fontWeight="800" fill="#141826"
               fontFamily="'Sora', sans-serif" style={{ pointerEvents: 'none' }}>!</text>
           </g>
+
+          {/* Celebration sparkles above Dub (clean sweep / goal reached) */}
+          {celebrate && (
+            <g className="dr-sparks" fill="#FFE08A" aria-hidden="true">
+              {[[128, 66], [196, 58], [160, 44], [110, 96], [212, 92]].map(([x, y], i) => (
+                <path key={i} className="dr-spark" style={{ animationDelay: `${i * 0.25}s` }}
+                  d={`M${x} ${y - 5} Q${x + 1} ${y - 1} ${x + 5} ${y} Q${x + 1} ${y + 1} ${x} ${y + 5} Q${x - 1} ${y + 1} ${x - 5} ${y} Q${x - 1} ${y - 1} ${x} ${y - 5} Z`} />
+              ))}
+            </g>
+          )}
+
+          {/* Dub's current thought — a speech bubble on the wall strip above the
+              shelf, tap to chat (same target as tapping Dub) */}
+          {thought && (
+            <foreignObject x="140" y="3" width="172" height="34" style={{ cursor: 'pointer' }} onClick={onChat}>
+              <div className="dr-thought">{thought}</div>
+            </foreignObject>
+          )}
         </svg>
       </div>
       <button className="dub-room-chat" onClick={onChat}>Chat to Dub</button>

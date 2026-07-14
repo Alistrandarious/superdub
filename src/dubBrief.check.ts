@@ -2,7 +2,7 @@
 // Guards kind selection, per-sentence data gating, evening's fixed closing,
 // the "no data at all" null rule, voice rules, and determinism.
 import assert from 'node:assert';
-import { buildBrief, type BriefSources } from './dubBrief';
+import { buildBrief, dubDayState, type BriefSources } from './dubBrief';
 import { buildCoachReport, type WeighIn } from './coach';
 
 const YEAR = new Date().getFullYear();
@@ -91,5 +91,19 @@ for (const hour of [9, 14, 20]) {
 const a1 = buildBrief({ ...fullBase, hour: 9 });
 const a2 = buildBrief({ ...fullBase, hour: 9 });
 assert.strictEqual(JSON.stringify(a1), JSON.stringify(a2), 'same input must give identical text');
+
+// 7) dubDayState priority mapping (drives the live room)
+const sweep = dubDayState({ ...fullBase, hour: 12, habitsDone: 2, habitsTotal: 2 });
+assert(sweep.celebrate && sweep.mood === 'happy' && /Clean sweep/.test(sweep.thought), `clean sweep celebrates: ${JSON.stringify(sweep)}`);
+const stalled = dubDayState({
+  ...fullBase, hour: 12,
+  plan: { ...(fullBase.plan as any), stall: { risk: 'high', score: 0.8, message: '', factors: [], action: '' } },
+});
+assert(stalled.mood === 'concerned' && !stalled.celebrate, `stall risk reads concerned: ${JSON.stringify(stalled)}`);
+const quiet = dubDayState({ ...empty, hour: 12 });
+assert(quiet.mood === 'neutral' && quiet.thought === 'Tap me for a chat.', 'no data falls back to neutral');
+for (const st of [sweep, stalled, quiet]) {
+  assert(!/[—–]/.test(st.thought) && !jargon.test(st.thought), `voice: day-state thought clean: ${st.thought}`);
+}
 
 console.log('dubBrief.check.ts — all assertions passed');

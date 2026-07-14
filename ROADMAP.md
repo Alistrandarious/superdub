@@ -74,7 +74,7 @@ deterministic conversation over the user's own numbers, present morning and nigh
 |---|---|---|---|---|---|---|
 | E5.1 | Dub chat: the coach report becomes the opening of a conversation. Pure question bank (dubQuestions.ts) gated on data existing, answers from the real engines; typing beat fixed 400ms; voice rules asserted in CI | src/dubQuestions.ts, DubChat.tsx (was CoachReport), coach.ts (weekPace extracted), index.tsx, App.css, dubQuestions.check.ts | L | fable | All 4 triggers open the chat; chips gated; deterministic; voice lint in `npm run check` | [x] done v2.417 2026-07-14 |
 | E5.2 | Morning brief + evening debrief: pure composer (dubBrief.ts), brief card under the room, "!" badge covers it, brief chip in the chat | src/dubBrief.ts, DubPage.tsx, DubChat.tsx, App.css, dubBrief.check.ts | M | sonnet | <12h morning, ≥18h evening, else day; missing data drops sentences; zero new fetches | [x] done v2.418 2026-07-14 |
-| E5.3 | Live room: dubDayState mapping drives mascot mood, a speech-bubble thought, and a sparkle celebrate state (no new mascot pose) | src/dubBrief.ts, DubRoom.tsx, DubPage.tsx, App.css | S/M | fable | Mood follows the mapping; clean sweep sparkles; bubble tappable to chat; reduced-motion safe | [ ] |
+| E5.3 | Live room: dubDayState mapping drives mascot mood, a speech-bubble thought, and a sparkle celebrate state (no new mascot pose) | src/dubBrief.ts, DubRoom.tsx, DubPage.tsx, App.css | S/M | fable | Mood follows the mapping; clean sweep sparkles; bubble tappable to chat; reduced-motion safe | [x] done v2.419 2026-07-14 |
 
 ## Icebox
 
