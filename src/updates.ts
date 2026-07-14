@@ -10,6 +10,18 @@ export interface UpdateEntry {
 
 export const UPDATE_LOG: UpdateEntry[] = [
   {
+    date: '2026-07-14',
+    emoji: '💬',
+    title: 'Dub can actually talk now',
+    summary: 'Talk to Dub is a real conversation. His weigh-in read opens a chat where you tap questions and he answers from your own numbers, on the spot. He also writes you a morning brief and an evening debrief, and his room now reacts to how your day is really going.',
+    points: [
+      'Tap Dub anywhere you could before and the chat opens. Ask if you are on pace, why the scale is up, whether you will hit your goal by its date, how much your body burns, how you slept, or how to level up faster. Every answer comes from your own data, and the maths page shows exactly how.',
+      'Questions only appear when Dub has the data to answer them, and some come from patterns he spotted himself, like the day a habit tends to slip.',
+      'Before noon his room shows a morning brief: your sleep, the scale move, one job for today, and your step and calorie aims. After 6 PM you get the debrief: how you landed against what your body burns, habits closed, and one thing for tomorrow.',
+      'His room is alive now. A clean sweep of your habits earns sparkles, a flat scale makes him look worried, and his current thought floats in a speech bubble. Tap it to chat.',
+    ],
+  },
+  {
     date: '2026-07-11',
     emoji: '🎚️',
     title: 'Choose the daily prompts you want',

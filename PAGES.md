@@ -35,7 +35,7 @@
 | `NutritionPrompt.tsx` | Evening "eating vs target" ring (time-locked to nutrition hour) |
 | `EnergyCheckIn.tsx` | Legacy combined check-in — on-demand only (cog menu → Log Check-in) |
 | `StepEntry.tsx` | Manual step entry (fallback to native step sync) |
-| `CoachReport.tsx` | Dub's post-weigh-in read (win / slipping / next step) |
+| `DubChat.tsx` | Dub's chat (was CoachReport): his weigh-in read as opening bubbles, then tappable questions answered from the user's data (`dubQuestions.ts`) |
 | `LevelUpCelebration.tsx` | Full-screen level-up moment |
 | `UpdateBanner.tsx` | New-version / What's-New prompt (see `BUILD_TAG` in `version.ts`) |
 

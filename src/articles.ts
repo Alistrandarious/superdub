@@ -18,6 +18,28 @@ export interface Article {
 
 export const ARTICLES: Article[] = [
   {
+    id: 'dub-can-talk',
+    title: 'Dub Can Actually Talk Now',
+    author: 'Ali Shah',
+    readMins: 3,
+    tag: 'Dub',
+    accent: '#2FD27E',
+    dek: 'Talk to Dub opens a real conversation answered from your own numbers, he writes you a morning brief and an evening debrief, and his room reacts to your day.',
+    body: [
+      { t: 'p', text: 'Dub has always read your data. Now he talks about it. Tap him after a weigh-in, from his page, or from the menu, and instead of a fixed report you get a conversation.' },
+      { t: 'h', text: 'Ask him things' },
+      { t: 'p', text: 'Under his opening read you will find questions you can tap. Am I on pace? Why is my weight up today? Will I hit my goal by the date I set? How much does my body burn? Am I sleeping enough? How do I level up faster? Each answer is worked out from your own numbers the moment you ask, and each one leads somewhere sensible next.' },
+      { t: 'li', text: 'Questions only appear when your data can actually answer them. No weigh-ins yet means no pace question, simple as that.' },
+      { t: 'li', text: 'Some questions come from patterns Dub spotted himself, like the weekday a habit tends to slip or whether a habit lifts your mood.' },
+      { t: 'li', text: 'Ask why the scale jumped and he will tell you how much of the move could be real and how much is just water passing through.' },
+      { t: 'quote', text: 'No scripts pretending to be smart. Every answer is your own data, and the maths page shows the working.' },
+      { t: 'h', text: 'A brief in the morning, a debrief at night' },
+      { t: 'p', text: 'Before noon, Dub\'s room carries a short morning brief: how you slept, what the scale said, one job for the day, and your step and calorie aims. After 6 PM it becomes the debrief: roughly where you landed against what your body burns, how many habits you closed, and one thing for tomorrow. Anything you did not log simply is not mentioned. No blanks, no guilt.' },
+      { t: 'h', text: 'His room tells the truth' },
+      { t: 'p', text: 'Close every habit and the room lights up with sparkles. Let the scale go flat and Dub looks worried under a dimmer glow. His sharpest thought floats in a speech bubble on the wall, and tapping it drops you straight into the chat. Go say hi. 💬' },
+    ],
+  },
+  {
     id: 'choose-your-prompts',
     title: 'Only the Check-ins You Actually Want',
     author: 'Ali Shah',

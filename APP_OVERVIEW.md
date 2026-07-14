@@ -54,14 +54,21 @@ Superdub is a **habit + weight + nutrition tracker** built around a single loop:
   coming soon (not yet built).
 
 ### 4. Dub — the coach
-- A small robotic Yorkie (switchable to a cat at L2) that reads your data and
-  gives an honest read after each weigh-in: a win to protect, what's slipping, and
-  one tiny next step. Has its own nav tab (`/dub`, `DubPage.tsx`): a check-in button,
-  a live read, and **per-habit data insights** (`src/dubInsights.ts`) — which weekday
-  a habit slips most, whether it goes with more steps / better mood, and whether its
-  weekly adherence tracks the weight trend. Also fires automatically after a weigh-in;
-  asks for a "walk" when momentum stalls. (Insight logic is on-device; the client
-  `dubInsights.ts` + `coach.ts` + `PatternsCard.tsx` complement the server services below.)
+- A small robotic Yorkie (cat at L2, wizard at 3 referred friends) and the app's
+  USP carrier. **Talking to Dub opens a chat** (`DubChat.tsx`, fires after each
+  weigh-in and from every "Talk to Dub" button): his coach read arrives as bubbles,
+  then tappable questions answered deterministically from the user's own data
+  (`src/dubQuestions.ts` — pace + ETA, why-is-weight-up with the water/real-tissue
+  cap, goal-by-date, calorie target, body burn, sleep, steps, level-up, plus
+  questions generated from spotted patterns). **Daily briefs** (`src/dubBrief.ts`):
+  a morning brief / evening debrief / midday read composed sentence-by-sentence
+  from available data, shown as a speech-bubble card on `/dub` and as a chat chip.
+  **His room is live** (`DubRoom.tsx` + `dubDayState`): mood, floor glow, a
+  tappable thought bubble, and sparkles on a clean sweep. Per-habit **data
+  insights** (`src/dubInsights.ts`) — which weekday a habit slips, step/mood/weight
+  links — feed both the page and the chat. All of it is on-device and rule-based
+  (`coach.ts` `weekPace` is the single pace source); voice rules are enforced by
+  assert in `dubQuestions.check.ts` / `dubBrief.check.ts`.
 
 ## Behavioural insights ("ML"-flavoured, mostly deterministic)
 
