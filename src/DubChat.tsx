@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from './api';
 import { buildCoachReport, type CoachReport as Report } from './coach';
+import { buildBrief } from './dubBrief';
 import { buildHabitInsights } from './dubInsights';
 import { buildQuestionBank, type DubData, type DubQuestion } from './dubQuestions';
 import { isSystemHabit } from './systemHabits';
@@ -21,6 +22,10 @@ const ALL_DAYS = buildAllDays();
 function todayKey() {
   const n = new Date();
   return `${String(n.getDate()).padStart(2, '0')}/${String(n.getMonth() + 1).padStart(2, '0')}`;
+}
+function isoOffset(daysAgo: number): string {
+  const d = new Date(); d.setDate(d.getDate() - daysAgo);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 interface Msg { from: 'dub' | 'you'; text: string }
@@ -115,10 +120,34 @@ const DubChat: React.FC = () => {
         lines: [{ icon: '📈', title: 'Keep logging', tone: 'neutral', body: "Weigh in and tick your habits for a few days and I'll start spotting trends, wins and what's tripping you up." }],
         closing: "I'll be here every time you weigh in. 🐶",
       };
+
+      // ── Morning brief / evening debrief (same sources as DubPage) ──
+      const checkinEntries = ((moods as any).entries ?? []) as { date: string; sleep: number | null; adherenceLevel?: number | null }[];
+      const todayISO = isoOffset(0);
+      const yesterdayISO = isoOffset(1);
+      const latestSleepEntry = [...checkinEntries]
+        .filter(e => e.sleep != null)
+        .sort((a, b) => (a.date < b.date ? 1 : -1))[0];
+      const sleepLastNight = (latestSleepEntry && (latestSleepEntry.date === todayISO || latestSleepEntry.date === yesterdayISO))
+        ? latestSleepEntry.sleep : null;
+      const adherenceToday = checkinEntries.find(e => e.date === todayISO)?.adherenceLevel ?? null;
+      const dailyHabits = (habits as any[]).filter(h => (h.cadence ?? 'daily') === 'daily' && !isSystemHabit(h.name));
+      const doneToday = new Set(((tracker.habits ?? []) as any[])
+        .filter((row: any) => row.day === todayKey() && row.state === 'done').map((row: any) => row.habit_name));
+      const brief = buildBrief({
+        hour: new Date().getHours(),
+        weights, today: todayKey(), report: r,
+        plan: plan ?? null, coaching: coaching ?? null,
+        sleepLastNight, adherenceToday,
+        habitsDone: dailyHabits.filter(h => doneToday.has(h.name)).length,
+        habitsTotal: dailyHabits.length,
+      });
+
       const data: DubData = {
         weights, report: r, insights,
         plan: plan ?? null, coaching: coaching ?? null,
         checkins, totalXP, today: todayKey(),
+        brief: brief?.text ?? null,
       };
       setBank(buildQuestionBank(data));
       setMessages([]); setAsked(new Set()); setQueue([]);

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import './App.css';
 import { api } from './api';
 import { buildCoachReport, type CoachReport as Report } from './coach';
+import { buildBrief } from './dubBrief';
 import { buildHabitInsights, type DubInsight } from './dubInsights';
 import { getMascot, type MascotSpecies } from './DubMascot';
 import DubRoom from './DubRoom';
@@ -26,12 +27,17 @@ function todayKey() {
   const n = new Date();
   return `${String(n.getDate()).padStart(2, '0')}/${String(n.getMonth() + 1).padStart(2, '0')}`;
 }
+function isoOffset(daysAgo: number): string {
+  const d = new Date(); d.setDate(d.getDate() - daysAgo);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
 // Dub's home is just his room now — tap Dub to chat (the coach report opens with
 // everything he's spotted). The insights list also renders right under the room;
 // the "!" badge stays gold until you tap through, then greys until the read changes.
 const DubPage: React.FC = () => {
   const [report, setReport] = useState<Report | null>(null);
+  const [brief, setBrief] = useState<{ kind: 'morning' | 'evening' | 'day'; text: string } | null>(null);
   const [insights, setInsights] = useState<DubInsight[]>([]);
   const [dataDays, setDataDays] = useState(0);
   const [advisableSteps, setAdvisableSteps] = useState<number | null>(null);
@@ -56,6 +62,7 @@ const DubPage: React.FC = () => {
     l: (report?.lines ?? []).map(l => l.title),
     i: insights.map(x => x.habit + '|' + x.text),
     s: advisableSteps,
+    b: brief?.text ?? '',
   });
   const hasNew = loaded && dubSig !== seen;
   const chatToDub = () => {
@@ -84,7 +91,8 @@ const DubPage: React.FC = () => {
         const goal = (plan && (plan as any).active && (plan as any).goal)
           ? { goalType: (plan as any).goal.goalType, targetWeight: (plan as any).goal.targetWeight }
           : null;
-        setReport(buildCoachReport(weights, habits as any, (tracker.habits ?? []) as any, ALL_DAYS, todayKey(), goal));
+        const rpt = buildCoachReport(weights, habits as any, (tracker.habits ?? []) as any, ALL_DAYS, todayKey(), goal);
+        setReport(rpt);
 
         // ── Insight inputs: steps + weight by day, mood by DD/MM ──
         const stepsByDay: Record<string, number> = {};
@@ -123,6 +131,28 @@ const DubPage: React.FC = () => {
           stepsByDay, weightByDay, moodByDay,
           allDays: ALL_DAYS, today: todayKey(),
         }));
+
+        // ── Morning brief / evening debrief ──
+        const checkinEntries = ((moods as any).entries ?? []) as { date: string; sleep: number | null; adherenceLevel?: number | null }[];
+        const todayISO = isoOffset(0);
+        const yesterdayISO = isoOffset(1);
+        const latestSleepEntry = [...checkinEntries]
+          .filter(e => e.sleep != null)
+          .sort((a, b) => (a.date < b.date ? 1 : -1))[0];
+        const sleepLastNight = (latestSleepEntry && (latestSleepEntry.date === todayISO || latestSleepEntry.date === yesterdayISO))
+          ? latestSleepEntry.sleep : null;
+        const adherenceToday = checkinEntries.find(e => e.date === todayISO)?.adherenceLevel ?? null;
+        const dailyHabits = (habits as any[]).filter(h => (h.cadence ?? 'daily') === 'daily' && !isSystemHabit(h.name));
+        const doneToday = new Set(((tracker.habits ?? []) as any[])
+          .filter((r: any) => r.day === todayKey() && r.state === 'done').map((r: any) => r.habit_name));
+        setBrief(buildBrief({
+          hour: new Date().getHours(),
+          weights, today: todayKey(), report: rpt,
+          plan: plan ?? null, coaching: coaching ?? null,
+          sleepLastNight, adherenceToday,
+          habitsDone: dailyHabits.filter(h => doneToday.has(h.name)).length,
+          habitsTotal: dailyHabits.length,
+        }));
       } catch {
         // coaching is a nicety, not critical
       } finally {
@@ -136,6 +166,13 @@ const DubPage: React.FC = () => {
       <SuperdubHeader />
       {/* Dub's room spans from the header down; tap Dub to chat ("!" flags fresh info) */}
       <DubRoom species={species} hasNew={hasNew} onChat={chatToDub} />
+
+      {brief && (
+        <div className="dub-brief">
+          <span className="dub-brief-eyebrow">{brief.kind === 'morning' ? 'MORNING BRIEF' : brief.kind === 'evening' ? 'EVENING DEBRIEF' : 'TODAY SO FAR'}</span>
+          <p className="dub-brief-text">{brief.text}</p>
+        </div>
+      )}
 
       {/* Dub's insights, right under the room */}
       <div className="dub-insights">
