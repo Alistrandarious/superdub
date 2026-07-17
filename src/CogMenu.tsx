@@ -187,6 +187,7 @@ const CogMenu: React.FC = () => {
             <button className="cog-menu-item" onClick={() => go('/profile')}><span className="cog-mi-ico"><Ic><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></Ic></span> Profile &amp; Settings</button>
             <button className="cog-menu-item" onClick={() => go('/about')}><span className="cog-mi-ico"><Ic><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></Ic></span> About Superdub</button>
             <button className="cog-menu-item" onClick={() => go('/maths')}><span className="cog-mi-ico"><Ic><path d="M19 5L5 19" /><circle cx="6.5" cy="6.5" r="2.5" /><circle cx="17.5" cy="17.5" r="2.5" /></Ic></span> The Maths</button>
+            <button className="cog-menu-item" onClick={() => go('/stages')}><span className="cog-mi-ico"><Ic><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></Ic></span> Your stages</button>
             <button className="cog-menu-item" onClick={() => go('/privacy')}><span className="cog-mi-ico"><Ic><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></Ic></span> Privacy Policy</button>
             <button className="cog-menu-item cog-menu-item--danger" onClick={logout}><span className="cog-mi-ico"><Ic><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></Ic></span> Log out</button>
 

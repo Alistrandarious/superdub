@@ -36,6 +36,7 @@ const LevelPage = lazy(() => import('./LevelPage'));
 const ArchivedHabits = lazy(() => import('./ArchivedHabits'));
 const PlanPage = lazy(() => import('./PlanPage'));
 const CommunityPage = lazy(() => import('./CommunityPage'));
+const StagesPreview = lazy(() => import('./StagesPreview'));
 
 const NO_NAV_PATHS = ['/privacy'];
 
@@ -141,6 +142,7 @@ function AppRouter() {
         <Route path="/archived" element={<ArchivedHabits />} />
         <Route path="/plan" element={<PlanPage />} />
         <Route path="/community" element={<CommunityPage />} />
+        <Route path="/stages" element={<StagesPreview />} />
       </Routes>
       </Suspense>
       <DailyCheckIn />
