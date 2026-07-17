@@ -14402,6 +14402,41 @@ details[open] .plan-explainer-summary::before { content: '▾  '; }
   opacity: 1;
 }
 .hcard-week-collapse { overflow: hidden; min-height: 0; }
+
+/* Habit-settings disclosure — schedule / due / reminder / share hide behind one
+   tap instead of stacking at the bottom of every expanded card. Same grid-rows
+   collapser as the calendar so it slides open/closed rather than popping. */
+.hcard-settings-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px 11px;
+  background: none;
+  border: 1px solid var(--glass-border, rgba(255,255,255,0.08));
+  border-radius: 10px;
+  color: rgba(255,255,255,0.5);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.hcard-settings-toggle:hover { color: rgba(255,255,255,0.82); background: rgba(255,255,255,0.03); }
+.hcard-settings-toggle.active { color: var(--theme, #2FD27E); border-color: var(--theme-dim, rgba(47,210,126,0.4)); }
+.hcard-settings-chev { margin-left: auto; display: inline-flex; transition: transform 0.28s cubic-bezier(0.22,1,0.36,1); }
+.hcard-settings-chev.open { transform: rotate(180deg); }
+.hcard-settings-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 0.32s cubic-bezier(0.22,1,0.36,1), opacity 0.24s ease;
+}
+.hcard-settings-wrap.open { grid-template-rows: 1fr; opacity: 1; }
+.hcard-settings-collapse { overflow: hidden; min-height: 0; }
+
 .hcard-history {
   overflow: hidden;
   min-height: 0;

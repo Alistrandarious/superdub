@@ -550,6 +550,7 @@ const HabitCard: React.FC<{
   focused?: boolean;
 }> = ({ habit, stats, weekDays, ht, today, cadence, onToggleDay, onEditDay, onRequestRemove, startDate, starred, onToggleStar, dueDate, onSetDueDate, reminderHour, onSetReminder, schedule, onSetSchedule, sharedWithFriends, onToggleShare, dragHandle, focused }) => {
   const [histOpen, setHistOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false); // per-habit config, hidden by default
   const [monthOffset, setMonthOffset] = useState(0); // 0 = this month, -1 = last month …
   // Shrink the name font when it wraps to more than one line. Measured at the base
   // size on mount / name change; deps are [habit] only so applying the smaller font
@@ -815,6 +816,23 @@ const HabitCard: React.FC<{
         </div>
       </div>
 
+      {/* Per-habit config (schedule · due date · reminder · share) is rarely
+          touched, so it hides behind one tap instead of stacking at the bottom of
+          every expanded card. Same grid-rows collapser as the calendar. */}
+      <button
+        className={`hcard-settings-toggle${settingsOpen ? ' active' : ''}`}
+        onClick={e => { e.stopPropagation(); setSettingsOpen(o => !o); }}
+        aria-expanded={settingsOpen}
+      >
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>Habit settings</span>
+        <span className={`hcard-settings-chev${settingsOpen ? ' open' : ''}`} aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
+        </span>
+      </button>
+      <div className={`hcard-settings-wrap${settingsOpen ? ' open' : ''}`}>
+      <div className="hcard-settings-collapse">
+
       {/* One-off due date (optional, any cadence). Overdue = past + not done. */}
       {/* Scheduling anchor — the day a non-daily habit runs on. */}
       {!isDaily && cadence !== 'quit' && (
@@ -911,6 +929,9 @@ const HabitCard: React.FC<{
         </span>
         <span className="hcard-share-knob" />
       </button>
+
+      </div>
+      </div>
       </div>
       </div>
     </div>
