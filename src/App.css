@@ -3826,22 +3826,34 @@ h1, h2, h3, h4, .sora {
 
 .auth-progress {
   display: flex;
-  gap: 8px;
-  justify-content: center;
+  align-items: center;
+  gap: 10px;
   margin: 4px 0;
 }
 
-.auth-progress-dot {
-  width: 28px;
-  height: 4px;
-  border-radius: 2px;
+.auth-progress-track {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
   background: rgba(255,255,255,0.1);
-  transition: background 0.3s;
+  overflow: hidden;
 }
 
-.auth-progress-dot.done {
+.auth-progress-fill {
+  height: 100%;
+  border-radius: 3px;
   background: var(--theme);
   box-shadow: 0 0 8px var(--theme-glow);
+  transition: width 0.3s ease;
+}
+
+.auth-progress-pct {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--theme);
+  min-width: 34px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .auth-step-title {

@@ -431,11 +431,12 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
             else { setMode('landing'); clearError(); }
           }}>← {step > 1 ? 'Back' : 'Home'}</button>
 
-          {/* Progress bar */}
+          {/* Progress bar — 20% per stage, starting at 20% on step 1 */}
           <div className="auth-progress">
-            {Array.from({ length: TOTAL_STEPS }, (_, i) => (
-              <div key={i} className={`auth-progress-dot ${i + 1 <= step ? 'done' : ''}`} />
-            ))}
+            <div className="auth-progress-track">
+              <div className="auth-progress-fill" style={{ width: `${Math.round((step / TOTAL_STEPS) * 100)}%` }} />
+            </div>
+            <span className="auth-progress-pct">{Math.round((step / TOTAL_STEPS) * 100)}%</span>
           </div>
 
           {/* Step 1, Account */}
