@@ -10,6 +10,7 @@ import CadenceCarousel from './CadenceCarousel';
 import { useUserStage } from './userStage';
 import SuperdubHeader from './SuperdubHeader';
 import DailyLog from './DailyLog';
+import HomeOnTrack from './HomeOnTrack';
 import AnimatedFlame from './AnimatedFlame';
 import LevelHeroRing from './LevelHeroRing';
 import PinnedXpBar from './PinnedXpBar';
@@ -1886,6 +1887,10 @@ const Habits: React.FC = () => {
         {/* Daily Log, the app's own inputs (weigh-in / steps / check-in) — follows
             the week strip's selected day; check-in reuses the mandatory-habit signal. */}
         <DailyLog day={rewindDay} checkedInDay={rewindDay ? ht[rewindDay]?.[MANDATORY_HABIT] === 'done' : undefined} />
+
+        {/* One-line "where you're trending" read — answers "am I on track?" without
+            a trip to Progress (the coach's weight verdict; tap for the full trend). */}
+        {!rewindDay && <HomeOnTrack />}
 
         {/* Weekly Recap, Sunday only, right under the gold circles */}
         {isSunday && <WeeklyRecap />}
