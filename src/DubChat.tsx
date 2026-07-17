@@ -159,15 +159,15 @@ const DubChat: React.FC = () => {
     }
   }, [totalXP]);
 
+  // Dub is tap-only: the coach opens on intent (any "Talk to Dub" button →
+  // superdub:show-coach), never automatically after a save. Auto-firing after
+  // every check-in stacked a full-screen modal on top of the weigh-in and the
+  // habit sheet. Logging now just lights the "!" dot on the Dub nav tab (see
+  // BottomNav), so his read stays discoverable without interrupting the flow.
   useEffect(() => {
-    const onCheckin = () => { setTimeout(() => generate(false), 1100); }; // let the check-in modal close first
     const onShow = () => generate(true);
-    window.addEventListener('superdub:checkin-done', onCheckin);
     window.addEventListener('superdub:show-coach', onShow);
-    return () => {
-      window.removeEventListener('superdub:checkin-done', onCheckin);
-      window.removeEventListener('superdub:show-coach', onShow);
-    };
+    return () => window.removeEventListener('superdub:show-coach', onShow);
   }, [generate]);
 
   const scrollDown = () => {

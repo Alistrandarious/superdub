@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
+const DUB_FRESH_KEY = 'superdub.dub.fresh';
+
 const BottomNav: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [habitsColor, setHabitsColor] = useState(() => localStorage.getItem('superdub.habitsColor') || '#FFB300');
   const [navGlow, setNavGlow] = useState(() => localStorage.getItem('superdub.navGlow') || '#2FD27E');
+  const [dubFresh, setDubFresh] = useState(() => localStorage.getItem(DUB_FRESH_KEY) === '1');
 
   useEffect(() => {
     const sync = () => {
@@ -21,6 +24,24 @@ const BottomNav: React.FC = () => {
       window.removeEventListener('storage', sync);
     };
   }, []);
+
+  // Dub is tap-only now: a check-in lights a quiet "!" dot on his tab instead of
+  // auto-opening the coach. It clears when the coach opens or you land on /dub.
+  useEffect(() => {
+    const mark = () => { localStorage.setItem(DUB_FRESH_KEY, '1'); setDubFresh(true); };
+    const clear = () => { localStorage.removeItem(DUB_FRESH_KEY); setDubFresh(false); };
+    window.addEventListener('superdub:checkin-done', mark);
+    window.addEventListener('superdub:show-coach', clear);
+    return () => {
+      window.removeEventListener('superdub:checkin-done', mark);
+      window.removeEventListener('superdub:show-coach', clear);
+    };
+  }, []);
+  useEffect(() => {
+    if (location.pathname.startsWith('/dub') && localStorage.getItem(DUB_FRESH_KEY) === '1') {
+      localStorage.removeItem(DUB_FRESH_KEY); setDubFresh(false);
+    }
+  }, [location.pathname]);
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
@@ -43,12 +64,13 @@ const BottomNav: React.FC = () => {
       </button>
 
       {/* Dub — the coach */}
-      <button className={`bottom-nav-item${isActive('/dub') ? ' active' : ''}`} onClick={() => goTo('/dub')} aria-label="Dub, your coach">
+      <button className={`bottom-nav-item${isActive('/dub') ? ' active' : ''}`} onClick={() => goTo('/dub')} aria-label={dubFresh ? 'Dub, your coach — new read' : 'Dub, your coach'}>
         <span className="bottom-nav-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             {/* speech bubble + antenna: Dub the robo-coach, kept to the 1-line icon style */}
             <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
           </svg>
+          {dubFresh && <span className="bottom-nav-dot" aria-hidden="true" />}
         </span>
         <span className="bottom-nav-label">Dub</span>
       </button>

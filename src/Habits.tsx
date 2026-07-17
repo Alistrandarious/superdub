@@ -1348,19 +1348,15 @@ const Habits: React.FC = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loaded]);
 
-  // Show/refresh the habit overlay after a check-in (weigh-in, vitals, evening),
-  // or once a skipped evening reflection closes and the overlay was still due.
-  // NOT on superdub:tracker-updated, which also fires for step logging and would
-  // wrongly pop this long overlay every time you log steps.
+  // The day overlay opens once on load (above). It no longer RE-fires on every
+  // superdub:checkin-done — that stacked it on the weigh-in + coach and made it
+  // reappear the instant you dismissed it. Only a SKIPPED evening reflection
+  // still hands the stage over (evening-closed), so the one deferred show that
+  // was suppressed on load isn't lost.
   useEffect(() => {
-    const handler = () => openDayOverlay();
     const deferred = () => { if (shouldAutoRefresh()) openDayOverlay(); };
-    window.addEventListener('superdub:checkin-done', handler);
     window.addEventListener('superdub:evening-closed', deferred);
-    return () => {
-      window.removeEventListener('superdub:checkin-done', handler);
-      window.removeEventListener('superdub:evening-closed', deferred);
-    };
+    return () => window.removeEventListener('superdub:evening-closed', deferred);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
