@@ -50,9 +50,7 @@ const LevelHeroRing: React.FC<{ to?: string; onRingTap?: () => void }> = ({ to =
               : `${totalXP.toLocaleString()} XP`}
           </span>
         </div>
-        {playerLevel.xpForNext != null ? (
-          <p className="hb-xp-to">{(playerLevel.xpForNext - totalXP).toLocaleString()} XP to <span>{playerLevel.nextTitle}</span></p>
-        ) : (
+        {playerLevel.xpForNext == null && (
           <p className="hb-xp-to">Max level, you legend.</p>
         )}
       </div>

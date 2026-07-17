@@ -744,7 +744,7 @@ const HabitCard: React.FC<{
         <span className="hcard-streak-label">
           {hasDanger ? 'Streak reset, start fresh today'
             : hasWarning ? 'Missed yesterday, keep going'
-            : stats.streak > 0 ? `${stats.streak}-day streak, keep it alive`
+            : stats.streak > 0 ? `${stats.streak}-day streak`
             : daysSinceDone != null ? `${daysSinceDone} ${daysSinceDone === 1 ? 'day' : 'days'} off, restart today`
             : 'New habit, log your first day'}
         </span>
@@ -1882,7 +1882,7 @@ const Habits: React.FC = () => {
         </div>
         <p className="hb-week-caption">{stage === 'new'
           ? 'Tick a habit each day to grow your streak. Dub coaches you as you go.'
-          : `${mandatoryStats.streak}-day check-in streak · keep it alive`}</p>
+          : `${mandatoryStats.streak}-day check-in streak`}</p>
 
         {/* Daily Log, the app's own inputs (weigh-in / steps / check-in) — follows
             the week strip's selected day; check-in reuses the mandatory-habit signal. */}
