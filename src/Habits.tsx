@@ -1574,6 +1574,11 @@ const Habits: React.FC = () => {
   const cadenceGroups: Record<Cadence, string[]> = { daily: [], weekly: [], monthly: [], yearly: [], quit: [] };
   yourHabits.forEach(h => { cadenceGroups[habitCadence[h] ?? 'daily'].push(h); });
 
+  // Once a user has a full, spread-out routine (6+ habits across 2+ cadence groups)
+  // the Featured discovery nudge has done its job — hide it automatically.
+  const featuredEarned =
+    yourHabits.length > 5 && CADENCE_ORDER.filter(c => cadenceGroups[c].length > 0).length >= 2;
+
   const cadencePanels = CADENCE_ORDER.map(cad => {
     const meta = CADENCE_META[cad];
     const list = cadenceGroups[cad];
@@ -1913,7 +1918,7 @@ const Habits: React.FC = () => {
             from the bottom (0 → 100% opacity) each time you swipe the carousel above —
             the changing key remounts it so the CSS animation replays.
             Dismissable with the X; bring it back from the cog's Discover Habits. */}
-        {!featuredDismissed && (
+        {!featuredDismissed && !featuredEarned && (
           <div key={featuredSwipeKey} className="hb-featured-wrap">
             <button className="hb-featured" onClick={() => setFeaturedOpen(true)}>
               <div className="hb-featured-text">
