@@ -4,7 +4,8 @@ import { OCCUPATIONS, ETHNICITIES, GENDER_IDENTITIES, COUNTRIES, RELATIONSHIP_ST
 import GoogleAuthButton from './GoogleAuthButton';
 import OnboardingDaily from './OnboardingDaily';
 import OnboardingCustomize from './OnboardingCustomize';
-import { onboardingScreens, onbProgressPct } from './onboarding';
+import DubCoach from './DubCoach';
+import { onboardingScreens, onbProgressPct, dubLine } from './onboarding';
 import './App.css';
 import { GROWTH } from './theme';
 import { nickToWordmark, setBrandNick } from './brand';
@@ -455,13 +456,17 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
             <span className="auth-progress-pct">{pct}%</span>
           </div>
 
-          {/* Each screen keys its own mount so it fades/slides in */}
+          {/* Each screen keys its own mount so it fades in and Dub hops back in */}
           <div className="onb-screen" key={screen}>
+
+          {/* Dub hosts the flow — he asks each question, hopping side to side */}
+          {screen !== 'dub' && screen !== 'finish' && (
+            <DubCoach line={dubLine(screen, greetName)} side={idx % 2 === 0 ? 'left' : 'right'} />
+          )}
 
           {/* Account */}
           {screen === 'account' && (
             <>
-              <h2 className="auth-step-title">Create your account</h2>
               <p className="auth-step-sub">You'll use these to log in from any device.</p>
               <div className="auth-form">
                 <div className="auth-field">
@@ -492,7 +497,6 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
           {/* Name — what should we call you */}
           {screen === 'name' && (
             <>
-              <h2 className="auth-step-title">What should we call you?</h2>
               <p className="auth-step-sub">This is how Dub greets you, and it names your app.</p>
               <div className="auth-form">
                 <div className="auth-field">
@@ -524,7 +528,6 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
           {/* Body */}
           {screen === 'body' && (
             <>
-              <h2 className="auth-step-title">A little about your body</h2>
               <p className="auth-step-sub">Sets your starting targets. You can edit these any time.</p>
               <div className="auth-form">
                 <div className="auth-row">
@@ -600,7 +603,6 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
             ];
             return (
               <>
-                <h2 className="auth-step-title">What's your goal?</h2>
                 <p className="auth-step-sub">This sets your starting calorie target, you can change it any time.</p>
                 <div className="auth-goal-picker">
                   {GOAL_OPTIONS.map(g => (
@@ -722,7 +724,6 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
           {/* Habits */}
           {screen === 'habits' && (
             <>
-              <h2 className="auth-step-title">Your first habits</h2>
               <p className="auth-step-sub">Pick the ones you want to track daily. You can change these any time.</p>
               <div className="auth-habits-grid">
                 {[...DEFAULT_HABITS, ...EXTRA_HABITS].map(h => (
@@ -764,7 +765,6 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
           {/* Your day — the daily window, on its own */}
           {screen === 'day' && (
             <>
-              <h2 className="auth-step-title">This is your day</h2>
               <p className="auth-step-sub">A taste of your daily rhythm. Give one a tap.</p>
               <OnboardingDaily habits={habits} nickname={greetName} />
             </>
@@ -782,7 +782,6 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
           {/* A little about you (optional) */}
           {screen === 'more' && (
             <>
-              <h2 className="auth-step-title">A little about you</h2>
               <p className="auth-step-sub">All optional, it helps us tailor superdub. You can edit or skip any of these.</p>
               <div className="auth-form">
                 {([

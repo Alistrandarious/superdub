@@ -3870,6 +3870,59 @@ h1, h2, h3, h4, .sora {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* Dub coach — the host. He hops in and asks the screen's question from a bubble.
+   Alternating side (set per screen in Auth) makes him bounce around the flow. */
+.dub-coach {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin: 2px 0 4px;
+}
+.dub-coach--right { flex-direction: row-reverse; }
+.dub-coach-pet {
+  flex-shrink: 0;
+  transform-origin: bottom center;
+  animation: dubHop 0.6s cubic-bezier(0.3, 0.9, 0.4, 1.4) both;
+}
+.dub-coach-bubble {
+  position: relative;
+  flex: 1;
+  align-self: center;
+  background: var(--glass-bg, rgba(255,255,255,0.06));
+  border: 1px solid var(--glass-border, rgba(255,255,255,0.13));
+  color: #f2f4f8;
+  font-size: 1.02rem;
+  font-weight: 650;
+  line-height: 1.34;
+  padding: 12px 15px;
+  border-radius: 16px;
+  animation: dubBubbleIn 0.34s ease 0.14s both;
+}
+/* little tail pointing at Dub */
+.dub-coach-bubble::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 11px;
+  height: 11px;
+  background: var(--glass-bg, rgba(255,255,255,0.06));
+  border: 1px solid var(--glass-border, rgba(255,255,255,0.13));
+  transform: translateY(-50%) rotate(45deg);
+}
+.dub-coach--left  .dub-coach-bubble::before { left: -6px;  border-right: none; border-top: none; }
+.dub-coach--right .dub-coach-bubble::before { right: -6px; border-left: none;  border-bottom: none; }
+
+@keyframes dubHop {
+  0%   { transform: translateY(-46px) scale(0.8); opacity: 0; }
+  55%  { transform: translateY(5px) scale(1.03); opacity: 1; }
+  75%  { transform: translateY(-3px) scale(0.99); }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+@keyframes dubBubbleIn {
+  from { opacity: 0; transform: translateY(6px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 /* Screen 6 — "This is your day": a soft, non-functional preview of the daily
    window built from the habits just chosen. */
 .onb-day-card {
@@ -3999,6 +4052,7 @@ h1, h2, h3, h4, .sora {
   .onb-screen { animation: none; }
   .onb-finish-badge { animation: none; }
   .onb-day-row.done .onb-day-ring { transform: none; }
+  .dub-coach-pet, .dub-coach-bubble { animation: none; }
 }
 
 .auth-step-title {

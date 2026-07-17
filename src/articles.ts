@@ -26,7 +26,9 @@ export const ARTICLES: Article[] = [
     accent: '#2E8BFF',
     dek: 'Signing up is now a gentle walkthrough: your name, your first habits, a look at your day, and meeting Dub with your colours chosen before you even arrive.',
     body: [
-      { t: 'p', text: 'The old sign-up was a form. Fill five boxes, press a button, land cold. The new one is a walkthrough, one soft screen at a time, and by the end the app already feels like yours.' },
+      { t: 'p', text: 'The old sign-up was a form. Fill five boxes, press a button, land cold. The new one is a walkthrough hosted by Dub, one soft screen at a time, and by the end the app already feels like yours.' },
+      { t: 'h', text: 'Dub does the asking' },
+      { t: 'p', text: 'Every screen, Dub hops in from the side and asks the question himself from a speech bubble, the way a good coach would. He greets you by name once you give it, and as soon as you choose his species and colour he shows up wearing them for the rest of the walk. It is his job to make the first five minutes feel like a hello, not a form.' },
       { t: 'h', text: 'One thing at a time' },
       { t: 'p', text: 'You tell us what to call you, a little about your body, and your goal, each on its own calm screen. Then you pick your first habits, and we show you your daily window on its own so you can feel the rhythm of a day before a single thing is live. Tap a ring, watch it close. That is the whole loop, in miniature.' },
       { t: 'h', text: 'Meet Dub, and make it yours' },

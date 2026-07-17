@@ -13,8 +13,9 @@ export const UPDATE_LOG: UpdateEntry[] = [
     date: '2026-07-17',
     emoji: '🌱',
     title: 'A softer way in',
-    summary: 'Signing up is now a gentle walkthrough instead of a form. You set your name, pick your first habits, get a look at your day, and meet Dub, choosing his look and your colours right there, before you land in an app that is already yours.',
+    summary: 'Signing up is now a gentle walkthrough hosted by Dub himself. He greets you, hops in on every screen and asks each question, you pick your first habits and get a look at your day, and you choose his look and your colours before you land in an app that is already yours.',
     points: [
+      'Dub hosts the whole thing. He hops in on each screen and asks the question himself, and by the end he is already wearing the species and colour you picked for him.',
       'One thing per screen, in a calm order: your name, your body, your goal, your first habits, then a preview of your daily window so you can feel the rhythm before anything is live.',
       'Meet Dub in person. Say hi, choose his species, pronouns and colour, and pick your ring, accents and background, all woven into the introduction.',
       'Locked looks are shown too, so you can see what is coming as you level up. Everything you pick is already applied the moment you arrive.',

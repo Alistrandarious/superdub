@@ -29,3 +29,19 @@ export function onboardingScreens(isGoogle: boolean): OnbScreen[] {
 export function onbProgressPct(index: number, total: number): number {
   return Math.round(((index + 1) / total) * 100);
 }
+
+// What Dub says on each screen — he hosts the whole flow, Duolingo-style, asking
+// each question from his speech bubble. `finish` is the silent reveal (no line).
+export function dubLine(screen: OnbScreen, name: string): string {
+  switch (screen) {
+    case 'account': return "Hi, I'm Dub! Let's get you set up.";
+    case 'name':    return 'First up, what should I call you?';
+    case 'body':    return name ? `Nice to meet you, ${name}! Tell me a bit about your body.` : 'Tell me a bit about your body.';
+    case 'goal':    return 'What are we working towards?';
+    case 'habits':  return 'Which habits should we start together?';
+    case 'day':     return 'This is your day. Try closing one!';
+    case 'more':    return 'A few optional bits, or skip them.';
+    case 'dub':     return 'Now, make me yours.';
+    case 'finish':  return '';
+  }
+}

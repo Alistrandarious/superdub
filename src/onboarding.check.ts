@@ -1,6 +1,6 @@
 // Runnable self-check for the onboarding screen model. Run: npx tsx src/onboarding.check.ts
 import assert from 'assert';
-import { onboardingScreens, onbProgressPct } from './onboarding';
+import { onboardingScreens, onbProgressPct, dubLine } from './onboarding';
 
 // Password path: full flow, opens on account, ends on finish.
 const pw = onboardingScreens(false);
@@ -25,5 +25,12 @@ for (const screens of [pw, g]) {
   });
   assert(onbProgressPct(screens.length - 1, screens.length) === 100, 'last screen is 100%');
 }
+
+// Dub hosts every screen except the silent finish reveal, so each has a line.
+for (const s of onboardingScreens(false)) {
+  if (s === 'finish') { assert(dubLine(s, 'Ali') === '', 'finish is silent'); continue; }
+  assert(dubLine(s, 'Ali').length > 0, `dubLine present for ${s}`);
+}
+assert(dubLine('body', 'Ali').includes('Ali'), 'body line greets by name');
 
 console.log('✓ onboarding checks passed');
