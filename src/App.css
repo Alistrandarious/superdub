@@ -7721,14 +7721,14 @@ h1, h2, h3, h4, .sora {
 }
 .dub-checkin-btn:active { transform: scale(0.98); }
 .dub-section { padding: 12px; }
-/* Dub's room — spans from the header down to roughly half the page; his
-   insights scroll in the region below it. */
+/* Dub's room — a hero scene sized to the SVG's own ratio so it fills its box
+   with no dead space; the brief + insights flow (and scroll) below it. */
 .dub-room {
-  flex: 0 0 48%;
+  flex: 0 0 auto;
   min-height: 0;
   box-sizing: border-box;
   display: flex; flex-direction: column;
-  margin: 6px 14px 0;
+  margin: 8px 12px 0;
 }
 /* Insights under the room — the scrollable half */
 .dub-insights {
@@ -7742,7 +7742,7 @@ h1, h2, h3, h4, .sora {
 .dub-brief {
   position: relative; flex-shrink: 0;
   background: #15151E; border: 1px solid var(--glass-border);
-  border-radius: 16px; margin: 10px 16px 0; padding: 12px 14px;
+  border-radius: 16px; margin: 10px 12px 0; padding: 12px 14px;
 }
 .dub-brief::before {
   content: ''; position: absolute; top: -5px; left: 50%; width: 10px; height: 10px;
@@ -7758,11 +7758,13 @@ h1, h2, h3, h4, .sora {
   color: rgba(255,255,255,0.8); margin: 6px 0 0;
 }
 .dub-room-stage {
-  position: relative; flex: 1; min-height: 0;
+  position: relative; flex: 0 0 auto; min-height: 0;
+  width: 100%; aspect-ratio: 320 / 210; max-height: 44vh;
   border-radius: var(--r-card); overflow: hidden;
   border: 1px solid var(--glass-border);
 }
-/* SVG fits the docked box by height, bottom-anchored (preserveAspectRatio meet) */
+/* Box carries the SVG's 320:210 ratio so meet fills it edge-to-edge; when
+   max-height clamps (tall/desktop) the SVG stays bottom-anchored, no distortion */
 .dub-room-svg { display: block; width: 100%; height: 100%; }
 /* Tap target around Dub; the "!" badge pulses gold when he has fresh info */
 .dub-room-dub { outline: none; }
@@ -8604,12 +8606,21 @@ h1, h2, h3, h4, .sora {
    ringed with the nav-bar colour so it punches out cleanly. */
 .bottom-nav-dot {
   position: absolute;
-  top: -2px;
-  right: -3px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+  top: -4px;
+  right: -6px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
   background: #FFC400;
+  color: #141826;
+  font-family: 'Sora', sans-serif;
+  font-weight: 800;
+  font-size: 10px;
+  line-height: 1;
   box-shadow: 0 0 0 2px rgba(8,10,20,1), 0 0 6px rgba(255,196,0,0.7);
 }
 
