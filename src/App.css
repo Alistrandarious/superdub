@@ -5464,46 +5464,19 @@ h1, h2, h3, h4, .sora {
   font-weight: 700;
 }
 
-/* Pinned XP bar — the TOP HALF of the scroll dock (the cadence dotrow docks
-   flush beneath it, .cadx--compact .cadx-header). Translucent glass instead of
-   an opaque solid, so every equipped background reads through it. */
-.hb-pinned-xp {
-  position: sticky; top: 0; z-index: 30;
-  display: flex; align-items: center; gap: 10px;
-  margin: 0 12px;
-  background: rgba(10,11,16,0.62);
-  -webkit-backdrop-filter: blur(16px) saturate(160%); backdrop-filter: blur(16px) saturate(160%);
-  border: 1px solid var(--glass-border);
-  border-radius: 14px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.35);
-  transform: translateY(-14px); opacity: 0;
-  max-height: 0; padding: 0 12px; margin-top: 0;
-  overflow: hidden; pointer-events: none;
-  transition: opacity 0.25s ease, transform 0.25s ease, max-height 0.25s ease, padding 0.25s ease, margin 0.25s ease, border-radius 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-}
-.hb-pinned-xp.show {
-  transform: translateY(0); opacity: 1;
-  max-height: 48px; padding: 8px 12px; margin-top: 6px;
-  pointer-events: auto;
-}
-/* Docked: shed the bottom edge so it fuses with the dotrow into one capsule.
-   Transparent border + squared corners (not border:none) so it morphs, not snaps.
-   The dotrow below carries the capsule's single shadow — no band at the seam. */
-.hb-pinned-xp.docked {
-  border-bottom-color: transparent;
-  border-bottom-left-radius: 0; border-bottom-right-radius: 0;
-  box-shadow: none;
-}
-/* The inner bar is the SAME element as the hero's, stretched to fill the pill. */
-.hb-pinned-xp .hb-xp-bar { flex: 1; }
+/* XP bar inside the cadence dock — it rides in .cadx-xp, the top row of the ONE
+   sticky glass capsule (.cadx--compact .cadx-header), above the dots. One element,
+   so there is no seam between the bar and the dots. */
+.cadx-xp { display: flex; align-items: center; margin-bottom: 8px; }
+.cadx-xp .hb-xp-bar { flex: 1; }
 /* Entrance: the fill sweeps out to its true value each time the dock appears
-   (the animation replays whenever .show is re-added). */
-.hb-pinned-xp.show .hb-xp-fill {
+   (the row only mounts in compact mode, so this replays on every re-dock). */
+.cadx--compact .cadx-xp .hb-xp-fill {
   animation: pxp-sweep 0.55s cubic-bezier(0.22,1,0.36,1) backwards;
   transform-origin: left;
 }
 @keyframes pxp-sweep { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-.hb-pinned-xp.grew .hb-xp-bar { animation: pxp-pulse 0.9s ease; }
+.hb-xp-bar.grew { animation: pxp-pulse 0.9s ease; }
 @keyframes pxp-pulse {
   0%   { box-shadow: 0 0 0 0 var(--pxp-glow, rgba(47,210,126,0.6)); }
   40%  { box-shadow: 0 0 0 4px var(--pxp-glow, rgba(47,210,126,0.4)); }
@@ -6078,23 +6051,18 @@ h1, h2, h3, h4, .sora {
 /* ── Cadence switcher: title + little coloured carousel + content ── */
 .cadx { padding: 6px 0 0; }
 .cadx-header {
-  position: sticky; z-index: 20;
-  /* Flush under the stuck XP pill: --dock-top is the pill's MEASURED stuck bottom
-     (set in Habits.tsx onPageScroll), so the dotrow abuts it exactly on any
-     device. A hardcoded value drifted a pixel or two on iOS and left the
-     reported "missing bar" gap. 37px is only the pre-scroll fallback. */
-  top: var(--dock-top, 37px);
+  position: sticky; top: 0; z-index: 20;
   /* Mid-page: paint NOTHING — transparent matches every equipped background.
-     The glass surface only appears in compact/docked mode below. */
+     The glass surface only appears in compact mode below, once it's stuck. */
   background: transparent;
   padding: 4px 0 6px;
   transition: padding 0.2s ease;
 }
-/* Scrolled/compact: the dotrow becomes the BOTTOM HALF of the scroll dock —
-   same translucent glass as the pinned XP pill, joined into one capsule. */
+/* Stuck at the top: the whole dock — XP bar (.cadx-xp) + dots — becomes ONE
+   translucent glass capsule. A single element means there's no seam to open. */
 .cadx--compact .cadx-header {
   margin: 0 12px;
-  padding: 9px 12px 11px;
+  padding: 10px 12px 11px;
   background: rgba(10,11,16,0.62);
   -webkit-backdrop-filter: blur(16px) saturate(160%); backdrop-filter: blur(16px) saturate(160%);
   border: 1px solid var(--glass-border);
@@ -6102,11 +6070,6 @@ h1, h2, h3, h4, .sora {
   box-shadow: 0 4px 16px rgba(0,0,0,0.35);
   animation: cadx-dock-in 0.25s ease backwards;
   transition: border-radius 0.2s ease, border-color 0.2s ease;
-}
-/* Docked flush under the pill: shed the top edge to complete the seamless join. */
-.cadx--docked .cadx-header {
-  border-top-color: transparent;
-  border-top-left-radius: 0; border-top-right-radius: 0;
 }
 @keyframes cadx-dock-in { from { opacity: 0; transform: translateY(-8px); } }
 .cadx--compact .cadx-title { display: none; }
@@ -6130,7 +6093,7 @@ h1, h2, h3, h4, .sora {
   to   { opacity: 1; translate: 0 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .hb-pinned-xp.show .hb-xp-fill,
+  .cadx--compact .cadx-xp .hb-xp-fill,
   .cadx--compact .cadx-header,
   .cadx--compact .cadx-dot2,
   .cadx--compact .cadx-active-label { animation: none; }

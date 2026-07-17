@@ -10,7 +10,7 @@ export interface CarouselPanel {
 
 // Cadence switcher: a big title + a little coloured carousel of chips, with the
 // habit list sliding purely along the X axis (no skew/rotate/scale) as you swipe.
-const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number; compact?: boolean; docked?: boolean; onIndexChange?: (index: number) => void }> = ({ panels, startIndex = 0, compact = false, docked = false, onIndexChange }) => {
+const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number; compact?: boolean; header?: React.ReactNode; onIndexChange?: (index: number) => void }> = ({ panels, startIndex = 0, compact = false, header, onIndexChange }) => {
   const [index, setIndex] = useState(startIndex);
   // Notify the parent whenever the active panel changes (drives the featured
   // banner's swipe-up replay). Skips the initial mount so it only fires on swipe.
@@ -101,8 +101,11 @@ const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number; 
   };
 
   return (
-    <div ref={rootRef} className={`cadx${compact ? ' cadx--compact' : ''}${docked ? ' cadx--docked' : ''}${hint ? ' cadx--hint' : ''}${hintBack ? ' cadx--hint-back' : ''}`}>
+    <div ref={rootRef} className={`cadx${compact ? ' cadx--compact' : ''}${hint ? ' cadx--hint' : ''}${hintBack ? ' cadx--hint-back' : ''}`}>
       <div className="cadx-header">
+        {/* XP bar rides inside the same glass capsule as the dots when docked —
+            one sticky element, so there's no seam to open between them. */}
+        {compact && header && <div className="cadx-xp">{header}</div>}
         {/* Dots + active label so users know other cadences exist */}
         <div className="cadx-dotrow">
           {panels.map((p, i) => (
