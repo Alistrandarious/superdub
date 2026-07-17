@@ -4,6 +4,7 @@ import { OCCUPATIONS, ETHNICITIES, GENDER_IDENTITIES, COUNTRIES, RELATIONSHIP_ST
 import GoogleAuthButton from './GoogleAuthButton';
 import './App.css';
 import { GROWTH } from './theme';
+import { nickToWordmark } from './brand';
 
 interface AuthProps {
   onAuth: () => void;
@@ -66,6 +67,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
   const [googleToken, setGoogleToken] = useState<string | null>(null);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [nickname, setNickname] = useState('');
   const [dob, setDob] = useState('');
   const [sex, setSex] = useState<'male' | 'female'>('male');
   const [heightCm, setHeightCm] = useState('');
@@ -215,8 +217,10 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
     setLoading(true);
     try {
       const name = [firstName.trim(), lastName.trim()].filter(Boolean).join(' ');
+      // Falls back to first name so the wordmark always has something ("superali").
+      const nick = nickname.trim() || firstName.trim();
       const result = await api.signup({
-        email, name, dob, sex, heightCm, weightKg,
+        email, name, nickname: nick, dob, sex, heightCm, weightKg,
         goalWeight, lossPerWeek, gainPerWeek, activityLevel, dietGoal, habits,
         jobType, gymFreq, walkFreq,
         occupation, ethnicity, genderIdentity, country, relationshipStatus, religion,
@@ -489,6 +493,13 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
                       value={lastName} onChange={e => setLastName(e.target.value)}
                       placeholder="Shah" />
                   </div>
+                </div>
+                <div className="auth-field">
+                  <label>What should we call you?</label>
+                  <input type="text" autoComplete="nickname" maxLength={15}
+                    value={nickname} onChange={e => setNickname(e.target.value)}
+                    placeholder={firstName.trim() || 'Ali'} />
+                  <span className="auth-step-sub">Your app becomes super<span className="hb-brand-dub">{nickToWordmark(nickname.trim() || firstName.trim())}</span></span>
                 </div>
                 <div className="auth-row">
                   <div className="auth-field">

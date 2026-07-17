@@ -8,6 +8,7 @@ import LevelCustomizer from './LevelCustomizer';
 import { OCCUPATIONS, ETHNICITIES, GENDER_IDENTITIES, COUNTRIES, RELATIONSHIP_STATUSES, RELIGIONS } from './demographics';
 import { pageTheme, GROWTH } from './theme';
 import { setWeightUnit as persistWeightUnit } from './weightUnit';
+import { setBrandNick, nickToWordmark } from './brand';
 
 interface ProfileData {
   dob: string;
@@ -71,6 +72,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
   const deleteAccount = useDeleteAccount(onLogout);
 
   const [name, setName] = useState('');
+  const [nickname, setNickname] = useState('');
   const [profile, setProfile] = useState<ProfileData>(DEFAULT_PROFILE);
   const [jobType, setJobType] = useState('desk');
   // Optional demographic / job / religion fields
@@ -112,8 +114,9 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
 
   useEffect(() => {
     api.getProfile().then((profileData: any) => {
-      const p = profileData as ProfileData & { name: string };
+      const p = profileData as ProfileData & { name: string; nickname?: string };
       setName(p.name ?? '');
+      setNickname(p.nickname ?? '');
       setProfile({ dob: p.dob ?? '', heightCm: p.heightCm ?? '', weightKg: p.weightKg ?? '', sex: p.sex ?? 'male', activity: p.activity ?? '1.55', steps: p.steps ?? '' });
       const pa = p as any;
       if (pa.jobType) setJobType(pa.jobType);
@@ -155,13 +158,17 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
   const profileSaveTimer = useRef<ReturnType<typeof setTimeout>>();
   const profileRef = useRef(profile);
   const nameRef = useRef(name);
+  const nicknameRef = useRef(nickname);
   useEffect(() => { profileRef.current = profile; }, [profile]);
   useEffect(() => { nameRef.current = name; }, [name]);
+  useEffect(() => { nicknameRef.current = nickname; }, [nickname]);
 
   const scheduleProfileSave = () => {
     clearTimeout(profileSaveTimer.current);
     profileSaveTimer.current = setTimeout(() => {
-      api.updateProfile({ ...profileRef.current, name: nameRef.current }).catch(() => {});
+      const nick = nicknameRef.current.trim();
+      api.updateProfile({ ...profileRef.current, name: nameRef.current, nickname: nick }).catch(() => {});
+      setBrandNick(nick); // live-update the wordmark on every header
     }, 800);
   };
 
@@ -262,6 +269,8 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
           <div className="profile-identity-info">
             <input id="profile-name-field" className="profile-name-input" type="text" value={name} onChange={e => setName(e.target.value)} onBlur={() => scheduleProfileSave()} onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} placeholder="Your name" maxLength={40} />
             <label htmlFor="profile-name-field" className="profile-name-hint">Tap to edit</label>
+            <input id="profile-nick-field" className="profile-nick-input" type="text" value={nickname} onChange={e => setNickname(e.target.value)} onBlur={() => scheduleProfileSave()} onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} placeholder="Nickname" maxLength={15} />
+            <label htmlFor="profile-nick-field" className="profile-name-hint">Your app is super<span className="hb-brand-dub">{nickToWordmark(nickname)}</span></label>
           </div>
         </div>
 

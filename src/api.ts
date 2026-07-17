@@ -27,6 +27,7 @@ export interface SignupCohort {
 
 export interface ProfileResponse {
   name?: string;
+  nickname?: string;
   dob?: string;
   heightCm?: string;
   weightKg?: string;

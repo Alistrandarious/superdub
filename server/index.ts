@@ -275,6 +275,7 @@ const migrations = [
   `ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS last_nutrition DATE`,
   `ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS last_workout DATE`,
   // Demographic / job / religion fields (optional, captured at signup + Profile).
+  `ALTER TABLE profile ADD COLUMN IF NOT EXISTS nickname TEXT`,
   `ALTER TABLE profile ADD COLUMN IF NOT EXISTS occupation TEXT`,
   `ALTER TABLE profile ADD COLUMN IF NOT EXISTS ethnicity TEXT`,
   `ALTER TABLE profile ADD COLUMN IF NOT EXISTS gender_identity TEXT`,

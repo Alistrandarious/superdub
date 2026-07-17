@@ -26,6 +26,7 @@ import { useWeightUnit, formatWeightKg, kgToUnitValue, unitLabel, WeightUnit } f
 import WeightInput from './WeightInput';
 import StreakFlame from './StreakFlame';
 import CogMenu from './CogMenu';
+import { useBrandNick, setBrandNick } from './brand';
 import PatternsCard, { PatternDay } from './PatternsCard';
 import ChartCarousel from './ChartCarousel';
 // DubProgressSummary retired from the Today panel — the live verdict text now carries Dub's read.
@@ -424,6 +425,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       api.getWeightSettings(),
     ]).then(([profile, loadedHabits, trackerData, ws]) => {
       setName(profile.name ?? '');
+      setBrandNick(profile.nickname ?? '');
       if (profile.accountCreatedAt) setAccountCreatedAt(profile.accountCreatedAt);
       setStepTarget(parseInt(profile.stepTarget) || 10000);
 
@@ -1618,12 +1620,13 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     );
   };
 
+  const brandNick = useBrandNick();
   return (
     <div className="app flush" style={{ '--theme': themeColor, '--theme-dim': themeColor + '66', '--theme-glow': themeColor + '14' } as React.CSSProperties}>
       <div className="hb-topbar">
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">{BUILD_TAG}</span>
+          <span className="hb-brand-name">super<span className="hb-brand-dub">{brandNick}</span></span><span className="hb-build-tag">{BUILD_TAG}</span>
         </div>
 
         {/* Unified header actions, same on every page */}

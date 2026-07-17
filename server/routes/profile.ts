@@ -18,7 +18,7 @@ router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
     const [profileRes, userRes] = await Promise.all([
       pool.query(
-        `SELECT name, dob, height_cm, weight_kg, age, sex, activity, steps, vest_kg,
+        `SELECT name, nickname, dob, height_cm, weight_kg, age, sex, activity, steps, vest_kg,
                 job_type, gym_freq, walk_freq, step_target,
                 gym_sessions_per_week, gym_intensity, gym_minutes, weekly_activities, avatar_seed,
                 occupation, ethnicity, gender_identity, country, relationship_status, religion
@@ -37,6 +37,7 @@ router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
     try { weeklyActivities = JSON.parse(r.weekly_activities ?? '[]'); } catch {}
     res.json({
       name: r.name ?? '',
+      nickname: r.nickname ?? '',
       dob: dobStr,
       heightCm: r.height_cm ?? '',
       weightKg: r.weight_kg ?? '',
@@ -71,7 +72,7 @@ router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
 router.put('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
     const {
-      name, dob, heightCm, weightKg, sex, activity, steps, vestKg,
+      name, nickname, dob, heightCm, weightKg, sex, activity, steps, vestKg,
       jobType, gymFreq, walkFreq, stepTarget,
       gymSessionsPerWeek, gymIntensity, gymMinutes, weeklyActivities, avatarSeed,
       occupation, ethnicity, genderIdentity, country, relationshipStatus, religion,
@@ -105,7 +106,8 @@ router.put('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
          gender_identity = CASE WHEN $22::text IS NOT NULL THEN $22 ELSE gender_identity END,
          country = CASE WHEN $23::text IS NOT NULL THEN $23 ELSE country END,
          relationship_status = CASE WHEN $24::text IS NOT NULL THEN $24 ELSE relationship_status END,
-         religion = CASE WHEN $25::text IS NOT NULL THEN $25 ELSE religion END
+         religion = CASE WHEN $25::text IS NOT NULL THEN $25 ELSE religion END,
+         nickname = CASE WHEN $26::text IS NOT NULL THEN $26 ELSE nickname END
        WHERE user_id=$1`,
       [req.userId,
        name          != null ? String(name)          : null,
@@ -131,7 +133,8 @@ router.put('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
        genderIdentity     != null ? String(genderIdentity)     : null,
        country            != null ? String(country)            : null,
        relationshipStatus != null ? String(relationshipStatus) : null,
-       religion           != null ? String(religion)           : null]
+       religion           != null ? String(religion)           : null,
+       nickname           != null ? String(nickname)           : null]
     );
     res.json({ ok: true });
   } catch {

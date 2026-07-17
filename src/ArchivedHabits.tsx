@@ -5,9 +5,11 @@ import { api } from './api';
 import { BUILD_TAG } from './version';
 import CogMenu from './CogMenu';
 import { pageTheme, HEALTH } from './theme';
+import { useBrandNick } from './brand';
 
 const ArchivedHabits: React.FC = () => {
   const navigate = useNavigate();
+  const nick = useBrandNick();
   const [graveyard, setGraveyard] = useState<{ name: string; startDate: string | null }[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
@@ -58,7 +60,7 @@ const ArchivedHabits: React.FC = () => {
         </button>
         <div className="hb-brand">
           <img className="hb-brand-logo" src="/superdub-logo.png" alt="" />
-          <span className="hb-brand-name">super<span className="hb-brand-dub">dub</span></span><span className="hb-build-tag">{BUILD_TAG}</span>
+          <span className="hb-brand-name">super<span className="hb-brand-dub">{nick}</span></span><span className="hb-build-tag">{BUILD_TAG}</span>
         </div>
         <div className="hb-topbar-actions"><CogMenu /></div>
       </div>
