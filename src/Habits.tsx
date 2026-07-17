@@ -7,6 +7,7 @@ import { cycleState, type HabitState } from './habitState';
 import { scheduleLabel, scheduledDateInPeriod, scheduleDdmm, WEEKDAYS_FULL } from './habitSchedule';
 import WeeklyRecap from './WeeklyRecap';
 import CadenceCarousel from './CadenceCarousel';
+import { useUserStage } from './userStage';
 import SuperdubHeader from './SuperdubHeader';
 import DailyLog from './DailyLog';
 import AnimatedFlame from './AnimatedFlame';
@@ -1214,6 +1215,9 @@ const Habits: React.FC = () => {
   const prevPerfectRef = useRef(false);
   const [honestyPending, setHonestyPending] = useState<{ habit: string; day: string; next: HabitState } | null>(null);
 
+  // Adapt the home surface to the user's stage: teach newcomers, stay out of veterans' way.
+  const stage = useUserStage();
+
   const pwaKey = `superdub.pwa.${PWA_PROMPT_VERSION}`;
   const pwaDayKey = `superdub.pwa.day.${PWA_PROMPT_VERSION}`;
   const todayStr = new Date().toDateString();
@@ -1783,7 +1787,7 @@ const Habits: React.FC = () => {
             grow in its own container as you tick them. */}
         <PinnedXpBar visible={scrolled} docked={docked} />
 
-        {showInstall && (
+        {showInstall && stage !== 'super' && (
           <div className={`pwa-banner${installClosing ? ' closing' : ''}`}>
             <button className="pwa-banner-dismiss" onClick={dismissInstall} aria-label="Hide for today">✕</button>
             <div className="pwa-banner-main">
@@ -1879,7 +1883,9 @@ const Habits: React.FC = () => {
             );
           })}
         </div>
-        <p className="hb-week-caption">{mandatoryStats.streak}-day check-in streak · keep it alive</p>
+        <p className="hb-week-caption">{stage === 'new'
+          ? 'Tick a habit each day to grow your streak. Dub coaches you as you go.'
+          : `${mandatoryStats.streak}-day check-in streak · keep it alive`}</p>
 
         {/* Daily Log, the app's own inputs (weigh-in / steps / check-in) — follows
             the week strip's selected day; check-in reuses the mandatory-habit signal. */}

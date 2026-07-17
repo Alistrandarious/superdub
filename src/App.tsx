@@ -27,6 +27,7 @@ import WeightInput from './WeightInput';
 import StreakFlame from './StreakFlame';
 import CogMenu from './CogMenu';
 import { useBrandNick, setBrandNick } from './brand';
+import { useUserStage } from './userStage';
 import PatternsCard, { PatternDay } from './PatternsCard';
 import ChartCarousel from './ChartCarousel';
 // DubProgressSummary retired from the Today panel — the live verdict text now carries Dub's read.
@@ -374,6 +375,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     workoutCalories?: number | null;
   } | null>(null);
 
+  // Stage adapts the dashboard: cold-start cohort framing for newcomers, out of veterans' way.
+  const stage = useUserStage();
+
   // Cohort onboarding banner — shown once after signup, dismissed permanently
   const [cohortMsg] = useState<string | null>(() => localStorage.getItem('superdub:cohort-msg'));
   const [cohortName] = useState<string | null>(() => localStorage.getItem('superdub:cohort-name'));
@@ -426,7 +430,10 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     ]).then(([profile, loadedHabits, trackerData, ws]) => {
       setName(profile.name ?? '');
       setBrandNick(profile.nickname ?? '');
-      if (profile.accountCreatedAt) setAccountCreatedAt(profile.accountCreatedAt);
+      if (profile.accountCreatedAt) {
+        setAccountCreatedAt(profile.accountCreatedAt);
+        localStorage.setItem('superdub.accountCreatedAt', profile.accountCreatedAt); // so userStage can read tenure anywhere
+      }
       setStepTarget(parseInt(profile.stepTarget) || 10000);
 
       const habitObjs = loadedHabits as { name: string; cadence?: string; starred?: boolean }[];
@@ -1940,8 +1947,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         onLogSteps={() => window.dispatchEvent(new CustomEvent('superdub:show-step-entry', { detail: { date: yesterdayISO } }))}
       />
 
-      {/* ── Cohort onboarding banner (shown once after signup) ── */}
-      {cohortMsg && !cohortDismissed && (
+      {/* ── Cohort onboarding banner (cold-start framing — newcomers only) ── */}
+      {stage === 'new' && cohortMsg && !cohortDismissed && (
         <div className="cohort-banner">
           <div className="cohort-banner-inner">
             <div className="cohort-banner-header">

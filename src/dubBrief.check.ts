@@ -106,4 +106,27 @@ for (const st of [sweep, stalled, quiet]) {
   assert(!/[—–]/.test(st.thought) && !jargon.test(st.thought), `voice: day-state thought clean: ${st.thought}`);
 }
 
+// 8) Stage adaptation: absent stage === 'regular' voice (no regression), 'new'
+//    appends a nudge, 'super' is terser (no greeting) and never longer.
+for (const hour of [9, 14, 20]) {
+  const regular = buildBrief({ ...fullBase, hour })!;
+  const noStage = buildBrief({ ...fullBase, hour, stage: 'regular' })!;
+  assert.strictEqual(regular.text, noStage.text, `absent stage matches 'regular' at hour ${hour}`);
+
+  const fresh = buildBrief({ ...fullBase, hour, stage: 'new' })!;
+  const superb = buildBrief({ ...fullBase, hour, stage: 'super' })!;
+  assert(superb.text.length <= regular.text.length, `super is not longer at hour ${hour}`);
+  assert(!/^Morning\.|^Day closed\./.test(superb.text), `super drops the greeting at hour ${hour}: ${superb.text}`);
+  for (const b of [fresh, superb]) {
+    assert(!/[—–]/.test(b.text) && !jargon.test(b.text), `voice: stage text clean at hour ${hour}: ${b.text}`);
+    assert(!/\bnull\b|\bNaN\b|\bundefined\b|  /.test(b.text), `no placeholder at hour ${hour}: ${b.text}`);
+  }
+}
+// Morning 'new' carries the one-tick nudge; empty sources stay null regardless of stage.
+assert(/tick one habit/.test(buildBrief({ ...fullBase, hour: 9, stage: 'new' })!.text), 'new morning nudges to tick one habit');
+assert.strictEqual(buildBrief({ ...empty, hour: 9, stage: 'new' }), null, 'new stage never fabricates a brief from nothing');
+// New-user neutral room greeting; regular/absent keeps the original line.
+assert.strictEqual(dubDayState({ ...empty, hour: 12, stage: 'new' }).thought, "Hi, I'm Dub. Tap me.", 'new user gets the intro thought');
+assert.strictEqual(dubDayState({ ...empty, hour: 12 }).thought, 'Tap me for a chat.', 'absent stage keeps the original thought');
+
 console.log('dubBrief.check.ts — all assertions passed');

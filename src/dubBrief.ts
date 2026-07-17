@@ -9,6 +9,7 @@
 import { weekPace, ddmmToEpochDay, tipFor, type WeighIn, type CoachReport } from './coach';
 import { estimateIntakeRange } from './energy';
 import type { PlanStatusResponse, CoachingResponse } from './api';
+import type { UserStage } from './userStage';
 
 export interface BriefSources {
   hour: number;                                   // local hour, injected for testability
@@ -21,6 +22,7 @@ export interface BriefSources {
   adherenceToday: number | null;                  // today's evening self-report level, or null
   habitsDone: number;
   habitsTotal: number;                            // today's real daily habits
+  stage?: UserStage;                              // adapt verbosity/tone; absent → 'regular' voice
 }
 
 // Sleep hours read "7", not "7.0", when whole; still one decimal otherwise.
@@ -63,7 +65,7 @@ export function dubDayState(src: BriefSources): DubDayState {
   // 5) A live streak (the report's 🔥 win line — reuse, don't re-analyse)
   const streakLine = src.report?.lines.find(l => l.icon === '🔥');
   if (streakLine) return { mood: 'happy', celebrate: false, thought: `${streakLine.title} alive.` };
-  return { mood: 'neutral', celebrate: false, thought: 'Tap me for a chat.' };
+  return { mood: 'neutral', celebrate: false, thought: src.stage === 'new' ? "Hi, I'm Dub. Tap me." : 'Tap me for a chat.' };
 }
 
 export function buildBrief(src: BriefSources): { kind: 'morning' | 'evening' | 'day'; text: string } | null {
@@ -102,6 +104,9 @@ export function buildBrief(src: BriefSources): { kind: 'morning' | 'evening' | '
     else if (kcal != null) body.push(`Keep eating to about ${kcal.toLocaleString()} kcal.`);
 
     if (body.length === 0) return null;
+    // super: verdict-first, no greeting, capped. new: one warm next-step nudge.
+    if (src.stage === 'super') return { kind, text: body.slice(0, 2).join(' ') };
+    if (src.stage === 'new') body.push("You're just getting started, so keep it simple: tick one habit today.");
     return { kind, text: ['Morning.', ...body].join(' ') };
   }
 
@@ -144,6 +149,7 @@ export function buildBrief(src: BriefSources): { kind: 'morning' | 'evening' | '
     const closing = focusName
       ? `Tomorrow's one thing: keep ${focusName} alive. Sleep well.`
       : "Tomorrow's one thing: weigh in before breakfast so I can keep your trend honest. Sleep well.";
+    if (src.stage === 'super') return { kind, text: [...body.slice(0, 2), closing].join(' ') };
     return { kind, text: ['Day closed.', ...body, closing].join(' ') };
   }
 
@@ -153,5 +159,7 @@ export function buildBrief(src: BriefSources): { kind: 'morning' | 'evening' | '
   if (steps != null) body.push(`There's daylight left. About ${steps.toLocaleString()} steps is the aim.`);
   if (body.length === 0) return null;
   if (streakLine) body.push(`Your ${streakLine.title} is alive. Protect it.`);
+  if (src.stage === 'super') return { kind, text: body.slice(0, 2).join(' ') };
+  if (src.stage === 'new') body.push('New here? Pick one habit and close it before tonight.');
   return { kind, text: body.join(' ') };
 }

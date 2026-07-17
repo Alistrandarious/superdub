@@ -10,6 +10,7 @@ import SuperdubHeader from './SuperdubHeader';
 import { pageTheme, GROWTH } from './theme';
 import { dubPronouns, getDubGender, dubHas, type DubGender } from './dubPronouns';
 import { isSystemHabit } from './systemHabits';
+import { readStage } from './userStage';
 
 const YEAR = new Date().getFullYear();
 const DUB_SEEN_KEY = 'superdub.dubSeen';
@@ -153,6 +154,7 @@ const DubPage: React.FC = () => {
           sleepLastNight, adherenceToday,
           habitsDone: dailyHabits.filter(h => doneToday.has(h.name)).length,
           habitsTotal: dailyHabits.length,
+          stage: readStage(),
         };
         setBrief(buildBrief(briefSrc));
         // Same sources drive Dub's live mood, room and speech-bubble thought.

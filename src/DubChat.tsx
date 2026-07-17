@@ -7,6 +7,7 @@ import { buildHabitInsights } from './dubInsights';
 import { buildQuestionBank, type DubData, type DubQuestion } from './dubQuestions';
 import { isSystemHabit } from './systemHabits';
 import { useXP } from './XPContext';
+import { readStage } from './userStage';
 import DubMascot, { getMascot, type MascotSpecies } from './DubMascot';
 
 const YEAR = new Date().getFullYear();
@@ -141,6 +142,7 @@ const DubChat: React.FC = () => {
         sleepLastNight, adherenceToday,
         habitsDone: dailyHabits.filter(h => doneToday.has(h.name)).length,
         habitsTotal: dailyHabits.length,
+        stage: readStage(),
       });
 
       const data: DubData = {
