@@ -25,6 +25,16 @@
 | `/archived` | `ArchivedHabits.tsx` | Archived habits (restore / permanent delete) | — | HEALTH green |
 | `/privacy` | `PrivacyPolicy.tsx` | Privacy policy (no nav chrome) | none | — |
 
+## Onboarding (unauthed)
+`Auth.tsx` signup is a **soft walkthrough**, not a form: an ordered screen list
+(`onboarding.ts` — account · name · body · goal · habits · **day** · **dub** · more ·
+finish; Google drops `account`). Screen 6 (`OnboardingDaily.tsx`) previews the daily
+window from the chosen habits; screen 7 (`OnboardingCustomize.tsx`) is "meet Dub +
+make it yours" — it reuses the `levels.ts` cosmetic shelves + `DubMascot` with a fixed
+level-1 unlock context (locks shown as teasers) and writes the **same** localStorage
+keys + CustomEvents as `LevelCustomizer`, so picks apply the moment the app boots.
+Progress + screen order are pure and covered by `onboarding.check.ts`.
+
 ## Global overlays (mount above the router)
 
 | Component | Role |

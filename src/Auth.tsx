@@ -2,9 +2,12 @@ import React, { useState, useCallback } from 'react';
 import { api, setToken } from './api';
 import { OCCUPATIONS, ETHNICITIES, GENDER_IDENTITIES, COUNTRIES, RELATIONSHIP_STATUSES, RELIGIONS } from './demographics';
 import GoogleAuthButton from './GoogleAuthButton';
+import OnboardingDaily from './OnboardingDaily';
+import OnboardingCustomize from './OnboardingCustomize';
+import { onboardingScreens, onbProgressPct } from './onboarding';
 import './App.css';
 import { GROWTH } from './theme';
-import { nickToWordmark } from './brand';
+import { nickToWordmark, setBrandNick } from './brand';
 
 interface AuthProps {
   onAuth: () => void;
@@ -45,7 +48,9 @@ const THEME = GROWTH;
 
 export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
   const [mode, setMode] = useState<Mode>('landing');
-  const [step, setStep] = useState(1);
+  // Onboarding is an ordered screen list (see onboarding.ts); screenIdx points
+  // into it. Google signups get a shorter list (no account screen).
+  const [screenIdx, setScreenIdx] = useState(0);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -152,8 +157,6 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
 
   const maxDob = new Date(new Date().setFullYear(new Date().getFullYear() - 10)).toISOString().split('T')[0];
 
-  const TOTAL_STEPS = 5;
-
   const clearError = () => setError('');
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -186,7 +189,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
         setFirstName(parts[0] || '');
         setLastName(parts.slice(1).join(' '));
         setMode('signup');
-        setStep(2);
+        setScreenIdx(0); // Google flow opens on 'name' (no account screen)
       }
     } catch (err: any) {
       setError(err.message || 'Google sign-in failed.');
@@ -195,21 +198,24 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
     }
   }, [onAuth]);
 
-  const nextStep = () => {
+  // Advance to the next onboarding screen, validating the current one first.
+  const advance = () => {
     setError('');
-    if (step === 1) {
+    const scr = onboardingScreens(!!googleToken);
+    const cur = scr[screenIdx];
+    if (cur === 'account') {
       if (!email.trim()) { setError('Email is required'); return; }
       if (!email.includes('@')) { setError('Enter a valid email'); return; }
       if (password.length < 6) { setError('Password must be at least 6 characters'); return; }
       if (password !== confirmPassword) { setError('Passwords do not match'); return; }
     }
-    if (step === 2) {
+    if (cur === 'body') {
       if (!dob) { setError('Please enter your date of birth'); return; }
     }
-    if (step === 4) {
+    if (cur === 'habits') {
       if (habits.length === 0) { setError('Pick at least one habit.'); return; }
     }
-    setStep(s => s + 1);
+    setScreenIdx(i => Math.min(i + 1, scr.length - 1));
   };
 
   const handleSignup = async () => {
@@ -219,6 +225,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
       const name = [firstName.trim(), lastName.trim()].filter(Boolean).join(' ');
       // Falls back to first name so the wordmark always has something ("superali").
       const nick = nickname.trim() || firstName.trim();
+      setBrandNick(nick); // wordmark reads from localStorage — make it live on landing
       const result = await api.signup({
         email, name, nickname: nick, dob, sex, heightCm, weightKg,
         goalWeight, lossPerWeek, gainPerWeek, activityLevel, dietGoal, habits,
@@ -236,7 +243,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
       onAuth();
     } catch (err: any) {
       setError(err.message);
-      setStep(1);
+      setScreenIdx(0); // back to the start so they can fix the account details
     } finally {
       setLoading(false);
     }
@@ -425,26 +432,34 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
     );
   }
 
-  // ── Sign-up (multi-step) ──────────────────────────────────────────────────
+  // ── Sign-up (soft flow) ───────────────────────────────────────────────────
+  const screens = onboardingScreens(!!googleToken);
+  const idx = Math.min(screenIdx, screens.length - 1);
+  const screen = screens[idx];
+  const greetName = nickname.trim() || firstName.trim();
+  const pct = onbProgressPct(idx, screens.length);
   return (
     <div className="app auth-page" style={themeStyle}>
       <div className="auth-center">
         <div className="auth-card">
           <button className="auth-back" onClick={() => {
-            if (step > 1) setStep(s => s - 1);
+            if (idx > 0) setScreenIdx(i => i - 1);
             else { setMode('landing'); clearError(); }
-          }}>← {step > 1 ? 'Back' : 'Home'}</button>
+          }}>← {idx > 0 ? 'Back' : 'Home'}</button>
 
-          {/* Progress bar — 20% per stage, starting at 20% on step 1 */}
+          {/* Progress — one soft bar filling across the whole flow */}
           <div className="auth-progress">
             <div className="auth-progress-track">
-              <div className="auth-progress-fill" style={{ width: `${Math.round((step / TOTAL_STEPS) * 100)}%` }} />
+              <div className="auth-progress-fill" style={{ width: `${pct}%` }} />
             </div>
-            <span className="auth-progress-pct">{Math.round((step / TOTAL_STEPS) * 100)}%</span>
+            <span className="auth-progress-pct">{pct}%</span>
           </div>
 
-          {/* Step 1, Account */}
-          {step === 1 && (
+          {/* Each screen keys its own mount so it fades/slides in */}
+          <div className="onb-screen" key={screen}>
+
+          {/* Account */}
+          {screen === 'account' && (
             <>
               <h2 className="auth-step-title">Create your account</h2>
               <p className="auth-step-sub">You'll use these to log in from any device.</p>
@@ -466,7 +481,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
                   <input type="password" autoComplete="new-password"
                     value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
                     placeholder="Same as above"
-                    onKeyDown={e => e.key === 'Enter' && nextStep()} />
+                    onKeyDown={e => e.key === 'Enter' && advance()} />
                 </div>
               </div>
               <div className="auth-or"><span>or</span></div>
@@ -474,16 +489,24 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
             </>
           )}
 
-          {/* Step 2, About You */}
-          {step === 2 && (
+          {/* Name — what should we call you */}
+          {screen === 'name' && (
             <>
-              <h2 className="auth-step-title">About you</h2>
-              <p className="auth-step-sub">Used to personalise your targets, you can edit these later.</p>
+              <h2 className="auth-step-title">What should we call you?</h2>
+              <p className="auth-step-sub">This is how Dub greets you, and it names your app.</p>
               <div className="auth-form">
+                <div className="auth-field">
+                  <label>Your name</label>
+                  <input type="text" autoFocus autoComplete="nickname" maxLength={15}
+                    value={nickname} onChange={e => setNickname(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && advance()}
+                    placeholder={firstName.trim() || 'Ali'} />
+                  <span className="auth-step-sub">Your app becomes super<span className="hb-brand-dub">{nickToWordmark(nickname.trim() || firstName.trim())}</span></span>
+                </div>
                 <div className="auth-row">
                   <div className="auth-field">
                     <label>First name</label>
-                    <input type="text" autoFocus autoComplete="given-name"
+                    <input type="text" autoComplete="given-name"
                       value={firstName} onChange={e => setFirstName(e.target.value)}
                       placeholder="Ali" />
                   </div>
@@ -494,17 +517,20 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
                       placeholder="Shah" />
                   </div>
                 </div>
-                <div className="auth-field">
-                  <label>What should we call you?</label>
-                  <input type="text" autoComplete="nickname" maxLength={15}
-                    value={nickname} onChange={e => setNickname(e.target.value)}
-                    placeholder={firstName.trim() || 'Ali'} />
-                  <span className="auth-step-sub">Your app becomes super<span className="hb-brand-dub">{nickToWordmark(nickname.trim() || firstName.trim())}</span></span>
-                </div>
+              </div>
+            </>
+          )}
+
+          {/* Body */}
+          {screen === 'body' && (
+            <>
+              <h2 className="auth-step-title">A little about your body</h2>
+              <p className="auth-step-sub">Sets your starting targets. You can edit these any time.</p>
+              <div className="auth-form">
                 <div className="auth-row">
                   <div className="auth-field">
                     <label>Date of Birth</label>
-                    <input type="date"
+                    <input type="date" autoFocus
                       value={dob} onChange={e => setDob(e.target.value)}
                       max={maxDob} />
                   </div>
@@ -548,8 +574,8 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
             </>
           )}
 
-          {/* Step 3, Goals */}
-          {step === 3 && (() => {
+          {/* Goal */}
+          {screen === 'goal' && (() => {
             const w = parseFloat(weightKg) || 0;
             const h = parseFloat(heightCm) || 0;
             const act = parseFloat(activityLevel) || 1.55;
@@ -693,10 +719,10 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
             );
           })()}
 
-          {/* Step 4, Habits */}
-          {step === 4 && (
+          {/* Habits */}
+          {screen === 'habits' && (
             <>
-              <h2 className="auth-step-title">Starting habits</h2>
+              <h2 className="auth-step-title">Your first habits</h2>
               <p className="auth-step-sub">Pick the ones you want to track daily. You can change these any time.</p>
               <div className="auth-habits-grid">
                 {[...DEFAULT_HABITS, ...EXTRA_HABITS].map(h => (
@@ -735,8 +761,26 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
             </>
           )}
 
-          {/* Step 5, About you (optional demographics) */}
-          {step === 5 && (
+          {/* Your day — the daily window, on its own */}
+          {screen === 'day' && (
+            <>
+              <h2 className="auth-step-title">This is your day</h2>
+              <p className="auth-step-sub">A taste of your daily rhythm. Give one a tap.</p>
+              <OnboardingDaily habits={habits} nickname={greetName} />
+            </>
+          )}
+
+          {/* Meet Dub + make it yours */}
+          {screen === 'dub' && (
+            <>
+              <h2 className="auth-step-title">Meet Dub</h2>
+              <p className="auth-step-sub">Say hi, then make superdub yours.</p>
+              <OnboardingCustomize nickname={greetName} />
+            </>
+          )}
+
+          {/* A little about you (optional) */}
+          {screen === 'more' && (
             <>
               <h2 className="auth-step-title">A little about you</h2>
               <p className="auth-step-sub">All optional, it helps us tailor superdub. You can edit or skip any of these.</p>
@@ -761,34 +805,54 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
             </>
           )}
 
+          {/* Finish — the reveal that it's running */}
+          {screen === 'finish' && (
+            <div className="onb-finish">
+              <div className="onb-finish-badge">super<span className="hb-brand-dub">{nickToWordmark(greetName)}</span></div>
+              <h2 className="auth-step-title">You're all set{greetName ? `, ${greetName}` : ''}</h2>
+              <p className="auth-step-sub">Your day, your Dub, your colours, all ready. Let's meet your future self.</p>
+            </div>
+          )}
+
+          </div>{/* /.onb-screen */}
+
           {error && <p className="auth-error">{error}</p>}
 
           <div className="auth-actions">
-            {step < TOTAL_STEPS ? (
-              <button className="auth-btn-primary" onClick={nextStep}>
-                Continue →
-              </button>
+            {screen !== 'finish' ? (
+              screen === 'more' ? (
+                <>
+                  <button className="auth-btn-primary" onClick={advance}>Continue →</button>
+                  <button className="auth-btn-ghost" onClick={advance}>Skip for now</button>
+                </>
+              ) : (
+                <button className="auth-btn-primary" onClick={advance}>Continue →</button>
+              )
             ) : (
               <button
                 className="auth-btn-primary"
                 onClick={handleSignup}
                 disabled={loading || habits.length === 0}
               >
-                {loading ? 'Creating account…' : 'Create account'}
+                {loading ? 'Creating account…' : `Enter super${nickToWordmark(greetName)}`}
               </button>
             )}
           </div>
 
-          <p className="auth-switch">
-            Already have an account?{' '}
-            <button className="auth-link" onClick={() => { setMode('login'); clearError(); }}>Log in</button>
-          </p>
+          {screen === 'account' && (
+            <p className="auth-switch">
+              Already have an account?{' '}
+              <button className="auth-link" onClick={() => { setMode('login'); clearError(); }}>Log in</button>
+            </p>
+          )}
         </div>
       </div>
-      <p style={{ textAlign: 'center', fontSize: '0.75rem', color: '#4b5563', marginTop: 16, paddingBottom: 8 }}>
-        By creating an account you agree to our{' '}
-        <a href="/privacy" target="_blank" rel="noreferrer" style={{ color: '#6b7280', textDecoration: 'underline' }}>Privacy Policy</a>
-      </p>
+      {(screen === 'account' || screen === 'finish') && (
+        <p style={{ textAlign: 'center', fontSize: '0.75rem', color: '#4b5563', marginTop: 16, paddingBottom: 8 }}>
+          By creating an account you agree to our{' '}
+          <a href="/privacy" target="_blank" rel="noreferrer" style={{ color: '#6b7280', textDecoration: 'underline' }}>Privacy Policy</a>
+        </p>
+      )}
     </div>
   );
 };

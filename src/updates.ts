@@ -10,6 +10,18 @@ export interface UpdateEntry {
 
 export const UPDATE_LOG: UpdateEntry[] = [
   {
+    date: '2026-07-17',
+    emoji: '🌱',
+    title: 'A softer way in',
+    summary: 'Signing up is now a gentle walkthrough instead of a form. You set your name, pick your first habits, get a look at your day, and meet Dub, choosing his look and your colours right there, before you land in an app that is already yours.',
+    points: [
+      'One thing per screen, in a calm order: your name, your body, your goal, your first habits, then a preview of your daily window so you can feel the rhythm before anything is live.',
+      'Meet Dub in person. Say hi, choose his species, pronouns and colour, and pick your ring, accents and background, all woven into the introduction.',
+      'Locked looks are shown too, so you can see what is coming as you level up. Everything you pick is already applied the moment you arrive.',
+      'Google sign-ups skip the password step and drop straight into the walkthrough with your name filled in.',
+    ],
+  },
+  {
     date: '2026-07-14',
     emoji: '💬',
     title: 'Dub can actually talk now',

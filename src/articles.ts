@@ -18,6 +18,27 @@ export interface Article {
 
 export const ARTICLES: Article[] = [
   {
+    id: 'a-softer-way-in',
+    title: 'A Softer Way In',
+    author: 'Ali Shah',
+    readMins: 2,
+    tag: 'Onboarding',
+    accent: '#2E8BFF',
+    dek: 'Signing up is now a gentle walkthrough: your name, your first habits, a look at your day, and meeting Dub with your colours chosen before you even arrive.',
+    body: [
+      { t: 'p', text: 'The old sign-up was a form. Fill five boxes, press a button, land cold. The new one is a walkthrough, one soft screen at a time, and by the end the app already feels like yours.' },
+      { t: 'h', text: 'One thing at a time' },
+      { t: 'p', text: 'You tell us what to call you, a little about your body, and your goal, each on its own calm screen. Then you pick your first habits, and we show you your daily window on its own so you can feel the rhythm of a day before a single thing is live. Tap a ring, watch it close. That is the whole loop, in miniature.' },
+      { t: 'h', text: 'Meet Dub, and make it yours' },
+      { t: 'p', text: 'Then you meet Dub in person. He says hi by name, and right there you choose his species, his pronouns and his colour, and set your ring, your accent colours and your background. It is not a settings page you find later. It is part of hello.' },
+      { t: 'li', text: 'Locked looks are shown alongside the free ones, so you can see what unlocks as you level up.' },
+      { t: 'li', text: 'Everything you choose is already applied the moment you arrive. No cold default, no trip to Profile to fix it.' },
+      { t: 'quote', text: 'You should not have to earn a home before it feels like one.' },
+      { t: 'h', text: 'Then you are in' },
+      { t: 'p', text: 'A last soft screen says you are all set, by name, and drops you into an app wearing the colours you picked, with the Dub you built waiting in his room. Go say hi. 🌱' },
+    ],
+  },
+  {
     id: 'dub-can-talk',
     title: 'Dub Can Actually Talk Now',
     author: 'Ali Shah',

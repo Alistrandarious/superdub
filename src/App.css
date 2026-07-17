@@ -3856,6 +3856,151 @@ h1, h2, h3, h4, .sora {
   font-variant-numeric: tabular-nums;
 }
 
+/* ── Soft onboarding flow (Auth signup) ─────────────────────────────────────
+   One gentle screen at a time. Each screen keys its own mount so it fades and
+   lifts in; the daily preview and Dub-meet screens sit inside the same card. */
+.onb-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: onbScreenIn 0.34s ease both;
+}
+@keyframes onbScreenIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Screen 6 — "This is your day": a soft, non-functional preview of the daily
+   window built from the habits just chosen. */
+.onb-day-card {
+  --onb-green: #2FD27E;
+  border-radius: 18px;
+  padding: 16px;
+  background: var(--glass-bg, rgba(255,255,255,0.04));
+  border: 1px solid var(--glass-border, rgba(255,255,255,0.09));
+  box-shadow: 0 10px 30px rgba(0,0,0,0.28);
+  transition: box-shadow 0.35s ease, border-color 0.35s ease;
+}
+.onb-day-card.is-complete {
+  border-color: rgba(47,210,126,0.55);
+  box-shadow: 0 0 0 1px rgba(47,210,126,0.35), 0 14px 34px rgba(47,210,126,0.18);
+}
+.onb-day-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.onb-day-eyebrow {
+  display: block;
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #8a90a0;
+  font-family: 'Space Mono', ui-monospace, monospace;
+}
+.onb-day-title { margin: 2px 0 0; font-size: 1.05rem; color: #fff; font-weight: 700; }
+.onb-day-count { color: #8a90a0; font-size: 0.9rem; white-space: nowrap; }
+.onb-day-count strong { color: var(--onb-green); font-size: 1.15rem; }
+.onb-day-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.onb-day-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  color: #dfe3ea;
+  font-family: inherit;
+  font-size: 0.95rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.onb-day-row.done { background: rgba(47,210,126,0.10); border-color: rgba(47,210,126,0.35); color: #fff; }
+.onb-day-ring {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.22);
+  display: grid;
+  place-items: center;
+  color: #0b1f16;
+  background: transparent;
+  transition: background 0.22s ease, border-color 0.22s ease, transform 0.22s ease;
+}
+.onb-day-row.done .onb-day-ring {
+  background: var(--onb-green);
+  border-color: var(--onb-green);
+  transform: scale(1.08);
+}
+.onb-day-name { flex: 1; }
+.onb-day-hint { margin: 12px 2px 0; font-size: 0.78rem; color: #8a90a0; text-align: center; }
+
+/* Screen 7 — "Meet Dub": greeting hero above the reused cosmetic shelves. */
+.onb-dub { display: flex; flex-direction: column; gap: 16px; }
+.onb-dub-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0 4px;
+}
+.onb-dub-bubble {
+  position: relative;
+  max-width: 260px;
+  text-align: center;
+  background: var(--glass-bg, rgba(255,255,255,0.06));
+  border: 1px solid var(--glass-border, rgba(255,255,255,0.1));
+  color: #eef1f6;
+  font-size: 0.9rem;
+  line-height: 1.35;
+  padding: 10px 14px;
+  border-radius: 14px;
+}
+.onb-dub-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -7px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 12px;
+  height: 12px;
+  background: var(--glass-bg, rgba(255,255,255,0.06));
+  border-right: 1px solid var(--glass-border, rgba(255,255,255,0.1));
+  border-bottom: 1px solid var(--glass-border, rgba(255,255,255,0.1));
+}
+
+/* Screen 9 — "You're all set": the reveal. */
+.onb-finish {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  padding: 18px 0 6px;
+}
+.onb-finish-badge {
+  font-size: 1.9rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #fff;
+  animation: onbFinishPop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
+}
+@keyframes onbFinishPop {
+  from { opacity: 0; transform: scale(0.8); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onb-screen { animation: none; }
+  .onb-finish-badge { animation: none; }
+  .onb-day-row.done .onb-day-ring { transform: none; }
+}
+
 .auth-step-title {
   margin: 0;
   font-size: 1.4rem;
