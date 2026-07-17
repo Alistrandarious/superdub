@@ -7721,14 +7721,15 @@ h1, h2, h3, h4, .sora {
 }
 .dub-checkin-btn:active { transform: scale(0.98); }
 .dub-section { padding: 12px; }
-/* Dub's room — a hero scene sized to the SVG's own ratio so it fills its box
-   with no dead space; the brief + insights flow (and scroll) below it. */
+/* Dub's room — a full-bleed hero scene sized to the SVG's own ratio, flush to
+   the header and edge-to-edge (no card frame): Dub gets the whole screen width.
+   The brief + insights flow (and scroll) below it. */
 .dub-room {
   flex: 0 0 auto;
   min-height: 0;
   box-sizing: border-box;
   display: flex; flex-direction: column;
-  margin: 8px 12px 0;
+  margin: 0;
 }
 /* Insights under the room — the scrollable half */
 .dub-insights {
@@ -7759,9 +7760,9 @@ h1, h2, h3, h4, .sora {
 }
 .dub-room-stage {
   position: relative; flex: 0 0 auto; min-height: 0;
-  width: 100%; aspect-ratio: 320 / 210; max-height: 44vh;
-  border-radius: var(--r-card); overflow: hidden;
-  border: 1px solid var(--glass-border);
+  width: 100%; aspect-ratio: 320 / 210; max-height: 48vh;
+  overflow: hidden;
+  border-bottom: 1px solid var(--glass-border);
 }
 /* Box carries the SVG's 320:210 ratio so meet fills it edge-to-edge; when
    max-height clamps (tall/desktop) the SVG stays bottom-anchored, no distortion */
