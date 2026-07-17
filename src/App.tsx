@@ -1443,6 +1443,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     return out;
   }, [tracker, habits, moodByDate, sleepByDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Must run unconditionally, BEFORE the !loaded early return below. A hook called
+  // after an early return violates rules-of-hooks and fails the production build
+  // (which is what pinned the live deploy on an old build).
+  const brandNick = useBrandNick();
+
   if (!loaded) {
     return (
       <div className="app" style={pageTheme(GROWTH)}>
@@ -1627,7 +1632,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     );
   };
 
-  const brandNick = useBrandNick();
   return (
     <div className="app flush" style={{ '--theme': themeColor, '--theme-dim': themeColor + '66', '--theme-glow': themeColor + '14' } as React.CSSProperties}>
       <div className="hb-topbar">
