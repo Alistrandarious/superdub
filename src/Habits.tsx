@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 import { useXP } from './XPContext';
 import './App.css';
 import { api } from './api';
@@ -1353,15 +1353,22 @@ const Habits: React.FC = () => {
     return () => window.removeEventListener('superdub:show-featured', handler);
   }, []);
 
+  // Login-streak stats for the mandatory check-in habit — one source for the flame
+  // badge cache below and the streak hero on the page.
+  const mandatoryStats = useMemo(
+    () => computeHabitStats(MANDATORY_HABIT, ht, today, startDates[MANDATORY_HABIT], xpCarry[MANDATORY_HABIT] ?? 0),
+    [ht, today, startDates, xpCarry],
+  );
+
   // Cache the check-in streak so the flame badge can show it on every page.
   useEffect(() => {
     if (!loaded) return;
-    const s = computeHabitStats(MANDATORY_HABIT, ht, today, startDates[MANDATORY_HABIT], xpCarry[MANDATORY_HABIT] ?? 0).streak;
+    const s = mandatoryStats.streak;
     if (localStorage.getItem('superdub.dayStreak') !== String(s)) {
       localStorage.setItem('superdub.dayStreak', String(s));
       window.dispatchEvent(new CustomEvent('superdub:streak-updated'));
     }
-  }, [loaded, ht, today, startDates, xpCarry]);
+  }, [loaded, mandatoryStats]);
 
   // The community habit is now a single dedicated habit ("do a good deed"), logged
   // from the Global planet overlay (GlobalPrompt) — no longer fed by daily-habit
@@ -1853,6 +1860,32 @@ const Habits: React.FC = () => {
             );
           })}
         </div>
+
+        {/* Login-streak hero: flame + big count + a milestone track pulling toward the next
+            mark. New users (or a lapsed 0-streak) get a gentle coaching line instead. */}
+        {stage === 'new' || mandatoryStats.streak < 1 ? (
+          <p className="hb-week-coach">Tick a habit each day to grow your streak. Dub coaches you as you go.</p>
+        ) : (() => {
+          const s = mandatoryStats.streak;
+          const MILES = [7, 14, 30, 60, 100, 180, 365];
+          const next = MILES.find(m => m > s) ?? null;
+          const prev = [...MILES].reverse().find(m => m <= s) ?? 0;
+          const pct = next ? Math.round(((s - prev) / (next - prev)) * 100) : 100;
+          const toGo = next ? next - s : 0;
+          return (
+            <div className={`streak-hero${s >= 7 ? ' hot' : ''}`}>
+              <span className="streak-hero-flame"><AnimatedFlame size={40} /></span>
+              <span className="streak-hero-num">{s}</span>
+              <span className="streak-hero-label">days in a row</span>
+              <div className="streak-track">
+                <div className="streak-track-bar"><div className="streak-track-fill" style={{ width: `${pct}%` }} /></div>
+                <p className="streak-track-nudge">{next
+                  ? <><b>{toGo}</b> {toGo === 1 ? 'day' : 'days'} to your {next}-day mark</>
+                  : "You've passed every milestone. Legendary."}</p>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Daily Log, the app's own inputs (weigh-in / steps / check-in) — follows
             the week strip's selected day; check-in reuses the mandatory-habit signal. */}

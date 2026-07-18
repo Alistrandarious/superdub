@@ -11,6 +11,7 @@ import {
   DUB_COLORS, DUB_COLOR_KEY, getDubColor,
   HABIT_COLORS, GLOW_COLORS, HABITS_COLOR_KEY, NAV_GLOW_KEY, type AccentColor,
   BACKGROUNDS, BACKGROUND_KEY, getBackground, type Background,
+  THEME_KEY, getTheme, type ThemeMode,
 } from './levels';
 
 // The cosmetic/companion customization, plus the shared level hero (LevelHeroRing).
@@ -124,6 +125,12 @@ const LevelCustomizer: React.FC<{ showHero?: boolean }> = ({ showHero = true }) 
     if (locked) return;
     localStorage.setItem(BACKGROUND_KEY, b.id); setBgId(b.id);
     window.dispatchEvent(new CustomEvent('superdub:bg-changed'));
+  };
+
+  const [theme, setThemeState] = useState<ThemeMode>(() => getTheme());
+  const pickTheme = (t: ThemeMode) => {
+    localStorage.setItem(THEME_KEY, t); setThemeState(t);
+    window.dispatchEvent(new CustomEvent('superdub:theme-changed'));
   };
 
   return (
@@ -260,6 +267,14 @@ const LevelCustomizer: React.FC<{ showHero?: boolean }> = ({ showHero = true }) 
               </button>
             );
           })}
+        </div>
+      </section>
+
+      <section className="asc-section">
+        <Eyebrow sub="light or dark">THEME</Eyebrow>
+        <div className="unit-seg">
+          <button type="button" className={`unit-seg-btn${theme === 'dark' ? ' active' : ''}`} onClick={() => pickTheme('dark')}>Dark</button>
+          <button type="button" className={`unit-seg-btn${theme === 'light' ? ' active' : ''}`} onClick={() => pickTheme('light')}>Light</button>
         </div>
       </section>
 

@@ -24,6 +24,10 @@
   --line-soft: var(--glass-border);
   --bg: var(--glass-bg);
   --void: #07090C;
+  /* Text tokens — the single source for body/foreground colour so light mode can flip it. */
+  --text: #E0E0F0;
+  --text-dim: rgba(255,255,255,0.62);
+  --text-mute: rgba(255,255,255,0.40);
 
   /* ── Signature gradients (brand identity) ── */
   --grad-brand: linear-gradient(135deg, #2FD27E 0%, #2E8BFF 100%);     /* flagship green→blue */
@@ -53,6 +57,27 @@
   --gutter: 16px;
 }
 
+/* ── Light theme — remaps the canonical surface + text tokens; accents stay as-is
+      (green/blue/gold/violet/flame read fine on both). Applied via [data-theme] on <html>
+      by BackgroundApplier.
+      ponytail: everything on the design-system surface/text tokens flips here. ~20 deep/rare
+      surfaces still hardcode #0E0E14 / #15151E (some paired with a hardcoded #fff text, e.g.
+      native option rules) — left dark on purpose rather than half-converted into white-on-white;
+      convert each together with its text colour once seen on device. ── */
+:root[data-theme="light"] {
+  --glass-bg: #F5F6FA;            /* soft white, not stark */
+  --glass-bg-strong: #FFFFFF;
+  --glass-border: #E2E5EC;
+  --glass-border-strong: #C7D2DC;
+  --glass-shadow: 0 4px 24px rgba(20,30,60,0.12);
+  --card-bg: rgba(255,255,255,0.66);
+  --void: #ECEEF3;
+  --text: #14161D;
+  --text-dim: rgba(20,22,29,0.64);
+  --text-mute: rgba(20,22,29,0.42);
+  --app-bg-base: linear-gradient(160deg, #F5F6FA 0%, #EDEFF4 100%);
+}
+
 /* Animatable CSS custom property for the ring */
 @property --pct {
   syntax: '<number>';
@@ -71,8 +96,8 @@
 
 html, body, #root {
   margin: 0; padding: 0; height: 100%;
-  background: #0E0E14;
-  color: #E0E0F0;
+  background: var(--glass-bg);
+  color: var(--text);
 }
 
 body {
@@ -5588,12 +5613,69 @@ h1, h2, h3, h4, .sora {
 .hb-week-celebrating .hb-week-col:nth-child(6) .hb-week-circle { animation: circle-flip 0.5s ease 0.40s both; }
 .hb-week-celebrating .hb-week-col:nth-child(7) .hb-week-circle { animation: circle-flip 0.5s ease 0.48s both; }
 
-.hb-week-caption {
+/* New-user coaching line (replaces the old grey check-in caption for stage === 'new'). */
+.hb-week-coach {
   text-align: center;
   font-size: 0.74rem;
-  color: #777;
+  color: var(--text-mute);
   margin: 12px 0 4px;
 }
+
+/* ── Login-streak hero — flame + big number + milestone track (stage !== 'new', streak ≥ 1) ── */
+.streak-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin: 14px 0 4px;
+}
+.streak-hero-flame { line-height: 0; }
+.streak-hero-num {
+  font-family: 'Sora', sans-serif;
+  font-weight: 800;
+  font-size: 2.6rem;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: #FF8A3C;
+  margin-top: 2px;
+}
+.streak-hero.hot .streak-hero-num {
+  color: var(--gold, #FFB928);
+  text-shadow: 0 0 18px rgba(255,185,40,0.35);
+}
+.streak-hero-label {
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+}
+
+.streak-track {
+  width: 100%;
+  max-width: 340px;
+  margin: 8px auto 6px;
+}
+.streak-track-bar {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--glass-border);
+  overflow: hidden;
+}
+.streak-track-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 999px;
+  background: var(--grad-ascension, linear-gradient(135deg, #FFB928, #FFE08A));
+  transition: width 0.6s ease;
+}
+.streak-track-nudge {
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  margin-top: 8px;
+}
+.streak-track-nudge b { color: var(--gold, #FFB928); font-weight: 700; }
 
 /* "Where you're trending" — the one-line on-track read on the home screen. The
    dot colour follows the coach's tone (good / warn / neutral). Tap → Progress. */
@@ -12086,7 +12168,6 @@ h3, h4,
 .hb-xp-scale,
 .hb-xp-to,
 .hb-week-dow,
-.hb-week-caption,
 .hcard-day-label,
 .hcard-day-tick {
   font-family: var(--font-data);

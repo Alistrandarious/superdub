@@ -184,17 +184,31 @@ export const NAV_GLOW_KEY = 'superdub.navGlow';
 export interface Background { id: string; name: string; grad: string; swatch: string; unlock?: Unlock; }
 export const BACKGROUNDS: Background[] = [
   { id: 'midnight', name: 'Midnight', grad: 'linear-gradient(160deg, #0E0E14 0%, #0E0E14 100%)', swatch: '#0E0E14' },
+  // Two colourful backgrounds free out of the gate, so there's colour beyond grey/black from day one.
+  { id: 'plum',     name: 'Plum',     grad: 'linear-gradient(160deg, #1A0E1E 0%, #2A1330 100%)', swatch: '#2A1330' },
+  { id: 'teal',     name: 'Teal',     grad: 'linear-gradient(160deg, #071518 0%, #0C2429 100%)', swatch: '#0C2429' },
   { id: 'dusk',     name: 'Dusk',     grad: 'linear-gradient(160deg, #0E0B16 0%, #16101F 100%)', swatch: '#16101F', unlock: { level: 3 } },
   { id: 'ocean',    name: 'Deep Ocean', grad: 'linear-gradient(160deg, #080F18 0%, #0C1826 100%)', swatch: '#0C1826', unlock: { level: 5 } },
   { id: 'forest',   name: 'Forest',   grad: 'linear-gradient(160deg, #08130D 0%, #0C1B13 100%)', swatch: '#0C1B13', unlock: { level: 7 } },
   { id: 'ember',    name: 'Ember',    grad: 'linear-gradient(160deg, #150B0B 0%, #1C0F0E 100%)', swatch: '#1C0F0E', unlock: { level: 10 } },
   { id: 'aurora',   name: 'Aurora',   grad: 'linear-gradient(160deg, #0A1018 0%, #140A1C 100%)', swatch: '#140A1C', unlock: { level: 13 } },
+  // Richer colour gates — earned as you climb.
+  { id: 'rose',     name: 'Rose',     grad: 'linear-gradient(160deg, #1C0A10 0%, #2E0F1C 100%)', swatch: '#2E0F1C', unlock: { level: 15 } },
+  { id: 'sunrise',  name: 'Sunrise',  grad: 'linear-gradient(160deg, #1A0E08 0%, #2A1710 100%)', swatch: '#2A1710', unlock: { level: 18 } },
+  { id: 'nebula',   name: 'Nebula',   grad: 'linear-gradient(160deg, #0B0A1E 0%, #1C1030 60%, #2A1330 100%)', swatch: '#1C1030', unlock: { level: 20 } },
   { id: 'freer',    name: 'Freer',    grad: 'linear-gradient(160deg, #07130F 0%, #160E18 100%)', swatch: '#0E1A1B', unlock: { special: 'earlyAdopter' } },
 ];
 export const BACKGROUND_KEY = 'superdub.background';
 export function getBackground(): Background {
   const id = (typeof localStorage !== 'undefined' && localStorage.getItem(BACKGROUND_KEY)) || 'midnight';
   return BACKGROUNDS.find(b => b.id === id) ?? BACKGROUNDS[0];
+}
+
+// ── Light / dark theme — a top-level axis, applied as [data-theme] on <html>. ──
+export type ThemeMode = 'dark' | 'light';
+export const THEME_KEY = 'superdub.theme';
+export function getTheme(): ThemeMode {
+  return (typeof localStorage !== 'undefined' && localStorage.getItem(THEME_KEY)) === 'light' ? 'light' : 'dark';
 }
 
 // ── The level ladder — meaningful titles + a reward each ─────────────────────
