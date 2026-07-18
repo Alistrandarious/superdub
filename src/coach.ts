@@ -7,6 +7,7 @@
 // =====================================================================
 
 import { isSystemHabit } from './systemHabits';
+import { getWeightUnit, kgToUnitValue, unitLabel } from './weightUnit';
 
 export interface WeighIn { day: string; weight: number; } // day = 'DD/MM'
 export interface TrackerHabitRow { day: string; habit_name: string; state: string | null; }
@@ -100,17 +101,24 @@ function weightLine(weights: WeighIn[], goal: Goal | null, seed: number): CoachL
   const { hasWeek, rate, first, last, latest } = wp;
   const goalType = goal?.goalType ?? (goal?.targetWeight != null ? (goal.targetWeight < latest ? 'lose' : 'gain') : undefined);
 
+  // Detection stays in kg (storage/engine unit); only DISPLAY converts to the
+  // user's chosen unit. kgToUnitValue is linear so it's right for deltas too.
+  // Guarded because coach.ts also runs under node in the *.check.ts files.
+  const unit = (() => { try { return getWeightUnit(); } catch { return 'kg' as const; } })();
+  const lbl = unitLabel(unit);
+  const w = (kg: number) => kgToUnitValue(kg, unit).toFixed(1);
+
   const absWk = Math.abs(rate);
   const plateau = absWk < 0.1;
   const losing = rate < 0;
   const weekWord = hasWeek ? 'this week' : 'lately';
-  const detail = hasWeek ? ` (${first!.y.toFixed(1)} → ${last!.y.toFixed(1)} kg since ${fmtDate(first!.x)})` : '';
+  const detail = hasWeek ? ` (${w(first!.y)} → ${w(last!.y)} ${lbl} since ${fmtDate(first!.x)})` : '';
 
   // No goal — just describe the movement kindly.
   if (!goal || goal.targetWeight == null || !goalType || goalType === 'maintain') {
-    if (plateau) return { icon: '⚖️', title: 'Holding steady', tone: 'neutral', body: `You're stable around ${latest.toFixed(1)} kg${detail}. Consistency is its own win.` };
+    if (plateau) return { icon: '⚖️', title: 'Holding steady', tone: 'neutral', body: `You're stable around ${w(latest)} ${lbl}${detail}. Consistency is its own win.` };
     return { icon: losing ? '📉' : '📈', title: losing ? 'Trending down' : 'Trending up', tone: 'neutral',
-      body: `${absWk.toFixed(1)} kg ${losing ? 'down' : 'up'} ${weekWord}${detail}, now at ${latest.toFixed(1)} kg.` };
+      body: `${w(absWk)} ${lbl} ${losing ? 'down' : 'up'} ${weekWord}${detail}, now at ${w(latest)} ${lbl}.` };
   }
 
   const target = goal.targetWeight;
@@ -118,12 +126,12 @@ function weightLine(weights: WeighIn[], goal: Goal | null, seed: number): CoachL
   const remaining = Math.abs(latest - target);
 
   if (remaining <= 0.3) {
-    return { icon: '🏆', title: 'Right on your goal', tone: 'good', body: `You're essentially at your ${target.toFixed(1)} kg target. Incredible. Now let's hold it.` };
+    return { icon: '🏆', title: 'Right on your goal', tone: 'good', body: `You're essentially at your ${w(target)} ${lbl} target. Incredible. Now let's hold it.` };
   }
   if (plateau) {
     return { icon: '🪨', title: 'A small plateau', tone: 'warn',
       body: pick([
-        `The scale's been flat ${weekWord}${detail}. Totally normal. Trust the process; ${remaining.toFixed(1)} kg to go.`,
+        `The scale's been flat ${weekWord}${detail}. Totally normal. Trust the process; ${w(remaining)} ${lbl} to go.`,
         `Plateaus happen to everyone${detail}. Tighten one thing today and the trend usually resumes within a week.`,
       ], seed) };
   }
@@ -131,15 +139,15 @@ function weightLine(weights: WeighIn[], goal: Goal | null, seed: number): CoachL
     // ETA from this week's honest pace, normalised to a full 7 days (weekPace).
     const weeksToGoal = wp.perWeek > 0 ? remaining / wp.perWeek : Infinity;
     const etaStr = isFinite(weeksToGoal) && weeksToGoal < 104
-      ? ` At this pace you'll hit ${target.toFixed(1)} kg around ${fmtDate(seed + Math.round(weeksToGoal * 7))}.`
+      ? ` At this pace you'll hit ${w(target)} ${lbl} around ${fmtDate(seed + Math.round(weeksToGoal * 7))}.`
       : '';
-    return { icon: '📉', title: `${absWk.toFixed(1)} kg ${losing ? 'down' : 'up'} ${weekWord}, on track`, tone: 'good',
-      body: `${hasWeek ? `${first!.y.toFixed(1)} → ${last!.y.toFixed(1)} kg since ${fmtDate(first!.x)}.` : ''}${etaStr} ${remaining.toFixed(1)} kg to go. Keep it steady.` };
+    return { icon: '📉', title: `${w(absWk)} ${lbl} ${losing ? 'down' : 'up'} ${weekWord}, on track`, tone: 'good',
+      body: `${hasWeek ? `${w(first!.y)} → ${w(last!.y)} ${lbl} since ${fmtDate(first!.x)}.` : ''}${etaStr} ${w(remaining)} ${lbl} to go. Keep it steady.` };
   }
   // Moving the wrong way
   return { icon: '🧭', title: 'Drifting off course', tone: 'warn',
     body: pick([
-      `${absWk.toFixed(1)} kg the wrong way ${weekWord}${detail}. One solid day resets the momentum. You've got this.`,
+      `${w(absWk)} ${lbl} the wrong way ${weekWord}${detail}. One solid day resets the momentum. You've got this.`,
       `Slightly off target ${weekWord}${detail}. No drama. Focus on today's basics and the line will turn.`,
     ], seed) };
 }

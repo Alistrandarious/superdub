@@ -49,6 +49,21 @@ assert.strictEqual(resolveAction('drift', 'warn', null), FALLBACK_ACTION.drift,
 assert.strictEqual(resolveAction('ontrack', 'good', 'ignored server text'), FALLBACK_ACTION.ontrack,
   'non-warn state must ignore any stall action and use its fallback');
 
+// ── the verdict renders in the user's weight unit, not always kg ──
+// (coach.ts converts at display; detection stays in kg). Stub localStorage so
+// getWeightUnit() returns 'lbs' under node.
+const store = new Map<string, string>([['superdub.weightUnit', 'lbs']]);
+(globalThis as any).localStorage = {
+  getItem: (k: string) => store.get(k) ?? null,
+  setItem: (k: string, v: string) => { store.set(k, v); },
+  removeItem: (k: string) => { store.delete(k); },
+};
+const lbReport = buildCoachReport(drifting, [], [], ALL_DAYS, ddmm(0), { goalType: 'lose', targetWeight: 78 });
+assert(lbReport, 'lb fixture must produce a coach report');
+const lbBody = lbReport!.lines[0].body;
+assert(/\blb\b/.test(lbBody), `expected lb unit in the verdict body, got "${lbBody}"`);
+assert(!/\d\s?kg\b/.test(lbBody), `verdict must not show kg when the unit is lbs: "${lbBody}"`);
+
 // ── every kind has a fallback action and at least one button ──
 for (const kind of Object.keys(FALLBACK_ACTION) as (keyof typeof FALLBACK_ACTION)[]) {
   assert(FALLBACK_ACTION[kind].length > 0, `${kind} needs a fallback action`);
