@@ -7,6 +7,7 @@
 // =====================================================================
 
 import { weekPace, ddmmToEpochDay, tipFor, type WeighIn, type CoachReport } from './coach';
+import { getWeightUnit, kgToUnitValue, unitLabel } from './weightUnit';
 import { estimateIntakeRange } from './energy';
 import type { PlanStatusResponse, CoachingResponse } from './api';
 import type { UserStage } from './userStage';
@@ -30,7 +31,12 @@ function sleepFmt(n: number): string {
   const r = Math.round(n * 10) / 10;
   return Number.isInteger(r) ? String(r) : r.toFixed(1);
 }
-const weightFmt = (n: number) => n.toFixed(1);
+// Display weights in the user's unit (storage/detection stay kg). kgToUnitValue
+// is linear so it's right for deltas too. Guarded — dubBrief also runs in node
+// (dubBrief.check.ts), where localStorage is absent.
+function weightDisplayUnit(): 'kg' | 'lbs' | 'st' {
+  try { return getWeightUnit(); } catch { return 'kg'; }
+}
 
 // ── Dub's live day state — drives his mood, room and speech bubble ───────────
 // Priority mapping over the same sources as the brief; first match wins.
@@ -92,10 +98,13 @@ export function buildBrief(src: BriefSources): { kind: 'morning' | 'evening' | '
       body.push(s);
     }
     if (wp?.latest != null && wp?.prev != null) {
+      const unit = weightDisplayUnit();
+      const lbl = unitLabel(unit);
+      const w = (kg: number) => kgToUnitValue(kg, unit).toFixed(1);
       const delta = wp.latest - wp.prev;
       body.push(Math.abs(delta) < 0.05
-        ? `The scale says ${weightFmt(wp.latest)} kg, level with your last weigh-in.`
-        : `The scale says ${weightFmt(wp.latest)} kg, ${delta < 0 ? 'down' : 'up'} ${weightFmt(Math.abs(delta))} on your last weigh-in.`);
+        ? `The scale says ${w(wp.latest)} ${lbl}, level with your last weigh-in.`
+        : `The scale says ${w(wp.latest)} ${lbl}, ${delta < 0 ? 'down' : 'up'} ${w(Math.abs(delta))} on your last weigh-in.`);
     }
     if (focusName) body.push(`Today's one job: ${focusName}. ${tipFor(focusName)}`);
     const kcal = plan?.currentTarget?.calories ?? null;

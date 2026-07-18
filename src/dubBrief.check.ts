@@ -129,4 +129,17 @@ assert.strictEqual(buildBrief({ ...empty, hour: 9, stage: 'new' }), null, 'new s
 assert.strictEqual(dubDayState({ ...empty, hour: 12, stage: 'new' }).thought, "Hi, I'm Dub. Tap me.", 'new user gets the intro thought');
 assert.strictEqual(dubDayState({ ...empty, hour: 12 }).thought, 'Tap me for a chat.', 'absent stage keeps the original thought');
 
+// 9) Weight unit: the morning weight sentence renders in the user's unit, not
+//    always kg. Stub localStorage so getWeightUnit() returns 'lbs' under node.
+//    (Last, so the assertions above run against the kg default.)
+const store = new Map<string, string>([['superdub.weightUnit', 'lbs']]);
+(globalThis as any).localStorage = {
+  getItem: (k: string) => store.get(k) ?? null,
+  setItem: (k: string, v: string) => { store.set(k, v); },
+  removeItem: (k: string) => { store.delete(k); },
+};
+const lbMorning = buildBrief({ ...fullBase, hour: 9 })!;
+assert(/scale says .*\blb\b/.test(lbMorning.text), `morning weight sentence must use lb when the unit is lbs: ${lbMorning.text}`);
+assert(!/\d\s?kg\b/.test(lbMorning.text), `morning brief must not show kg when the unit is lbs: ${lbMorning.text}`);
+
 console.log('dubBrief.check.ts — all assertions passed');

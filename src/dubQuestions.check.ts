@@ -95,4 +95,18 @@ for (const q of bank.concat(empty)) {
   assert(!banned.test(q.label) && !banned.test(q.answer), `voice: jargon found in "${q.id}": ${q.answer}`);
 }
 
+// 6) Weight unit: answers render in the user's unit, not always kg. Stub
+//    localStorage so getWeightUnit() returns 'lbs' under node. (Kept last so the
+//    kg assertions above run against the default.)
+const store = new Map<string, string>([['superdub.weightUnit', 'lbs']]);
+(globalThis as any).localStorage = {
+  getItem: (k: string) => store.get(k) ?? null,
+  setItem: (k: string, v: string) => { store.set(k, v); },
+  removeItem: (k: string) => { store.delete(k); },
+};
+const lbPace = buildQuestionBank(full).find(q => q.id === 'pace')!;
+assert(/\blb\b/.test(lbPace.answer), `pace answer must use lb when the unit is lbs: ${lbPace.answer}`);
+assert(!/\d\s?kg\b/.test(lbPace.answer), `pace answer must not show kg when the unit is lbs: ${lbPace.answer}`);
+assert(/180\.8/.test(lbPace.answer), `82.0 kg goal must convert to 180.8 lb: ${lbPace.answer}`);
+
 console.log('dubQuestions.check.ts — all assertions passed');

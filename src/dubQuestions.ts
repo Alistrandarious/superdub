@@ -13,6 +13,7 @@ import {
   type WeighIn, type CoachReport,
 } from './coach';
 import { FAT_CAP_KG_PER_DAY } from './energy';
+import { getWeightUnit, kgToUnitValue, unitLabel } from './weightUnit';
 import { computePlayerLevel } from './levels';
 import type { DubInsight } from './dubInsights';
 import type { PlanStatusResponse, CoachingResponse } from './api';
@@ -59,6 +60,13 @@ export function buildQuestionBank(d: DubData): DubQuestion[] {
   const plan = d.plan && d.plan.active ? d.plan : null;
   const goal = plan?.goal ?? null;
 
+  // Weight display in the user's unit (storage/detection stay kg). kgToUnitValue
+  // is linear so it's right for deltas and per-week rates too. Guarded — this
+  // runs in node under dubQuestions.check.ts, where localStorage is absent.
+  const unit = (() => { try { return getWeightUnit(); } catch { return 'kg' as const; } })();
+  const wLbl = unitLabel(unit);
+  const wt = (kg: number) => fmt1(kgToUnitValue(kg, unit));
+
   // ── The brief (when the composer produced one, E5.2) ──
   if (d.brief) {
     qs.push({ id: 'brief', label: "What's my brief?", answer: d.brief, followUps: ['focus', 'steps'] });
@@ -73,8 +81,8 @@ export function buildQuestionBank(d: DubData): DubQuestion[] {
   // ── Weight and pace ──
   if (wp) {
     const losing = wp.rate < 0;
-    const move = `${fmt1(Math.abs(wp.rate))} kg ${losing ? 'down' : 'up'} ${wp.hasWeek ? 'this week' : 'lately'}`;
-    const span = wp.hasWeek ? ` (${fmt1(wp.first!.y)} to ${fmt1(wp.last!.y)} kg since ${fmtDate(wp.first!.x)})` : '';
+    const move = `${wt(Math.abs(wp.rate))} ${wLbl} ${losing ? 'down' : 'up'} ${wp.hasWeek ? 'this week' : 'lately'}`;
+    const span = wp.hasWeek ? ` (${wt(wp.first!.y)} to ${wt(wp.last!.y)} ${wLbl} since ${fmtDate(wp.first!.x)})` : '';
     let paceAnswer: string;
     if (Math.abs(wp.rate) < 0.1) {
       paceAnswer = `The scale's held flat ${wp.hasWeek ? 'this week' : 'lately'}${span}. That's normal. Judge the month, not the week.`;
@@ -83,11 +91,11 @@ export function buildQuestionBank(d: DubData): DubQuestion[] {
       const rightWay = (goal.goalType === 'lose' && losing) || (goal.goalType === 'gain' && !losing);
       const weeks = wp.perWeek > 0 ? remaining / wp.perWeek : Infinity;
       const eta = rightWay && isFinite(weeks) && weeks < 104
-        ? ` At this pace you'll hit ${fmt1(goal.targetWeight)} kg around ${fmtDate(seed + Math.round(weeks * 7))}.`
+        ? ` At this pace you'll hit ${wt(goal.targetWeight)} ${wLbl} around ${fmtDate(seed + Math.round(weeks * 7))}.`
         : '';
-      paceAnswer = `You're ${move}${span}.${eta} ${fmt1(remaining)} kg to go. ${rightWay ? 'Keep it steady.' : 'One solid day turns the line.'}`;
+      paceAnswer = `You're ${move}${span}.${eta} ${wt(remaining)} ${wLbl} to go. ${rightWay ? 'Keep it steady.' : 'One solid day turns the line.'}`;
     } else {
-      paceAnswer = `You're ${move}${span}, now at ${fmt1(wp.latest)} kg. Set a goal in the Adaptive Weight Plan and I'll tell you your finish date.`;
+      paceAnswer = `You're ${move}${span}, now at ${wt(wp.latest)} ${wLbl}. Set a goal in the Adaptive Weight Plan and I'll tell you your finish date.`;
     }
     qs.push({ id: 'pace', label: 'Am I on pace?', answer: paceAnswer, followUps: ['goalDate', 'target'] });
 
@@ -97,7 +105,7 @@ export function buildQuestionBank(d: DubData): DubQuestion[] {
       const real = Math.min(FAT_CAP_KG_PER_DAY, delta);
       qs.push({
         id: 'whyUp', label: 'Why is my weight up?',
-        answer: `You're up ${fmt1(delta)} kg since your last weigh-in. At most ${fmt1(real)} kg of that can be real tissue. The rest is water and food still moving through. Judge the week, not the morning.`,
+        answer: `You're up ${wt(delta)} ${wLbl} since your last weigh-in. At most ${wt(real)} ${wLbl} of that can be real tissue. The rest is water and food still moving through. Judge the week, not the morning.`,
         followUps: ['pace'],
       });
     }
@@ -112,10 +120,10 @@ export function buildQuestionBank(d: DubData): DubQuestion[] {
         const dateStr = fmtDate(targetEpoch);
         const verdict = wp.perWeek >= needed * 1.1 ? 'so yes, with room to spare'
           : wp.perWeek >= needed * 0.9 ? 'so yes, if you hold this pace'
-          : `and your last week ran at ${fmt1(wp.perWeek)} kg, so it needs a step up`;
+          : `and your last week ran at ${wt(wp.perWeek)} ${wLbl}, so it needs a step up`;
         qs.push({
           id: 'goalDate', label: `Will I hit my goal by ${dateStr}?`,
-          answer: `You need ${fmt1(remaining)} kg off by ${dateStr}. That works out to ${fmt1(needed)} kg a week. Your last week ran at ${fmt1(wp.perWeek)} kg, ${verdict}.`,
+          answer: `You need ${wt(remaining)} ${wLbl} off by ${dateStr}. That works out to ${wt(needed)} ${wLbl} a week. Your last week ran at ${wt(wp.perWeek)} ${wLbl}, ${verdict}.`,
           followUps: ['target', 'steps'],
         });
       }
@@ -152,7 +160,7 @@ export function buildQuestionBank(d: DubData): DubQuestion[] {
     const { weekTicks, possibleTicks } = d.report.weekStats;
     const pct = Math.round((weekTicks / possibleTicks) * 100);
     const weightBit = wp && Math.abs(wp.rate) >= 0.1
-      ? ` The scale ${wp.rate < 0 ? 'gave back' : 'added'} ${fmt1(Math.abs(wp.rate))} kg too.`
+      ? ` The scale ${wp.rate < 0 ? 'gave back' : 'added'} ${wt(Math.abs(wp.rate))} ${wLbl} too.`
       : '';
     qs.push({
       id: 'week', label: "How's my week looking?",
