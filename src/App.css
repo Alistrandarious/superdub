@@ -14899,3 +14899,101 @@ details[open] .plan-explainer-summary::before { content: '▾  '; }
 }
 .plan-meal-total-lbl { font-family: 'Space Mono', monospace; font-size: 0.68rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.08em; }
 .plan-meal-total-val { font-family: 'Space Mono', monospace; font-size: 0.74rem; font-weight: 700; color: var(--brand-blue); }
+
+/* ══ Full-screen prompt shell (PromptShell.tsx) ═══════════════════════════════
+   The full-bleed replacement for the .checkin-modal bottom sheet. NEW classes
+   only — never touches .checkin-* (shared by Habits.tsx + FriendsPanel.tsx).
+   --theme / --theme-glow come from pageTheme(accent) set inline on .prompt-fs.
+   z-index sits above the check-in sheets (1200). v1 has no mascot; the reserved
+   .prompt-fs-mascot slot only renders when a mascot node is passed. ── */
+.prompt-fs {
+  position: fixed; inset: 0; z-index: 1300;
+  display: flex; align-items: stretch; justify-content: center;
+  background: var(--void);
+  overflow: hidden;
+}
+/* Accent radial glow from the top — the hero light in place of a mascot. */
+.prompt-fs-glow {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(125% 56% at 50% -8%, var(--theme-glow), transparent 60%);
+}
+/* Ambient accent motes drifting up behind the content. */
+.prompt-fs-motes { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.prompt-fs-motes i {
+  position: absolute; bottom: 22%; width: 5px; height: 5px; border-radius: 50%;
+  background: var(--theme); box-shadow: 0 0 8px var(--theme);
+  opacity: 0; animation: prompt-fs-mote 3.8s ease-in-out infinite;
+}
+.prompt-fs-motes i:nth-child(1) { left: 22%; animation-delay: 0s; }
+.prompt-fs-motes i:nth-child(2) { left: 36%; animation-delay: .9s; width: 4px; height: 4px; }
+.prompt-fs-motes i:nth-child(3) { left: 50%; animation-delay: 1.7s; }
+.prompt-fs-motes i:nth-child(4) { left: 64%; animation-delay: .5s; width: 4px; height: 4px; }
+.prompt-fs-motes i:nth-child(5) { left: 78%; animation-delay: 2.4s; }
+.prompt-fs-motes i:nth-child(6) { left: 45%; animation-delay: 3s; width: 3px; height: 3px; }
+@keyframes prompt-fs-mote {
+  0%   { transform: translateY(18px) scale(.5); opacity: 0; }
+  20%  { opacity: .8; }
+  80%  { opacity: .5; }
+  100% { transform: translateY(-92px) scale(1); opacity: 0; }
+}
+/* The content column. Full-height on phones; a centred column on wide screens so
+   the void around it reads as the backdrop (closeOnBackdrop taps land there). */
+.prompt-fs-screen {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 520px; min-height: 100dvh;
+  display: flex; flex-direction: column; gap: 14px;
+  padding:
+    calc(34px + env(safe-area-inset-top, 0px)) 22px
+    calc(24px + env(safe-area-inset-bottom, 16px));
+  outline: none;
+  animation: prompt-fs-in .34s ease;
+}
+@keyframes prompt-fs-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.prompt-fs-hero { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+.prompt-fs-eyebrow {
+  font-family: var(--font-data, 'Space Mono', monospace);
+  font-size: 0.62rem; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--theme); font-weight: 700;
+}
+.prompt-fs-mascot, .prompt-fs-art { display: flex; justify-content: center; align-items: center; }
+.prompt-fs-title {
+  font-family: var(--font-display, 'Kanit', sans-serif);
+  font-style: italic; font-weight: 800; font-size: 1.7rem; line-height: 1.08;
+  letter-spacing: 0.01em; color: var(--text); margin: 2px 0 0; text-wrap: balance;
+}
+.prompt-fs-sub {
+  font-family: var(--font-ui, 'Sora', sans-serif);
+  color: var(--text-dim); font-size: 0.9rem; line-height: 1.5;
+  max-width: 34ch; margin: 0 auto;
+}
+/* The reviewed control lives here — centred on the taller canvas. Any spacing the
+   controls need is scoped UNDER this class, never on the control classes. */
+.prompt-fs-body { display: flex; flex-direction: column; gap: 12px; }
+.prompt-fs-body .vitals-slider,
+.prompt-fs-body .checkin-weight-input-wrap { margin-left: auto; margin-right: auto; }
+/* Pushes the actions to the bottom of the full-height screen. */
+.prompt-fs-fill { flex: 1; min-height: 8px; }
+.prompt-fs-actions { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+/* Mirrors .checkin-save-btn: full-width, --theme fill, dark text, weight 800. */
+.prompt-fs-cta {
+  width: 100%; padding: 15px 20px; border-radius: 14px; border: none;
+  font-family: var(--font-ui, 'Sora', sans-serif);
+  font-size: 1.05rem; font-weight: 800; line-height: 1.2; letter-spacing: 0.01em;
+  background: var(--theme, #2E8BFF); color: #000;
+  cursor: pointer; transition: opacity 0.15s;
+}
+.prompt-fs-cta:active { opacity: 0.75; }
+.prompt-fs-cta:disabled { opacity: 0.5; cursor: default; }
+.prompt-fs-dismiss {
+  background: none; border: none; color: var(--text-mute);
+  font-family: var(--font-ui, 'Sora', sans-serif); font-size: 0.82rem;
+  padding: 10px 16px; cursor: pointer; transition: color 0.15s;
+}
+.prompt-fs-dismiss:hover { color: var(--text-dim); }
+.prompt-fs-cta:focus-visible, .prompt-fs-dismiss:focus-visible {
+  outline: 2px solid var(--theme); outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .prompt-fs-screen { animation: none; }
+  .prompt-fs-motes i { animation: none; opacity: 0; }
+}

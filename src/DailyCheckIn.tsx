@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import { api } from './api';
+import PromptShell from './PromptShell';
+import { HEALTH } from './theme';
 import WeightInput from './WeightInput';
 import { useWeightUnit, formatWeightKg } from './weightUnit';
 import { promptEnabled } from './promptPrefs';
@@ -145,59 +147,54 @@ const DailyCheckIn: React.FC = () => {
   // "No" reassures and stops nagging for the day (dismiss marks it done).
   if (gate === 'ask') {
     return (
-      <div className="checkin-overlay">
-        <div className="checkin-modal">
-          <h2 className="checkin-title">Morning Check-in</h2>
-          <p className="checkin-subtitle">Did you weigh yourself this morning? Before breakfast, after using the bathroom. That's the most consistent reading.</p>
-          <div className="checkin-actions">
-            <button className="checkin-save-btn" onClick={() => setGate('input')}>Yes, log it</button>
-            <button className="checkin-later-btn" onClick={askLater}>Ask me later</button>
-            <button className="checkin-skip-btn" onClick={dismiss}>No, try tomorrow</button>
-          </div>
-        </div>
-      </div>
+      <PromptShell
+        accent={HEALTH}
+        eyebrow="Morning Check-in"
+        title="Weigh in today?"
+        subtitle="Did you weigh yourself this morning? Before breakfast, after using the bathroom. That's the most consistent reading."
+        cta={{ label: 'Yes, weigh in', onClick: () => setGate('input') }}
+        onDismiss={dismiss}
+        dismissLabel="No, try tomorrow"
+      >
+        <button className="checkin-later-btn" onClick={askLater}>Ask me later</button>
+      </PromptShell>
     );
   }
 
   return (
-    <div className="checkin-overlay">
-      <div className="checkin-modal">
-        <h2 className="checkin-title">Morning Check-in</h2>
-        <p className="checkin-subtitle">Weigh yourself first thing in the morning, after using the bathroom and before eating. This gives you the most consistent reading.</p>
-
-        {/* Tap-to-type weight, entered in the user's unit, stored as kg */}
-        <div className="checkin-weight-input-wrap">
-          <WeightInput
-            valueKg={weight}
-            onChangeKg={setWeight}
-            unit={unit}
-            inputClassName="checkin-weight-input"
-            autoFocus
-            onEnter={save}
-            ariaLabel="Weight"
-          />
-        </div>
-
-        <div className="checkin-actions">
-          {done ? (
-            <div className="checkin-done">✓ Logged!</div>
-          ) : (
-            <>
-              {error && <p className="checkin-error">{error}</p>}
-              <button className="checkin-save-btn" onClick={save} disabled={saving}>
-                {saving ? 'Saving…' : error ? 'Retry' : 'Log it'}
-              </button>
-              <button className="checkin-later-btn" onClick={askLater} disabled={saving}>
-                Ask me later
-              </button>
-              <button className="checkin-skip-btn" onClick={dismiss} disabled={saving}>
-                Skip today
-              </button>
-            </>
-          )}
-        </div>
+    <PromptShell
+      accent={HEALTH}
+      eyebrow="Weigh-in · Morning"
+      title="Log your weight"
+      subtitle="No judgment, just data."
+      cta={done ? undefined : { label: saving ? 'Saving…' : error ? 'Retry' : 'Log it', onClick: save, disabled: saving }}
+      onDismiss={dismiss}
+      dismissLabel="Skip today"
+    >
+      {/* Tap-to-type weight, entered in the user's unit, stored as kg */}
+      <div className="checkin-weight-input-wrap">
+        <WeightInput
+          valueKg={weight}
+          onChangeKg={setWeight}
+          unit={unit}
+          inputClassName="checkin-weight-input"
+          autoFocus
+          onEnter={save}
+          ariaLabel="Weight"
+        />
       </div>
-    </div>
+
+      {done ? (
+        <div className="checkin-done">✓ Logged!</div>
+      ) : (
+        <>
+          {error && <p className="checkin-error">{error}</p>}
+          <button className="checkin-later-btn" onClick={askLater} disabled={saving}>
+            Ask me later
+          </button>
+        </>
+      )}
+    </PromptShell>
   );
 };
 

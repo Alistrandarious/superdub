@@ -5,6 +5,8 @@ import SleepRangeSlider, { axisToHHMM, DEFAULT_BED, DEFAULT_WAKE } from './Sleep
 import { promptEnabled } from './promptPrefs';
 import { getLoggingDay } from './day';
 import { MORNING_VITALS } from './systemHabits';
+import PromptShell from './PromptShell';
+import { TEAL } from './theme';
 
 // ── Vitals prompt — the sleek morning "how did you sleep & feel?" step from the
 // prompt-system spec. One focused pop-up (not the old combined check-in): a
@@ -93,52 +95,48 @@ const VitalsPrompt: React.FC = () => {
   if (!show) return null;
 
   return (
-    <div className="checkin-overlay">
-      <div className="checkin-modal vitals-modal">
-        <h2 className="checkin-title">Morning vitals</h2>
-        <p className="checkin-subtitle">A few taps on how you're doing.</p>
-
-        {/* Sleep, a two-thumb "between" slider: drag bedtime and wake time */}
-        {sleepOn && (
-          <div className="vitals-step">
-            <div className="vitals-label"><span>Sleep last night</span></div>
-            <SleepRangeSlider
-              bed={bed} wake={wake}
-              onChange={(b, w) => { setBed(b); setWake(w); setSleepTouched(true); }}
-            />
-          </div>
-        )}
-
-        {/* Energy, 1–10. No thumb until you tap and slide to lock it in. Slides in
-            after sleep when both are on; shown straight away when sleep is off. */}
-        {energyOn && (
-          <div className={`vitals-step${sleepOn ? ` vitals-reveal${sleepTouched ? ' in' : ''}` : ''}`}>
-            <div className="vitals-label"><span>Energy</span><span className="vitals-value">{energyTouched ? energy : '–'}<span className="vitals-of">/10</span></span></div>
-            <input
-              type="range" min={1} max={10} step={1} value={energy}
-              className={`vitals-slider${energyTouched ? '' : ' untouched'}`}
-              onChange={e => { setEnergy(parseInt(e.target.value, 10)); setEnergyTouched(true); }}
-              aria-label="Energy"
-            />
-            <div className="vitals-scale"><span>drained</span><span>peak</span></div>
-          </div>
-        )}
-
-        <div className="checkin-actions">
-          {done ? (
-            <div className="checkin-done">✓ Logged! +5 XP</div>
-          ) : (
-            <>
-              {error && <p className="checkin-error">{error}</p>}
-              <button className="checkin-save-btn" onClick={save} disabled={saving || !canSave}>
-                {saving ? 'Saving…' : error ? 'Retry' : canSave ? 'Log it' : 'Set it'}
-              </button>
-              <button className="checkin-skip-btn" onClick={dismiss} disabled={saving}>Skip today</button>
-            </>
+    <PromptShell
+      accent={TEAL}
+      eyebrow="Vitals · Morning"
+      title="How did you sleep?"
+      subtitle="This sets how hard to push today."
+      cta={done ? undefined : { label: saving ? 'Saving…' : error ? 'Retry' : 'Save vitals', onClick: save, disabled: saving || !canSave }}
+      onDismiss={dismiss}
+    >
+      {done ? (
+        <div className="checkin-done">✓ Logged! +5 XP</div>
+      ) : (
+        <>
+          {/* Sleep, a two-thumb "between" slider: drag bedtime and wake time */}
+          {sleepOn && (
+            <div className="vitals-step">
+              <div className="vitals-label"><span>Sleep last night</span></div>
+              <SleepRangeSlider
+                bed={bed} wake={wake}
+                onChange={(b, w) => { setBed(b); setWake(w); setSleepTouched(true); }}
+              />
+            </div>
           )}
-        </div>
-      </div>
-    </div>
+
+          {/* Energy, 1–10. No thumb until you tap and slide to lock it in. Slides in
+              after sleep when both are on; shown straight away when sleep is off. */}
+          {energyOn && (
+            <div className={`vitals-step${sleepOn ? ` vitals-reveal${sleepTouched ? ' in' : ''}` : ''}`}>
+              <div className="vitals-label"><span>Energy</span><span className="vitals-value">{energyTouched ? energy : '–'}<span className="vitals-of">/10</span></span></div>
+              <input
+                type="range" min={1} max={10} step={1} value={energy}
+                className={`vitals-slider${energyTouched ? '' : ' untouched'}`}
+                onChange={e => { setEnergy(parseInt(e.target.value, 10)); setEnergyTouched(true); }}
+                aria-label="Energy"
+              />
+              <div className="vitals-scale"><span>drained</span><span>peak</span></div>
+            </div>
+          )}
+
+          {error && <p className="checkin-error">{error}</p>}
+        </>
+      )}
+    </PromptShell>
   );
 };
 

@@ -4,6 +4,8 @@ import { api } from './api';
 import { promptEnabled } from './promptPrefs';
 import { getLoggingDay } from './day';
 import { EVENING_REFLECTION } from './systemHabits';
+import PromptShell from './PromptShell';
+import { TEAL } from './theme';
 
 // ── Evening reflection — the sleek end-of-day step: how the day felt (mood) and
 // whether eating landed on plan. Time-locked to the evening (6 PM+, once/day) so
@@ -98,67 +100,62 @@ const EveningPrompt: React.FC = () => {
   if (!show) return null;
 
   return (
-    <div className="checkin-overlay">
-      <div className="checkin-modal vitals-modal">
-        <h2 className="checkin-title">Evening reflection</h2>
-        <p className="checkin-subtitle">{moodOn ? 'Two taps. How the day felt, and how eating landed.' : 'One tap. How eating landed today.'}</p>
-
-        {/* Mood, 1–10. No thumb until you tap and slide to lock it in. */}
-        {moodOn && (
-          <div className="vitals-step">
-            <div className="vitals-label"><span>Mood today</span><span className="vitals-value">{moodTouched ? mood : '–'}<span className="vitals-of">/10</span></span></div>
-            <input
-              type="range" min={1} max={10} step={1} value={mood}
-              className={`vitals-slider mood${moodTouched ? '' : ' untouched'}`}
-              onChange={e => { setMood(parseInt(e.target.value, 10)); setMoodTouched(true); }}
-              aria-label="Mood today"
-            />
-            <div className="vitals-scale"><span>rough</span><span>great</span></div>
-          </div>
-        )}
-
-        {/* Eating, feeds the plan engine's confidence. Slides in once mood is set;
-            shown straight away when mood is off. */}
-        <div className={`adherence-section${moodOn ? ` vitals-reveal${moodTouched ? ' in' : ''}` : ''}`}>
-          <p className="energy-label-row">
-            Eating vs. your target today?
-            {adherenceLevel !== null && (
-              <span className="energy-selected-label"> · {EATING_BLOCKS.find(b => b.level === adherenceLevel)?.label}</span>
-            )}
-          </p>
-          <div className="eating-blocks">
-            {EATING_BLOCKS.map(b => (
-              <button
-                key={b.level}
-                className={`eating-block${adherenceLevel === b.level ? ' selected' : ''}${b.level === 0 ? ' mid' : ''}`}
-                onClick={() => setAdherenceLevel(b.level)}
-                aria-label={b.label}
-              >
-                {b.sym}
-              </button>
-            ))}
-          </div>
-          <div className="energy-pip-labels">
-            <span>Well under</span>
-            <span>Well over</span>
-          </div>
+    <PromptShell
+      accent={TEAL}
+      eyebrow="Evening"
+      title="How did today land?"
+      subtitle="Be honest, no score kept."
+      cta={done ? undefined : {
+        label: saving ? 'Saving…' : error ? 'Retry' : canSave ? 'Log it' : moodOn ? 'Mood + eating' : 'Pick eating',
+        onClick: save,
+        disabled: saving || !canSave,
+      }}
+      onDismiss={dismiss}
+    >
+      {/* Mood, 1–10. No thumb until you tap and slide to lock it in. */}
+      {moodOn && (
+        <div className="vitals-step">
+          <div className="vitals-label"><span>Mood today</span><span className="vitals-value">{moodTouched ? mood : '–'}<span className="vitals-of">/10</span></span></div>
+          <input
+            type="range" min={1} max={10} step={1} value={mood}
+            className={`vitals-slider mood${moodTouched ? '' : ' untouched'}`}
+            onChange={e => { setMood(parseInt(e.target.value, 10)); setMoodTouched(true); }}
+            aria-label="Mood today"
+          />
+          <div className="vitals-scale"><span>rough</span><span>great</span></div>
         </div>
+      )}
 
-        <div className="checkin-actions">
-          {done ? (
-            <div className="checkin-done">✓ Logged! +5 XP</div>
-          ) : (
-            <>
-              {error && <p className="checkin-error">{error}</p>}
-              <button className="checkin-save-btn" onClick={save} disabled={saving || !canSave}>
-                {saving ? 'Saving…' : error ? 'Retry' : canSave ? 'Log it' : moodOn ? 'Mood + eating' : 'Pick eating'}
-              </button>
-              <button className="checkin-skip-btn" onClick={dismiss} disabled={saving}>Skip today</button>
-            </>
+      {/* Eating, feeds the plan engine's confidence. Slides in once mood is set;
+          shown straight away when mood is off. */}
+      <div className={`adherence-section${moodOn ? ` vitals-reveal${moodTouched ? ' in' : ''}` : ''}`}>
+        <p className="energy-label-row">
+          Eating vs. your target today?
+          {adherenceLevel !== null && (
+            <span className="energy-selected-label"> · {EATING_BLOCKS.find(b => b.level === adherenceLevel)?.label}</span>
           )}
+        </p>
+        <div className="eating-blocks">
+          {EATING_BLOCKS.map(b => (
+            <button
+              key={b.level}
+              className={`eating-block${adherenceLevel === b.level ? ' selected' : ''}${b.level === 0 ? ' mid' : ''}`}
+              onClick={() => setAdherenceLevel(b.level)}
+              aria-label={b.label}
+            >
+              {b.sym}
+            </button>
+          ))}
+        </div>
+        <div className="energy-pip-labels">
+          <span>Well under</span>
+          <span>Well over</span>
         </div>
       </div>
-    </div>
+
+      {done && <div className="checkin-done">✓ Logged! +5 XP</div>}
+      {error && !done && <p className="checkin-error">{error}</p>}
+    </PromptShell>
   );
 };
 

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import { api } from './api';
 import { getWorkoutHour } from './push';
+import PromptShell from './PromptShell';
+import { HEALTH } from './theme';
 
 // ── Exercise prompt (#3) — the one-tap "did you close your loop?" from the spec.
 // Time-locked: auto-appears once you're past your set workout hour (cog menu →
@@ -45,23 +47,22 @@ const ExercisePrompt: React.FC = () => {
   if (!show) return null;
 
   return (
-    <div className="checkin-overlay">
-      <div className="checkin-modal exercise-modal">
-        <h2 className="checkin-title">Exercise loop</h2>
-        <p className="checkin-subtitle">Did you close your exercise loop today?</p>
-        {result ? (
-          <div className="checkin-done">{result === 'yes' ? '💪 Nice, logged!' : 'No worries, tomorrow.'}</div>
-        ) : (
-          <>
-            <div className="exercise-btns">
-              <button className="exercise-btn yes" onClick={() => answer(true)} disabled={saving}>Yes</button>
-              <button className="exercise-btn no" onClick={() => answer(false)} disabled={saving}>No</button>
-            </div>
-            <button className="checkin-skip-btn" onClick={dismiss} disabled={saving}>Ask me later</button>
-          </>
-        )}
-      </div>
-    </div>
+    <PromptShell
+      accent={HEALTH}
+      eyebrow="Workout"
+      title="Did you close your loop today?"
+      onDismiss={dismiss}
+      dismissLabel="Ask me later"
+    >
+      {result ? (
+        <div className="checkin-done">{result === 'yes' ? '💪 Nice, logged!' : 'No worries, tomorrow.'}</div>
+      ) : (
+        <div className="exercise-btns">
+          <button className="exercise-btn yes" onClick={() => answer(true)} disabled={saving}>Yes</button>
+          <button className="exercise-btn no" onClick={() => answer(false)} disabled={saving}>No</button>
+        </div>
+      )}
+    </PromptShell>
   );
 };
 
