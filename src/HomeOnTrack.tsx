@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { api } from './api';
 import { buildCoachReport } from './coach';
 
@@ -30,7 +29,6 @@ function todayKey() {
 
 const HomeOnTrack: React.FC = () => {
   const [line, setLine] = useState<{ title: string; tone: 'good' | 'warn' | 'neutral' } | null>(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
     let cancelled = false;
@@ -58,8 +56,8 @@ const HomeOnTrack: React.FC = () => {
   return (
     <button
       className={`home-ontrack home-ontrack--${line.tone}`}
-      onClick={() => navigate('/dashboard')}
-      aria-label={`Where you're trending: ${line.title}. Open Progress for the full trend.`}
+      onClick={() => window.dispatchEvent(new CustomEvent('superdub:show-trend'))}
+      aria-label={`Where you're trending: ${line.title}. Open the full read: why, and what to do next.`}
     >
       <span className="home-ontrack-dot" aria-hidden="true" />
       <span className="home-ontrack-body">

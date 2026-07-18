@@ -19,6 +19,7 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { XPProvider } from './XPContext';
 import LevelUpCelebration from './LevelUpCelebration';
 import DubChat from './DubChat';
+import TrendSheet from './TrendSheet';
 import BackgroundApplier from './BackgroundApplier';
 import NightSky from './NightSky';
 
@@ -168,6 +169,7 @@ function Root() {
         <AppRouter />
         <LevelUpCelebration />
         <DubChat />
+        <TrendSheet />
       </XPProvider>
     </BrowserRouter>
   );
