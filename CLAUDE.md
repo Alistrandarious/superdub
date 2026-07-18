@@ -4,6 +4,24 @@ Coding rules for this repo — the Ponytail "lazy senior dev" ruleset applies:
 
 @AGENTS.md
 
+## Git workflow — branch, verify, then land on master
+
+Ali runs several chats on this repo at once. Every chat ships the same way, and does
+it seamlessly without stopping to ask (approval is standing):
+
+1. **Work on your own branch, never on `master` directly** (own `git worktree` if you
+   can). This is what keeps concurrent chats from committing each other's edits.
+2. **Verify on the branch before landing** — both must pass:
+   `CI=true npm run build` (eslint-as-errors + tsc) **and** `npm run check`. Green only.
+3. **Bump `src/version.ts` `BUILD_TAG`** so the deploy is identifiable.
+4. **Land on master seamlessly:** `git fetch origin` → `git rebase origin/master` →
+   re-run the checks if the rebase pulled in changes → `git push origin HEAD:master`
+   (fast-forward). `master` auto-deploys to Render, so only a green build ever lands.
+
+Before staging: `git branch -vv` first. Anything in the tree you didn't change belongs
+to another chat — leave it, stage explicit paths, never `git add -A`. Full detail and
+the collision failure mode: [PARALLEL_CHATS.md](PARALLEL_CHATS.md).
+
 ## Project reference
 - [APP_OVERVIEW.md](APP_OVERVIEW.md) — what Superdub does + the insight services
 - [PAGES.md](PAGES.md) — routes → components → accents
