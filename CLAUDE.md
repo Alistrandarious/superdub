@@ -31,5 +31,6 @@ the collision failure mode: [PARALLEL_CHATS.md](PARALLEL_CHATS.md).
 - [CALCULATIONS.md](CALCULATIONS.md) — every formula (mirrored live at `/maths`)
 - [UPDATE_ARTICLES.md](UPDATE_ARTICLES.md) — every major update ships a Success Kit article
 - [ROADMAP.md](ROADMAP.md) — the prioritized backlog; pick the top unblocked task
+- [CLICKUP.md](CLICKUP.md) — the LayerDigital ClickUp mirror of the roadmap (IDs + sync rules)
 - [ORCHESTRATION.md](ORCHESTRATION.md) — lead/worker agent workflow for shipping tasks
 - [PARALLEL_CHATS.md](PARALLEL_CHATS.md) — several chats on this repo at once: one worktree per chat, check git state before committing
