@@ -5467,8 +5467,8 @@ h1, h2, h3, h4, .sora {
 /* XP bar inside the cadence dock — it rides in .cadx-xp, the top row of the ONE
    sticky glass capsule (.cadx--compact .cadx-header), above the dots. One element,
    so there is no seam between the bar and the dots. */
-.cadx-xp { display: flex; align-items: center; margin-bottom: 8px; }
-.cadx-xp .hb-xp-bar { flex: 1; }
+.cadx-xp { display: flex; align-items: center; margin-bottom: 13px; }
+.cadx-xp .hb-xp-bar { flex: 1; height: 22px; }
 /* Entrance: the fill sweeps out to its true value each time the dock appears
    (the row only mounts in compact mode, so this replays on every re-dock). */
 .cadx--compact .cadx-xp .hb-xp-fill {
@@ -6062,7 +6062,7 @@ h1, h2, h3, h4, .sora {
    translucent glass capsule. A single element means there's no seam to open. */
 .cadx--compact .cadx-header {
   margin: 0 12px;
-  padding: 10px 12px 11px;
+  padding: 14px 14px 15px;
   background: rgba(10,11,16,0.62);
   -webkit-backdrop-filter: blur(16px) saturate(160%); backdrop-filter: blur(16px) saturate(160%);
   border: 1px solid var(--glass-border);

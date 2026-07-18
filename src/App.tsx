@@ -24,7 +24,6 @@ import PlanGauge from './PlanGauge';
 import WeightSparkline from './WeightSparkline';
 import { useWeightUnit, formatWeightKg, kgToUnitValue, unitLabel, WeightUnit } from './weightUnit';
 import WeightInput from './WeightInput';
-import StreakFlame from './StreakFlame';
 import CogMenu from './CogMenu';
 import { useBrandNick, setBrandNick } from './brand';
 import { useUserStage } from './userStage';
@@ -1642,7 +1641,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
         {/* Unified header actions, same on every page */}
         <div className="hb-topbar-actions">
-          <StreakFlame />
           <CogMenu />
         </div>
       </div>

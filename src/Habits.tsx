@@ -18,7 +18,7 @@ import LevelCustomizer from './LevelCustomizer';
 import LevelLadder from './LevelLadder';
 import { eveningPending } from './EveningPrompt';
 import {
-  MoonIc, CalendarIc, TrophyIc, WalkIc, BookIc, NoSmokeIc, MealIc, MoneyIc, HealthIc,
+  CalendarIc, TrophyIc, WalkIc, BookIc, NoSmokeIc, MealIc, MoneyIc, HealthIc,
   SunIc, CloudSunIc, CloudIc, RainIc, SnowIc, StormIc, type IconProps,
 } from './icons';
 import { pageTheme, HEALTH } from './theme';
@@ -598,17 +598,6 @@ const HabitCard: React.FC<{
     else if (currentUnit) toggleUnit(currentUnit);
   };
 
-  // Days since the habit was last marked done (null = never done). Used to show
-  // "how long you've been off it" when the streak is broken.
-  const daysSinceDone = (() => {
-    const todayIdx = ALL_DAYS.indexOf(today);
-    if (todayIdx < 0) return null;
-    for (let i = todayIdx; i >= 0; i--) {
-      if (ht[ALL_DAYS[i]]?.[habit] === 'done') return todayIdx - i;
-    }
-    return null;
-  })();
-
   // Undeclared: a past due day (on/after the habit's start, before today) that was
   // never marked shows the yellow "?", not red. Explicit fails stay red; N/A shows the
   // grey dash. Derived render state — 'undeclared' is never persisted.
@@ -649,13 +638,6 @@ const HabitCard: React.FC<{
           <span ref={nameRef} className={`hcard-name${nameWrapped ? ' hcard-name--wrapped' : ''}`}>{habit}</span>
           <div className="hcard-head-meta">
             <span className="hcard-level-badge" title={`Level ${stats.level}, ${stats.totalDays} days logged · +${stats.xpPerDay} XP per day`}>LV{stats.level}</span>
-            {stats.streak > 0 ? (
-              <span className="hcard-streak-mini on"><span className="hsm-ico"><AnimatedFlame size={12} /></span>{stats.streak}d</span>
-            ) : daysSinceDone === null ? (
-              <span className="hcard-streak-mini new">new</span>
-            ) : (
-              <span className="hcard-streak-mini off"><span className="hsm-ico"><MoonIc size={12} /></span>{daysSinceDone}d</span>
-            )}
           </div>
         </div>
         <div className="hcard-head-controls">
@@ -718,11 +700,6 @@ const HabitCard: React.FC<{
         </div>
 
         <div className="hsp-stats">
-          <div className={`hsp-stat ${stats.streak > 0 ? 'hot' : 'cold'}`}>
-            <span className="hsp-stat-ico">{stats.streak > 0 ? <AnimatedFlame size={16} /> : <MoonIc size={16} />}</span>
-            <span className="hsp-stat-val">{stats.streak > 0 ? stats.streak : daysSinceDone ?? 0}</span>
-            <span className="hsp-stat-lbl">{stats.streak > 0 ? 'day streak' : 'days off'}</span>
-          </div>
           <div className="hsp-stat">
             <span className="hsp-stat-ico"><CalendarIc size={16} /></span>
             <span className="hsp-stat-val">{stats.totalDays}</span>
@@ -742,11 +719,9 @@ const HabitCard: React.FC<{
           M-S breakdown for the month calendar. */}
       <div className={`hcard-streakrow ${hasDanger ? 'danger' : hasWarning ? 'warning' : ''}`}>
         <span className="hcard-streak-label">
-          {hasDanger ? 'Streak reset, start fresh today'
+          {hasDanger ? 'Start fresh today'
             : hasWarning ? 'Missed yesterday, keep going'
-            : stats.streak > 0 ? `${stats.streak}-day streak`
-            : daysSinceDone != null ? `${daysSinceDone} ${daysSinceDone === 1 ? 'day' : 'days'} off, restart today`
-            : 'New habit, log your first day'}
+            : 'Tap the calendar for your history'}
         </span>
         <button
           className={`hcard-cal-toggle${histOpen ? ' active' : ''}`}
@@ -1646,8 +1621,6 @@ const Habits: React.FC = () => {
     return { key: cad, label: meta.label, color: meta.color, icon: meta.icon, content };
   });
 
-  const mandatoryStats = computeHabitStats(MANDATORY_HABIT, ht, today, startDates[MANDATORY_HABIT], xpCarry[MANDATORY_HABIT] ?? 0);
-
   return (
     <div className="app flush" style={pageTheme(HEALTH, '0D')}>
       {/* Remove confirmation dialog */}
@@ -1880,9 +1853,6 @@ const Habits: React.FC = () => {
             );
           })}
         </div>
-        <p className="hb-week-caption">{stage === 'new'
-          ? 'Tick a habit each day to grow your streak. Dub coaches you as you go.'
-          : `${mandatoryStats.streak}-day check-in streak`}</p>
 
         {/* Daily Log, the app's own inputs (weigh-in / steps / check-in) — follows
             the week strip's selected day; check-in reuses the mandatory-habit signal. */}

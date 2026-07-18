@@ -1,6 +1,5 @@
 import React from 'react';
 import CogMenu from './CogMenu';
-import StreakFlame from './StreakFlame';
 import { useBrandNick } from './brand';
 
 // The standard superdub brand header, shared across the main nav pages so the
@@ -17,7 +16,6 @@ const SuperdubHeader: React.FC<{ children?: React.ReactNode; cog?: boolean }> = 
     </div>
     <div className="hb-topbar-actions">
       {children}
-      <StreakFlame />
       {cog && <CogMenu />}
     </div>
   </div>
