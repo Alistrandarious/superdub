@@ -33,7 +33,7 @@ the app keeps improving on both fronts.
 | ID | Task | Files | Size | Tier | Acceptance | Status |
 |---|---|---|---|---|---|---|
 | E2.1 | XP trust boundary: server recomputes/clamps Global-habit XP instead of trusting the client (`server/routes/global.ts:77`) | server/routes/global.ts | M | fable | Out-of-band XP rejected/clamped; check file added + wired into E0.1 | [ ] |
-| E2.2 | Single source of truth for plan/profile/weight-settings: one cached client provider; kill the 8× `getPlanStatus()` and 6× `getProfile()` re-fetches | src provider + callers | L | fable | One fetch per resource per page load; all consumers share it | [ ] |
+| E2.2 | Single source of truth for plan/profile/weight-settings: one cached client provider; kill the 8× `getPlanStatus()` and 6× `getProfile()` re-fetches | src provider + callers | L | fable | One fetch per resource per page load; all consumers share it | [x] done v2.442 2026-07-18 — module cache in api.ts (apiCache.ts `makeCache`); `getPlanStatus`/`getProfile` share one promise, every write invalidates, 60s TTL, auth change clears; zero call-site edits |
 | E2.3 | energy.ts client/server dedupe (logic currently duplicated) | src/energy.ts, server | S | sonnet | One implementation imported by both; energy.check.ts still passes | [ ] |
 
 ## Epic 3 — The date model

@@ -1,3 +1,5 @@
+import { makeCache } from './apiCache';
+
 // Inside a Capacitor native shell the webview origin is capacitor://localhost, so the
 // relative '/api' + CRA dev proxy don't apply — point at the hosted backend directly.
 // We read the injected window.Capacitor global rather than importing @capacitor/core so
@@ -246,10 +248,12 @@ function getToken() {
 
 export function setToken(t: string) {
   localStorage.setItem('superdub.token', t);
+  clearApiCaches(); // a new session must not read the previous user's cached data
 }
 
 export function clearToken() {
   localStorage.removeItem('superdub.token');
+  clearApiCaches();
 }
 
 export function isLoggedIn() {
@@ -271,6 +275,17 @@ async function request<T = any>(path: string, options: RequestInit = {}): Promis
   return data;
 }
 
+// ── Shared read caches (E2.2) ──────────────────────────────────────────────
+// Plan status and profile are fetched independently by many components on mount
+// (~10 and ~7 call sites). Caching the base getters dedupes a burst of mounts
+// into one request; every mutation that can change either resource invalidates
+// the relevant cache below, so callers still read fresh data after a write. The
+// 60s TTL bounds staleness across a long session with no mutation. Auth changes
+// (login/logout) clear both so one user never reads another's cached data.
+const planStatusCache = makeCache<PlanStatusResponse>(() => request('/plan/status'), 60_000);
+const profileCache = makeCache<ProfileResponse>(() => request('/profile'), 60_000);
+export function clearApiCaches() { planStatusCache.invalidate(); profileCache.invalidate(); }
+
 export const api = {
   // auth
   signup: (body: object): Promise<{ token: string; userId: number; cohort: SignupCohort }> =>
@@ -287,8 +302,12 @@ export const api = {
     request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ email, code, newPassword }) }),
 
   // profile
-  getProfile: (): Promise<ProfileResponse> => request('/profile'),
-  updateProfile: (data: object): Promise<{ ok: true }> => request('/profile', { method: 'PUT', body: JSON.stringify(data) }),
+  getProfile: (): Promise<ProfileResponse> => profileCache.get(),
+  // Profile fields feed the TDEE/plan engine (activity, height, sex, dob) and
+  // weightKg feeds the weight trend, so a profile write invalidates both caches.
+  updateProfile: (data: object): Promise<{ ok: true }> =>
+    request<{ ok: true }>('/profile', { method: 'PUT', body: JSON.stringify(data) })
+      .then(r => { profileCache.invalidate(); planStatusCache.invalidate(); return r; }),
   deleteAccount: (): Promise<{ ok: true }> => request('/profile', { method: 'DELETE' }),
   heartbeat: (): Promise<{ ok: true }> => request('/profile/heartbeat', { method: 'POST' }),
 
@@ -313,8 +332,10 @@ export const api = {
 
   // tracker
   getTracker: (): Promise<TrackerResponse> => request('/tracker'),
+  // A tracker day carries weight/steps, both of which feed the plan/stall engine.
   updateTrackerDay: (day: string, data: object): Promise<{ ok: true }> =>
-    request('/tracker', { method: 'PATCH', body: JSON.stringify({ day, ...data }) }),
+    request<{ ok: true }>('/tracker', { method: 'PATCH', body: JSON.stringify({ day, ...data }) })
+      .then(r => { planStatusCache.invalidate(); return r; }),
   toggleTrackerHabit: (day: string, habitName: string, state: 'done' | 'failed' | 'na' | null): Promise<{ ok: true }> =>
     request('/tracker/habit', { method: 'PATCH', body: JSON.stringify({ day, habitName, state }) }),
 
@@ -364,19 +385,26 @@ export const api = {
 
   // weight settings
   getWeightSettings: (): Promise<WeightSettingsResponse> => request('/weight-settings'),
+  // Weight-settings (goal rate, target) feed the plan engine.
   updateWeightSettings: (data: object): Promise<{ ok: true }> =>
-    request('/weight-settings', { method: 'PUT', body: JSON.stringify(data) }),
+    request<{ ok: true }>('/weight-settings', { method: 'PUT', body: JSON.stringify(data) })
+      .then(r => { planStatusCache.invalidate(); return r; }),
 
-  // plan engine
-  getPlanStatus: (): Promise<PlanStatusResponse> => request('/plan/status'),
+  // plan engine — every write here changes plan status, so each invalidates its cache.
+  getPlanStatus: (): Promise<PlanStatusResponse> => planStatusCache.get(),
   createPlanGoal: (targetWeight: number, targetDate: string): Promise<CreatePlanGoalResponse> =>
-    request('/plan/goal', { method: 'POST', body: JSON.stringify({ targetWeight, targetDate }) }),
-  abandonPlanGoal: (): Promise<{ ok: true }> => request('/plan/goal', { method: 'DELETE' }),
+    request<CreatePlanGoalResponse>('/plan/goal', { method: 'POST', body: JSON.stringify({ targetWeight, targetDate }) })
+      .then(r => { planStatusCache.invalidate(); return r; }),
+  abandonPlanGoal: (): Promise<{ ok: true }> =>
+    request<{ ok: true }>('/plan/goal', { method: 'DELETE' }).then(r => { planStatusCache.invalidate(); return r; }),
   patchPlanStartDate: (startDate: string): Promise<{ ok: true }> =>
-    request('/plan/goal/start-date', { method: 'PATCH', body: JSON.stringify({ startDate }) }),
-  runPlanCycle: (): Promise<PlanCycleResponse> => request('/plan/cycle', { method: 'POST' }),
+    request<{ ok: true }>('/plan/goal/start-date', { method: 'PATCH', body: JSON.stringify({ startDate }) })
+      .then(r => { planStatusCache.invalidate(); return r; }),
+  runPlanCycle: (): Promise<PlanCycleResponse> =>
+    request<PlanCycleResponse>('/plan/cycle', { method: 'POST' }).then(r => { planStatusCache.invalidate(); return r; }),
   resolvePlanReached: (action: 'maintain' | 'dismiss'): Promise<ResolvePlanReachedResponse> =>
-    request('/plan/resolve-reached', { method: 'POST', body: JSON.stringify({ action }) }),
+    request<ResolvePlanReachedResponse>('/plan/resolve-reached', { method: 'POST', body: JSON.stringify({ action }) })
+      .then(r => { planStatusCache.invalidate(); return r; }),
 
   // AI key
 
