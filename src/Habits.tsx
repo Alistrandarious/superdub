@@ -1759,6 +1759,11 @@ const Habits: React.FC = () => {
       <div className="habits-page-scroll" onScroll={onPageScroll}>
         {/* Top bar: brand + weather + cog (shared header) */}
         <SuperdubHeader>
+          {stage !== 'new' && mandatoryStats.streak >= 1 && (
+            <span className="hb-streak-chip" aria-label={`${mandatoryStats.streak} day streak`}>
+              <AnimatedFlame size={14} />{mandatoryStats.streak}
+            </span>
+          )}
           {weather && (
             <span className="hb-weather"><WeatherIc code={weather.code} size={14} />{weather.temp}°</span>
           )}
@@ -1861,31 +1866,11 @@ const Habits: React.FC = () => {
           })}
         </div>
 
-        {/* Login-streak hero: flame + big count + a milestone track pulling toward the next
-            mark. New users (or a lapsed 0-streak) get a gentle coaching line instead. */}
-        {stage === 'new' || mandatoryStats.streak < 1 ? (
+        {/* Streak moved into the header flame chip (beside the weather). New / lapsed
+            users still get the gentle coaching line here instead of a bare gap. */}
+        {(stage === 'new' || mandatoryStats.streak < 1) && (
           <p className="hb-week-coach">Tick a habit each day to grow your streak. Dub coaches you as you go.</p>
-        ) : (() => {
-          const s = mandatoryStats.streak;
-          const MILES = [7, 14, 30, 60, 100, 180, 365];
-          const next = MILES.find(m => m > s) ?? null;
-          const prev = [...MILES].reverse().find(m => m <= s) ?? 0;
-          const pct = next ? Math.round(((s - prev) / (next - prev)) * 100) : 100;
-          const toGo = next ? next - s : 0;
-          return (
-            <div className={`streak-hero${s >= 7 ? ' hot' : ''}`}>
-              <span className="streak-hero-flame"><AnimatedFlame size={40} /></span>
-              <span className="streak-hero-num">{s}</span>
-              <span className="streak-hero-label">days in a row</span>
-              <div className="streak-track">
-                <div className="streak-track-bar"><div className="streak-track-fill" style={{ width: `${pct}%` }} /></div>
-                <p className="streak-track-nudge">{next
-                  ? <><b>{toGo}</b> {toGo === 1 ? 'day' : 'days'} to your {next}-day mark</>
-                  : "You've passed every milestone. Legendary."}</p>
-              </div>
-            </div>
-          );
-        })()}
+        )}
 
         {/* Daily Log, the app's own inputs (weigh-in / steps / check-in) — follows
             the week strip's selected day; check-in reuses the mandatory-habit signal. */}

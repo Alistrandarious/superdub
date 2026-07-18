@@ -5118,6 +5118,20 @@ h1, h2, h3, h4, .sora {
   font-weight: 600;
   color: #D0D0DC;
 }
+/* Day-streak flame chip — bare like the weather control (no pill chrome), the
+   flame's own gradient carries the colour; the count is Space Mono. */
+.hb-streak-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 36px;
+  box-sizing: border-box;
+  padding: 0 2px;
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: #FF8A00;
+}
 .hb-cog {
   display: flex;
   align-items: center;
@@ -5620,62 +5634,6 @@ h1, h2, h3, h4, .sora {
   color: var(--text-mute);
   margin: 12px 0 4px;
 }
-
-/* ── Login-streak hero — flame + big number + milestone track (stage !== 'new', streak ≥ 1) ── */
-.streak-hero {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  margin: 14px 0 4px;
-}
-.streak-hero-flame { line-height: 0; }
-.streak-hero-num {
-  font-family: 'Sora', sans-serif;
-  font-weight: 800;
-  font-size: 2.6rem;
-  line-height: 1;
-  letter-spacing: -0.02em;
-  color: #FF8A3C;
-  margin-top: 2px;
-}
-.streak-hero.hot .streak-hero-num {
-  color: var(--gold, #FFB928);
-  text-shadow: 0 0 18px rgba(255,185,40,0.35);
-}
-.streak-hero-label {
-  font-size: 0.66rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--text-mute);
-}
-
-.streak-track {
-  width: 100%;
-  max-width: 340px;
-  margin: 8px auto 6px;
-}
-.streak-track-bar {
-  position: relative;
-  height: 8px;
-  border-radius: 999px;
-  background: var(--glass-border);
-  overflow: hidden;
-}
-.streak-track-fill {
-  position: absolute;
-  inset: 0 auto 0 0;
-  border-radius: 999px;
-  background: var(--grad-ascension, linear-gradient(135deg, #FFB928, #FFE08A));
-  transition: width 0.6s ease;
-}
-.streak-track-nudge {
-  text-align: center;
-  font-size: 0.72rem;
-  color: var(--text-dim);
-  margin-top: 8px;
-}
-.streak-track-nudge b { color: var(--gold, #FFB928); font-weight: 700; }
 
 /* "Where you're trending" — the one-line on-track read on the home screen. The
    dot colour follows the coach's tone (good / warn / neutral). Tap → Progress. */
