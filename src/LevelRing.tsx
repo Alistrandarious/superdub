@@ -69,6 +69,42 @@ const LevelRing: React.FC<{
     };
   }, [applyTilt]);
 
+  // ── Water level: spring-settle instead of snap ──────────────────
+  // Real water pours in and finds its level with a little overshoot, not an
+  // instant jump. When progress changes we run an under-damped spring toward
+  // the new level and carry its velocity out so the surface sloshes harder
+  // while the level is still moving, then calms. rAF only runs while settling
+  // (idle at rest — no battery cost), and reduced-motion snaps straight there.
+  const [settle, setSettle] = useState({ p: clampedP, v: 0 });
+  const springRef = useRef({ p: clampedP, v: 0 });
+  const settleRafRef = useRef(0);
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      springRef.current = { p: clampedP, v: 0 };
+      setSettle({ p: clampedP, v: 0 });
+      return;
+    }
+    const K = 110, D = 9; // D < 2·√K ⇒ slight overshoot (the slosh)
+    let last = performance.now();
+    const step = (now: number) => {
+      const dt = Math.min(0.032, (now - last) / 1000);
+      last = now;
+      const s = springRef.current;
+      s.v += (-K * (s.p - clampedP) - D * s.v) * dt;
+      s.p += s.v * dt;
+      if (Math.abs(s.p - clampedP) > 0.0005 || Math.abs(s.v) > 0.0005) {
+        setSettle({ p: s.p, v: s.v });
+        settleRafRef.current = requestAnimationFrame(step);
+      } else {
+        s.p = clampedP; s.v = 0;
+        setSettle({ p: clampedP, v: 0 });
+      }
+    };
+    settleRafRef.current = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(settleRafRef.current);
+  }, [clampedP]);
+  const displayP = Math.max(0, Math.min(1, settle.p));
+
   // ── Derived geometry ────────────────────────────────────────────
   const cx = size / 2, cy = size / 2;
 
@@ -83,8 +119,8 @@ const LevelRing: React.FC<{
   const innerR = r - stroke / 2 - 1;      // inner disc for arc themes
   const R = size / 2;
   const fillR = useLiquid ? R - 2 : innerR; // water radius (hairline rim on liquid)
-  // Liquid level: rises from the bottom of the fill circle
-  const liquidTopY = cy + fillR - clampedP * fillR * 2;
+  // Liquid level: rises from the bottom of the fill circle (spring-settled level)
+  const liquidTopY = cy + fillR - displayP * fillR * 2;
 
   // Wave at the liquid surface: smooth quadratic curves (no straight-segment
   // facets), extended past the clip on both sides so the CSS slosh animation
@@ -92,7 +128,11 @@ const LevelRing: React.FC<{
   // Surface = a densely-sampled line (smooth, no facets) that (a) ripples with a
   // sine wave and (b) TILTS with device roll so the water finds its level like
   // real liquid as you move the phone.
-  const waveAmp = clampedP > 0.02 && clampedP < 0.98 ? 3.5 : 0;
+  // Base ripple when the vessel is between empty and full, plus a boost while the
+  // level is still settling — a fresh pour sloshes hard, then calms to the gentle
+  // idle ripple as the spring's velocity bleeds off.
+  const sloshBoost = Math.min(7, Math.abs(settle.v) * 16);
+  const waveAmp = (displayP > 0.02 && displayP < 0.98 ? 3.5 : 0) + sloshBoost;
   const WAVE_EXT = 16;
   const wx0 = cx - fillR - WAVE_EXT;
   const wx1 = cx + fillR + WAVE_EXT;
@@ -190,7 +230,7 @@ const LevelRing: React.FC<{
             {/* LIQUID THEME, a filled vessel, no arc. Dark empty vessel, water
                 on top clipped to the full disc, then a thin themed rim. */}
             <circle cx={cx} cy={cy} r={fillR} fill="#0B0B11" />
-            {clampedP > 0 && (
+            {displayP > 0 && (
               <g clipPath={`url(#${gid}clip)`}>
                 {/* Back swell — lighter, slid the other way so the surface morphs */}
                 <path d={liquidPathBack} fill={theme.from} fillOpacity={0.28} className="lvl-liquid-back" shapeRendering="geometricPrecision" />
