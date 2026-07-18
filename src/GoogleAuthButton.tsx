@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { isNative } from './api';
 
 const CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
 const GIS_SRC = 'https://accounts.google.com/gsi/client';
@@ -25,7 +26,10 @@ const GoogleAuthButton: React.FC<{ onCredential: (idToken: string) => void; text
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!CLIENT_ID) return; // not configured, render nothing
+    // Google Identity Services is blocked inside the Capacitor WebView (Google rejects
+    // embedded user-agents), so the button would just fail. Hide it on native — native
+    // sign-in is a later fast-follow; testers use email/password.
+    if (!CLIENT_ID || isNative) return;
     let cancelled = false;
     loadGis().then(() => {
       if (cancelled || !ref.current) return;
@@ -43,7 +47,7 @@ const GoogleAuthButton: React.FC<{ onCredential: (idToken: string) => void; text
     return () => { cancelled = true; };
   }, [onCredential, text]);
 
-  if (!CLIENT_ID) return null;
+  if (!CLIENT_ID || isNative) return null;
   return (
     <div className="google-auth-wrap">
       <div ref={ref} className="google-auth-btn" />

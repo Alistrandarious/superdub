@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { api, setToken } from './api';
+import { api, setToken, isNative } from './api';
 import { OCCUPATIONS, ETHNICITIES, GENDER_IDENTITIES, COUNTRIES, RELATIONSHIP_STATUSES, RELIGIONS } from './demographics';
 import GoogleAuthButton from './GoogleAuthButton';
 import OnboardingDaily from './OnboardingDaily';
@@ -351,7 +351,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
                 {loading ? 'Logging in…' : 'Log in'}
               </button>
             </form>
-            <div className="auth-or"><span>or</span></div>
+            {!isNative && <div className="auth-or"><span>or</span></div>}
             <GoogleAuthButton onCredential={handleGoogle} text="signin_with" />
             <p className="auth-switch">No account? <button className="auth-link" onClick={() => { setMode('signup'); clearError(); }}>Sign up</button></p>
             <p className="auth-switch"><button className="auth-link" onClick={() => { setResetEmail(loginEmail); setMode('forgot'); clearError(); }}>Forgot password?</button></p>
@@ -489,7 +489,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
                     onKeyDown={e => e.key === 'Enter' && advance()} />
                 </div>
               </div>
-              <div className="auth-or"><span>or</span></div>
+              {!isNative && <div className="auth-or"><span>or</span></div>}
               <GoogleAuthButton onCredential={handleGoogle} text="signup_with" />
             </>
           )}

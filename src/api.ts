@@ -2,7 +2,7 @@
 // relative '/api' + CRA dev proxy don't apply — point at the hosted backend directly.
 // We read the injected window.Capacitor global rather than importing @capacitor/core so
 // the plain web/PWA build has no dependency on the native package.
-const isNative =
+export const isNative =
   typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.() === true;
 const BASE = isNative ? 'https://superdub.onrender.com/api' : '/api';
 
