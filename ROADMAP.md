@@ -24,7 +24,7 @@ the app keeps improving on both fronts.
 | ID | Task | Files | Size | Tier | Acceptance | Status |
 |---|---|---|---|---|---|---|
 | E1.1 | Typed api.ts: `request<T>()` + typed return per endpoint. Types only, zero runtime change | src/api.ts | M | sonnet | tsc passes; no behavioral diff; repo `as any` count doesn't rise | [x] done v2.402 2026-07-13 |
-| E1.2 | `as any` purge, one file per task, after E1.1: DubPage (11) → App (10) → Habits (7) → rest | per file | S ×n | sonnet | File's `as any` count = 0, or each survivor carries a `ponytail:` justification | [ ] |
+| E1.2 | `as any` purge, one file per task, after E1.1: DubPage (11) → App (10) → Habits (7) → rest | per file | S ×n | sonnet | File's `as any` count = 0, or each survivor carries a `ponytail:` justification | [~] DubPage.tsx done v2.443 2026-07-19 (15 as-any → 0, typed off api's TrackerDayRow/TrackerHabitRow/PlanGoal/CoachingResponse); App/Habits/rest remain |
 | E1.3 | `src/storageKeys.ts` registry for the ~55 `superdub.*` localStorage keys; replace literals | new file + callers | M | sonnet | No stray `superdub.` storage literals outside the registry (CustomEvent names exempt) | [ ] |
 | E1.4 | `.catch(() => {})` triage (78 sites): tagged `console.warn` or real handling per policy; no UX change without lead sign-off | App.tsx (17), Habits.tsx (12), rest | M | sonnet | Zero bare empty catches; intentional silence gets a policy comment | [ ] |
 

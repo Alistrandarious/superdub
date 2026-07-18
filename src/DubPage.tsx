@@ -80,40 +80,40 @@ const DubPage: React.FC = () => {
           api.getTracker(),
           api.getHabits(),
           api.getPlanStatus().catch(() => null),
-          api.getCheckInHistory(180).catch(() => ({ entries: [] as any[] })),
-          api.getJournal().catch(() => [] as any[]),
+          api.getCheckInHistory(180).catch((): Awaited<ReturnType<typeof api.getCheckInHistory>> => ({ entries: [] })),
+          api.getJournal().catch((): Awaited<ReturnType<typeof api.getJournal>> => []),
           api.getCoachingMessage().catch(() => null),
         ]);
-        setAdvisableSteps((coaching as any)?.advisableSteps ?? null);
+        setAdvisableSteps(coaching?.advisableSteps ?? null);
 
         // ── Coaching report (same inputs as the post-weigh-in modal) ──
         const weights = (tracker.days ?? [])
-          .filter((d: any) => d.weight)
-          .map((d: any) => ({ day: d.day, weight: Number(d.weight) }));
-        const goal = (plan && (plan as any).active && (plan as any).goal)
-          ? { goalType: (plan as any).goal.goalType, targetWeight: (plan as any).goal.targetWeight }
+          .filter(d => d.weight)
+          .map(d => ({ day: d.day, weight: Number(d.weight) }));
+        const goal = (plan && plan.active && plan.goal)
+          ? { goalType: plan.goal.goalType, targetWeight: plan.goal.targetWeight }
           : null;
-        const rpt = buildCoachReport(weights, habits as any, (tracker.habits ?? []) as any, ALL_DAYS, todayKey(), goal);
+        const rpt = buildCoachReport(weights, habits, tracker.habits ?? [], ALL_DAYS, todayKey(), goal);
         setReport(rpt);
 
         // ── Insight inputs: steps + weight by day, mood by DD/MM ──
         const stepsByDay: Record<string, number> = {};
         const weightByDay: Record<string, number> = {};
-        for (const d of (tracker.days ?? []) as any[]) {
+        for (const d of (tracker.days ?? [])) {
           const s = parseInt(d.steps ?? '', 10);
           if (s > 0) stepsByDay[d.day] = s;
           const w = Number(d.weight);
           if (w > 0) weightByDay[d.day] = w;
         }
         const moodByDay: Record<string, number> = {};
-        for (const e of ((moods as any).entries ?? [])) {
+        for (const e of (moods.entries ?? [])) {
           if (e.mood == null || !e.date) continue;
           // check-in dates are ISO (YYYY-MM-DD); insights key on DD/MM.
           const parts = String(e.date).split('-');
           if (parts.length === 3) moodByDay[`${parts[2]}/${parts[1]}`] = e.mood;
         }
         // Journal moods are an extra signal — fill days the check-in didn't cover.
-        for (const j of (journal as any[])) {
+        for (const j of journal) {
           if (j.mood == null || !j.createdAt) continue;
           const d = new Date(j.createdAt);
           if (isNaN(d.getTime())) continue;
@@ -123,19 +123,19 @@ const DubPage: React.FC = () => {
 
         // count of days with any real signal — gates the "keep logging" state
         const signalDays = new Set<string>([...Object.keys(stepsByDay), ...Object.keys(weightByDay), ...Object.keys(moodByDay)]);
-        for (const row of ((tracker.habits ?? []) as any[])) if (row.state && !isSystemHabit(row.habit_name)) signalDays.add(row.day);
+        for (const row of (tracker.habits ?? [])) if (row.state && !isSystemHabit(row.habit_name)) signalDays.add(row.day);
         setDataDays(signalDays.size);
 
-        const realHabits = (habits as any[]).map(h => h.name).filter((n: string) => !isSystemHabit(n));
+        const realHabits = habits.map(h => h.name).filter(n => !isSystemHabit(n));
         setInsights(buildHabitInsights({
           habits: realHabits,
-          trackerHabits: (tracker.habits ?? []) as any,
+          trackerHabits: tracker.habits ?? [],
           stepsByDay, weightByDay, moodByDay,
           allDays: ALL_DAYS, today: todayKey(),
         }));
 
         // ── Morning brief / evening debrief ──
-        const checkinEntries = ((moods as any).entries ?? []) as { date: string; sleep: number | null; adherenceLevel?: number | null }[];
+        const checkinEntries = moods.entries ?? [];
         const todayISO = isoOffset(0);
         const yesterdayISO = isoOffset(1);
         const latestSleepEntry = [...checkinEntries]
@@ -144,9 +144,9 @@ const DubPage: React.FC = () => {
         const sleepLastNight = (latestSleepEntry && (latestSleepEntry.date === todayISO || latestSleepEntry.date === yesterdayISO))
           ? latestSleepEntry.sleep : null;
         const adherenceToday = checkinEntries.find(e => e.date === todayISO)?.adherenceLevel ?? null;
-        const dailyHabits = (habits as any[]).filter(h => (h.cadence ?? 'daily') === 'daily' && !isSystemHabit(h.name));
-        const doneToday = new Set(((tracker.habits ?? []) as any[])
-          .filter((r: any) => r.day === todayKey() && r.state === 'done').map((r: any) => r.habit_name));
+        const dailyHabits = habits.filter(h => (h.cadence ?? 'daily') === 'daily' && !isSystemHabit(h.name));
+        const doneToday = new Set((tracker.habits ?? [])
+          .filter(r => r.day === todayKey() && r.state === 'done').map(r => r.habit_name));
         const briefSrc = {
           hour: new Date().getHours(),
           weights, today: todayKey(), report: rpt,
