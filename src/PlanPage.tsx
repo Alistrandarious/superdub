@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from './api';
 import WeightInput from './WeightInput';
+import PlanJourneyChart from './PlanJourneyChart';
 import { useWeightUnit, formatWeightKg, unitLabel } from './weightUnit';
 
 interface ActiveGoal {
@@ -35,20 +36,25 @@ interface CycleData {
   ran: boolean;
 }
 
-const ZONE_GENTLE    = 0.0035;
-const ZONE_MODERATE  = 0.0070;
+const ZONE_GENTLE     = 0.0035;
+const ZONE_MODERATE   = 0.0070;
 const ZONE_AGGRESSIVE = 0.0100;
-const SLIDER_MAX_PCT = 0.0200;
+const SLIDER_MAX_PCT  = 0.0200;
 
+// Plain-language pace names (no jargon per SUPERDUB_VOICE.md).
 function rateZone(pct: number): { label: string; color: string } {
-  if (pct <= ZONE_GENTLE)     return { label: 'Gentle',           color: '#2FD27E' };
-  if (pct <= ZONE_MODERATE)   return { label: 'Moderate',         color: '#FFD233' };
-  if (pct <= ZONE_AGGRESSIVE) return { label: 'Aggressive',       color: '#FF8A00' };
-  return                               { label: 'Not recommended', color: '#FF5470' };
+  if (pct <= ZONE_GENTLE)     return { label: 'Gentle',    color: '#2FD27E' };
+  if (pct <= ZONE_MODERATE)   return { label: 'Steady',    color: '#FFD233' };
+  if (pct <= ZONE_AGGRESSIVE) return { label: 'Fast',      color: '#FF8A00' };
+  return                             { label: 'Very fast', color: '#FF5470' };
 }
 
 function formatDate(d: Date): string {
   return d.toISOString().slice(0, 10);
+}
+
+function shortDate(d: string): string {
+  return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
 
 function addWeeks(from: Date, weeks: number): Date {
@@ -57,10 +63,28 @@ function addWeeks(from: Date, weeks: number): Date {
   return d;
 }
 
-function fmtSlope(n: number | null | undefined): string {
+// Plain rate string, e.g. "-0.45 kg/wk".
+function fmtRate(n: number | null | undefined): string {
   if (n == null) return '—';
   return `${n > 0 ? '+' : ''}${n.toFixed(2)} kg/wk`;
 }
+
+// Small feather-style icons (no emoji chrome, per DESIGN_SYSTEM.md).
+const IconPencil = () => (
+  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+  </svg>
+);
+const IconX = () => (
+  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M18 6 6 18M6 6l12 12" />
+  </svg>
+);
+const IconAlert = () => (
+  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" /><path d="M12 9v4" /><path d="M12 17h.01" />
+  </svg>
+);
 
 const PlanPage: React.FC = () => {
   const navigate = useNavigate();
@@ -74,6 +98,7 @@ const PlanPage: React.FC = () => {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [cycle, setCycle] = useState<CycleData | null>(null);
   const [latestWeight, setLatestWeight] = useState<number | null>(null);
+  const [trackerDays, setTrackerDays] = useState<any[]>([]);
   const unit = useWeightUnit();
 
   // Form state
@@ -109,8 +134,9 @@ const PlanPage: React.FC = () => {
         setTargetDate('');
       }
 
-      // Find latest logged weight from tracker
+      // Keep the full day list for the journey chart, and find the latest weigh-in.
       const days: any[] = trackerData.days ?? [];
+      setTrackerDays(days);
       let lw: number | null = null;
       for (let i = days.length - 1; i >= 0; i--) {
         const w = parseFloat(days[i].weight);
@@ -211,7 +237,7 @@ const PlanPage: React.FC = () => {
       localStorage.setItem('superdub.plan.badge', JSON.stringify({ active: false, calories: null, onTrack: null }));
       window.dispatchEvent(new Event('superdub:plan-badge-updated'));
     } catch {
-      setError('Failed to abandon goal');
+      setError('Failed to end goal');
     } finally {
       setSaving(false);
     }
@@ -233,6 +259,146 @@ const PlanPage: React.FC = () => {
 
   const minDate = formatDate(addWeeks(new Date(), 1));
   const onTrack = cycle?.onTrack ?? null;
+  const hasGoal = !!(activeGoal && !abandoned && currentTarget);
+  const changes = history.filter(h => h.previousCalories != null);
+
+  const weeksLeft = activeGoal
+    ? Math.max(0, Math.round((new Date(activeGoal.targetDate).getTime() - Date.now()) / (7 * 86400000)))
+    : 0;
+
+  // Plain one-line read of where you stand.
+  const oneLiner = (() => {
+    if (!activeGoal) return '';
+    const by = shortDate(activeGoal.targetDate);
+    if (onTrack === null) return 'Superdub is still reading your weight trend. Keep logging and this updates on its own.';
+    if (onTrack) return `You're on pace to reach ${formatWeightKg(activeGoal.targetWeight, unit)} by ${by}. Keep it up.`;
+    return `You're off pace right now, so Superdub nudged your daily target to bring you back on time for ${by}.`;
+  })();
+
+  // The set / adjust form, shared by the empty state and the "Adjust goal" panel.
+  const goalForm = (
+    <div className="plan-form">
+      <div className="goal-field">
+        <span className="goal-field-label">Current weight</span>
+        <span className="goal-field-readonly">
+          {latestWeight != null ? formatWeightKg(latestWeight, unit) : 'No weigh-in yet'}
+        </span>
+      </div>
+
+      <div className="goal-field">
+        <label className="goal-field-label" htmlFor="pp-target-weight">Target weight ({unitLabel(unit)})</label>
+        <WeightInput
+          id="pp-target-weight"
+          valueKg={targetWeight}
+          onChangeKg={setTargetWeight}
+          unit={unit}
+          inputClassName="goal-input"
+          ariaLabel="Target weight"
+        />
+      </div>
+
+      <div className="goal-field">
+        <label className="goal-field-label" htmlFor="pp-target-date">Target date</label>
+        <input
+          id="pp-target-date"
+          className="goal-input"
+          type="date"
+          min={minDate}
+          value={targetDate}
+          onChange={e => setTargetDate(e.target.value)}
+        />
+      </div>
+
+      {impliedRate && (
+        <div className="goal-rate-section">
+          <div className="goal-rate-row">
+            <span className="goal-rate-label">How fast</span>
+            <span className="goal-rate-value" style={{ color: zone?.color }}>
+              about {impliedRate.kgPerWk.toFixed(2)} kg a week
+            </span>
+          </div>
+
+          <div className="goal-slider-wrap">
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.001}
+              value={sliderValue}
+              onChange={handleSlider}
+              className="goal-slider"
+              aria-label="How fast to reach your goal"
+              disabled={!targetWeight || !latestWeight}
+            />
+            <div className="goal-slider-track">
+              <div className="goal-slider-zone zone-gentle" />
+              <div className="goal-slider-zone zone-moderate" />
+              <div className="goal-slider-zone zone-aggressive" />
+              <div className="goal-slider-zone zone-warn" />
+            </div>
+            <div className="goal-slider-labels">
+              <span>Gentle</span>
+              <span>Steady</span>
+              <span>Fast</span>
+              <span className="goal-slider-warnicon"><IconAlert /></span>
+            </div>
+          </div>
+
+          <div className="goal-zone-badge" style={{ background: (zone?.color ?? '') + '20', borderColor: (zone?.color ?? '') + '50', color: zone?.color }}>
+            {zone?.label}{overWarning && ', try a longer timeline'}
+          </div>
+
+          {overWarning && (
+            <div className="goal-warning">
+              That's a fast pace. Losing weight this quickly means more of what comes off can be muscle instead of fat. A longer timeline is gentler on your body. You can still set this.
+            </div>
+          )}
+        </div>
+      )}
+
+      {error && <div className="goal-error">{error}</div>}
+
+      <div className="goal-actions">
+        {hasGoal && (
+          <button className="goal-btn-abandon" onClick={handleAbandon} disabled={saving}>
+            End goal
+          </button>
+        )}
+        <button
+          className="goal-btn-save"
+          onClick={handleSave}
+          disabled={saving || !targetWeight || !targetDate || !latestWeight}
+        >
+          {saving ? 'Saving…' : hasGoal ? 'Update goal' : 'Set goal'}
+        </button>
+      </div>
+
+      {hasGoal && activeGoal && (
+        <div className="plan-start-date-row">
+          <span className="plan-start-date-label">Plan started</span>
+          {editingStartDate ? (
+            <span className="plan-start-date-edit">
+              <input
+                type="date"
+                className="plan-start-date-input"
+                value={startDateDraft}
+                max={new Date().toISOString().slice(0, 10)}
+                onChange={e => setStartDateDraft(e.target.value)}
+              />
+              <button className="plan-start-date-save" onClick={handleSaveStartDate} disabled={startDateSaving}>
+                {startDateSaving ? '…' : 'Save'}
+              </button>
+              <button className="plan-start-date-cancel" onClick={() => setEditingStartDate(false)} aria-label="Cancel"><IconX /></button>
+            </span>
+          ) : (
+            <button className="plan-start-date-value" onClick={() => { setStartDateDraft(activeGoal.startDate.slice(0, 10)); setEditingStartDate(true); }}>
+              {shortDate(activeGoal.startDate)} <IconPencil />
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div className="plan-page">
@@ -247,218 +413,95 @@ const PlanPage: React.FC = () => {
 
       {loading ? (
         <div className="plan-page-loading">Loading…</div>
-      ) : (
+      ) : hasGoal && activeGoal && currentTarget ? (
         <div className="plan-page-body">
 
-          {/* ── Status card (if active goal) ── */}
-          {activeGoal && !abandoned && currentTarget && (
-            <div className={`plan-status-card ${onTrack === false ? 'plan-status-off' : 'plan-status-on'}`}>
-              <div className="plan-status-top">
-                <div className="plan-status-cal">
-                  <span className="plan-status-cal-num">{currentTarget.calories}</span>
-                  <span className="plan-status-cal-unit">kcal/day</span>
-                </div>
-                <div className={`plan-status-badge ${onTrack === false ? 'badge-off' : 'badge-on'}`}>
-                  {onTrack === null ? 'calculating' : onTrack ? 'on pace' : 'off pace'}
-                </div>
+          {/* ── Hero: the journey chart, calorie target, and pace ── */}
+          <div className={`plan-hero ${onTrack === false ? 'plan-hero-off' : 'plan-hero-on'}`}>
+            <div className="plan-hero-top">
+              <div className="plan-hero-cal">
+                <span className="plan-hero-num">{currentTarget.calories.toLocaleString()}</span>
+                <span className="plan-hero-unit">calories a day</span>
               </div>
-
-              <div className="plan-status-goal-row">
-                <span className="plan-status-arrow">
-                  {activeGoal.goalType === 'lose' ? '↓' : activeGoal.goalType === 'gain' ? '↑' : '→'}
-                </span>
-                <span className="plan-status-weights">{formatWeightKg(activeGoal.startWeight, unit)} → {formatWeightKg(activeGoal.targetWeight, unit)}</span>
-                <span className="plan-status-date">by {new Date(activeGoal.targetDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-              </div>
-
-              <div className="plan-start-date-row">
-                <span className="plan-start-date-label">Plan started</span>
-                {editingStartDate ? (
-                  <span className="plan-start-date-edit">
-                    <input
-                      type="date"
-                      className="plan-start-date-input"
-                      value={startDateDraft}
-                      max={new Date().toISOString().slice(0, 10)}
-                      onChange={e => setStartDateDraft(e.target.value)}
-                    />
-                    <button className="plan-start-date-save" onClick={handleSaveStartDate} disabled={startDateSaving}>
-                      {startDateSaving ? '…' : 'Save'}
-                    </button>
-                    <button className="plan-start-date-cancel" onClick={() => setEditingStartDate(false)}>✕</button>
-                  </span>
-                ) : (
-                  <span className="plan-start-date-value" onClick={() => { setStartDateDraft(activeGoal.startDate.slice(0, 10)); setEditingStartDate(true); }}>
-                    {new Date(activeGoal.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} ✎
-                  </span>
-                )}
-              </div>
-
-              {cycle && cycle.actualSlope != null && (
-                <div className="plan-status-slopes">
-                  <span className="plan-status-slope-item">
-                    <span className="plan-status-slope-label">Trend</span>
-                    <span className="plan-status-slope-val" style={{ color: onTrack === false ? '#FF5470' : '#2FD27E' }}>
-                      {fmtSlope(cycle.actualSlope)}
-                    </span>
-                  </span>
-                  <span className="plan-status-slope-sep">·</span>
-                  <span className="plan-status-slope-item">
-                    <span className="plan-status-slope-label">Target</span>
-                    <span className="plan-status-slope-val">{fmtSlope(cycle.targetSlope)}</span>
-                  </span>
-                  <span className="plan-status-slope-sep">·</span>
-                  <span className="plan-status-slope-item">
-                    <span className="plan-status-slope-label">Weeks left</span>
-                    <span className="plan-status-slope-val">
-                      {Math.max(0, Math.round((new Date(activeGoal.targetDate).getTime() - Date.now()) / (7 * 86400000)))}
-                    </span>
-                  </span>
-                </div>
-              )}
-
-              <div className="plan-status-reason">{currentTarget.reason}</div>
-
-              {cycle?.flaggedDays && cycle.flaggedDays.length > 0 && (
-                <div className="plan-status-flagged">
-                  {cycle.flaggedDays.length} weigh-in{cycle.flaggedDays.length > 1 ? 's' : ''} flagged as outliers ({cycle.flaggedDays.join(', ')}), included with reduced EMA weight.
-                </div>
-              )}
+              <span className={`plan-hero-pill ${onTrack === false ? 'pill-off' : 'pill-on'}`}>
+                <span className="plan-hero-pill-dot" />
+                {onTrack === null ? 'calculating' : onTrack ? 'on pace' : 'off pace'}
+              </span>
             </div>
+
+            <PlanJourneyChart days={trackerDays} goal={activeGoal} />
+
+            <div className="plan-hero-axis">
+              <span>{formatWeightKg(activeGoal.startWeight, unit)} · {shortDate(activeGoal.startDate)}</span>
+              {latestWeight != null && <span className="plan-hero-axis-now">{formatWeightKg(latestWeight, unit)} now</span>}
+              <span>{formatWeightKg(activeGoal.targetWeight, unit)} · {shortDate(activeGoal.targetDate)}</span>
+            </div>
+          </div>
+
+          {/* ── At a glance: your trend vs the target pace ── */}
+          <div className="plan-stats">
+            <div className="plan-stat">
+              <span className="plan-stat-val" style={{ color: onTrack === false ? '#FF5470' : '#2FD27E' }}>{fmtRate(cycle?.actualSlope)}</span>
+              <span className="plan-stat-key">Your trend</span>
+            </div>
+            <div className="plan-stat">
+              <span className="plan-stat-val">{fmtRate(cycle?.targetSlope)}</span>
+              <span className="plan-stat-key">Target pace</span>
+            </div>
+            <div className="plan-stat">
+              <span className="plan-stat-val">{weeksLeft}<span className="plan-stat-unit"> wks</span></span>
+              <span className="plan-stat-key">To go</span>
+            </div>
+          </div>
+
+          <p className="plan-line">{oneLiner}</p>
+
+          {cycle?.flaggedDays && cycle.flaggedDays.length > 0 && (
+            <p className="plan-flagged-note">
+              {cycle.flaggedDays.length} weigh-in{cycle.flaggedDays.length > 1 ? 's' : ''} looked like an outlier and counted for less ({cycle.flaggedDays.join(', ')}).
+            </p>
           )}
 
-          {/* ── How the engine works ── */}
-          {activeGoal && !abandoned && (
-            <details className="plan-explainer">
-              <summary className="plan-explainer-summary">How does this work?</summary>
-              <div className="plan-explainer-body">
-                <p>Every week, Superdub looks at your real weight trend (smoothed to filter out daily noise) and compares it to the pace you need to hit your goal on time.</p>
-                <p>If you're off pace, it moves your daily calorie target up or down, by how far off you are, capped at 40% of your weekly budget. It never drops below what your body burns at rest, so the target stays safe for your size.</p>
-                <p>You don't need to log food for this to work. Your weight trend shows the result of your energy balance, whatever the cause.</p>
+          {/* ── Adjust goal (collapsed) ── */}
+          <details className="plan-collapse">
+            <summary className="plan-collapse-summary">Adjust goal</summary>
+            <div className="plan-collapse-body">{goalForm}</div>
+          </details>
+
+          {/* ── How this works (collapsed) ── */}
+          <details className="plan-collapse">
+            <summary className="plan-collapse-summary">How this works</summary>
+            <div className="plan-collapse-body plan-explainer-body">
+              <p>Each week Superdub looks at your real weight trend, smoothed so a single heavy or light day doesn't throw it off, and compares it to the pace you need to hit your goal on time.</p>
+              <p>If you're off pace, it moves your daily calorie target up or down by how far off you are. It never drops below what your body needs at rest, so the target stays safe for your size.</p>
+              <p>You don't need to log food for this to work. Your weight trend already shows the result.</p>
+            </div>
+          </details>
+
+          {/* ── Adjustment history (collapsed) ── */}
+          {changes.length > 0 && (
+            <details className="plan-collapse">
+              <summary className="plan-collapse-summary">Adjustments <span className="plan-collapse-count">{changes.length}</span></summary>
+              <div className="plan-collapse-body">
+                {changes.map(h => (
+                  <div className="plan-history-row" key={h.id}>
+                    <span className="plan-history-cal">{h.previousCalories} → {h.calories} kcal</span>
+                    <span className="plan-history-date">{shortDate(h.effectiveFrom)}</span>
+                    <span className="plan-history-reason">{h.reason}</span>
+                  </div>
+                ))}
               </div>
             </details>
           )}
 
-          {/* ── Adjustment history ── */}
-          {history.filter(h => h.previousCalories != null).length > 0 && (
-            <div className="plan-history">
-              <div className="plan-history-title">Adjustments</div>
-              {history.filter(h => h.previousCalories != null).map(h => (
-                <div className="plan-history-row" key={h.id}>
-                  <span className="plan-history-cal">
-                    {h.previousCalories} → {h.calories} kcal
-                  </span>
-                  <span className="plan-history-date">
-                    {new Date(h.effectiveFrom).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                  </span>
-                  <span className="plan-history-reason">{h.reason}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* ── Set / update goal form ── */}
-          <div className="plan-form-section">
-            <div className="plan-form-title">{activeGoal && !abandoned ? 'Update goal' : 'Set a goal'}</div>
-
-            <div className="goal-field">
-              <span className="goal-field-label">Current weight</span>
-              <span className="goal-field-readonly">
-                {latestWeight != null ? formatWeightKg(latestWeight, unit) : 'No weigh-in yet'}
-              </span>
-            </div>
-
-            <div className="goal-field">
-              <label className="goal-field-label" htmlFor="pp-target-weight">Target weight ({unitLabel(unit)})</label>
-              <WeightInput
-                id="pp-target-weight"
-                valueKg={targetWeight}
-                onChangeKg={setTargetWeight}
-                unit={unit}
-                inputClassName="goal-input"
-                ariaLabel="Target weight"
-              />
-            </div>
-
-            <div className="goal-field">
-              <label className="goal-field-label" htmlFor="pp-target-date">Target date</label>
-              <input
-                id="pp-target-date"
-                className="goal-input"
-                type="date"
-                min={minDate}
-                value={targetDate}
-                onChange={e => setTargetDate(e.target.value)}
-              />
-            </div>
-
-            {impliedRate && (
-              <div className="goal-rate-section">
-                <div className="goal-rate-row">
-                  <span className="goal-rate-label">Implied rate</span>
-                  <span className="goal-rate-value" style={{ color: zone?.color }}>
-                    {impliedRate.kgPerWk.toFixed(2)} kg/wk
-                    <span className="goal-rate-pct">({(impliedRate.pct * 100).toFixed(2)}% BW/wk)</span>
-                  </span>
-                </div>
-
-                <div className="goal-slider-wrap">
-                  <input
-                    type="range"
-                    min={0}
-                    max={1}
-                    step={0.001}
-                    value={sliderValue}
-                    onChange={handleSlider}
-                    className="goal-slider"
-                    disabled={!targetWeight || !latestWeight}
-                  />
-                  <div className="goal-slider-track">
-                    <div className="goal-slider-zone zone-gentle"    title="Gentle (0–0.35%)" />
-                    <div className="goal-slider-zone zone-moderate"  title="Moderate (0.35–0.7%)" />
-                    <div className="goal-slider-zone zone-aggressive" title="Aggressive (0.7–1%)" />
-                    <div className="goal-slider-zone zone-warn"      title="Not recommended (>1%)" />
-                  </div>
-                  <div className="goal-slider-labels">
-                    <span>Gentle</span>
-                    <span>Moderate</span>
-                    <span>Aggressive</span>
-                    <span>⚠</span>
-                  </div>
-                </div>
-
-                <div className="goal-zone-badge" style={{ background: zone?.color + '20', borderColor: zone?.color + '50', color: zone?.color }}>
-                  {zone?.label}{overWarning && ', consider a longer timeline'}
-                </div>
-
-                {overWarning && (
-                  <div className="goal-warning">
-                    This implies {impliedRate.kgPerWk.toFixed(2)} kg/week, above 1% of your body weight per week,
-                    where research suggests a higher proportion of weight lost comes from lean mass rather than fat.
-                    You can still proceed, but a longer timeline is generally safer.
-                  </div>
-                )}
-              </div>
-            )}
-
-            {error && <div className="goal-error">{error}</div>}
-
-            <div className="goal-actions">
-              {activeGoal && !abandoned && (
-                <button className="goal-btn-abandon" onClick={handleAbandon} disabled={saving}>
-                  Abandon goal
-                </button>
-              )}
-              <button
-                className="goal-btn-save"
-                onClick={handleSave}
-                disabled={saving || !targetWeight || !targetDate || !latestWeight}
-              >
-                {saving ? 'Saving…' : activeGoal && !abandoned ? 'Update goal' : 'Set goal'}
-              </button>
-            </div>
+        </div>
+      ) : (
+        <div className="plan-page-body">
+          <div className="plan-empty-intro">
+            <div className="plan-empty-title">Set a weight goal</div>
+            <p>Pick a target weight and date. Superdub works out how much to eat each day and quietly adjusts it as your weight moves, so you stay on pace without counting every meal.</p>
           </div>
-
+          {goalForm}
         </div>
       )}
     </div>

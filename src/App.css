@@ -13837,46 +13837,191 @@ html.superdub-night .app {
   gap: 16px;
 }
 
-/* ── Status card ── */
-.plan-status-card {
+/* ── Hero: journey chart + calorie target + pace ── */
+.plan-hero {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   border-left: 3px solid #2FD27E;
   border-radius: var(--r-lg);
-  padding: 18px 18px 14px;
+  padding: 16px 14px 12px;
 }
-.plan-status-card.plan-status-off {
-  border-left-color: #FF5470;
-}
+.plan-hero.plan-hero-off { border-left-color: #FF5470; }
 
-.plan-status-top {
+.plan-hero-top {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 10px;
+  margin-bottom: 4px;
+  padding: 0 4px;
 }
 
-.plan-status-cal {
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-}
+.plan-hero-cal { display: flex; flex-direction: column; gap: 2px; }
 
-.plan-status-cal-num {
-  font-size: 2rem;
-  font-weight: 800;
-  font-family: 'Kanit', sans-serif;
+.plan-hero-num {
+  font-size: 2.3rem;
+  font-weight: 700;
+  font-family: 'Space Mono', monospace;
   color: #fff;
-  line-height: 1;
+  line-height: 0.95;
+  letter-spacing: -0.02em;
 }
 
-.plan-status-cal-unit {
+.plan-hero-unit {
   font-size: 0.72rem;
-  color: rgba(255,255,255,0.45);
+  color: rgba(255,255,255,0.5);
+  font-family: 'Sora', sans-serif;
+}
+
+.plan-hero-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.6rem;
+  font-weight: 700;
   font-family: 'Space Mono', monospace;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
+  padding: 5px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
 }
+.plan-hero-pill-dot { width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
+.plan-hero-pill.pill-on  { color: #2FD27E; background: rgba(47,210,126,0.12); border: 1px solid rgba(47,210,126,0.3); }
+.plan-hero-pill.pill-off { color: #FF5470; background: rgba(255,84,112,0.12); border: 1px solid rgba(255,84,112,0.3); }
+
+.plan-hero-axis {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 0 6px;
+  font-size: 0.66rem;
+  font-family: 'Space Mono', monospace;
+  color: rgba(255,255,255,0.4);
+}
+.plan-hero-axis-now { color: #2FD27E; }
+
+/* ── At-a-glance stat row ── */
+.plan-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.plan-stat {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-md, 12px);
+  padding: 11px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.plan-stat-val { font-size: 1.02rem; font-weight: 700; font-family: 'Space Mono', monospace; color: #fff; }
+.plan-stat-unit { font-size: 0.7rem; color: rgba(255,255,255,0.5); font-weight: 400; }
+.plan-stat-key {
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.4);
+  font-family: 'Space Mono', monospace;
+}
+
+.plan-line {
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: rgba(255,255,255,0.62);
+  font-family: 'Sora', sans-serif;
+  margin: 0;
+  padding: 0 2px;
+}
+
+.plan-flagged-note {
+  margin: 0;
+  padding: 0 2px;
+  font-size: 0.66rem;
+  color: rgba(255,200,80,0.6);
+  font-family: 'Space Mono', monospace;
+  line-height: 1.4;
+}
+
+/* ── Collapsed panels (adjust / how it works / adjustments) ── */
+.plan-collapse {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.plan-collapse-summary {
+  padding: 13px 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: 'Sora', sans-serif;
+  color: rgba(255,255,255,0.7);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.plan-collapse-summary::-webkit-details-marker { display: none; }
+.plan-collapse-summary::before { content: '▸'; font-size: 0.6rem; opacity: 0.5; }
+details[open] > .plan-collapse-summary::before { content: '▾'; }
+.plan-collapse-count {
+  margin-left: auto;
+  font-size: 0.6rem;
+  font-family: 'Space Mono', monospace;
+  color: rgba(255,255,255,0.45);
+  background: rgba(255,255,255,0.06);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.plan-collapse-body { padding: 4px 16px 16px; }
+
+/* ── Set / adjust form (shared) ── */
+.plan-form { display: flex; flex-direction: column; gap: 14px; }
+
+.plan-empty-intro {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-lg);
+  padding: 18px 18px 16px;
+}
+.plan-empty-title {
+  font-family: 'Kanit', sans-serif;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: #fff;
+  margin-bottom: 6px;
+}
+.plan-empty-intro p {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: rgba(255,255,255,0.55);
+  font-family: 'Sora', sans-serif;
+}
+
+/* ── Journey chart states ── */
+.plan-journey-empty {
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0 24px;
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.4);
+  font-family: 'Sora', sans-serif;
+}
+.plan-journey-tip {
+  background: rgba(12,12,18,0.97);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  padding: 8px 11px;
+  min-width: 130px;
+}
+.pjt-day { color: #fff; font-weight: 700; font-family: 'Space Mono', monospace; font-size: 11px; margin-bottom: 5px; }
+.pjt-row { display: flex; align-items: center; gap: 7px; padding: 1px 0; }
+.pjt-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.pjt-name { color: #c8ccd8; font-size: 11px; font-family: 'Sora', sans-serif; }
+.pjt-val { margin-left: auto; padding-left: 12px; color: #fff; font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; }
 
 .plan-nav-badge {
   font-size: 0.58rem;
@@ -13888,78 +14033,6 @@ html.superdub-night .app {
   vertical-align: middle;
 }
 
-.plan-status-goal-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
-}
-
-.plan-status-arrow {
-  font-size: 1.1rem;
-  color: rgba(255,255,255,0.55);
-}
-
-.plan-status-weights {
-  font-size: 0.9rem;
-  font-weight: 600;
-  font-family: 'Space Mono', monospace;
-  color: #fff;
-}
-
-.plan-status-date {
-  font-size: 0.7rem;
-  color: rgba(255,255,255,0.4);
-  font-family: 'Sora', sans-serif;
-}
-
-.plan-status-slopes {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  padding: 10px 0 8px;
-  border-top: 1px solid rgba(255,255,255,0.06);
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-  margin-bottom: 10px;
-}
-
-.plan-status-slope-item {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.plan-status-slope-label {
-  font-size: 0.58rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: rgba(255,255,255,0.3);
-  font-family: 'Space Mono', monospace;
-}
-
-.plan-status-slope-val {
-  font-size: 0.82rem;
-  font-weight: 700;
-  font-family: 'Space Mono', monospace;
-  color: #fff;
-}
-
-.plan-status-slope-sep {
-  color: rgba(255,255,255,0.2);
-  font-size: 0.8rem;
-  align-self: flex-end;
-  padding-bottom: 2px;
-}
-
-.plan-status-reason {
-  font-size: 0.71rem;
-  color: rgba(255,255,255,0.38);
-  font-family: 'Sora', sans-serif;
-  line-height: 1.5;
-}
-
 .plan-start-date-row {
   display: flex; align-items: center; gap: 8px; margin-top: 8px;
   font-family: 'Sora', sans-serif; font-size: 0.75rem;
@@ -13967,7 +14040,10 @@ html.superdub-night .app {
 .plan-start-date-label { color: rgba(255,255,255,0.45); flex-shrink: 0; }
 .plan-start-date-value {
   color: rgba(255,255,255,0.7); cursor: pointer;
+  background: none; border: none; padding: 0;
+  font-family: 'Sora', sans-serif; font-size: 0.75rem;
   border-bottom: 1px dashed rgba(255,255,255,0.25);
+  display: inline-flex; align-items: center; gap: 5px;
   transition: color 0.15s, border-color 0.15s;
 }
 .plan-start-date-value:hover { color: #fff; border-color: rgba(255,255,255,0.6); }
@@ -13990,39 +14066,6 @@ html.superdub-night .app {
 }
 .plan-start-date-cancel:hover { color: #fff; }
 
-.plan-status-flagged {
-  margin-top: 8px;
-  font-size: 0.65rem;
-  color: rgba(255,200,80,0.65);
-  font-family: 'Space Mono', monospace;
-  line-height: 1.4;
-}
-
-/* ── Explainer ── */
-.plan-explainer {
-  background: rgba(255,255,255,0.02);
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.plan-explainer-summary {
-  padding: 12px 16px;
-  font-size: 0.78rem;
-  font-family: 'Sora', sans-serif;
-  color: rgba(255,255,255,0.5);
-  cursor: pointer;
-  list-style: none;
-  user-select: none;
-}
-.plan-explainer-summary::-webkit-details-marker { display: none; }
-.plan-explainer-summary::before {
-  content: '▸  ';
-  font-size: 0.65rem;
-  opacity: 0.5;
-}
-details[open] .plan-explainer-summary::before { content: '▾  '; }
-
 .plan-explainer-body {
   padding: 0 16px 14px;
   display: flex;
@@ -14037,23 +14080,7 @@ details[open] .plan-explainer-summary::before { content: '▾  '; }
   margin: 0;
 }
 
-/* ── Adjustment history ── */
-.plan-history {
-  background: rgba(255,255,255,0.02);
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 12px;
-  padding: 14px 16px;
-}
-
-.plan-history-title {
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: rgba(255,255,255,0.3);
-  font-family: 'Space Mono', monospace;
-  margin-bottom: 10px;
-}
-
+/* ── Adjustment history rows ── */
 .plan-history-row {
   display: grid;
   grid-template-columns: auto auto 1fr;
@@ -14086,26 +14113,6 @@ details[open] .plan-explainer-summary::before { content: '▾  '; }
   line-height: 1.4;
   grid-column: 1 / -1;
   padding-top: 2px;
-}
-
-/* ── Form section ── */
-.plan-form-section {
-  background: rgba(255,255,255,0.02);
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 16px;
-  padding: 18px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.plan-form-title {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: rgba(255,255,255,0.35);
-  font-family: 'Space Mono', monospace;
-  margin-bottom: 2px;
 }
 
 /* ── Coaching card ─────────────────────────────────────────────────────────── */
