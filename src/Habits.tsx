@@ -17,6 +17,7 @@ import PinnedXpBar from './PinnedXpBar';
 import LevelCustomizer from './LevelCustomizer';
 import LevelLadder from './LevelLadder';
 import { eveningPending } from './EveningPrompt';
+import './HabitsPopup.css';
 import {
   CalendarIc, TrophyIc, WalkIc, BookIc, NoSmokeIc, MealIc, MoneyIc, HealthIc,
   SunIc, CloudSunIc, CloudIc, RainIc, SnowIc, StormIc, type IconProps,
@@ -1958,31 +1959,35 @@ const Habits: React.FC = () => {
         const viewDate = isTodayView ? now : new Date(now.getFullYear(), parseInt(viewingDay.slice(3), 10) - 1, parseInt(viewingDay.slice(0, 2), 10));
         const dayLabel = viewDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
         return (
-          <div className="checkin-overlay" onClick={() => setShowDayOverlay(false)}>
-            <div className="checkin-inner" onClick={e => e.stopPropagation()}>
-              <button className="checkin-close" onClick={() => setShowDayOverlay(false)} aria-label="Close">✕</button>
-              <div className="checkin-head">
-                <div className="checkin-greet-wrap">
-                  <p className="checkin-eyebrow">{dayLabel}</p>
-                  <h2 className="checkin-greeting">{isTodayView ? <>{greeting} <span className="checkin-wave">👋</span></> : 'Your log'}</h2>
-                  <p className="checkin-sub">{isTodayView ? "Here's your habit progress for today." : 'Tap a habit to backfill this day.'}</p>
+          <div className={`hp-overlay${allDone ? ' all-done' : ''}`} onClick={() => setShowDayOverlay(false)}>
+            <div className="hp-glow" aria-hidden="true" />
+            <div className="hp-screen" onClick={e => e.stopPropagation()}>
+              <div className="hp-top">
+                <span className="hp-eyebrow">{dayLabel}</span>
+                <button className="hp-close" onClick={() => setShowDayOverlay(false)} aria-label="Close">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" /></svg>
+                </button>
+              </div>
+
+              <div className="hp-hero">
+                <div className="hp-greet">
+                  <h2 className="hp-greeting">{isTodayView ? (allDone ? 'All done' : greeting) : 'Your log'}</h2>
+                  <p className="hp-sub">{isTodayView ? (allDone ? 'Every habit closed today. Nice work.' : "Here's your habit progress for today.") : 'Tap a habit to backfill this day.'}</p>
                 </div>
-                <div
-                  className="checkin-ring"
-                  style={{ '--pct': pct } as React.CSSProperties}
-                  aria-label={`${doneCount} of ${total} habits done today`}
-                >
-                  <div className="checkin-ring-inner">
-                    <span className="checkin-count">{doneCount}<span className="checkin-count-total">/{total}</span></span>
-                    <span className="checkin-progress-label">done</span>
-                  </div>
+                <div className="hp-ring" aria-label={`${doneCount} of ${total} habits done`}>
+                  <svg viewBox="0 0 88 88" aria-hidden="true">
+                    <circle cx="44" cy="44" r="39" fill="none" stroke="var(--glass-border, #252532)" strokeWidth="6" />
+                    <circle className="hp-ring-arc" cx="44" cy="44" r="39" fill="none" strokeWidth="6" strokeLinecap="round"
+                      strokeDasharray="245" strokeDashoffset={245 * (1 - pct / 100)} transform="rotate(-90 44 44)" />
+                  </svg>
+                  <div className="hp-ring-c"><b>{doneCount}<small>/{total}</small></b><span>done</span></div>
                 </div>
               </div>
 
               {total === 0 ? (
-                <p className="checkin-empty">No habits yet, add some below.</p>
+                <p className="hp-empty">No habits yet, add some below.</p>
               ) : (
-                <div className="checkin-habits">
+                <div className="hp-rows">
                   {displayHabits.map(h => {
                     const state = todayHabits[h] ?? null;
                     const done = state === 'done';
@@ -1990,25 +1995,27 @@ const Habits: React.FC = () => {
                       <button
                         key={h}
                         type="button"
-                        className={`checkin-habit ${done ? 'done' : ''} ${state === 'failed' ? 'failed' : ''} ${state === 'na' ? 'na' : ''}`}
+                        className={`hp-row ${done ? 'done' : ''} ${state === 'failed' ? 'failed' : ''} ${state === 'na' ? 'na' : ''}`}
                         onClick={() => handleToggleDay(h, viewingDay, cycleState(state))}
                         aria-pressed={done}
                       >
-                        <span className="checkin-tick">{done ? '✓' : state === 'failed' ? '✕' : state === 'na' ? '–' : '+'}</span>
-                        <span className="checkin-habit-name">{h}</span>
+                        <span className="hp-chk">
+                          {done
+                            ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6" /></svg>
+                            : state === 'failed'
+                              ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" /></svg>
+                              : <span className="hp-plus">{state === 'na' ? '–' : '+'}</span>}
+                        </span>
+                        <span className="hp-name">{h}</span>
                       </button>
                     );
                   })}
                 </div>
               )}
 
-              <div className="checkin-footer">
-                {allDone
-                  ? <p className="checkin-done-msg">All habits done, nice work! 🎉</p>
-                  : total > 0 && <p className="checkin-hint-msg">Tap to check off habits.</p>}
-                <button type="button" className="checkin-scroll-hint" onClick={() => setShowDayOverlay(false)}>
-                  {allDone ? 'Keep it up 🚀' : 'Close'} <span className="checkin-chevron">▾</span>
-                </button>
+              <div className="hp-foot">
+                {total > 0 && <p className="hp-msg">{allDone ? 'All habits done, perfect day.' : 'Tap to check off habits.'}</p>}
+                <button type="button" className="hp-dismiss" onClick={() => setShowDayOverlay(false)}>{allDone ? 'Keep it up' : 'Close'}</button>
               </div>
             </div>
           </div>

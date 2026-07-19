@@ -1,0 +1,114 @@
+/* Daily-habits check-in pop-up — full-screen, matching the redesigned prompts.
+   Green by default, with a smooth morph to gold (ascension) on a perfect day.
+   Kept out of App.css so this chat's changes don't collide with parallel edits. */
+
+/* Registering --hp-accent as a colour lets it animate green -> gold. */
+@property --hp-accent {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #2FD27E;
+}
+
+.hp-overlay {
+  position: fixed; inset: 0; z-index: 1200;
+  --hp-accent: #2FD27E;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex; justify-content: center;
+  animation: hp-fade 0.25s ease;
+  transition: --hp-accent 0.7s ease;
+}
+.hp-overlay.all-done { --hp-accent: #FFB928; }
+
+.hp-glow {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(125% 55% at 50% -6%, color-mix(in srgb, var(--hp-accent) 26%, transparent), transparent 62%);
+  transition: background 0.7s ease;
+}
+
+.hp-screen {
+  position: relative; z-index: 1; width: 100%; max-width: 480px;
+  display: flex; flex-direction: column;
+  padding: calc(env(safe-area-inset-top, 0px) + 26px) 18px calc(env(safe-area-inset-bottom, 16px) + 18px);
+  animation: hp-rise 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.hp-top { display: flex; align-items: flex-start; justify-content: space-between; }
+.hp-eyebrow {
+  font-family: 'Space Mono', monospace; font-size: 0.62rem; font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--hp-accent); transition: color 0.7s ease;
+}
+.hp-close {
+  width: 30px; height: 30px; border-radius: 50%; flex: none;
+  border: 1px solid var(--glass-border, #252532); background: rgba(255, 255, 255, 0.03);
+  color: var(--text-dim, rgba(255, 255, 255, 0.62)); display: grid; place-items: center; cursor: pointer;
+}
+
+.hp-hero { display: flex; align-items: center; gap: 16px; margin: 16px 0 10px; }
+.hp-greet { flex: 1; min-width: 0; }
+.hp-greeting {
+  font-family: 'Kanit', sans-serif; font-style: italic; font-weight: 800;
+  font-size: 1.5rem; line-height: 1.05; margin: 0; color: var(--text, #E0E0F0);
+}
+.hp-sub { margin: 5px 0 0; font-size: 0.82rem; color: var(--text-dim, rgba(255, 255, 255, 0.62)); line-height: 1.4; }
+
+.hp-ring { flex: 0 0 auto; width: 88px; height: 88px; position: relative; display: grid; place-items: center; }
+.hp-ring svg { position: absolute; inset: 0; width: 88px; height: 88px; }
+.hp-ring-arc {
+  stroke: var(--hp-accent);
+  transition: stroke-dashoffset 0.5s ease, stroke 0.7s ease;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--hp-accent) 55%, transparent));
+}
+.hp-ring-c { text-align: center; }
+.hp-ring-c b { font-family: 'Space Mono', monospace; font-weight: 700; font-size: 1.5rem; line-height: 1; color: var(--text, #E0E0F0); }
+.hp-ring-c b small { font-size: 0.9rem; color: var(--text-mute, rgba(255, 255, 255, 0.4)); }
+.hp-ring-c span {
+  display: block; font-family: 'Space Mono', monospace; font-size: 0.5rem;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-mute, rgba(255, 255, 255, 0.4)); margin-top: 2px;
+}
+
+.hp-rows { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; overflow-y: auto; }
+.hp-row {
+  display: flex; align-items: center; gap: 12px; text-align: left; cursor: pointer;
+  background: var(--card-bg, rgba(14, 14, 20, 0.5)); border: 1px solid var(--glass-border, #252532);
+  border-radius: 14px; padding: 13px 14px; color: inherit;
+}
+.hp-chk {
+  width: 26px; height: 26px; border-radius: 8px; flex: none; display: grid; place-items: center;
+  border: 1.5px solid var(--glass-border, #252532); color: var(--text-mute, rgba(255, 255, 255, 0.4));
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+.hp-chk svg { width: 15px; height: 15px; }
+.hp-row.done .hp-chk {
+  background: var(--hp-accent); border-color: var(--hp-accent); color: #07090C;
+  transition: background 0.7s ease, border-color 0.7s ease;
+}
+.hp-row.failed .hp-chk { color: var(--danger, #FF5470); border-color: color-mix(in srgb, var(--danger, #FF5470) 45%, transparent); }
+.hp-plus { font-family: 'Space Mono', monospace; font-size: 1.1rem; line-height: 1; }
+.hp-name { flex: 1; font-size: 0.92rem; font-weight: 600; color: var(--text, #E0E0F0); }
+.hp-row.done .hp-name { color: var(--text-dim, rgba(255, 255, 255, 0.62)); }
+.hp-empty { text-align: center; color: var(--text-dim, rgba(255, 255, 255, 0.62)); font-size: 0.9rem; margin: 30px 0; }
+
+.hp-foot { margin-top: auto; padding-top: 16px; display: flex; flex-direction: column; gap: 9px; }
+.hp-msg { text-align: center; font-size: 0.84rem; color: var(--text-dim, rgba(255, 255, 255, 0.62)); margin: 0; transition: color 0.7s ease; }
+.hp-overlay.all-done .hp-msg { color: var(--hp-accent); font-weight: 600; }
+.hp-dismiss {
+  width: 100%; padding: 12px; border: none; border-radius: 12px; cursor: pointer;
+  background: none; color: var(--text-mute, rgba(255, 255, 255, 0.4)); font-family: 'Sora', sans-serif; font-size: 0.9rem;
+}
+.hp-overlay.all-done .hp-dismiss {
+  background: var(--hp-accent); color: #07090C; font-weight: 800;
+  transition: background 0.7s ease, color 0.7s ease;
+}
+
+/* Flourish: a soft ring pop when the last habit closes and the accent turns gold. */
+.hp-overlay.all-done .hp-ring { animation: hp-pop 0.65s cubic-bezier(0.22, 1, 0.36, 1); }
+@keyframes hp-pop { 0% { transform: scale(1); } 45% { transform: scale(1.1); } 100% { transform: scale(1); } }
+@keyframes hp-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes hp-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .hp-overlay, .hp-screen, .hp-overlay.all-done .hp-ring { animation: none; }
+  .hp-overlay, .hp-glow, .hp-eyebrow, .hp-ring-arc,
+  .hp-row.done .hp-chk, .hp-msg, .hp-overlay.all-done .hp-dismiss { transition: none; }
+}
