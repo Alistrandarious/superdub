@@ -120,6 +120,14 @@ const LevelCustomizer: React.FC<{ showHero?: boolean }> = ({ showHero = true }) 
     window.dispatchEvent(new CustomEvent('superdub:nav-glow-changed'));
   };
 
+  const [navHideaway, setNavHideaway] = useState(() => localStorage.getItem('superdub.navHideaway') !== '0');
+  const toggleHideaway = () => {
+    const next = !navHideaway;
+    setNavHideaway(next);
+    localStorage.setItem('superdub.navHideaway', next ? '1' : '0');
+    window.dispatchEvent(new CustomEvent('superdub:nav-hideaway-changed'));
+  };
+
   const [bgId, setBgId] = useState(() => getBackground().id);
   const pickBg = (b: Background, locked: boolean) => {
     if (locked) return;
@@ -268,6 +276,17 @@ const LevelCustomizer: React.FC<{ showHero?: boolean }> = ({ showHero = true }) 
             );
           })}
         </div>
+      </section>
+
+      <section className="asc-section">
+        <Eyebrow sub="tuck the bar away with a tab">NAVIGATION</Eyebrow>
+        <button className="asc-switch-row" onClick={toggleHideaway} role="switch" aria-checked={navHideaway}>
+          <span className="asc-switch-text">
+            <b>Hide-away nav bar</b>
+            <span>On lets you tuck the bar below a pull tab for a cleaner screen. Off keeps it fixed.</span>
+          </span>
+          <span className={`asc-switch${navHideaway ? ' on' : ''}`} aria-hidden="true"><span className="asc-switch-knob" /></span>
+        </button>
       </section>
 
       <section className="asc-section">
