@@ -5085,8 +5085,9 @@ h1, h2, h3, h4, .sora {
 .fade-end::after { opacity: 0; }
 
 /* Level hero on Habits: inset the XP bar to the 18px gutter so it lines up with
-   the check-in circles (.hb-week) below instead of running edge to edge. */
-.habits-page-scroll .lvl-hero-xp { max-width: none; padding: 0 18px; }
+   the check-in circles (.hb-week) below instead of running edge to edge. On this
+   docked hero the XP bar sits ABOVE the ring (order:-1), unlike Profile/Global. */
+.habits-page-scroll .lvl-hero-xp { max-width: none; padding: 0 18px; order: -1; margin: 0 0 14px; }
 /* Match the older Habits look: the level ring sits flat (no floating bob or the
    glow bloom that belongs to the Profile hero). */
 .habits-page-scroll .lvl-hero-bloom { display: none; }
