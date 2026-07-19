@@ -24,6 +24,7 @@ import {
 import { pageTheme, HEALTH } from './theme';
 import { quitProgress, quitElapsed, toLocalDatetimeValue } from './quit';
 import { moveItem, applyGroupReorder } from './reorder';
+import { RECENT_ADD_DAYS, daysSince } from './habitAdd';
 import {
   HABIT_LEVEL_TIERS as LEVEL_TIERS, HABIT_LEVEL_RATES as LEVEL_RATES,
   MAX_HABIT_LEVEL as MAX_LEVEL, habitLevelFromDays as levelFromDays, habitXPForDoneDays, cadenceXpMultiplier,
@@ -1140,6 +1141,14 @@ const Habits: React.FC = () => {
   }, [focusHabit]);
   // Tapping the level ring reveals the customization pickers in place (no navigation).
   const [customizeOpen, setCustomizeOpen] = useState(false);
+  // Which cadence panel the carousel is showing. Level/streak chrome is Daily-only,
+  // so we track the active cadence (fed by the carousel's onIndexChange) to gate it.
+  const [activeCadence, setActiveCadence] = useState<Cadence>('daily');
+  // Seed the active cadence to the carousel's opening panel — normally 'daily', but a
+  // /?habit= deep-link can open on that habit's cadence. Stable after load, so it won't
+  // clobber later swipes (which update activeCadence via onIndexChange).
+  const startCad: Cadence = focusHabit ? (habitCadence[focusHabit] ?? 'daily') : 'daily';
+  useEffect(() => { setActiveCadence(startCad); }, [startCad]);
   const cadenceRef = useRef<Record<string, Cadence>>({});
   useEffect(() => { cadenceRef.current = habitCadence; }, [habitCadence]);
   // Persist habit names + their cadence (objects), using the latest cadence map.
@@ -1556,6 +1565,10 @@ const Habits: React.FC = () => {
   const cadenceGroups: Record<Cadence, string[]> = { daily: [], weekly: [], monthly: [], yearly: [], quit: [] };
   yourHabits.forEach(h => { cadenceGroups[habitCadence[h] ?? 'daily'].push(h); });
 
+  // Just added a habit? Hold off on the "add another" affordance for a few days so the
+  // new habit gets focus. They can still add from the cog's "Add Habit" any time.
+  const addedRecently = yourHabits.some(h => daysSince(startDates[h]) < RECENT_ADD_DAYS);
+
   // Once a user has a full, spread-out routine (6+ habits across 2+ cadence groups)
   // the Featured discovery nudge has done its job — hide it automatically.
   const featuredEarned =
@@ -1609,20 +1622,21 @@ const Habits: React.FC = () => {
           renderItem={(name, handle) => renderHabitCard(name, handle)}
         />
       );
+    // Add affordance appears only on an empty cadence with no recent add elsewhere.
+    // Once a cadence has a habit (habit+1) the mini "add another" is gone entirely — the
+    // cog's "Add Habit" is the discovery path from here on.
     const content = list.length === 0 ? (
       <div className="hb-rows">
-        <button className="hcard hcard-add" onClick={() => { setNewHabitCadence(cad); setAddOpen(true); }} aria-label={addLabel}>
-          <span className="hcard-add-plus" style={{ color: meta.color }}>+</span>
-          <span className="hcard-add-label">{addLabel}</span>
-        </button>
+        {!addedRecently && (
+          <button className="hcard hcard-add" onClick={() => { setNewHabitCadence(cad); setAddOpen(true); }} aria-label={addLabel}>
+            <span className="hcard-add-plus" style={{ color: meta.color }}>+</span>
+            <span className="hcard-add-label">{addLabel}</span>
+          </button>
+        )}
       </div>
     ) : (
       <div className="hb-rows">
         {cards}
-        <button className="hcard-add hcard-add--mini" onClick={() => { setNewHabitCadence(cad); setAddOpen(true); }} aria-label={addLabel}>
-          <span className="hcard-add-plus" style={{ color: meta.color }}>+</span>
-          <span className="hcard-add-label">{addLabel}</span>
-        </button>
       </div>
     );
     return { key: cad, label: meta.label, color: meta.color, icon: meta.icon, content };
@@ -1759,7 +1773,7 @@ const Habits: React.FC = () => {
       <div className="habits-page-scroll" onScroll={onPageScroll}>
         {/* Top bar: brand + weather + cog (shared header) */}
         <SuperdubHeader>
-          {stage !== 'new' && mandatoryStats.streak >= 1 && (
+          {activeCadence === 'daily' && stage !== 'new' && mandatoryStats.streak >= 1 && (
             <span className="hb-streak-chip" aria-label={`${mandatoryStats.streak} day streak`}>
               <AnimatedFlame size={14} />{mandatoryStats.streak}
             </span>
@@ -1818,7 +1832,7 @@ const Habits: React.FC = () => {
 
         {/* User level hero — the XP ring at the top of Habits (also on Profile).
             Tapping it opens Profile (customization + a link to the full level map). */}
-        <div><LevelHeroRing onRingTap={() => setCustomizeOpen(o => !o)} /></div>
+        {activeCadence === 'daily' && <div><LevelHeroRing onRingTap={() => setCustomizeOpen(o => !o)} /></div>}
         {/* Ring tap SWAPS the page: customization + the level ladder replace the
             habits content below the ring; tapping the ring again brings it back. */}
         <div className={`hb-customize${customizeOpen ? ' open' : ''}`}>
@@ -1900,7 +1914,7 @@ const Habits: React.FC = () => {
             when its sticky header has reached the top and stuck (→ glass capsule). */}
         <div ref={cadTopRef} aria-hidden="true" style={{ height: 0 }} />
         {/* Your habits, cadence carousel (Daily · Weekly · Monthly · Yearly) */}
-        <CadenceCarousel panels={cadencePanels} startIndex={CADENCE_ORDER.indexOf(focusHabit ? (habitCadence[focusHabit] ?? 'daily') : 'daily')} compact={stuck} header={<PinnedXpBar />} onIndexChange={() => setFeaturedSwipeKey(k => k + 1)} />
+        <CadenceCarousel panels={cadencePanels} startIndex={CADENCE_ORDER.indexOf(startCad)} compact={stuck} header={activeCadence === 'daily' ? <PinnedXpBar /> : null} onIndexChange={(i) => { setActiveCadence(CADENCE_ORDER[i]); setFeaturedSwipeKey(k => k + 1); }} />
 
         {/* Featured banner, tap to open & join (below the user's habits). Swipes up
             from the bottom (0 → 100% opacity) each time you swipe the carousel above —
