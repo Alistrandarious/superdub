@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useXP } from './XPContext';
 import { getRingTheme, SELECTED_THEME_KEY } from './levels';
+import LevelGlance from './LevelGlance';
 
 const LAST_LEVEL_KEY = 'superdub.lastSeenLevel';
 
@@ -41,8 +42,10 @@ const LevelUpCelebration: React.FC = () => {
     : getRingTheme('gold');
 
   return (
-    <div className={`lvlup-overlay${closing ? ' closing' : ''}`} onClick={close}>
-      <div className="lvlup-card" onClick={e => e.stopPropagation()}>
+    // Full-screen "at a glance" moment (styled like the daily prompt popups). The
+    // down-chevron is the only way out: it slides the whole page down to reveal the app.
+    <div className={`lvlup-overlay${closing ? ' closing' : ''}`}>
+      <div className="lvlup-card">
         <div className="lvlup-rays" style={{ ['--ray' as any]: theme.glow }} />
         <div className="lvlup-burst">
           {Array.from({ length: 14 }).map((_, i) => (
@@ -52,23 +55,23 @@ const LevelUpCelebration: React.FC = () => {
 
         <p className="lvlup-eyebrow">LEVEL UP</p>
         <div
-          className="lvlup-num"
+          className="lvlup-num lvlup-bump"
           style={{ background: `linear-gradient(160deg, ${theme.from}, ${theme.to})`, boxShadow: `0 0 40px ${theme.glow}` }}
         >
           {playerLevel.level}
         </div>
         <h2 className="lvlup-title">{playerLevel.title}</h2>
 
-        <div className="lvlup-reward">
+        <div className="lvlup-reward lvlup-reward--compact">
           <span className="lvlup-reward-icon">{playerLevel.reward.icon}</span>
-          <div className="lvlup-reward-text">
-            <span className="lvlup-reward-label">{playerLevel.reward.label}</span>
-            <span className="lvlup-reward-blurb">{playerLevel.reward.blurb}</span>
-          </div>
+          <span className="lvlup-reward-label">{playerLevel.reward.label} unlocked</span>
         </div>
 
-        <button className="lvlup-btn" onClick={close}>
-          {playerLevel.reward.kind === 'theme' ? 'Equipped, nice!' : 'Keep going 🚀'}
+        <LevelGlance />
+
+        <button className="lvlup-down" onClick={close} aria-label="Down to the app">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9" /></svg>
+          <span>to the app</span>
         </button>
       </div>
     </div>
