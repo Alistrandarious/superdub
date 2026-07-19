@@ -5087,7 +5087,7 @@ h1, h2, h3, h4, .sora {
 /* Level hero on Habits: inset the XP bar to the 18px gutter so it lines up with
    the check-in circles (.hb-week) below instead of running edge to edge. On this
    docked hero the XP bar sits ABOVE the ring (order:-1), unlike Profile/Global. */
-.habits-page-scroll .lvl-hero-xp { max-width: none; padding: 0 18px; order: -1; margin: 0 0 14px; }
+.habits-page-scroll .lvl-hero-xp { max-width: none; padding: 0 18px; order: -1; margin: 0 0 20px; }
 /* Match the older Habits look: the level ring sits flat (no floating bob or the
    glow bloom that belongs to the Profile hero). */
 .habits-page-scroll .lvl-hero-bloom { display: none; }
@@ -5874,11 +5874,49 @@ h1, h2, h3, h4, .sora {
 .home-ontrack-chev { color: rgba(255,255,255,0.35); font-size: 1.2rem; flex: none; }
 
 /* Level ring, docked at the BOTTOM of Habits — the reward you scroll down to,
-   rather than the gate you scroll through. Sits above the customization swap. */
+   rather than the gate you scroll through. Framed as its own "Ascension" zone:
+   a fading top divider, a warm gold reward glow behind the ring, and room to
+   breathe. Sits above the customization swap. */
 .hb-level-dock {
-  margin-top: 16px;
-  padding-top: 4px;
+  position: relative;
+  isolation: isolate;
+  margin-top: 28px;
+  padding: 26px 16px 32px;
+  display: flex;
+  flex-direction: column;
+  /* stretch (default) so the hero + its XP bar stay full width; the eyebrow/hint
+     centre themselves individually below. */
 }
+/* Fading hairline that separates the reward zone from the day above it. */
+.hb-level-dock::before {
+  content: "";
+  position: absolute; top: 0; left: 18px; right: 18px; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12) 24%, rgba(255,255,255,0.12) 76%, transparent);
+}
+/* Soft gold ascension bloom rising from behind the ring (gold = levels/XP). */
+.hb-level-dock::after {
+  content: "";
+  position: absolute; z-index: -1; pointer-events: none;
+  left: 50%; bottom: 24px; transform: translateX(-50%);
+  width: 320px; height: 250px;
+  background: radial-gradient(ellipse at 50% 62%, rgba(255,185,40,0.16), rgba(255,185,40,0.045) 44%, transparent 70%);
+}
+.hb-level-eyebrow {
+  text-align: center;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+  color: #FFB928;
+  margin-bottom: 4px;
+}
+.hb-level-hint {
+  align-self: center;
+  margin-top: 16px;
+  font-family: 'Sora', sans-serif; font-size: 0.72rem; font-weight: 500;
+  color: rgba(255,255,255,0.42);
+  background: none; border: 0; cursor: pointer;
+  transition: color 0.15s;
+}
+.hb-level-hint:hover { color: rgba(255,255,255,0.7); }
 
 /* Rewind banner — shown when the habit cards are viewing a past day */
 .hb-rewind-banner {

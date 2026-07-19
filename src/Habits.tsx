@@ -2066,7 +2066,15 @@ const Habits: React.FC = () => {
         {/* Level ring — the reward, now docked at the BOTTOM of the page (was at the
             top). Daily-only, matching master's level-chrome gating. Tapping it still
             SWAPS in the customization pickers + ladder (below); tap again to restore. */}
-        {activeCadence === 'daily' && <div className="hb-level-dock"><LevelHeroRing onRingTap={() => setCustomizeOpen(o => !o)} /></div>}
+        {activeCadence === 'daily' && (
+          <div className="hb-level-dock">
+            <span className="hb-level-eyebrow">The Ascension</span>
+            <LevelHeroRing onRingTap={() => setCustomizeOpen(o => !o)} />
+            <button type="button" className="hb-level-hint" onClick={() => setCustomizeOpen(o => !o)}>
+              Tap the ring to customise your look
+            </button>
+          </div>
+        )}
         <div className={`hb-customize${customizeOpen ? ' open' : ''}`}>
           <div className="hb-customize-inner">
             {customizeOpen && (
