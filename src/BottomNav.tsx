@@ -63,16 +63,22 @@ const BottomNav: React.FC = () => {
         <span className="bottom-nav-label">Progress</span>
       </button>
 
-      {/* Dub — the coach */}
-      <button className={`bottom-nav-item${isActive('/dub') ? ' active' : ''}`} onClick={() => goTo('/dub')} aria-label={dubFresh ? 'Dub, your coach — new read' : 'Dub, your coach'}>
+      {/* Coach (route stays /dub, display-only rebrand) */}
+      <button className={`bottom-nav-item${isActive('/dub') ? ' active' : ''}`} onClick={() => goTo('/dub')} aria-label={dubFresh ? 'Coach, your read — new read' : 'Coach, your read'}>
         <span className="bottom-nav-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            {/* speech bubble + antenna: Dub the robo-coach, kept to the 1-line icon style */}
-            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+            {/* spark/pulse mark: a center dot with short radiating lines, non-mascot */}
+            <circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none" />
+            <line x1="12" y1="4" x2="12" y2="7" />
+            <line x1="12" y1="17" x2="12" y2="20" />
+            <line x1="4" y1="12" x2="7" y2="12" />
+            <line x1="17" y1="12" x2="20" y2="12" />
+            <line x1="6.5" y1="6.5" x2="8.6" y2="8.6" />
+            <line x1="15.4" y1="15.4" x2="17.5" y2="17.5" />
           </svg>
           {dubFresh && <span className="bottom-nav-dot" aria-hidden="true">!</span>}
         </span>
-        <span className="bottom-nav-label">Dub</span>
+        <span className="bottom-nav-label">Coach</span>
       </button>
 
       {/* Habits — raised center circle */}

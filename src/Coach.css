@@ -1,0 +1,109 @@
+/* Coach — the mascot-less coach surfaces (/dub home + the read).
+   Kept in its own file (not App.css) so this chat's changes don't collide with
+   parallel edits to App.css. Uses only committed design-system tokens. */
+
+/* ── Coach home (/dub) ──────────────────────────────────────────────────────── */
+.coach-scroll {
+  flex: 1; min-height: 0; overflow-y: auto;
+  padding: 10px 16px 24px;
+  scrollbar-width: none; -ms-overflow-style: none;
+}
+.coach-scroll::-webkit-scrollbar { display: none; }
+.coach-eyebrow {
+  font-family: 'Space Mono', monospace; font-size: 0.62rem; font-weight: 700;
+  letter-spacing: 0.13em; text-transform: uppercase; color: var(--text-mute);
+}
+.coach-topbar { display: flex; align-items: center; gap: 8px; padding: 4px 2px 10px; }
+/* Freshness dot — muted until the read changes, then GROWTH + a soft pulse */
+.coach-fresh {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--text-mute); transition: background 0.25s;
+}
+.coach-fresh.is-new {
+  background: var(--theme);
+  box-shadow: 0 0 8px var(--theme);
+  animation: coach-fresh-pulse 1.6s ease-in-out infinite;
+}
+@keyframes coach-fresh-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
+
+/* Hero — today's read, anchored by the ambient wash + a level ring (no mascot) */
+.coach-hero {
+  position: relative; overflow: hidden;
+  border: 1px solid var(--glass-border); border-radius: var(--r-lg);
+  background: var(--glass-bg-strong);
+  padding: 16px 15px; margin-bottom: 14px;
+}
+.coach-hero-wash { position: absolute; inset: 0; pointer-events: none; }
+.coach-hero-body { position: relative; display: flex; gap: 14px; align-items: flex-start; }
+.coach-hero-ring {
+  position: relative; flex: 0 0 auto; width: 64px; height: 64px;
+  display: flex; align-items: center; justify-content: center;
+}
+.coach-hero-ring svg { display: block; }
+.coach-hero-ring-num {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-family: 'Space Mono', monospace; font-weight: 700; font-size: 1.15rem;
+  color: var(--text);
+}
+.coach-hero-text { min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.coach-hero-thought {
+  font-family: 'Kanit', sans-serif; font-style: italic; font-weight: 600;
+  font-size: 1.1rem; line-height: 1.2; color: var(--text); margin: 2px 0 0;
+}
+.coach-hero-brief {
+  font-family: var(--font-ui); font-size: 0.84rem; line-height: 1.55;
+  color: var(--text-dim); margin: 0;
+}
+
+/* Steps-today nudge — Space Mono number */
+.coach-steps {
+  display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+  font-family: var(--font-ui); font-size: 0.84rem; line-height: 1.5;
+  color: var(--text-dim); margin: 0 2px 16px;
+}
+.coach-steps-ico { flex-shrink: 0; color: var(--theme); }
+.coach-steps-num { font-family: 'Space Mono', monospace; font-weight: 700; color: var(--text); }
+
+/* WHAT WE SPOTTED — eyebrow + hairline + insight lines */
+.coach-spotted { margin-bottom: 16px; }
+.coach-sec-head { display: flex; align-items: center; gap: 10px; margin: 0 2px 11px; }
+.coach-hairline { flex: 1; height: 1px; background: var(--glass-border); }
+.coach-lines { display: flex; flex-direction: column; gap: 8px; }
+.coach-line {
+  display: flex; gap: 11px; align-items: flex-start;
+  padding: 11px 13px; border-radius: var(--r-md);
+  background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border);
+  border-left: 3px solid rgba(255,255,255,0.15);
+}
+.coach-line--good { border-left-color: #2FD27E; }
+.coach-line--warn { border-left-color: #FFB928; }
+.coach-line--neutral { border-left-color: #6C8BFF; }
+.coach-line-ico { font-size: 1.2rem; flex-shrink: 0; line-height: 1.2; }
+.coach-line-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.coach-line-title { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 0.9rem; color: var(--text); }
+.coach-line-body { font-size: 0.82rem; line-height: 1.5; color: var(--text-dim); }
+
+/* Primary CTA — opens the full read (fires superdub:show-coach, marks seen) */
+.coach-open {
+  width: 100%; padding: 13px; border: none; border-radius: var(--r-md);
+  background: var(--theme); color: #06101F;
+  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 0.95rem; cursor: pointer;
+  transition: transform 0.1s;
+}
+.coach-open:active { transform: scale(0.98); }
+.coach-fresh:focus-visible,
+.coach-open:focus-visible { outline: 2px solid var(--theme); outline-offset: 2px; }
+
+/* ── The read (DubChat, mascot-less) — header + tone dots ────────────────────── */
+.dchat-head { display: flex; flex-direction: column; gap: 3px; padding: 2px 2px 12px; }
+.dchat-verdict {
+  font-family: 'Kanit', sans-serif; font-style: italic; font-weight: 800;
+  font-size: 1.3rem; line-height: 1.15; color: var(--text); margin: 2px 0 0;
+}
+.dchat-dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  margin-right: 7px; vertical-align: middle; background: #6C8BFF;
+}
+.dchat-dot--good { background: #2FD27E; }
+.dchat-dot--warn { background: #FFB928; }
+.dchat-dot--neutral { background: #6C8BFF; }

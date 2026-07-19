@@ -1,8 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import DubMascot, { getMascot, type MascotSpecies } from './DubMascot';
 
 // ── ChartCarousel — swipe between full-width charts instead of scrolling ─────
-// Each child chart becomes a scroll-snap slide with a short Dub write-up
+// Each child chart becomes a scroll-snap slide with a short write-up
 // underneath. Tabs and dots jump between slides. Falsy children (charts with
 // no data yet) are dropped, and `tabs`/`notes` are expected to be filtered to
 // match the rendered children in the same order.
@@ -14,7 +13,6 @@ const ChartCarousel: React.FC<{
   const slides = React.Children.toArray(children).filter(Boolean);
   const trackRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
-  const [species] = useState<MascotSpecies>(getMascot);
 
   const onScroll = useCallback(() => {
     const t = trackRef.current;
@@ -50,10 +48,9 @@ const ChartCarousel: React.FC<{
             && (child.props as any).className.includes('story-panel--stats');
           return (
             <div className="cc-slide" key={i}>
-              {/* Dub's read of THIS slide — a quiet caption, not a button. */}
+              {/* The read of THIS slide — a quiet caption, not a button. */}
               {notes[i] && (
                 <div className="cc-dubbar cc-dubbar--static">
-                  <span className="cc-dubbar-pet"><DubMascot size={46} mood="happy" species={species} /></span>
                   <p className="cc-dubbar-text">{notes[i]}</p>
                 </div>
               )}

@@ -1,16 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import './App.css';
+import './Coach.css';
 import { api } from './api';
 import { buildCoachReport, type CoachReport as Report } from './coach';
 import { buildBrief, dubDayState, type DubDayState } from './dubBrief';
 import { buildHabitInsights, type DubInsight } from './dubInsights';
-import { getMascot, type MascotSpecies } from './DubMascot';
-import DubRoom from './DubRoom';
 import SuperdubHeader from './SuperdubHeader';
 import { pageTheme, GROWTH } from './theme';
-import { dubPronouns, getDubGender, dubHas, type DubGender } from './dubPronouns';
 import { isSystemHabit } from './systemHabits';
 import { readStage } from './userStage';
+import { useXP } from './XPContext';
 
 const YEAR = new Date().getFullYear();
 const DUB_SEEN_KEY = 'superdub.dubSeen';
@@ -33,9 +32,24 @@ function isoOffset(daysAgo: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-// Dub's home is just his room now — tap Dub to chat (the coach report opens with
-// everything he's spotted). The insights list also renders right under the room;
-// the "!" badge stays gold until you tap through, then greys until the read changes.
+// Ambient time-of-day wash for the hero — lifted from DubRoom's timePhase (which
+// is being deleted). Anchors the read with a day/dusk/night mood cue, no mascot.
+type Phase = 'day' | 'dusk' | 'night';
+function timePhase(hour: number): Phase {
+  // ponytail: coarse 3-way split on the local clock — a mood cue, not solar time.
+  if (hour >= 6 && hour < 17) return 'day';
+  if (hour >= 17 && hour < 20) return 'dusk';
+  return 'night';
+}
+const WASH: Record<Phase, string> = {
+  day:   'radial-gradient(120% 90% at 50% 0%, rgba(70,194,255,0.28), rgba(46,139,255,0.10) 45%, transparent 72%)',
+  dusk:  'radial-gradient(120% 90% at 50% 0%, rgba(255,158,77,0.26), rgba(139,92,246,0.14) 50%, transparent 74%)',
+  night: 'radial-gradient(120% 90% at 50% 0%, rgba(70,110,220,0.22), rgba(20,26,51,0.28) 48%, transparent 76%)',
+};
+
+// The coach's home — mascot-less. All the data intelligence stays (coach report,
+// habit insights, brief + day-state, step nudge). The freshness dot lights when
+// the read changes; "Open the full read" opens the coaching read and marks it seen.
 const DubPage: React.FC = () => {
   const [report, setReport] = useState<Report | null>(null);
   const [brief, setBrief] = useState<{ kind: 'morning' | 'evening' | 'day'; text: string } | null>(null);
@@ -44,21 +58,14 @@ const DubPage: React.FC = () => {
   const [dataDays, setDataDays] = useState(0);
   const [advisableSteps, setAdvisableSteps] = useState<number | null>(null);
   const [loaded, setLoaded] = useState(false);
-  const [species, setSpecies] = useState<MascotSpecies>(getMascot);
-  const [gender, setGender] = useState<DubGender>(getDubGender);
   const [seen, setSeen] = useState(() => localStorage.getItem(DUB_SEEN_KEY) || '');
+  const { playerLevel } = useXP();
 
-  useEffect(() => {
-    const sync = () => { setSpecies(getMascot()); setGender(getDubGender()); };
-    window.addEventListener('superdub:mascot-changed', sync);
-    return () => window.removeEventListener('superdub:mascot-changed', sync);
-  }, []);
-  const pn = dubPronouns(gender);
-  const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+  const phase = timePhase(new Date().getHours());
 
-  // A signature of everything Dub currently "knows". Gold "!" until you tap him
-  // (which opens the chat and marks this exact read as seen), then it goes grey
-  // and only relights when the report, insights, or step nudge actually change.
+  // A signature of everything the coach currently "knows". The freshness dot stays
+  // lit until you open the read (which marks this exact read as seen), then it goes
+  // muted and only relights when the report, insights or step nudge actually change.
   const dubSig = JSON.stringify({
     h: report?.headline ?? '',
     l: (report?.lines ?? []).map(l => l.title),
@@ -157,7 +164,7 @@ const DubPage: React.FC = () => {
           stage: readStage(),
         };
         setBrief(buildBrief(briefSrc));
-        // Same sources drive Dub's live mood, room and speech-bubble thought.
+        // Same sources drive the explicit day-state line in the hero.
         setDayState(dubDayState(briefSrc));
       } catch {
         // coaching is a nicety, not critical
@@ -167,57 +174,82 @@ const DubPage: React.FC = () => {
     })();
   }, []);
 
+  // 64px identity ring — the level as an XP arc, no mascot.
+  const RING = 64, RS = 6, RR = (RING - RS) / 2, CIRC = 2 * Math.PI * RR;
+  const ringOffset = CIRC * (1 - Math.max(0, Math.min(1, playerLevel.progress)));
+
   return (
     <div className="app flush" style={pageTheme(GROWTH, '0D')}>
       <SuperdubHeader />
-      {/* Dub's room spans from the header down; tap Dub (or his thought) to chat.
-          His mood, glow and speech bubble follow the live day state. */}
-      <DubRoom
-        species={species} hasNew={hasNew} onChat={chatToDub}
-        mood={dayState?.mood ?? 'happy'}
-        celebrate={dayState?.celebrate ?? false}
-        thought={dayState?.thought ?? null}
-      />
 
-      {brief && (
-        <div className="dub-brief">
-          <span className="dub-brief-eyebrow">{brief.kind === 'morning' ? 'MORNING BRIEF' : brief.kind === 'evening' ? 'EVENING DEBRIEF' : 'TODAY SO FAR'}</span>
-          <p className="dub-brief-text">{brief.text}</p>
+      <div className="coach-scroll">
+        <div className="coach-topbar">
+          <span className="coach-eyebrow">COACH</span>
+          <span className={`coach-fresh${hasNew ? ' is-new' : ''}`} aria-hidden="true" />
         </div>
-      )}
 
-      {/* Dub's insights, right under the room */}
-      <div className="dub-insights">
-        {advisableSteps != null && (
-          <div className="coach-line coach-line--neutral">
-            <span className="coach-line-ico">🚶</span>
-            <div className="coach-line-text">
-              <span className="coach-line-title">Steps today</span>
-              <span className="coach-line-body">Aim for about {advisableSteps.toLocaleString()} steps today.</span>
+        {/* HERO — today's read, anchored by an ambient time-of-day wash + level ring */}
+        <section className="coach-hero">
+          <div className="coach-hero-wash" aria-hidden="true" style={{ background: WASH[phase] }} />
+          <div className="coach-hero-body">
+            <span className="coach-hero-ring" role="img" aria-label={`Level ${playerLevel.level}, ${playerLevel.title}`}>
+              <svg width={RING} height={RING} aria-hidden="true">
+                <circle cx={RING / 2} cy={RING / 2} r={RR} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth={RS} />
+                <circle cx={RING / 2} cy={RING / 2} r={RR} fill="none" stroke={GROWTH} strokeWidth={RS}
+                  strokeLinecap="round" strokeDasharray={CIRC} strokeDashoffset={ringOffset}
+                  transform={`rotate(-90 ${RING / 2} ${RING / 2})`}
+                  style={{ filter: `drop-shadow(0 0 4px ${GROWTH}88)` }} />
+              </svg>
+              <span className="coach-hero-ring-num">{playerLevel.level}</span>
+            </span>
+            <div className="coach-hero-text">
+              <span className="coach-eyebrow">TODAY&rsquo;S READ</span>
+              {dayState?.thought && <p className="coach-hero-thought">{dayState.thought}</p>}
+              {brief && <p className="coach-hero-brief">{brief.text}</p>}
             </div>
           </div>
-        )}
-        <h3 className="dub-section-title">What {pn.subject} spotted</h3>
-        {insights.length > 0 ? (
-          <div className="coach-lines">
-            {insights.map((ins, i) => (
-              <div key={i} className="coach-line coach-line--neutral">
-                <span className="coach-line-ico">{ins.icon}</span>
-                <div className="coach-line-text">
-                  <span className="coach-line-title">{ins.habit}</span>
-                  <span className="coach-line-body">{ins.text}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="dub-empty">
-            {!loaded ? 'Having a look at your data…'
-              : dataDays < 10
-                ? `Keep logging. ${cap(pn.subject)} ${dubHas(gender)} enough to read patterns at 10 days of data (${dataDays}/10 so far).`
-                : `Nothing jumps out yet. Keep ticking your habits and ${pn.subject}'ll surface what's driving your steps, mood and weight.`}
+        </section>
+
+        {advisableSteps != null && (
+          <p className="coach-steps">
+            <svg className="coach-steps-ico" width="15" height="15" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M4 21v-4a4 4 0 0 1 4-4h1a3 3 0 0 0 3-3V4" />
+              <path d="M20 21v-3a4 4 0 0 0-4-4h-1a3 3 0 0 1-3-3" />
+            </svg>
+            Aim for about <span className="coach-steps-num">{advisableSteps.toLocaleString()}</span> steps today.
           </p>
         )}
+
+        {/* WHAT WE SPOTTED — the habit insights, neutral heading */}
+        <div className="coach-spotted">
+          <div className="coach-sec-head">
+            <span className="coach-eyebrow">WHAT WE SPOTTED</span>
+            <span className="coach-hairline" aria-hidden="true" />
+          </div>
+          {insights.length > 0 ? (
+            <div className="coach-lines">
+              {insights.map((ins, i) => (
+                <div key={i} className="coach-line coach-line--neutral">
+                  <span className="coach-line-ico">{ins.icon}</span>
+                  <div className="coach-line-text">
+                    <span className="coach-line-title">{ins.habit}</span>
+                    <span className="coach-line-body">{ins.text}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="dub-empty">
+              {!loaded ? 'Having a look at your data.'
+                : dataDays < 10
+                  ? `Keep logging. We can read patterns at 10 days of data (${dataDays}/10 so far).`
+                  : "Nothing jumps out yet. Keep ticking your habits and we'll surface what's driving your steps, mood and weight."}
+            </p>
+          )}
+        </div>
+
+        <button className="coach-open" onClick={chatToDub}>Open the full read</button>
       </div>
     </div>
   );

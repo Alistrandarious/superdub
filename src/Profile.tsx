@@ -260,7 +260,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
         {/* Level, customization & Dub — moved here from the Level page */}
         <LevelCustomizer />
         <div className="profile-level-links">
-          <button className="profile-coach-btn" onClick={() => window.dispatchEvent(new CustomEvent('superdub:show-coach'))}>Talk to Dub, your coach</button>
+          <button className="profile-coach-btn" onClick={() => window.dispatchEvent(new CustomEvent('superdub:show-coach'))}>Coach, your read</button>
           <button className="profile-level-link" onClick={() => navigate('/level')}>View all levels &amp; badges →</button>
         </div>
 

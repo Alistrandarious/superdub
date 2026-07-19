@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import './Coach.css';
 import { api } from './api';
 import { buildCoachReport, type CoachReport as Report } from './coach';
 import { buildBrief } from './dubBrief';
@@ -8,7 +9,6 @@ import { buildQuestionBank, type DubData, type DubQuestion } from './dubQuestion
 import { isSystemHabit } from './systemHabits';
 import { useXP } from './XPContext';
 import { readStage } from './userStage';
-import DubMascot, { getMascot, type MascotSpecies } from './DubMascot';
 
 const YEAR = new Date().getFullYear();
 function buildAllDays(): string[] {
@@ -45,16 +45,10 @@ const DubChat: React.FC = () => {
   const [queue, setQueue] = useState<string[]>([]);   // followUps floated forward
   const [typing, setTyping] = useState(false);
   const [closing, setClosing] = useState(false);
-  const [species, setSpecies] = useState<MascotSpecies>(getMascot);
   const { totalXP } = useXP();
   const msgsRef = useRef<HTMLDivElement>(null);
   const typeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    const sync = () => setSpecies(getMascot());
-    window.addEventListener('superdub:mascot-changed', sync);
-    return () => window.removeEventListener('superdub:mascot-changed', sync);
-  }, []);
   useEffect(() => () => { if (typeTimer.current) clearTimeout(typeTimer.current); }, []);
 
   const dismiss = useCallback(() => {
@@ -117,9 +111,9 @@ const DubChat: React.FC = () => {
       });
 
       const openingReport: Report = r ?? {
-        emoji: '👋', headline: "Hey, I'm Dub",
-        lines: [{ icon: '📈', title: 'Keep logging', tone: 'neutral', body: "Weigh in and tick your habits for a few days and I'll start spotting trends, wins and what's tripping you up." }],
-        closing: "I'll be here every time you weigh in. 🐶",
+        emoji: '', headline: 'Your first read is coming',
+        lines: [{ icon: '', title: 'Keep logging', tone: 'neutral', body: "Weigh in and tick your habits for a few days and your numbers will start showing trends, wins and what's tripping you up." }],
+        closing: 'Come back any time you log. Your read updates with your data.',
       };
 
       // ── Morning brief / evening debrief (same sources as DubPage) ──
@@ -200,8 +194,6 @@ const DubChat: React.FC = () => {
   };
 
   if (!report) return null;
-  const mood = report.lines.some(l => l.tone === 'warn') ? 'concerned'
-    : report.lines.some(l => l.tone === 'good') ? 'happy' : 'neutral';
 
   // Tray: floated followUps first, then bank order; asked chips never return.
   const unasked = bank.filter(q => !asked.has(q.id));
@@ -214,19 +206,16 @@ const DubChat: React.FC = () => {
       <div className="coach-card dchat-card" onClick={e => e.stopPropagation()}>
         <button className="coach-close" onClick={dismiss} aria-label="Close">✕</button>
 
-        <div className="coach-hero">
-          <DubMascot size={84} mood={mood as any} species={species} />
-          <div className="coach-hero-text">
-            <span className="coach-eyebrow">DUB · YOUR COACH</span>
-            <h2 className="coach-headline">{report.emoji} {report.headline}</h2>
-          </div>
+        <div className="dchat-head">
+          <span className="coach-eyebrow">YOUR READ</span>
+          <h2 className="dchat-verdict">{report.headline}</h2>
         </div>
 
         <div className="dchat-msgs" ref={msgsRef}>
-          {/* Dub's opening read: the coach report as his first messages */}
+          {/* The opening read: the coach report as the first messages, tone-coded */}
           {report.lines.map((l, i) => (
             <div key={`r${i}`} className={`dchat-bubble dchat-bubble--dub dchat-bubble--${l.tone}`} style={{ animationDelay: `${i * 120}ms` }}>
-              <span className="dchat-line-title">{l.icon} {l.title}</span>
+              <span className="dchat-line-title"><span className={`dchat-dot dchat-dot--${l.tone}`} aria-hidden="true" />{l.title}</span>
               <span className="dchat-line-body">{l.body}</span>
             </div>
           ))}

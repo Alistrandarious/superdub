@@ -2,25 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { api } from './api';
 import { useXP } from './XPContext';
 import LevelHeroRing from './LevelHeroRing';
-import DubMascot, { getMascot, MASCOT_KEY, type MascotSpecies } from './DubMascot';
-import { getDubGender, DUB_GENDER_KEY, type DubGender } from './dubPronouns';
 import {
   PLAYER_LEVELS, RING_THEMES, getSelectedThemeId,
   SELECTED_THEME_KEY, type RingTheme,
   isUnlocked, unlockLabel, EARLY_ADOPTER_BEFORE, type UnlockCtx, globalWhiteEarned,
-  DUB_COLORS, DUB_COLOR_KEY, getDubColor,
   HABIT_COLORS, GLOW_COLORS, HABITS_COLOR_KEY, NAV_GLOW_KEY, type AccentColor,
   BACKGROUNDS, BACKGROUND_KEY, getBackground, type Background,
   THEME_KEY, getTheme, type ThemeMode,
 } from './levels';
 
-// The cosmetic/companion customization, plus the shared level hero (LevelHeroRing).
+// The cosmetic customization, plus the shared level hero (LevelHeroRing).
 // Lifted out of LevelPage so it lives on Profile (identity + customization). Every
 // picker writes localStorage + dispatches a custom event; nothing hits the server.
 // The deep ladder/badges/habit record stay on /level.
-
-const CAT_UNLOCK_LEVEL = 2;
-const WIZARD_REFERRALS = 3;
 
 const LockIc: React.FC<{ size?: number }> = ({ size = 11 }) => (
   <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-label="Locked">
@@ -72,39 +66,6 @@ const LevelCustomizer: React.FC<{ showHero?: boolean }> = ({ showHero = true }) 
     localStorage.setItem(SELECTED_THEME_KEY, t.id);
     setThemeId(t.id);
     window.dispatchEvent(new CustomEvent('superdub:ring-theme-changed'));
-  };
-
-  const [species, setSpecies] = useState<MascotSpecies>(getMascot);
-  // ponytail: "referrals" = accepted friends on this account. Ceiling: it counts
-  // friends however they were added, not verified new-signup referrals. Upgrade
-  // path is a real referral column on the server once that flow exists.
-  const [friendCount, setFriendCount] = useState(0);
-  useEffect(() => {
-    api.getFriends().then(f => setFriendCount(f.friends.length)).catch(() => {});
-  }, []);
-  const catUnlocked = playerLevel.level >= CAT_UNLOCK_LEVEL;
-  const wizardUnlocked = friendCount >= WIZARD_REFERRALS;
-  const pickSpecies = (s: MascotSpecies) => {
-    if (s === 'cat' && !catUnlocked) return;
-    if (s === 'wizard' && !wizardUnlocked) return;
-    setSpecies(s);
-    localStorage.setItem(MASCOT_KEY, s);
-    window.dispatchEvent(new CustomEvent('superdub:mascot-changed'));
-  };
-
-  const [dubGender, setDubGender] = useState<DubGender>(getDubGender);
-  const pickGender = (g: DubGender) => {
-    setDubGender(g);
-    localStorage.setItem(DUB_GENDER_KEY, g);
-    window.dispatchEvent(new CustomEvent('superdub:mascot-changed'));
-  };
-
-  const [dubColorId, setDubColorId] = useState(() => getDubColor().id);
-  const pickDubColor = (id: string, locked: boolean) => {
-    if (locked) return;
-    localStorage.setItem(DUB_COLOR_KEY, id);
-    setDubColorId(id);
-    window.dispatchEvent(new CustomEvent('superdub:mascot-changed'));
   };
 
   const [habitsColor, setHabitsColor] = useState(() => localStorage.getItem(HABITS_COLOR_KEY) || '#FFB300');
@@ -170,66 +131,6 @@ const LevelCustomizer: React.FC<{ showHero?: boolean }> = ({ showHero = true }) 
                   <span className={`ringtheme-fillbadge${isLiquid ? ' liquid' : ''}`}>{isLiquid ? <DropIc /> : <ArcIc />}</span>
                 </span>
                 <span className="ringtheme-name">{locked ? unlockLabel(t.unlock) : t.name}</span>
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="asc-section">
-        <Eyebrow sub="who walks with you">COMPANION</Eyebrow>
-        <div className="companion-grid">
-          <button className={`companion-card${species === 'dog' ? ' active' : ''}`} onClick={() => pickSpecies('dog')}>
-            <span className="companion-pet"><DubMascot size={66} mood="happy" species="dog" /></span>
-            <span className="companion-name">Dub the dog{species === 'dog' ? ' ✓' : ''}</span>
-          </button>
-          <button
-            className={`companion-card${species === 'cat' ? ' active' : ''}${catUnlocked ? '' : ' locked'}`}
-            onClick={() => pickSpecies('cat')}
-            disabled={!catUnlocked}
-          >
-            <span className="companion-pet">
-              <DubMascot size={66} mood="happy" species="cat" />
-              {!catUnlocked && <span className="companion-lock"><LockIc size={14} /></span>}
-            </span>
-            <span className="companion-name">{catUnlocked ? `Dub the cat${species === 'cat' ? ' ✓' : ''}` : 'Cat · LV2'}</span>
-          </button>
-          <button
-            className={`companion-card${species === 'wizard' ? ' active' : ''}${wizardUnlocked ? '' : ' locked'}`}
-            onClick={() => pickSpecies('wizard')}
-            disabled={!wizardUnlocked}
-            title={wizardUnlocked ? 'Dub the wizard' : `Refer ${WIZARD_REFERRALS} friends to unlock (${friendCount}/${WIZARD_REFERRALS})`}
-          >
-            <span className="companion-pet">
-              <DubMascot size={66} mood="happy" species="wizard" />
-              {!wizardUnlocked && <span className="companion-lock"><LockIc size={14} /></span>}
-            </span>
-            <span className="companion-name">{wizardUnlocked ? `Dub the wizard${species === 'wizard' ? ' ✓' : ''}` : `Wizard · ${friendCount}/${WIZARD_REFERRALS} friends`}</span>
-          </button>
-        </div>
-        <div className="dub-gender-row">
-          <span className="dub-gender-label">Dub's pronouns</span>
-          <div className="dub-gender-seg">
-            {([['he', 'He'], ['she', 'She'], ['they', 'They']] as [DubGender, string][]).map(([g, label]) => (
-              <button
-                key={g}
-                className={`dub-gender-pick${dubGender === g ? ' active' : ''}`}
-                onClick={() => pickGender(g)}
-              >{label}</button>
-            ))}
-          </div>
-        </div>
-        <div className="asc-shelf" style={{ marginTop: 10 }}>
-          {DUB_COLORS.map(dc => {
-            const locked = !isUnlocked(dc.unlock, ctx);
-            const active = dc.id === dubColorId;
-            return (
-              <button key={dc.id} className={`ringtheme-chip${active ? ' active' : ''}${locked ? ' locked' : ''}`} onClick={() => pickDubColor(dc.id, locked)} disabled={locked} title={locked ? `Unlocks: ${unlockLabel(dc.unlock)}` : dc.name}>
-                <span className="ringtheme-swatch" style={{ background: `linear-gradient(135deg, ${dc.bodyFrom}, ${dc.bodyTo})`, boxShadow: active ? `0 0 12px ${dc.accent}66` : undefined }}>
-                  {locked && <span className="ringtheme-lock"><LockIc /></span>}
-                  {active && !locked && <span className="ringtheme-check">✓</span>}
-                </span>
-                <span className="ringtheme-name">{locked ? unlockLabel(dc.unlock) : dc.name}</span>
               </button>
             );
           })}
