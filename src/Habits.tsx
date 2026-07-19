@@ -2005,6 +2005,11 @@ const Habits: React.FC = () => {
         })()}
         <WeekStrip ht={ht} rewindDay={rewindDay} onPick={setRewindDay} perfectWeek={isPerfectWeek} celebrating={weekCelebrating} />
 
+        {/* Today's log — the app's own inputs (weigh-in / steps / check-in), pulled up
+            with the ticks so your day sits together at the top. Follows the week strip's
+            selected day; check-in reuses the mandatory-habit signal. */}
+        <DailyLog day={rewindDay} checkedInDay={rewindDay ? ht[rewindDay]?.[MANDATORY_HABIT] === 'done' : undefined} />
+
         {/* HABITS — the cadence carousel. Zero-height sentinel marks the carousel top
             for the sticky-XP calc. PinnedXpBar + activeCadence kept from master
             (level chrome = Daily only). */}
@@ -2039,10 +2044,6 @@ const Habits: React.FC = () => {
         {(stage === 'new' || mandatoryStats.streak < 1) && (
           <p className="hb-week-coach">Tick a habit each day to grow your streak. Dub coaches you as you go.</p>
         )}
-
-        {/* Daily Log, the app's own inputs (weigh-in / steps / check-in) — follows
-            the week strip's selected day; check-in reuses the mandatory-habit signal. */}
-        <DailyLog day={rewindDay} checkedInDay={rewindDay ? ht[rewindDay]?.[MANDATORY_HABIT] === 'done' : undefined} />
 
         {/* Weekly Recap, Sunday only, right under the gold circles */}
         {isSunday && <WeeklyRecap />}
