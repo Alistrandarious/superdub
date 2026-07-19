@@ -9,10 +9,6 @@ const BottomNav: React.FC = () => {
   const [habitsColor, setHabitsColor] = useState(() => localStorage.getItem('superdub.habitsColor') || '#FFB300');
   const [navGlow, setNavGlow] = useState(() => localStorage.getItem('superdub.navGlow') || '#2FD27E');
   const [dubFresh, setDubFresh] = useState(() => localStorage.getItem(DUB_FRESH_KEY) === '1');
-  // Hide-away nav: on by default. When on, a pull-tab tucks the bar below the fold
-  // (reclaiming its height) until pulled back up. Off = classic fixed bar.
-  const [hideaway, setHideaway] = useState(() => localStorage.getItem('superdub.navHideaway') !== '0');
-  const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
     const sync = () => {
@@ -47,20 +43,6 @@ const BottomNav: React.FC = () => {
     }
   }, [location.pathname]);
 
-  useEffect(() => {
-    const sync = () => {
-      const on = localStorage.getItem('superdub.navHideaway') !== '0';
-      setHideaway(on);
-      if (!on) setCollapsed(false); // turning it off restores the fixed bar
-    };
-    window.addEventListener('superdub:nav-hideaway-changed', sync);
-    window.addEventListener('storage', sync);
-    return () => {
-      window.removeEventListener('superdub:nav-hideaway-changed', sync);
-      window.removeEventListener('storage', sync);
-    };
-  }, []);
-
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
     return location.pathname.startsWith(path);
@@ -68,17 +50,6 @@ const BottomNav: React.FC = () => {
   const goTo = (path: string) => navigate(path);
 
   return (
-    <div className={`bottom-nav-shell${hideaway && collapsed ? ' collapsed' : ''}`}>
-      {hideaway && (
-        <button
-          className="bottom-nav-tab"
-          onClick={() => setCollapsed(c => !c)}
-          aria-label={collapsed ? 'Show the navigation bar' : 'Hide the navigation bar'}
-          aria-expanded={!collapsed}
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
-        </button>
-      )}
     <nav className="bottom-nav bottom-nav--five" style={{ ['--nav-glow' as any]: navGlow, ['--habits-c' as any]: habitsColor, ['--habits-c-glow' as any]: habitsColor + '73' }}>
       {/* Progress */}
       <button className={`bottom-nav-item${isActive('/dashboard') ? ' active' : ''}`} onClick={() => goTo('/dashboard')} aria-label="Progress">
@@ -136,7 +107,6 @@ const BottomNav: React.FC = () => {
         <span className="bottom-nav-label">Lists</span>
       </button>
     </nav>
-    </div>
   );
 };
 

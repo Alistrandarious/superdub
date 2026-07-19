@@ -7370,31 +7370,6 @@ h1, h2, h3, h4, .sora {
   color: rgba(255,255,255,0.3); letter-spacing: 0.02em;
 }
 
-/* Settings toggle row (e.g. hide-away nav) */
-.asc-switch-row {
-  width: 100%;
-  display: flex; align-items: center; gap: 14px;
-  background: var(--glass-bg); border: 1px solid var(--glass-border);
-  border-radius: var(--r-card, 18px); padding: 13px 15px;
-  cursor: pointer; text-align: left; color: inherit;
-}
-.asc-switch-row:hover { border-color: var(--glass-border-strong, #16323E); }
-.asc-switch-text { flex: 1; display: flex; flex-direction: column; gap: 3px; }
-.asc-switch-text b { font-family: 'Sora', sans-serif; font-weight: 600; font-size: 0.92rem; color: #EBEDF3; }
-.asc-switch-text span { font-size: 0.74rem; line-height: 1.4; color: rgba(255,255,255,0.42); }
-.asc-switch {
-  flex: none; width: 46px; height: 27px; border-radius: 999px;
-  background: #23242f; border: 1px solid var(--glass-border);
-  position: relative; transition: background 0.2s, border-color 0.2s;
-}
-.asc-switch.on { background: linear-gradient(160deg, #FFB928, #FFE08A); border-color: transparent; }
-.asc-switch-knob {
-  position: absolute; top: 2px; left: 2px; width: 21px; height: 21px;
-  border-radius: 50%; background: #6b6f7e;
-  transition: left 0.24s cubic-bezier(0.3, 1.4, 0.5, 1), background 0.2s;
-}
-.asc-switch.on .asc-switch-knob { left: 21px; background: #1a1206; }
-
 /* Horizontal cosmetic shelves — swatches scroll, page stays short */
 .asc-shelf {
   display: flex; gap: 10px; overflow-x: auto; overflow-y: hidden;
@@ -8650,46 +8625,6 @@ h1, h2, h3, h4, .sora {
 /* =====================================================================
    BOTTOM NAVIGATION BAR
    ===================================================================== */
-/* Hide-away shell (on by default) — the pull-tab tucks the bar below the fold by
-   collapsing this flex item's height, so the page above grows to fill the gap. */
-.bottom-nav-shell {
-  position: relative;
-  flex-shrink: 0;
-  height: calc(58px + env(safe-area-inset-bottom, 0px));
-  transition: height 0.42s cubic-bezier(0.22, 1, 0.36, 1);
-  z-index: 500;
-}
-.bottom-nav-shell.collapsed { height: 0; }
-
-.bottom-nav-tab {
-  position: absolute;
-  top: -20px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 60px;
-  height: 22px;
-  border: 1px solid var(--glass-border);
-  border-bottom: none;
-  border-radius: 14px 14px 0 0;
-  background: rgba(8,10,20,0.95);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  backdrop-filter: blur(24px) saturate(180%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: rgba(255,255,255,0.5);
-  cursor: pointer;
-  z-index: 501;
-  -webkit-tap-highlight-color: transparent;
-}
-.bottom-nav-tab svg { width: 20px; height: 20px; transition: transform 0.38s cubic-bezier(0.3, 1.4, 0.5, 1); }
-.bottom-nav-tab:hover { color: var(--nav-glow, #2FD27E); }
-.bottom-nav-shell.collapsed .bottom-nav-tab {
-  border-radius: 14px;
-  border-bottom: 1px solid var(--glass-border);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
-}
-.bottom-nav-shell.collapsed .bottom-nav-tab svg { transform: rotate(180deg); }
 
 .bottom-nav {
   position: relative;
