@@ -134,8 +134,16 @@ const FriendsPanel: React.FC = () => {
 
       {data && data.friends.length > 0 ? (
         <div className="friends-group">
-          {data.friends.map(f => (
+          {data.friends.map(f => {
+            const initial = (f.name || '?').trim().charAt(0).toUpperCase() || '?';
+            // Ring fills toward a 14-day streak — a visual pulse, not a hard cap.
+            const ringPct = f.shares && f.streak ? Math.min(100, Math.round((f.streak / 14) * 100)) : 0;
+            return (
             <button key={f.id} type="button" className="friend-row friend-row--card" onClick={() => openSheet(f)} aria-label={`View ${f.name}`}>
+              <span className="friend-ring" aria-hidden="true"
+                style={{ background: `conic-gradient(#FFB928 ${ringPct}%, rgba(255,255,255,0.08) 0)` }}>
+                <i>{initial}</i>
+              </span>
               <div className="friend-main">
                 <span className="friend-name">{f.name}</span>
                 <span className="friend-stats">
@@ -146,7 +154,8 @@ const FriendsPanel: React.FC = () => {
                 {f.sharedHabits.length > 0 && <span className="friend-habits">shares: {f.sharedHabits.join(', ')}</span>}
               </div>
             </button>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <p className="friends-empty">No friends yet. Add one by email to cheer each other on.</p>

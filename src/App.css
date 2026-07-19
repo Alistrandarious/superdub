@@ -6012,8 +6012,18 @@ h1, h2, h3, h4, .sora {
   transform-style: preserve-3d;
 }
 .community-hero-orb .gp-svg {
-  width: 78%; height: 78%;
+  width: 66%; height: 66%; position: relative; z-index: 1;
   filter: drop-shadow(0 10px 28px rgba(46,139,255,0.55));
+}
+/* Gold community-progress ring wrapping the planet (one hero graphic) */
+.community-ring { position: absolute; inset: 0; width: 100%; height: 100%; }
+.community-ring-arc { transition: stroke-dashoffset 0.7s cubic-bezier(0.22,1,0.36,1); }
+.community-ring-pct {
+  position: absolute; top: 4%; right: 8%; z-index: 3;
+  font-family: var(--font-data); font-weight: 700; font-size: 0.72rem; color: #1a1008;
+  padding: 3px 9px; border-radius: 999px;
+  background: linear-gradient(135deg, #FFB928, #FFE08A);
+  box-shadow: 0 3px 10px rgba(255,185,40,0.45);
 }
 /* Pulsing blue atmosphere behind the globe */
 .community-hero-orb::before {
@@ -6070,6 +6080,30 @@ h1, h2, h3, h4, .sora {
   margin: 6px 0 0; font-family: var(--font-ui); font-size: 0.82rem; line-height: 1.45;
   color: rgba(255,255,255,0.6);
 }
+.community-sub b { color: #FFE08A; font-weight: 700; }
+/* The shared climb, front and centre under the ring */
+.community-hero-total {
+  font-family: var(--font-data); font-weight: 700; font-size: 1.85rem;
+  letter-spacing: -0.01em; line-height: 1; color: #F0F4FF;
+}
+.community-hero-total em { font-style: normal; font-size: 0.8rem; color: rgba(255,255,255,0.4); }
+.community-climbers {
+  display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px;
+}
+.community-avatars { display: flex; }
+.community-avatars i {
+  width: 24px; height: 24px; border-radius: 50%; margin-left: -8px;
+  border: 2px solid var(--glass-bg); box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  background: linear-gradient(135deg, #2E8BFF, #8B5CF6);
+}
+.community-avatars i:first-child { margin-left: 0; background: linear-gradient(135deg, #6FC3FF, #2E8BFF); }
+.community-avatars i:nth-child(2) { background: linear-gradient(135deg, #FFB928, #FFE08A); }
+.community-avatars i:nth-child(3) { background: linear-gradient(135deg, #8B5CF6, #B79BFF); }
+.community-avatars i:nth-child(4) { background: linear-gradient(135deg, #2ED27E, #6FC3FF); }
+.community-climbers small {
+  font-family: var(--font-data); font-size: 0.66rem; letter-spacing: 0.02em;
+  color: rgba(255,255,255,0.6);
+}
 .community-deed-btn {
   align-self: stretch; padding: 14px; border-radius: var(--r-lg); cursor: pointer;
   font-family: var(--font-ui); font-size: 0.9rem; font-weight: 700; color: #1a1008;
@@ -6108,7 +6142,16 @@ h1, h2, h3, h4, .sora {
   background: var(--glass-bg); border: 1px solid var(--glass-border);
 }
 .friend-row--card { width: 100%; text-align: left; cursor: pointer; font: inherit; color: inherit; }
-.friend-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.friend-ring {
+  position: relative; flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%;
+  display: grid; place-items: center;
+}
+.friend-ring i {
+  position: absolute; inset: 3px; border-radius: 50%; display: grid; place-items: center;
+  font-style: normal; font-family: var(--font-display, 'Kanit'), sans-serif;
+  font-weight: 700; font-size: 0.95rem; color: #E8ECF4; background: var(--glass-bg-strong);
+}
+.friend-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
 .friend-name { font-family: var(--font-ui); font-weight: 600; font-size: 0.9rem; color: #E8ECF4; }
 .friend-stats { font-family: var(--font-data); font-size: 0.6rem; color: rgba(255,255,255,0.5); }
 .friend-habits { font-family: var(--font-ui); font-size: 0.7rem; color: rgba(255,224,138,0.7); }
@@ -6226,41 +6269,70 @@ h1, h2, h3, h4, .sora {
 /* (Core Habits Matrix removed — the home Today's Log is the single status strip.) */
 
 /* This month's community habit (Level page): gold, since it's a shared XP goal. */
-.global-habit {
-  margin: 4px 16px 18px; padding: 16px;
+/* ── Milestone track: the Aurora White reward + your personal 100-XP gate ── */
+.global-milestone {
+  margin: 0 4px; padding: 14px 16px;
   border-radius: var(--r-card, 18px);
   border: 1px solid rgba(255,185,40,0.28);
   background: linear-gradient(135deg, rgba(255,185,40,0.10), rgba(255,185,40,0.03));
 }
-.global-habit-head { display: flex; align-items: baseline; justify-content: space-between; }
-.global-habit-eyebrow {
-  font-family: var(--font-data); font-size: 0.6rem; font-weight: 700;
-  letter-spacing: 0.14em; color: rgba(255,224,138,0.7);
+.global-milestone-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.global-milestone-eyebrow {
+  font-family: var(--font-data); font-size: 0.56rem; font-weight: 700;
+  letter-spacing: 0.14em; color: rgba(183,155,255,0.85);
 }
-.global-habit-contributors {
-  font-family: var(--font-data); font-size: 0.6rem; font-weight: 700; color: rgba(255,255,255,0.4);
+.global-milestone-togo {
+  font-family: var(--font-data); font-size: 0.56rem; font-weight: 700;
+  letter-spacing: 0.08em; color: rgba(255,224,138,0.72);
 }
-.global-habit-title {
-  font-family: var(--font-display, 'Kanit'), sans-serif; font-size: 1.1rem; font-weight: 700;
-  color: #FFE08A; margin: 6px 0 12px;
+.global-milestone-track {
+  position: relative; height: 8px; margin: 14px 0 0;
+  border-radius: 999px; background: rgba(255,255,255,0.07);
 }
-.global-habit-bar {
-  height: 10px; border-radius: 999px; background: rgba(255,255,255,0.07); overflow: hidden;
-}
-.global-habit-fill {
-  display: block; height: 100%; border-radius: 999px;
+.global-milestone-fill {
+  position: absolute; inset: 0 auto 0 0; height: 100%; border-radius: 999px;
   background: linear-gradient(90deg, #FFB928, #FFE08A);
   box-shadow: 0 0 10px rgba(255,185,40,0.5);
   transition: width 0.6s cubic-bezier(0.22,1,0.36,1);
 }
-.global-habit-stats {
-  display: flex; align-items: baseline; justify-content: space-between; margin-top: 8px;
+.global-milestone-node {
+  position: absolute; top: 50%; width: 16px; height: 16px; border-radius: 50%;
+  border: 2px solid var(--glass-bg); transform: translate(-50%,-50%);
 }
-.global-habit-total { font-family: var(--font-data); font-weight: 700; font-size: 0.9rem; color: #F0F4FF; }
-.global-habit-total span { color: rgba(255,255,255,0.4); font-size: 0.72rem; font-weight: 700; }
-.global-habit-pct { font-family: var(--font-data); font-weight: 700; font-size: 0.9rem; color: var(--theme, #FFB928); }
-.global-habit-mine {
-  margin-top: 8px; font-family: var(--font-ui); font-size: 0.72rem; color: rgba(255,224,138,0.75);
+.global-milestone-node.start { left: 0; background: #FFE08A; box-shadow: 0 0 8px rgba(255,224,138,0.7); }
+.global-milestone-node.goal {
+  left: 100%; background: #8B5CF6; box-shadow: 0 0 10px rgba(139,92,246,0.7);
+}
+.global-milestone-node.goal.hit { background: #FFE08A; box-shadow: 0 0 10px rgba(255,224,138,0.9); }
+.global-milestone-labels {
+  display: flex; justify-content: space-between; margin-top: 10px;
+  font-family: var(--font-data); font-size: 0.58rem; color: rgba(255,255,255,0.4);
+}
+.global-milestone-note {
+  margin: 10px 0 0; font-family: var(--font-ui); font-size: 0.72rem; line-height: 1.5;
+  color: rgba(255,255,255,0.6);
+}
+.global-milestone-note b { color: #E0E0F0; font-weight: 600; }
+.global-milestone-you { color: rgba(255,224,138,0.85); font-weight: 600; }
+
+/* ── Your contribution: a stat row under the collective climb ── */
+.global-you { display: flex; align-items: center; gap: 12px; margin: 0 4px; }
+.global-you-badge {
+  flex-shrink: 0; width: 46px; height: 46px; border-radius: 14px;
+  display: grid; place-items: center; line-height: 1;
+  border: 1px solid rgba(255,185,40,0.28); color: #FFE08A;
+  background: linear-gradient(135deg, rgba(255,185,40,0.18), rgba(255,185,40,0.04));
+}
+.global-you-badge small {
+  font-family: var(--font-data); font-size: 0.42rem; font-weight: 700;
+  letter-spacing: 0.12em; color: rgba(255,255,255,0.4);
+}
+.global-you-badge strong { font-family: var(--font-display, 'Kanit'), sans-serif; font-size: 1.1rem; font-weight: 700; }
+.global-you-text { flex: 1; min-width: 0; }
+.global-you-text b { font-family: var(--font-data); font-size: 0.94rem; font-weight: 700; color: #F0F4FF; }
+.global-you-text small {
+  display: block; margin-top: 2px; font-family: var(--font-ui);
+  font-size: 0.74rem; line-height: 1.4; color: rgba(255,255,255,0.6);
 }
 
 /* Featured banner */
