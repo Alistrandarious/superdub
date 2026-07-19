@@ -48,8 +48,19 @@ const DubChat: React.FC = () => {
   const { totalXP } = useXP();
   const msgsRef = useRef<HTMLDivElement>(null);
   const typeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Accent follows the nav-glow cosmetic so the read matches the Coach page + tab.
+  const [navGlow, setNavGlow] = useState(() => localStorage.getItem('superdub.navGlow') || '#2FD27E');
 
   useEffect(() => () => { if (typeTimer.current) clearTimeout(typeTimer.current); }, []);
+  useEffect(() => {
+    const sync = () => setNavGlow(localStorage.getItem('superdub.navGlow') || '#2FD27E');
+    window.addEventListener('superdub:nav-glow-changed', sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener('superdub:nav-glow-changed', sync);
+      window.removeEventListener('storage', sync);
+    };
+  }, []);
 
   const dismiss = useCallback(() => {
     setClosing(true);
@@ -202,7 +213,7 @@ const DubChat: React.FC = () => {
   const tray = [...floated, ...rest].slice(0, TRAY_SIZE);
 
   return (
-    <div className={`coach-overlay${closing ? ' closing' : ''}`} onClick={dismiss}>
+    <div className={`coach-overlay${closing ? ' closing' : ''}`} style={{ ['--theme' as any]: navGlow }} onClick={dismiss}>
       <div className="coach-card dchat-card" onClick={e => e.stopPropagation()}>
         <button className="coach-close" onClick={dismiss} aria-label="Close">✕</button>
 

@@ -6,7 +6,7 @@ import { buildCoachReport, type CoachReport as Report } from './coach';
 import { buildBrief, dubDayState, type DubDayState } from './dubBrief';
 import { buildHabitInsights, type DubInsight } from './dubInsights';
 import SuperdubHeader from './SuperdubHeader';
-import { pageTheme, GROWTH } from './theme';
+import { pageTheme } from './theme';
 import { isSystemHabit } from './systemHabits';
 import { readStage } from './userStage';
 import { useXP } from './XPContext';
@@ -60,6 +60,20 @@ const DubPage: React.FC = () => {
   const [loaded, setLoaded] = useState(false);
   const [seen, setSeen] = useState(() => localStorage.getItem(DUB_SEEN_KEY) || '');
   const { playerLevel } = useXP();
+
+  // Coach accent follows the nav-glow cosmetic so the page, the read and the Coach
+  // tab all share one colour. ponytail: same 4-line read as BottomNav / DubChat —
+  // extract a useNavGlow() hook if a 4th consumer shows up.
+  const [navGlow, setNavGlow] = useState(() => localStorage.getItem('superdub.navGlow') || '#2FD27E');
+  useEffect(() => {
+    const sync = () => setNavGlow(localStorage.getItem('superdub.navGlow') || '#2FD27E');
+    window.addEventListener('superdub:nav-glow-changed', sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener('superdub:nav-glow-changed', sync);
+      window.removeEventListener('storage', sync);
+    };
+  }, []);
 
   const phase = timePhase(new Date().getHours());
 
@@ -179,7 +193,7 @@ const DubPage: React.FC = () => {
   const ringOffset = CIRC * (1 - Math.max(0, Math.min(1, playerLevel.progress)));
 
   return (
-    <div className="app flush" style={pageTheme(GROWTH, '0D')}>
+    <div className="app flush" style={pageTheme(navGlow, '0D')}>
       <SuperdubHeader />
 
       <div className="coach-scroll">
@@ -195,10 +209,10 @@ const DubPage: React.FC = () => {
             <span className="coach-hero-ring" role="img" aria-label={`Level ${playerLevel.level}, ${playerLevel.title}`}>
               <svg width={RING} height={RING} aria-hidden="true">
                 <circle cx={RING / 2} cy={RING / 2} r={RR} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth={RS} />
-                <circle cx={RING / 2} cy={RING / 2} r={RR} fill="none" stroke={GROWTH} strokeWidth={RS}
+                <circle cx={RING / 2} cy={RING / 2} r={RR} fill="none" stroke={navGlow} strokeWidth={RS}
                   strokeLinecap="round" strokeDasharray={CIRC} strokeDashoffset={ringOffset}
                   transform={`rotate(-90 ${RING / 2} ${RING / 2})`}
-                  style={{ filter: `drop-shadow(0 0 4px ${GROWTH}88)` }} />
+                  style={{ filter: `drop-shadow(0 0 4px ${navGlow}88)` }} />
               </svg>
               <span className="coach-hero-ring-num">{playerLevel.level}</span>
             </span>
