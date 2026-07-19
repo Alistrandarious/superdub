@@ -28,7 +28,6 @@ import CogMenu from './CogMenu';
 import { useBrandNick, setBrandNick } from './brand';
 import { useUserStage } from './userStage';
 import PatternsCard, { PatternDay } from './PatternsCard';
-import ChartCarousel from './ChartCarousel';
 // DubProgressSummary retired from the Today panel — the live verdict text now carries Dub's read.
 import YesterdayMatrix, { KPI_ACCENT } from './YesterdayMatrix';
 import GoalSheet from './GoalSheet';
@@ -347,6 +346,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
 
   const todayKey = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}`;
 
+  // Progress layout state — the page is a vertical spine (Right now → Weight
+  // journey → Trends), with the retrospective panels on their own in-page view
+  // reached by the "Stats & heatmaps" link (Variant B of the redesign).
+  const [trendMetric, setTrendMetric] = useState('Weight'); // active Trends chart
+  const [progressView, setProgressView] = useState<'main' | 'history'>('main');
   // Chart state
   const [chartRange, setChartRange] = useState<ChartRange>('week');
   const [chartOffset, setChartOffset] = useState(0); // 0 = most recent window; higher = further back
@@ -1483,6 +1487,15 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         : `Log your mood in the evening reflection to track it here.` },
   ].filter(m => m.show);
 
+  // Trends switcher: the active metric must be one that's actually shown, or the
+  // Trends zone renders nothing (e.g. Sleep selected, then its data drops out).
+  const shownMetricNames = chartMeta.map(m => m.name);
+  const activeMetric = shownMetricNames.includes(trendMetric) ? trendMetric : 'Weight';
+  const activeMeta = chartMeta.find(m => m.name === activeMetric) ?? null;
+  const METRIC_DOT: Record<string, string> = {
+    Weight: '#FFFFFF', Habits: '#2FD27E', Steps: '#2FD27E', Intake: '#FF8A00', Sleep: '#8B5CF6', Mood: TEAL,
+  };
+
   // ── Yesterday Matrix inputs (yesterday's closing KPIs) ──────────────────────
   const yDate = new Date(now); yDate.setDate(now.getDate() - 1);
   const yesterdayKey = `${String(yDate.getDate()).padStart(2, '0')}/${String(yDate.getMonth() + 1).padStart(2, '0')}`;
@@ -1508,20 +1521,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       : '';
     return `Yesterday you ate roughly ${verdict.intakeLow.toLocaleString()} to ${verdict.intakeHigh.toLocaleString()} kcal, ${verdict.delta <= 0 ? 'around or under' : 'around or over'} your ${targetCalories.toLocaleString()} target.${zone}${wk}`;
   })();
-
-  // Story panels: Today first, then Yesterday (retrospective KPIs), the charts in
-  // the middle, and a scrollable Stats panel last. Tabs/notes stay index-aligned
-  // with the slides; Dub's top bar shows each note.
-  const hasHeatmaps = habits.length > 0;
-  const storyTabs = ['Today', 'Yesterday', 'Weight Plan', ...chartMeta.map(m => m.name), 'Stats', ...(hasHeatmaps ? ['Heatmaps'] : [])];
-  const storyNotes: (string | null)[] = [
-    "Here is what is due today and coming up this week. Knock them out one at a time.",
-    liveVerdict,
-    "Your live plan for today. The steps to hit and where your weight is heading.",
-    ...chartMeta.map(m => m.note),
-    null,
-    ...(hasHeatmaps ? ['A whole year of each habit. Green is done, red missed, grey untouched.'] : []),
-  ];
 
   // ── Plan-on-Today inputs — the old "Plan" surface folded into Progress→Today:
   // the weight-journey gauge + "Weight This Week" chart + a step-count tile.
@@ -1828,9 +1827,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       )}
 
       <div className="dashboard-story">
-      <ChartCarousel tabs={storyTabs} notes={storyNotes}>
+      <div className={`progress-v${progressView === 'history' ? ' progress-history' : ''}`}>
 
-      {/* ── Panel 0 · Today — to-dos due this week + weekly/monthly habits about to lapse ── */}
+      {/* ── Zone A · Right now — live scoreboard + what's due this week ── */}
+      {progressView === 'main' && (<>
+      <div className="progress-zone-label">Right now</div>
       <div className="story-panel today-feed">
         {/* Live scoreboard — the same four metrics as Yesterday's grid, but in motion.
             Steps + habits fill through the day; kcal budget and bedtime are the aims. */}
@@ -1924,9 +1925,13 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         )}
         {renderStarStrip(todayKey)}
       </div>
+      </>)}
 
-      {/* ── Panel 1 · Yesterday, retrospective KPIs fill the locked height.
-             Dub's yesterday-verdict rides in the carousel's top bar (note 1). ── */}
+      {/* ── Yesterday's verdict — retrospective KPIs, history view only ── */}
+      {progressView === 'history' && (<>
+      <button className="progress-back" onClick={() => setProgressView('main')}>← Back to Progress</button>
+      <div className="progress-zone-label">Yesterday</div>
+      {liveVerdict && <p className="progress-verdict">{liveVerdict}</p>}
       <div className="story-panel story-panel--intro">
 
       <YesterdayMatrix
@@ -1968,8 +1973,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       )}
 
       </div>{/* /Yesterday panel */}
+      </>)}
 
-      {/* ── Panel · Weight Plan — gauge + weekly chart + steps, or a start-plan prompt ── */}
+      {/* ── Zone B · Your weight journey — gauge + weekly chart + steps ── */}
+      {progressView === 'main' && (<>
+      <div className="progress-zone-label">Your weight journey</div>
       <div className="story-panel today-plan">
         {planGoal ? (
           <>
@@ -2033,7 +2041,24 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         )}
       </div>
 
-      {/* ── Panel 2 · Weight ── */}
+      {/* ── Zone C · Trends — one framed chart, tap a chip to switch metric ── */}
+      <div className="progress-zone-label">Trends</div>
+      <div className="trend-chips">
+        {chartMeta.map(m => (
+          <button
+            key={m.name}
+            className={`trend-chip${activeMetric === m.name ? ' active' : ''}`}
+            onClick={() => setTrendMetric(m.name)}
+          >
+            <span className="trend-chip-dot" style={{ background: METRIC_DOT[m.name] }} />{m.name}
+          </button>
+        ))}
+      </div>
+      {activeMeta?.note && <p className="progress-trend-note">{activeMeta.note}</p>}
+      </>)}
+
+      {/* ── Trends chart · Weight ── */}
+      {progressView === 'main' && activeMetric === 'Weight' && (
       <section className="chart-section chart-section--weight">
         <div className="chart-title-row">
           <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#FFFFFF' }} />Weight Trend</h3>
@@ -2217,9 +2242,10 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </div>
         </div>{/* /chart-section-inner */}
       </section>
+      )}
 
-      {/* ── Habits Chart, completion bars, split out from the weight chart ── */}
-      {habits.length > 0 && (
+      {/* ── Trends chart · Habits ── */}
+      {progressView === 'main' && activeMetric === 'Habits' && habits.length > 0 && (
         <section className="chart-section chart-section--habits">
           <div className="chart-title-row">
             <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#2FD27E' }} />Habits<span className="chart-title-cad" style={{ color: CADENCE_META[chartCadence].color }}>{CADENCE_META[chartCadence].label}</span></h3>
@@ -2290,7 +2316,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </section>
       )}
 
-      {/* ── Step Chart ── */}
+      {/* ── Trends chart · Steps ── */}
+      {progressView === 'main' && activeMetric === 'Steps' && (
       <section className="chart-section step-chart-section">
         <div className="chart-section-inner">
           <div className="chart-container">
@@ -2364,7 +2391,10 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </div>
       </section>
 
-      {/* ── Estimated Calorie Intake (energy-balance back-calculation) ── */}
+      )}
+
+      {/* ── Trends chart · Intake ── */}
+      {progressView === 'main' && activeMetric === 'Intake' && (
       <section className="chart-section calorie-chart-section">
         <div className="chart-section-inner">
           <div className="chart-container">
@@ -2420,13 +2450,10 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           </div>
         </div>
       </section>
+      )}
 
-      {/* ── Sleep & Mood, the two on one panel, sharing the date axis so you
-             can eyeball how rest and mood move together. Sleep on top (bed→wake
-             candles, or an hours line for older duration-only entries), mood
-             below. Together they fill the uniform canvas height. ── */}
-      {/* ── Sleep panel — bed→wake candles (or an hours line for hours-only nights) ── */}
-      {sleepEver && (
+      {/* ── Trends chart · Sleep ── */}
+      {progressView === 'main' && activeMetric === 'Sleep' && sleepEver && (
         <section className="chart-section chart-section--sleep">
           <div className="chart-title-row" style={{ padding: '4px 16px 0' }}>
             <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#8B5CF6' }} />Sleep</h3>
@@ -2477,8 +2504,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </section>
       )}
 
-      {/* ── Mood panel (1 to 10) ── */}
-      {moodHasData && (
+      {/* ── Trends chart · Mood ── */}
+      {progressView === 'main' && activeMetric === 'Mood' && moodHasData && (
         <section className="chart-section chart-section--mood">
           <div className="chart-title-row" style={{ padding: '4px 16px 0' }}>
             <h3 className="chart-title"><span className="chart-title-dot" style={{ background: TEAL }} />Mood</h3>
@@ -2513,7 +2540,17 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </section>
       )}
 
-      {/* ── Last panel · Stats, scrolls internally ── */}
+      {/* ── Zone D · the one quiet exit to the retrospective screen ── */}
+      {progressView === 'main' && (
+      <button className="progress-more-link" onClick={() => setProgressView('history')}>
+        <span className="pml-title">Stats &amp; heatmaps →</span>
+        <span className="pml-sub">Yesterday · XP · streaks · patterns · a year per habit</span>
+      </button>
+      )}
+
+      {/* ── History view · Stats + Heatmaps ── */}
+      {progressView === 'history' && (<>
+      {/* ── Stats, scrolls internally ── */}
       <div className="story-panel story-panel--stats">
 
       {/* ── Day-of-week patterns + correlations across steps/habits/mood ── */}
@@ -2767,7 +2804,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         </section>
       </div>
       )}
-      </ChartCarousel>
+      </>)}
+      </div>{/* /progress-v */}
 
       {/* Honesty declaration, shown once per device before backfilling past tracker days */}
       {honestyPending && (

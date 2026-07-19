@@ -1894,6 +1894,59 @@ h1, h2, h3, h4, .sora {
 .dashboard-story {
   flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;
 }
+
+/* ── Progress redesign: a vertical spine replaces the horizontal ChartCarousel.
+   Order: Right now → Your weight journey → Trends (one framed chart, chip-switched)
+   → a link out to the retrospective view (Yesterday · Stats · Heatmaps). ── */
+.progress-v {
+  flex: 1; min-height: 0;
+  overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 4px 0 calc(22px + env(safe-area-inset-bottom, 0px));
+}
+.progress-v::-webkit-scrollbar { display: none; }
+.progress-zone-label {
+  font-family: var(--font-data); font-size: 0.6rem; font-weight: 700;
+  letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,255,0.4);
+  margin: 20px 16px 8px; display: flex; align-items: center; gap: 10px;
+}
+.progress-zone-label::after { content: ""; flex: 1; height: 1px; background: rgba(255,255,255,0.08); }
+.progress-v > .today-feed, .progress-v > .today-plan {
+  margin: 0 16px; display: flex; flex-direction: column; gap: 12px;
+}
+
+/* Trends chips — the six chart metrics, tap to switch the single framed chart. */
+.trend-chips { display: flex; gap: 7px; overflow-x: auto; padding: 2px 16px 4px; scrollbar-width: none; }
+.trend-chips::-webkit-scrollbar { display: none; }
+.trend-chip {
+  flex: 0 0 auto; font-family: var(--font-ui); font-size: 0.8rem; font-weight: 600;
+  padding: 7px 13px; border-radius: 999px; background: #15151E;
+  border: 1px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.6); white-space: nowrap;
+}
+.trend-chip.active { color: #fff; border-color: rgba(255,255,255,0.35); background: #20202c; }
+.trend-chip-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+.progress-trend-note { margin: 6px 16px 0; font-size: 0.8rem; color: rgba(255,255,255,0.55); line-height: 1.4; }
+
+/* One framed chart at a fixed height so ChartFill measures a definite box (the
+   vertical layout removed the carousel's flex-grown height — percentage heights
+   would collapse to 0 and blank the chart). Mirrors the .cc-slide-viz chain. */
+.progress-v .chart-section { height: 380px; display: flex; flex-direction: column; margin: 6px 16px 0; width: auto; }
+.progress-v .chart-section-inner { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.progress-v .chart-container { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.progress-v .chart-section--habits .chart-section-inner { min-height: 160px; }
+
+/* The quiet exit to the retrospective screen, and the history view itself. */
+.progress-more-link {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 3px;
+  margin: 26px 16px 4px; padding: 15px 16px; width: calc(100% - 32px); text-align: left;
+  background: #0E0E14; border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; color: #E8ECF4;
+}
+.pml-title { font-weight: 600; font-size: 0.95rem; }
+.pml-sub { font-family: var(--font-data); font-size: 0.58rem; letter-spacing: 0.04em; text-transform: uppercase; color: rgba(255,255,255,0.4); }
+.progress-back { align-self: flex-start; margin: 8px 16px 0; padding: 6px 0; background: none; border: 0; color: rgba(255,255,255,0.6); font-family: var(--font-data); font-size: 0.8rem; cursor: pointer; }
+.progress-verdict { margin: 4px 16px 8px; font-size: 0.85rem; color: rgba(255,255,255,0.72); line-height: 1.45; }
+.progress-history > .story-panel--stats { margin: 0 16px; }
+
 .chart-carousel {
   flex: 1; min-height: 0; display: flex; flex-direction: column;
 }
