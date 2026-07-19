@@ -5171,11 +5171,19 @@ h1, h2, h3, h4, .sora {
   gap: 5px;
   height: 36px;
   box-sizing: border-box;
-  padding: 0 2px;
+  padding: 0 4px;
+  font-family: inherit;
   font-size: 0.8rem;
   font-weight: 600;
   color: #D0D0DC;
+  background: none;
+  border: 0;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
 }
+.hb-weather:hover { color: #fff; background: rgba(255,255,255,0.05); }
+.hb-weather:active { transform: scale(0.95); }
 /* Day-streak flame chip — bare like the weather control (no pill chrome), the
    flame's own gradient carries the colour; the count is Space Mono. */
 .hb-streak-chip {
@@ -5636,6 +5644,38 @@ h1, h2, h3, h4, .sora {
 }
 
 /* Weekly check-in strip (mandatory habit) */
+/* Date header — day name + date under the wordmark, above the week ticks. */
+.hb-datehead { display: flex; align-items: baseline; gap: 9px; padding: 2px 18px 0; }
+.hb-datehead-dow { font-family: 'Kanit', sans-serif; font-style: italic; font-weight: 800; font-size: 1.3rem; color: #EEF0F5; }
+.hb-datehead-dm { font-family: 'Space Mono', monospace; font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-mute, #626873); }
+
+/* Swipeable week strip — the login-streak ticks, paged back through weeks. */
+.hb-weekcard {
+  margin: 4px 14px 2px;
+  padding: 9px 4px 8px;
+  border: 1px solid var(--glass-border, #252532);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(47,210,126,0.05), transparent 78%);
+}
+.hb-weeknav { display: flex; align-items: center; justify-content: space-between; padding: 0 8px 7px; }
+.hb-weeknav-lbl { font-family: 'Space Mono', monospace; font-size: 0.7rem; letter-spacing: 0.03em; color: var(--text-mute, #9AA0AC); }
+.hb-weeknav-lbl b { color: #2FD27E; font-weight: 700; }
+.hb-weeknav-arrows { display: flex; gap: 4px; }
+.hb-weeknav-arrows button {
+  width: 26px; height: 26px; border-radius: 8px;
+  background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border, #252532);
+  color: #9AA0AC; font-size: 0.95rem; line-height: 1; cursor: pointer;
+  display: grid; place-items: center; transition: color 0.15s, border-color 0.15s;
+}
+.hb-weeknav-arrows button:hover:not(:disabled) { color: #fff; border-color: #38384a; }
+.hb-weeknav-arrows button:disabled { opacity: 0.3; cursor: default; }
+.hb-weekview { overflow: hidden; touch-action: pan-y; }
+.hb-weekcard .hb-week { padding: 2px 4px; }
+@keyframes hb-week-in-l { from { opacity: 0; transform: translateX(-22px); } to { opacity: 1; transform: none; } }
+@keyframes hb-week-in-r { from { opacity: 0; transform: translateX(22px); } to { opacity: 1; transform: none; } }
+.hb-week-in-l { animation: hb-week-in-l 0.3s cubic-bezier(0.22,1,0.36,1); }
+.hb-week-in-r { animation: hb-week-in-r 0.3s cubic-bezier(0.22,1,0.36,1); }
+
 .hb-week {
   display: flex;
   justify-content: space-between;
@@ -5748,6 +5788,56 @@ h1, h2, h3, h4, .sora {
   margin: 12px 0 4px;
 }
 
+/* ── Weather breakdown bottom-sheet (tap the header weather chip) ── */
+.wx-scrim {
+  position: fixed; inset: 0; z-index: 900;
+  background: rgba(0,0,0,0.55); opacity: 0; pointer-events: none;
+  transition: opacity 0.28s;
+}
+.wx-scrim.open { opacity: 1; pointer-events: auto; }
+.wx-sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 901;
+  max-width: 520px; margin: 0 auto;
+  max-height: 82vh; overflow-y: auto;
+  padding: 10px 16px calc(22px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(180deg, #12131b, #0b0c12);
+  border-top: 1px solid var(--glass-border, #252532);
+  border-radius: 24px 24px 0 0;
+  box-shadow: 0 -12px 40px rgba(0,0,0,0.55);
+  transform: translateY(102%);
+  transition: transform 0.34s cubic-bezier(0.22,1,0.36,1);
+}
+.wx-sheet.open { transform: translateY(0); }
+.wx-grab { width: 38px; height: 4px; border-radius: 2px; background: var(--glass-border, #252532); margin: 2px auto 14px; }
+.wx-now { display: flex; align-items: center; gap: 13px; padding: 0 2px 2px; }
+.wx-now-ico { color: #9FB6D8; display: inline-flex; }
+.wx-now-big { font-family: 'Space Mono', monospace; font-weight: 700; font-size: 2.3rem; line-height: 1; color: #EEF0F5; }
+.wx-now-meta { display: flex; flex-direction: column; gap: 2px; }
+.wx-now-city { font-family: 'Kanit', sans-serif; font-style: italic; font-weight: 800; font-size: 1.05rem; color: #fff; }
+.wx-now-desc { font-size: 0.82rem; color: #9AA0AC; }
+.wx-close { margin-left: auto; align-self: flex-start; width: 30px; height: 30px; border-radius: 50%; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border, #252532); color: #9AA0AC; cursor: pointer; font-size: 0.95rem; }
+.wx-sub { font-family: 'Space Mono', monospace; font-size: 0.6rem; letter-spacing: 0.16em; text-transform: uppercase; color: #626873; margin: 18px 2px 9px; display: flex; align-items: center; gap: 8px; }
+.wx-sub::after { content: ""; flex: 1; height: 1px; background: var(--glass-border, #252532); }
+.wx-hours { display: flex; gap: 7px; overflow-x: auto; padding: 1px 2px 6px; }
+.wx-hours::-webkit-scrollbar { display: none; }
+.wx-hour { flex: 0 0 auto; width: 52px; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 9px 0; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border, #252532); color: #9FB6D8; }
+.wx-hour.now { border-color: #2E8BFF; background: rgba(46,139,255,0.1); }
+.wx-hour-h { font-family: 'Space Mono', monospace; font-size: 0.6rem; color: #626873; }
+.wx-hour-t { font-family: 'Space Mono', monospace; font-weight: 700; font-size: 0.82rem; color: #EEF0F5; }
+.wx-days { display: flex; flex-direction: column; }
+.wx-day { display: grid; grid-template-columns: 46px 24px 1fr auto; align-items: center; gap: 12px; padding: 9px 4px; border-bottom: 1px solid var(--glass-border, #252532); color: #9FB6D8; }
+.wx-day:last-child { border-bottom: 0; }
+.wx-day-d { font-family: 'Space Mono', monospace; font-size: 0.76rem; color: #9AA0AC; }
+.wx-day-d.today { color: #2FD27E; font-weight: 700; }
+.wx-day-bar { height: 5px; border-radius: 3px; background: linear-gradient(90deg, #3a5a8a, #7fb0e0, #ffcf7a); }
+.wx-day-temps { font-family: 'Space Mono', monospace; font-size: 0.78rem; white-space: nowrap; }
+.wx-day-temps .hi { color: #EEF0F5; font-weight: 700; }
+.wx-day-temps .lo { color: #626873; }
+@media (prefers-reduced-motion: reduce) {
+  .wx-sheet { transition: none; }
+  .hb-week-in-l, .hb-week-in-r { animation: none; }
+}
+
 /* "Where you're trending" — the one-line on-track read on the home screen. The
    dot colour follows the coach's tone (good / warn / neutral). Tap → Progress. */
 .home-ontrack {
@@ -5781,44 +5871,6 @@ h1, h2, h3, h4, .sora {
 }
 .home-ontrack-text { font-size: 0.92rem; font-weight: 650; color: #f2f5f4; line-height: 1.25; }
 .home-ontrack-chev { color: rgba(255,255,255,0.35); font-size: 1.2rem; flex: none; }
-
-/* Streak + coach status band — the login-streak tile (flame) paired with the
-   coach's "where you're trending" read, sitting under the habits. The coach card
-   keeps its own chrome and stretches to fill the row. */
-.hb-status-band {
-  display: flex;
-  align-items: stretch;
-  gap: 10px;
-  margin: 10px 14px 4px;
-}
-.hb-status-band .home-ontrack { margin: 0; flex: 1; }
-.hb-streak-tile {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1px;
-  flex: none;
-  min-width: 78px;
-  padding: 8px 14px;
-  border-radius: 14px;
-  background: linear-gradient(165deg, rgba(255,138,0,0.13), rgba(255,138,0,0.03));
-  border: 1px solid rgba(255,138,0,0.28);
-}
-.hb-streak-tile-num {
-  font-family: 'Space Mono', monospace;
-  font-weight: 700;
-  font-size: 1.35rem;
-  line-height: 1.05;
-  color: #FF8A00;
-}
-.hb-streak-tile-lbl {
-  font-family: 'Space Mono', monospace;
-  font-size: 0.5rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(255,138,0,0.75);
-}
 
 /* Level ring, docked at the BOTTOM of Habits — the reward you scroll down to,
    rather than the gate you scroll through. Sits above the customization swap. */

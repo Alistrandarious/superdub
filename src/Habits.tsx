@@ -25,6 +25,7 @@ import {
 import { pageTheme, HEALTH } from './theme';
 import { quitProgress, quitElapsed, toLocalDatetimeValue } from './quit';
 import { moveItem, applyGroupReorder } from './reorder';
+import { weekMonday, weekRangeLabel, weekTitle } from './weekRange';
 import { RECENT_ADD_DAYS, daysSince } from './habitAdd';
 import {
   HABIT_LEVEL_TIERS as LEVEL_TIERS, HABIT_LEVEL_RATES as LEVEL_RATES,
@@ -137,12 +138,9 @@ function startDateToKey(startDate: string | null | undefined): string | null {
   return `${parts[2]}/${parts[1]}`;
 }
 
-function getWeekDays(): { key: string; label: string; isFuture: boolean; isToday: boolean }[] {
+function getWeekDays(weekOffset = 0): { key: string; label: string; isFuture: boolean; isToday: boolean }[] {
   const now = loggingNow();
-  const dow = now.getDay();
-  const mon = new Date(now);
-  mon.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1));
-  mon.setHours(0, 0, 0, 0);
+  const mon = weekMonday(now, weekOffset); // offset 0 = this week, -1 = last week …
   const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
   const today = todayKey();
   return Array.from({ length: 7 }, (_, i) => {
@@ -322,7 +320,9 @@ const FEATURED: { id: string; name: string; tagline: string; icon: React.FC<Icon
 
 /* ── types ───────────────────────────────────────────────── */
 
-interface WeatherState { temp: number; code: number; city: string; }
+interface WeatherHour { time: string; temp: number; code: number; }
+interface WeatherDay { date: string; code: number; hi: number; lo: number; }
+interface WeatherState { temp: number; code: number; city: string; feels?: number; hours?: WeatherHour[]; days?: WeatherDay[]; }
 
 /* ── sub-components ──────────────────────────────────────── */
 
@@ -1128,6 +1128,151 @@ const FeaturedSheet: React.FC<{
 
 const MANDATORY_HABIT = 'Logging into Superdub';
 
+// Title + date range for the swipeable week strip, e.g. { title: 'Last week',
+// range: '7–13 Jul' }. Pure formatting lives in weekRange.ts (unit-tested).
+function weekMeta(offset: number): { title: string; range: string } {
+  const mon = weekMonday(loggingNow(), offset);
+  const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+  return { title: weekTitle(offset), range: weekRangeLabel(mon, sun) };
+}
+
+// The login-streak week strip — 7 day-circles for the mandatory check-in habit,
+// pulled up to the top of the page. Swipe (or the ‹ › arrows) pages back through
+// previous weeks; you can't go past the current week. Tapping a past/today circle
+// rewinds the page to that day (onPick), same as before.
+// ponytail: only the current calendar year is in `ht`, so weeks that fall in a
+// previous year read blank — fine until year-boundary history matters.
+const WeekStrip: React.FC<{
+  ht: HabitTracker;
+  rewindDay: string | null;
+  onPick: (key: string | null) => void;
+  perfectWeek: boolean;
+  celebrating: boolean;
+}> = ({ ht, rewindDay, onPick, perfectWeek, celebrating }) => {
+  const [offset, setOffset] = useState(0); // 0 = this week, negative = weeks back
+  const [dir, setDir] = useState(0);        // slide direction for the entrance anim
+  const startX = useRef(0);
+  const dragging = useRef(false);
+  const older = () => { setDir(-1); setOffset(o => o - 1); };
+  const newer = () => { if (offset < 0) { setDir(1); setOffset(o => o + 1); } };
+  const onDown = (e: React.PointerEvent) => { startX.current = e.clientX; dragging.current = true; };
+  const onUp = (e: React.PointerEvent) => {
+    if (!dragging.current) return;
+    dragging.current = false;
+    const dx = e.clientX - startX.current;
+    if (dx < -40) older();          // swipe left → older weeks
+    else if (dx > 40) newer();      // swipe right → back toward this week
+  };
+  const days = getWeekDays(offset);
+  const meta = weekMeta(offset);
+  const isCurrent = offset === 0;
+  return (
+    <div className="hb-weekcard">
+      <div className="hb-weeknav">
+        <span className="hb-weeknav-lbl"><b>{meta.title}</b> · {meta.range}</span>
+        <span className="hb-weeknav-arrows">
+          <button type="button" onClick={older} aria-label="Previous week">‹</button>
+          <button type="button" onClick={newer} disabled={offset >= 0} aria-label="Next week">›</button>
+        </span>
+      </div>
+      <div className="hb-weekview" onPointerDown={onDown} onPointerUp={onUp} onPointerLeave={onUp}>
+        <div
+          key={offset}
+          className={`hb-week${isCurrent && perfectWeek ? ' hb-week-gold' : ''}${isCurrent && celebrating ? ' hb-week-celebrating' : ''}${dir < 0 ? ' hb-week-in-l' : dir > 0 ? ' hb-week-in-r' : ''}`}
+        >
+          {days.map(({ key, label, isFuture, isToday }) => {
+            const state = ht[key]?.[MANDATORY_HABIT] ?? null;
+            return (
+              <button
+                key={key}
+                type="button"
+                className="hb-week-col hb-week-col-btn"
+                disabled={isFuture}
+                onClick={() => { if (!isFuture) onPick(isToday ? null : key); }}
+                aria-label={`${label}: ${state ?? 'not logged'}, ${isToday ? 'go to today' : 'rewind to this day'}`}
+              >
+                <span className="hb-week-dow">{label}</span>
+                <div
+                  className={`hb-week-circle ${state === 'done' ? 'done' : ''} ${state === 'failed' ? 'failed' : ''} ${state === 'na' ? 'na' : ''} ${isToday ? 'today' : ''} ${key === rewindDay ? 'viewing' : ''} ${isFuture ? 'future' : ''}`}
+                  aria-hidden="true"
+                >
+                  {state === 'done' && <span className="hb-week-tick"><CheckSVG size={18} strokeWidth={2} /></span>}
+                  {state === 'failed' && <span className="hb-week-tick fail">✕</span>}
+                  {state === 'na' && <span className="hb-week-tick na">–</span>}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Weather breakdown bottom-sheet — opens when the header weather chip is tapped.
+// Current conditions + a horizontal hourly strip + a 7-day forecast. Reuses the
+// WeatherIc mapping so every icon matches the header chip.
+const WeatherSheet: React.FC<{ weather: WeatherState | null; open: boolean; onClose: () => void }> = ({ weather, open, onClose }) => {
+  const hourLabel = (t: string, i: number) => {
+    if (i === 0) return 'Now';
+    const h = new Date(t).getHours();
+    return h === 0 ? '12am' : h < 12 ? `${h}am` : h === 12 ? '12pm' : `${h - 12}pm`;
+  };
+  const dayLabel = (d: string, i: number) => i === 0 ? 'Today' : new Date(d).toLocaleDateString('en-GB', { weekday: 'short' });
+  return (
+    <>
+      <div className={`wx-scrim${open ? ' open' : ''}`} onClick={onClose} aria-hidden="true" />
+      <div className={`wx-sheet${open ? ' open' : ''}`} role="dialog" aria-label="Weather breakdown" aria-hidden={!open}>
+        {weather && (
+          <>
+            <div className="wx-grab" />
+            <div className="wx-now">
+              <span className="wx-now-ico"><WeatherIc code={weather.code} size={44} /></span>
+              <span className="wx-now-big">{weather.temp}°</span>
+              <span className="wx-now-meta">
+                {weather.city && <span className="wx-now-city">{weather.city}</span>}
+                {weather.feels != null && <span className="wx-now-desc">Feels {weather.feels}°</span>}
+              </span>
+              <button className="wx-close" onClick={onClose} aria-label="Close weather">✕</button>
+            </div>
+
+            {!!weather.hours?.length && (
+              <>
+                <div className="wx-sub">Next hours</div>
+                <div className="wx-hours">
+                  {weather.hours.map((h, i) => (
+                    <div key={h.time} className={`wx-hour${i === 0 ? ' now' : ''}`}>
+                      <span className="wx-hour-h">{hourLabel(h.time, i)}</span>
+                      <WeatherIc code={h.code} size={20} />
+                      <span className="wx-hour-t">{h.temp}°</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {!!weather.days?.length && (
+              <>
+                <div className="wx-sub">This week</div>
+                <div className="wx-days">
+                  {weather.days.map((d, i) => (
+                    <div key={d.date} className="wx-day">
+                      <span className={`wx-day-d${i === 0 ? ' today' : ''}`}>{dayLabel(d.date, i)}</span>
+                      <WeatherIc code={d.code} size={20} />
+                      <span className="wx-day-bar" />
+                      <span className="wx-day-temps"><span className="hi">{d.hi}°</span> <span className="lo">{d.lo}°</span></span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </>
+        )}
+      </div>
+    </>
+  );
+};
+
 const Habits: React.FC = () => {
   const [habits, setHabits] = useState<string[]>([]);
   const [habitCadence, setHabitCadence] = useState<Record<string, Cadence>>({});
@@ -1168,6 +1313,7 @@ const Habits: React.FC = () => {
   const [xpCarry, setXpCarry] = useState<Record<string, number>>({});
   const [ht, setHt] = useState<HabitTracker>({});
   const [weather, setWeather] = useState<WeatherState | null>(null);
+  const [weatherOpen, setWeatherOpen] = useState(false); // weather breakdown sheet
   // `stuck` = the cadence section has reached the top and its header is pinned, so
   // the XP bar + dots show as one glass capsule. One sticky element, no seam.
   const [stuck, setStuck] = useState(false);
@@ -1312,13 +1458,22 @@ const Habits: React.FC = () => {
         const { latitude: lat, longitude: lon } = pos.coords;
         try {
           const [wxRes, geoRes] = await Promise.all([
-            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code`),
+            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,apparent_temperature&hourly=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=7`),
             fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=en`),
           ]);
           const wx = await wxRes.json();
           const geo = await geoRes.json();
           const city = geo.address?.city || geo.address?.town || geo.address?.village || geo.address?.county || '';
-          setWeather({ temp: Math.round(wx.current.temperature_2m), code: wx.current.weather_code, city });
+          // Hourly: the next ~10 hours starting from the current hour.
+          const nowMs = Date.now();
+          const hr = wx.hourly;
+          const allHours: WeatherHour[] = (hr?.time ?? []).map((t: string, i: number) => ({ time: t, temp: Math.round(hr.temperature_2m[i]), code: hr.weather_code[i] }));
+          const startIdx = Math.max(0, allHours.findIndex(h => new Date(h.time).getTime() >= nowMs - 3600e3));
+          const hours = allHours.slice(startIdx, startIdx + 10);
+          // Daily: the 7-day forecast.
+          const dl = wx.daily;
+          const days: WeatherDay[] = (dl?.time ?? []).map((t: string, i: number) => ({ date: t, code: dl.weather_code[i], hi: Math.round(dl.temperature_2m_max[i]), lo: Math.round(dl.temperature_2m_min[i]) })).slice(0, 7);
+          setWeather({ temp: Math.round(wx.current.temperature_2m), code: wx.current.weather_code, city, feels: Math.round(wx.current.apparent_temperature), hours, days });
         } catch {}
       },
       () => {}
@@ -1772,11 +1927,19 @@ const Habits: React.FC = () => {
       )}
 
       <div className="habits-page-scroll" onScroll={onPageScroll}>
-        {/* Top bar: brand + weather + cog (shared header). Streak moved out of the
-            header into the status band under the habits (see .hb-status-band). */}
+        {/* Top bar: brand + weather + cog (shared header). The streak lives in the
+            login-streak ticks at the top of the page now; the weather chip is tappable
+            (opens the WeatherSheet breakdown). */}
         <SuperdubHeader>
           {weather && (
-            <span className="hb-weather"><WeatherIc code={weather.code} size={14} />{weather.temp}°</span>
+            <button
+              type="button"
+              className="hb-weather"
+              onClick={() => setWeatherOpen(true)}
+              aria-label={`Weather ${weather.temp} degrees${weather.city ? ` in ${weather.city}` : ''}, tap for the hourly and weekly breakdown`}
+            >
+              <WeatherIc code={weather.code} size={14} />{weather.temp}°
+            </button>
           )}
         </SuperdubHeader>
 
@@ -1828,10 +1991,23 @@ const Habits: React.FC = () => {
         )}
 
         {!customizeOpen && <>
-        {/* HABITS — front and center. The cadence carousel now leads the page so the
-            first thing you see is your habits, not the level ring (which moved to the
-            bottom). Zero-height sentinel marks the carousel top for the sticky-XP calc.
-            PinnedXpBar + activeCadence tracking kept from master (level chrome = Daily only). */}
+        {/* Date + login-streak ticks — top of the page, under the wordmark. The ticks
+            swipe back through previous weeks (WeekStrip); tapping a day rewinds the page
+            to it. Shown on every cadence (it's your daily check-in, not level chrome). */}
+        {(() => {
+          const d = loggingNow();
+          return (
+            <div className="hb-datehead">
+              <span className="hb-datehead-dow">{d.toLocaleDateString('en-GB', { weekday: 'long' })}</span>
+              <span className="hb-datehead-dm">{d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}</span>
+            </div>
+          );
+        })()}
+        <WeekStrip ht={ht} rewindDay={rewindDay} onPick={setRewindDay} perfectWeek={isPerfectWeek} celebrating={weekCelebrating} />
+
+        {/* HABITS — the cadence carousel. Zero-height sentinel marks the carousel top
+            for the sticky-XP calc. PinnedXpBar + activeCadence kept from master
+            (level chrome = Daily only). */}
         <div ref={cadTopRef} aria-hidden="true" style={{ height: 0 }} />
         <CadenceCarousel panels={cadencePanels} startIndex={CADENCE_ORDER.indexOf(startCad)} compact={stuck} header={activeCadence === 'daily' ? <PinnedXpBar /> : null} onIndexChange={(i) => { setActiveCadence(CADENCE_ORDER[i]); setFeaturedSwipeKey(k => k + 1); }} />
 
@@ -1854,57 +2030,12 @@ const Habits: React.FC = () => {
           </div>
         )}
 
-        {/* Streak + what the coach says — the login streak (out of the header now)
-            paired with the coach's "where you're trending" read, as one status band.
-            Daily-only, matching master's level/streak chrome gating. */}
-        {activeCadence === 'daily' && !rewindDay && (
-          <div className="hb-status-band">
-            {stage !== 'new' && mandatoryStats.streak >= 1 && (
-              <div className="hb-streak-tile" aria-label={`${mandatoryStats.streak} day streak`}>
-                <AnimatedFlame size={20} />
-                <span className="hb-streak-tile-num">{mandatoryStats.streak}</span>
-                <span className="hb-streak-tile-lbl">day streak</span>
-              </div>
-            )}
-            <HomeOnTrack />
-          </div>
-        )}
+        {/* What the coach says — the "where you're trending" read. Daily-only, matching
+            master's chrome gating. The streak now lives in the ticks up top, so there's
+            no separate streak tile here anymore. */}
+        {activeCadence === 'daily' && !rewindDay && <HomeOnTrack />}
 
-        {/* Your day — the login-streak week strip + the app's own logging inputs. */}
-        <div className={`hb-week${isPerfectWeek ? ' hb-week-gold' : ''}${weekCelebrating ? ' hb-week-celebrating' : ''}`}>
-          {weekDays.map(({ key, label, isFuture, isToday }) => {
-            const state = ht[key]?.[MANDATORY_HABIT] ?? null;
-            // Tap a past/today cell to open that day's log; future days are disabled.
-            return (
-              <button
-                key={key}
-                type="button"
-                className="hb-week-col hb-week-col-btn"
-                disabled={isFuture}
-                onClick={() => {
-                  if (isFuture) return;
-                  // Every day just points the log/cards to it — today no longer pops
-                  // the check-in overlay (that still auto-opens on its own schedule).
-                  setRewindDay(isToday ? null : key);
-                }}
-                aria-label={`${label}: ${state ?? 'not logged'}, ${isToday ? 'go to today' : 'rewind to this day'}`}
-              >
-                <span className="hb-week-dow">{label}</span>
-                <div
-                  className={`hb-week-circle ${state === 'done' ? 'done' : ''} ${state === 'failed' ? 'failed' : ''} ${state === 'na' ? 'na' : ''} ${isToday ? 'today' : ''} ${key === rewindDay ? 'viewing' : ''} ${isFuture ? 'future' : ''}`}
-                  aria-hidden="true"
-                >
-                  {state === 'done' && <span className="hb-week-tick"><CheckSVG size={18} strokeWidth={2} /></span>}
-                  {state === 'failed' && <span className="hb-week-tick fail">✕</span>}
-                  {state === 'na' && <span className="hb-week-tick na">–</span>}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Streak moved into the header flame chip (beside the weather). New / lapsed
-            users still get the gentle coaching line here instead of a bare gap. */}
+        {/* New / lapsed users get a gentle coaching line instead of a bare gap. */}
         {(stage === 'new' || mandatoryStats.streak < 1) && (
           <p className="hb-week-coach">Tick a habit each day to grow your streak. Dub coaches you as you go.</p>
         )}
@@ -1948,6 +2079,9 @@ const Habits: React.FC = () => {
 
         <div style={{ height: 100 }} />
       </div>
+
+      {/* Weather breakdown sheet — opens from the header weather chip (hourly + 7-day). */}
+      <WeatherSheet weather={weather} open={weatherOpen} onClose={() => setWeatherOpen(false)} />
 
       {/* ── Habit day overlay, triggered by weigh-in or 6-hour refresh ── */}
       {showDayOverlay && loaded && (() => {

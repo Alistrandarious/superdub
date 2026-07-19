@@ -432,7 +432,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       api.getWeightSettings(),
     ]).then(([profile, loadedHabits, trackerData, ws]) => {
       setName(profile.name ?? '');
-      setBrandNick(profile.nickname ?? '');
+      // Wordmark = super + nickname; fall back to the account's first name so it reads
+      // e.g. "superali" by default instead of "superdub" when no nickname is set.
+      setBrandNick(profile.nickname || (profile.name ?? '').trim().split(/\s+/)[0] || '');
       if (profile.accountCreatedAt) {
         setAccountCreatedAt(profile.accountCreatedAt);
         localStorage.setItem('superdub.accountCreatedAt', profile.accountCreatedAt); // so userStage can read tenure anywhere

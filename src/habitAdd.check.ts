@@ -3,7 +3,9 @@
 import assert from 'assert';
 import { RECENT_ADD_DAYS, daysSince } from './habitAdd';
 
-const iso = (d: Date) => d.toISOString().slice(0, 10);
+// Local (not UTC) date string, so it matches how daysSince parses it (local midnight);
+// toISOString() would skew by a day near tz boundaries and make the day-counts flaky.
+const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const daysAgo = (n: number) => { const d = new Date(); d.setDate(d.getDate() - n); return iso(d); };
 
 // Today's add reads as 0 days old, so it's inside the window and suppresses the button.
