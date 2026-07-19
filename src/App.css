@@ -5782,6 +5782,51 @@ h1, h2, h3, h4, .sora {
 .home-ontrack-text { font-size: 0.92rem; font-weight: 650; color: #f2f5f4; line-height: 1.25; }
 .home-ontrack-chev { color: rgba(255,255,255,0.35); font-size: 1.2rem; flex: none; }
 
+/* Streak + coach status band — the login-streak tile (flame) paired with the
+   coach's "where you're trending" read, sitting under the habits. The coach card
+   keeps its own chrome and stretches to fill the row. */
+.hb-status-band {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  margin: 10px 14px 4px;
+}
+.hb-status-band .home-ontrack { margin: 0; flex: 1; }
+.hb-streak-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  flex: none;
+  min-width: 78px;
+  padding: 8px 14px;
+  border-radius: 14px;
+  background: linear-gradient(165deg, rgba(255,138,0,0.13), rgba(255,138,0,0.03));
+  border: 1px solid rgba(255,138,0,0.28);
+}
+.hb-streak-tile-num {
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  font-size: 1.35rem;
+  line-height: 1.05;
+  color: #FF8A00;
+}
+.hb-streak-tile-lbl {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.5rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,138,0,0.75);
+}
+
+/* Level ring, docked at the BOTTOM of Habits — the reward you scroll down to,
+   rather than the gate you scroll through. Sits above the customization swap. */
+.hb-level-dock {
+  margin-top: 16px;
+  padding-top: 4px;
+}
+
 /* Rewind banner — shown when the habit cards are viewing a past day */
 .hb-rewind-banner {
   display: flex;

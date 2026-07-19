@@ -1772,13 +1772,9 @@ const Habits: React.FC = () => {
       )}
 
       <div className="habits-page-scroll" onScroll={onPageScroll}>
-        {/* Top bar: brand + weather + cog (shared header) */}
+        {/* Top bar: brand + weather + cog (shared header). Streak moved out of the
+            header into the status band under the habits (see .hb-status-band). */}
         <SuperdubHeader>
-          {activeCadence === 'daily' && stage !== 'new' && mandatoryStats.streak >= 1 && (
-            <span className="hb-streak-chip" aria-label={`${mandatoryStats.streak} day streak`}>
-              <AnimatedFlame size={14} />{mandatoryStats.streak}
-            </span>
-          )}
           {weather && (
             <span className="hb-weather"><WeatherIc code={weather.code} size={14} />{weather.temp}°</span>
           )}
@@ -1831,24 +1827,50 @@ const Habits: React.FC = () => {
           </div>
         )}
 
-        {/* User level hero — the XP ring at the top of Habits (also on Profile).
-            Tapping it opens Profile (customization + a link to the full level map). */}
-        {activeCadence === 'daily' && <div><LevelHeroRing onRingTap={() => setCustomizeOpen(o => !o)} /></div>}
-        {/* Ring tap SWAPS the page: customization + the level ladder replace the
-            habits content below the ring; tapping the ring again brings it back. */}
-        <div className={`hb-customize${customizeOpen ? ' open' : ''}`}>
-          <div className="hb-customize-inner">
-            {customizeOpen && (
-              <>
-                <LevelCustomizer showHero={false} />
-                <div className="hb-customize-ladder"><LevelLadder /></div>
-              </>
-            )}
-          </div>
-        </div>
-
         {!customizeOpen && <>
-        {/* Weekly strip, the simplified "Logging into Superdub" habit */}
+        {/* HABITS — front and center. The cadence carousel now leads the page so the
+            first thing you see is your habits, not the level ring (which moved to the
+            bottom). Zero-height sentinel marks the carousel top for the sticky-XP calc.
+            PinnedXpBar + activeCadence tracking kept from master (level chrome = Daily only). */}
+        <div ref={cadTopRef} aria-hidden="true" style={{ height: 0 }} />
+        <CadenceCarousel panels={cadencePanels} startIndex={CADENCE_ORDER.indexOf(startCad)} compact={stuck} header={activeCadence === 'daily' ? <PinnedXpBar /> : null} onIndexChange={(i) => { setActiveCadence(CADENCE_ORDER[i]); setFeaturedSwipeKey(k => k + 1); }} />
+
+        {/* Featured banner, tap to open & join (below the user's habits). Swipes up
+            from the bottom (0 → 100% opacity) each time you swipe the carousel above —
+            the changing key remounts it so the CSS animation replays.
+            Dismissable with the X; bring it back from the cog's Discover Habits. */}
+        {!featuredDismissed && !featuredEarned && (
+          <div key={featuredSwipeKey} className="hb-featured-wrap">
+            <button className="hb-featured" onClick={() => setFeaturedOpen(true)}>
+              <div className="hb-featured-text">
+                <span className="hb-featured-eyebrow">FEATURED</span>
+                <span className="hb-featured-cta">Discover habits to join →</span>
+              </div>
+              <span className="hb-featured-icon"><WalkIc size={44} /></span>
+            </button>
+            <button className="hb-featured-x" onClick={dismissFeatured} aria-label="Hide featured habits">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+            </button>
+          </div>
+        )}
+
+        {/* Streak + what the coach says — the login streak (out of the header now)
+            paired with the coach's "where you're trending" read, as one status band.
+            Daily-only, matching master's level/streak chrome gating. */}
+        {activeCadence === 'daily' && !rewindDay && (
+          <div className="hb-status-band">
+            {stage !== 'new' && mandatoryStats.streak >= 1 && (
+              <div className="hb-streak-tile" aria-label={`${mandatoryStats.streak} day streak`}>
+                <AnimatedFlame size={20} />
+                <span className="hb-streak-tile-num">{mandatoryStats.streak}</span>
+                <span className="hb-streak-tile-lbl">day streak</span>
+              </div>
+            )}
+            <HomeOnTrack />
+          </div>
+        )}
+
+        {/* Your day — the login-streak week strip + the app's own logging inputs. */}
         <div className={`hb-week${isPerfectWeek ? ' hb-week-gold' : ''}${weekCelebrating ? ' hb-week-celebrating' : ''}`}>
           {weekDays.map(({ key, label, isFuture, isToday }) => {
             const state = ht[key]?.[MANDATORY_HABIT] ?? null;
@@ -1891,10 +1913,6 @@ const Habits: React.FC = () => {
             the week strip's selected day; check-in reuses the mandatory-habit signal. */}
         <DailyLog day={rewindDay} checkedInDay={rewindDay ? ht[rewindDay]?.[MANDATORY_HABIT] === 'done' : undefined} />
 
-        {/* One-line "where you're trending" read — answers "am I on track?" without
-            a trip to Progress (the coach's weight verdict; tap for the full trend). */}
-        {!rewindDay && <HomeOnTrack />}
-
         {/* Weekly Recap, Sunday only, right under the gold circles */}
         {isSunday && <WeeklyRecap />}
 
@@ -1911,32 +1929,22 @@ const Habits: React.FC = () => {
           </div>
         )}
 
-        {/* Zero-height sentinel: marks the carousel's top so onPageScroll can tell
-            when its sticky header has reached the top and stuck (→ glass capsule). */}
-        <div ref={cadTopRef} aria-hidden="true" style={{ height: 0 }} />
-        {/* Your habits, cadence carousel (Daily · Weekly · Monthly · Yearly) */}
-        <CadenceCarousel panels={cadencePanels} startIndex={CADENCE_ORDER.indexOf(startCad)} compact={stuck} header={activeCadence === 'daily' ? <PinnedXpBar /> : null} onIndexChange={(i) => { setActiveCadence(CADENCE_ORDER[i]); setFeaturedSwipeKey(k => k + 1); }} />
-
-        {/* Featured banner, tap to open & join (below the user's habits). Swipes up
-            from the bottom (0 → 100% opacity) each time you swipe the carousel above —
-            the changing key remounts it so the CSS animation replays.
-            Dismissable with the X; bring it back from the cog's Discover Habits. */}
-        {!featuredDismissed && !featuredEarned && (
-          <div key={featuredSwipeKey} className="hb-featured-wrap">
-            <button className="hb-featured" onClick={() => setFeaturedOpen(true)}>
-              <div className="hb-featured-text">
-                <span className="hb-featured-eyebrow">FEATURED</span>
-                <span className="hb-featured-cta">Discover habits to join →</span>
-              </div>
-              <span className="hb-featured-icon"><WalkIc size={44} /></span>
-            </button>
-            <button className="hb-featured-x" onClick={dismissFeatured} aria-label="Hide featured habits">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
-            </button>
-          </div>
-        )}
-
         </>}
+
+        {/* Level ring — the reward, now docked at the BOTTOM of the page (was at the
+            top). Daily-only, matching master's level-chrome gating. Tapping it still
+            SWAPS in the customization pickers + ladder (below); tap again to restore. */}
+        {activeCadence === 'daily' && <div className="hb-level-dock"><LevelHeroRing onRingTap={() => setCustomizeOpen(o => !o)} /></div>}
+        <div className={`hb-customize${customizeOpen ? ' open' : ''}`}>
+          <div className="hb-customize-inner">
+            {customizeOpen && (
+              <>
+                <LevelCustomizer showHero={false} />
+                <div className="hb-customize-ladder"><LevelLadder /></div>
+              </>
+            )}
+          </div>
+        </div>
 
         <div style={{ height: 100 }} />
       </div>

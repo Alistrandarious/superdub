@@ -130,6 +130,11 @@ const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number; 
             const nearest = i === Math.round(current);
             const off = Math.abs(offset);
             if (off > 1.5) return null; // off-screen, don't render
+            // Lift & fade as a cadence settles into the centre: the arriving panel
+            // rises (translateY → 0), brightens (opacity → 1) and grows back to full
+            // scale, while the leaving one drops and dims. Purely offset-driven, so it
+            // rides the same slide with no remount and works on swipe AND dot taps.
+            const lift = Math.min(off, 1);
             return (
               <div
                 key={p.key}
@@ -139,8 +144,9 @@ const CadenceCarousel: React.FC<{ panels: CarouselPanel[]; startIndex?: number; 
                   top: nearest ? undefined : 0,
                   left: nearest ? undefined : 0,
                   right: nearest ? undefined : 0,
-                  transform: `translateX(${offset * 100}%)`,
-                  transition: dragging ? 'none' : 'transform 0.34s cubic-bezier(0.22,1,0.36,1)',
+                  transform: `translateX(${offset * 100}%) translateY(${lift * 14}px) scale(${1 - lift * 0.04})`,
+                  opacity: Math.max(0, 1 - off * 0.85),
+                  transition: dragging ? 'none' : 'transform 0.42s cubic-bezier(0.22,1,0.36,1), opacity 0.42s ease',
                   pointerEvents: i === index ? 'auto' : 'none',
                 }}
               >
