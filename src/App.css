@@ -15326,3 +15326,89 @@ details[open] > .plan-collapse-summary::before { content: '▾'; }
   .prompt-fs-screen { animation: none; }
   .prompt-fs-motes i { animation: none; opacity: 0; }
 }
+
+/* ══ POP-UP LAW ══════════════════════════════════════════════════════════════
+   A pop-up is never see-through. Every one is its own full screen: the opaque
+   --void ground edge to edge, nothing of the page reading through it, no card
+   floating on a scrim. .prompt-fs and .hp-overlay were already built this way —
+   this holds every older pop-up to the same rule.
+   ponytail: one block instead of the same four edits in ten places, so the rule
+   lives in a single place and a new pop-up can only drift by being left out of
+   these lists. Anchored menus (.cog-menu, .chart-cog-menu, .diet-sub-menu) are
+   not pop-ups and are deliberately absent. ── */
+.modal-overlay,
+.goal-reached-overlay,
+.honesty-overlay,
+.confirm-overlay,
+.checkin-overlay,
+.hb-sheet-overlay,
+.coach-overlay,
+.lvlup-overlay,
+.reader-overlay,
+.wx-scrim {
+  background: var(--void);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  display: flex;
+  align-items: stretch;      /* the panel IS the screen, not a card sitting on it */
+  justify-content: center;
+  padding: 0;
+  overflow: hidden;          /* the panel scrolls inside it; the ground never moves */
+}
+/* Both sat under the bottom nav (z 500) — a "full screen" with a nav bar on top. */
+.modal-overlay,
+.goal-reached-overlay { z-index: 1200; }
+/* The honesty gate fires from inside the tracker modal, so it has to clear it. */
+.honesty-overlay { z-index: 1400; }
+
+.modal,
+.goal-reached-card,
+.honesty-modal,
+.confirm-dialog,
+.checkin-modal,
+.hb-sheet,
+.coach-card,
+.lvlup-card,
+.reader {
+  position: relative;
+  max-height: none;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: transparent;   /* the ground is the surface */
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 26px);
+  padding-bottom: calc(env(safe-area-inset-bottom, 16px) + 18px);
+}
+/* Closes pinned to the top of a card now sit at the top of the screen, which on
+   a notched phone is under the status bar. */
+.coach-close,
+.reader-close { top: calc(env(safe-area-inset-top, 0px) + 12px); }
+/* The article cover is meant to bleed to the top edge, under the close. */
+.reader { padding-top: env(safe-area-inset-top, 0px); }
+
+/* A short pop-up is a beat, not a page: it owns the whole screen but centres on
+   it rather than starting at the top edge. The cap keeps the scroll inside the
+   panel — a centred flex item taller than the line clips at the top. */
+.goal-reached-overlay,
+.honesty-overlay,
+.confirm-overlay,
+.lvlup-overlay { align-items: center; }
+.goal-reached-card,
+.honesty-modal,
+.confirm-dialog,
+.lvlup-card { max-height: 100dvh; }
+
+/* The weather sheet is fixed in its own right (it slides up while .wx-scrim
+   fades), so it takes the top edge here instead of stretching to it. It keeps
+   its own opaque gradient: its copy is hardcoded light, and --void would
+   swallow it in light mode. */
+.wx-sheet {
+  top: 0;
+  max-height: none;
+  border-top: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 14px);
+}

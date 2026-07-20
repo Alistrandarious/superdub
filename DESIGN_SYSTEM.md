@@ -83,6 +83,24 @@ Section header pattern: Space Mono 700 caps eyebrow + hairline rule.
 - Overlays (`DailyCheckIn`, `EnergyCheckIn`, `StepEntry`, `CoachReport`,
   `LevelUpCelebration`, `UpdateBanner`) mount above the router, outside `<Routes>`.
 
+### Pop-up law — full screen, never see-through
+
+**A pop-up is never translucent.** Every one is its own full screen: the opaque
+`--void` ground edge to edge, no scrim, no `backdrop-filter`, no card floating on
+a dimmed page. Nothing behind it reads through.
+
+- The ground is `var(--void)`; the panel is `background: transparent`, no border,
+  no radius, no shadow — the void _is_ the surface.
+- Long pop-ups stretch to the full height and scroll inside themselves; short ones
+  (confirm, honesty, goal reached, level up) centre on the ground, capped at
+  `100dvh` so they scroll instead of clipping.
+- Above the bottom nav (z 500), always. A screen with a nav bar on top isn't one.
+- Every pop-up needs its own close control: full screen means there is no backdrop
+  left to tap on a phone.
+- Enforced in one place — the `POP-UP LAW` block at the end of `App.css`. A new
+  pop-up joins those two selector lists. Anchored menus (`.cog-menu`,
+  `.chart-cog-menu`, `.diet-sub-menu`) are not pop-ups and stay out of it.
+
 ## Components
 
 ### Ring-flanking circle buttons (the "Dub circle" pattern)

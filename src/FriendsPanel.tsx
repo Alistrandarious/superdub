@@ -190,6 +190,8 @@ const FriendsPanel: React.FC = () => {
         return (
           <div className="checkin-overlay" onClick={closeSheet}>
             <div className="checkin-modal fdetail" onClick={e => e.stopPropagation()}>
+              {/* Full screen now, so the backdrop tap is out of reach on a phone. */}
+              <button className="coach-close" onClick={closeSheet} aria-label="Close">✕</button>
               <span className="fdetail-name">{name}</span>
               <span className="fdetail-email">{email}</span>
               {profile?.memberSince && <span className="fdetail-since">Superdubber since {memberSinceLabel(profile.memberSince)}</span>}
