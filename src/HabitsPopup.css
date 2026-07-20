@@ -12,7 +12,10 @@
 .hp-overlay {
   position: fixed; inset: 0; z-index: 1200;
   --hp-accent: #2FD27E;
-  background: rgba(0, 0, 0, 0.72);
+  /* Opaque ground, same as .prompt-fs. This is a full-screen takeover, not a
+     dialog: a translucent scrim let the busy Habits page read through the
+     rows and made the whole pop-up look faded. */
+  background: var(--void);
   display: flex; justify-content: center;
   animation: hp-fade 0.25s ease;
   transition: --hp-accent 0.7s ease;
@@ -70,7 +73,9 @@
 .hp-rows { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; overflow-y: auto; }
 .hp-row {
   display: flex; align-items: center; gap: 12px; text-align: left; cursor: pointer;
-  background: var(--card-bg, rgba(14, 14, 20, 0.5)); border: 1px solid var(--glass-border, #252532);
+  /* Opaque raised surface — --card-bg is half-transparent, which read as washed-out
+     rows once they sat on the solid ground. */
+  background: var(--glass-bg-strong, #15151E); border: 1px solid var(--glass-border, #252532);
   border-radius: 14px; padding: 13px 14px; color: inherit;
 }
 .hp-chk {
