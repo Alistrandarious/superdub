@@ -5826,8 +5826,10 @@ h1, h2, h3, h4, .sora {
 .wx-hour-h { font-family: 'Space Mono', monospace; font-size: 0.6rem; color: #626873; }
 .wx-hour-t { font-family: 'Space Mono', monospace; font-weight: 700; font-size: 0.82rem; color: #EEF0F5; }
 .wx-days { display: flex; flex-direction: column; }
-.wx-day { display: grid; grid-template-columns: 46px 24px 1fr auto; align-items: center; gap: 12px; padding: 9px 4px; border-bottom: 1px solid var(--glass-border, #252532); color: #9FB6D8; }
+/* Each day is a button: tapping one points the hourly strip above at that day. */
+.wx-day { display: grid; grid-template-columns: 46px 24px 1fr auto; align-items: center; gap: 12px; padding: 9px 4px; border: 0; border-bottom: 1px solid var(--glass-border, #252532); border-radius: 10px; width: 100%; background: none; font: inherit; text-align: left; cursor: pointer; color: #9FB6D8; }
 .wx-day:last-child { border-bottom: 0; }
+.wx-day.sel { background: rgba(46,139,255,0.1); border-bottom-color: transparent; }
 .wx-day-d { font-family: 'Space Mono', monospace; font-size: 0.76rem; color: #9AA0AC; }
 .wx-day-d.today { color: #2FD27E; font-weight: 700; }
 .wx-day-bar { height: 5px; border-radius: 3px; background: linear-gradient(90deg, #3a5a8a, #7fb0e0, #ffcf7a); }

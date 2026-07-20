@@ -18,6 +18,7 @@ import LevelCustomizer from './LevelCustomizer';
 import LevelLadder from './LevelLadder';
 import { eveningPending } from './EveningPrompt';
 import { weatherEnabled } from './promptPrefs';
+import { hoursForDay, type WeatherHour } from './weatherHours';
 import './HabitsPopup.css';
 import {
   CalendarIc, TrophyIc, WalkIc, BookIc, NoSmokeIc, MealIc, MoneyIc, HealthIc,
@@ -321,7 +322,6 @@ const FEATURED: { id: string; name: string; tagline: string; icon: React.FC<Icon
 
 /* ── types ───────────────────────────────────────────────── */
 
-interface WeatherHour { time: string; temp: number; code: number; }
 interface WeatherDay { date: string; code: number; hi: number; lo: number; }
 interface WeatherState { temp: number; code: number; city: string; feels?: number; hours?: WeatherHour[]; days?: WeatherDay[]; }
 
@@ -1214,12 +1214,19 @@ const WeekStrip: React.FC<{
 // Current conditions + a horizontal hourly strip + a 7-day forecast. Reuses the
 // WeatherIc mapping so every icon matches the header chip.
 const WeatherSheet: React.FC<{ weather: WeatherState | null; open: boolean; onClose: () => void }> = ({ weather, open, onClose }) => {
-  const hourLabel = (t: string, i: number) => {
-    if (i === 0) return 'Now';
+  // Which day of the week the hourly strip is showing. 0 is today, and reopening the
+  // sheet always comes back to today rather than to whatever was tapped last time.
+  const [selDay, setSelDay] = useState(0);
+  useEffect(() => { if (open) setSelDay(0); }, [open]);
+
+  const hourLabel = (t: string, isNow: boolean) => {
+    if (isNow) return 'Now';
     const h = new Date(t).getHours();
     return h === 0 ? '12am' : h < 12 ? `${h}am` : h === 12 ? '12pm' : `${h - 12}pm`;
   };
   const dayLabel = (d: string, i: number) => i === 0 ? 'Today' : new Date(d).toLocaleDateString('en-GB', { weekday: 'short' });
+  const days = weather?.days ?? [];
+  const hours = hoursForDay(weather?.hours ?? [], days[selDay]?.date ?? '', selDay === 0, Date.now());
   return (
     <>
       <div className={`wx-scrim${open ? ' open' : ''}`} onClick={onClose} aria-hidden="true" />
@@ -1237,13 +1244,15 @@ const WeatherSheet: React.FC<{ weather: WeatherState | null; open: boolean; onCl
               <button className="wx-close" onClick={onClose} aria-label="Close weather">✕</button>
             </div>
 
-            {!!weather.hours?.length && (
+            {!!hours.length && (
               <>
-                <div className="wx-sub">Next hours</div>
+                <div className="wx-sub">
+                  {selDay === 0 ? 'Next hours' : new Date(days[selDay].date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}
+                </div>
                 <div className="wx-hours">
-                  {weather.hours.map((h, i) => (
-                    <div key={h.time} className={`wx-hour${i === 0 ? ' now' : ''}`}>
-                      <span className="wx-hour-h">{hourLabel(h.time, i)}</span>
+                  {hours.map((h, i) => (
+                    <div key={h.time} className={`wx-hour${selDay === 0 && i === 0 ? ' now' : ''}`}>
+                      <span className="wx-hour-h">{hourLabel(h.time, selDay === 0 && i === 0)}</span>
                       <WeatherIc code={h.code} size={20} />
                       <span className="wx-hour-t">{h.temp}°</span>
                     </div>
@@ -1252,17 +1261,24 @@ const WeatherSheet: React.FC<{ weather: WeatherState | null; open: boolean; onCl
               </>
             )}
 
-            {!!weather.days?.length && (
+            {!!days.length && (
               <>
                 <div className="wx-sub">This week</div>
                 <div className="wx-days">
-                  {weather.days.map((d, i) => (
-                    <div key={d.date} className="wx-day">
+                  {days.map((d, i) => (
+                    <button
+                      key={d.date}
+                      type="button"
+                      className={`wx-day${i === selDay ? ' sel' : ''}`}
+                      onClick={() => setSelDay(i)}
+                      aria-pressed={i === selDay}
+                      aria-label={`${dayLabel(d.date, i)}, high ${d.hi} degrees, low ${d.lo} degrees, show this day's hours`}
+                    >
                       <span className={`wx-day-d${i === 0 ? ' today' : ''}`}>{dayLabel(d.date, i)}</span>
                       <WeatherIc code={d.code} size={20} />
                       <span className="wx-day-bar" />
                       <span className="wx-day-temps"><span className="hi">{d.hi}°</span> <span className="lo">{d.lo}°</span></span>
-                    </div>
+                    </button>
                   ))}
                 </div>
               </>
@@ -1466,12 +1482,9 @@ const Habits: React.FC = () => {
           const wx = await wxRes.json();
           const geo = await geoRes.json();
           const city = geo.address?.city || geo.address?.town || geo.address?.village || geo.address?.county || '';
-          // Hourly: the next ~10 hours starting from the current hour.
-          const nowMs = Date.now();
+          // Hourly: keep the whole 7-day run so tapping a day is a filter, not a refetch.
           const hr = wx.hourly;
-          const allHours: WeatherHour[] = (hr?.time ?? []).map((t: string, i: number) => ({ time: t, temp: Math.round(hr.temperature_2m[i]), code: hr.weather_code[i] }));
-          const startIdx = Math.max(0, allHours.findIndex(h => new Date(h.time).getTime() >= nowMs - 3600e3));
-          const hours = allHours.slice(startIdx, startIdx + 10);
+          const hours: WeatherHour[] = (hr?.time ?? []).map((t: string, i: number) => ({ time: t, temp: Math.round(hr.temperature_2m[i]), code: hr.weather_code[i] }));
           // Daily: the 7-day forecast.
           const dl = wx.daily;
           const days: WeatherDay[] = (dl?.time ?? []).map((t: string, i: number) => ({ date: t, code: dl.weather_code[i], hi: Math.round(dl.temperature_2m_max[i]), lo: Math.round(dl.temperature_2m_min[i]) })).slice(0, 7);

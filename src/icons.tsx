@@ -50,8 +50,10 @@ export const EditIc: React.FC<IconProps> = (p) => (   // edit (was ✎)
 export const SunIc: React.FC<IconProps> = (p) => (
   <S {...p}><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19" /></S>
 );
+// Sun disc + rays clearing the cloud's top right. The sun used to be a bare arc
+// with two stray ticks, which at the header's 14px read as scratches, not a sun.
 export const CloudSunIc: React.FC<IconProps> = (p) => (
-  <S {...p}><path d="M8 5V3M4.5 6 3 4.5M14 6a4 4 0 0 0-7.4-1.2" /><path d="M17.5 19a3.5 3.5 0 0 0 0-7 5 5 0 0 0-9.7 1.3A3 3 0 0 0 8 19z" /></S>
+  <S {...p}><circle cx="16.5" cy="5" r="2.5" /><path d="M12.3 5H11M20.7 5H21.7M13.5 2 12.8 1.3M19.5 2 20.2 1.3" /><path d="M17.5 19a3.5 3.5 0 0 0 0-7 5 5 0 0 0-9.7 1.3A3 3 0 0 0 8 19z" /></S>
 );
 export const CloudIc: React.FC<IconProps> = (p) => (  // fog / overcast
   <S {...p}><path d="M17.5 19a3.5 3.5 0 0 0 0-7 5 5 0 0 0-9.7 1.3A3 3 0 0 0 8 19z" /></S>
