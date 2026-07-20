@@ -170,7 +170,7 @@ router.delete('/:name', requireAuth as any, async (req: AuthRequest, res: Respon
   try {
     const { name } = req.params;
     await pool.query(
-      'UPDATE habits SET archived = TRUE WHERE user_id = $1 AND name = $2',
+      'UPDATE habits SET archived = TRUE, archived_at = NOW() WHERE user_id = $1 AND name = $2',
       [req.userId, name]
     );
     res.json({ ok: true });

@@ -18,8 +18,10 @@ import goalsRoutes from './routes/goals';
 import globalRoutes from './routes/global';
 import journalRoutes from './routes/journal';
 import friendsRoutes from './routes/friends';
+import emailRoutes from './routes/email';
 import { sendPush, pushEnabled } from './services/push';
 import { reminderDue, scheduleMatchesToday } from './reminderSchedule';
+import { runClearoutNudge, runWeeklyEmails, runReengagementSweep } from './emailJobs';
 import { pool } from './db';
 
 dotenv.config();
@@ -45,6 +47,7 @@ app.use('/api/goals', goalsRoutes);
 app.use('/api/global', globalRoutes);
 app.use('/api/journal', journalRoutes);
 app.use('/api/friends', friendsRoutes);
+app.use('/api/email', emailRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
@@ -74,7 +77,14 @@ const migrations = [
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id TEXT`,
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_provider TEXT DEFAULT 'password'`,
   `ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL`,
+  // Accompanying / lifecycle email — opt-out flag + per-send stamps so each job fires once per period.
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS email_optout BOOLEAN DEFAULT FALSE`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS last_weekly_email DATE`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS last_reengage_email DATE`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS last_delete_nudge DATE`,
   `ALTER TABLE habits ADD COLUMN IF NOT EXISTS archived BOOLEAN DEFAULT FALSE`,
+  // Timestamp of the last archive, so the safety-net job can spot a batch clear-out.
+  `ALTER TABLE habits ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ`,
   // Ensure unique constraints exist for ON CONFLICT to work
   `CREATE UNIQUE INDEX IF NOT EXISTS tracker_user_day_uniq ON tracker (user_id, day)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS tracker_habits_user_day_habit_uniq ON tracker_habits (user_id, day, habit_name)`,
@@ -497,6 +507,16 @@ async function runReminders() {
 }
 setInterval(runReminders, 30 * 60 * 1000);
 runReminders();
+
+// ── Accompanying email jobs — same 30-min cadence. Each self-gates by day/hour and a
+// per-user DATE stamp, so running every cycle (and once at boot) is safe.
+async function runEmailJobs() {
+  await runClearoutNudge();
+  await runWeeklyEmails();
+  await runReengagementSweep();
+}
+setInterval(runEmailJobs, 30 * 60 * 1000);
+runEmailJobs();
 
 // Serve React build in production
 const buildDir = path.join(__dirname, '..', 'build');
