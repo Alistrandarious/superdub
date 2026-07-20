@@ -114,7 +114,7 @@ const CommunityPage: React.FC = () => {
             {/* Milestone track — the Aurora White reward + your personal 100-XP gate */}
             <section className="global-milestone">
               <div className="global-milestone-head">
-                <span className="global-milestone-eyebrow">REWARD · AURORA WHITE DUB</span>
+                <span className="global-milestone-eyebrow">REWARD · AURORA WHITE RING</span>
                 <span className="global-milestone-togo">{unlocked ? 'Unlocked' : `${toGo.toLocaleString()} XP to go`}</span>
               </div>
               <div className="global-milestone-track">
@@ -127,7 +127,7 @@ const CommunityPage: React.FC = () => {
               </div>
               <p className="global-milestone-note">
                 Reach {d.goal.toLocaleString()} together with <b>100+ XP of your own</b> and everyone latches{' '}
-                <b>Aurora White</b>, a dub colour you can only earn as a world.
+                <b>Aurora White</b>, a ring theme you can only earn as a world.
                 {!unlocked && d.mine < 100 && (
                   <span className="global-milestone-you"> You: {d.mine.toLocaleString()} / 100 XP.</span>
                 )}

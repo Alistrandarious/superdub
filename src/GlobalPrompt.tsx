@@ -14,7 +14,7 @@ const RING_C = 2 * Math.PI * RING_R;
 // ring (dispatches `superdub:show-global`). One shared, ascension-gold habit that
 // each user levels personally (day-count → level → XP-per-deed, the same ladder as
 // every other habit) while all that XP feeds ONE monthly community total. Hitting
-// 10k as a community, with ≥100 XP of your own, latches the white dub colour.
+// 10k as a community, with ≥100 XP of your own, latches the Aurora White ring.
 
 interface GlobalData {
   month: string; title: string; habit: string; goal: number;
@@ -129,7 +129,7 @@ const GlobalPrompt: React.FC = () => {
           </div>
 
           {justEarned && (
-            <p className="gp-earned">New colour unlocked: Aurora White. Equip it on your Level page.</p>
+            <p className="gp-earned">Aurora White unlocked. Equip the ring on your Profile.</p>
           )}
 
           {error && <p className="checkin-error">{error}</p>}

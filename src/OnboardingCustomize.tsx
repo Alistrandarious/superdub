@@ -65,8 +65,7 @@ const OnboardingCustomize: React.FC<{ nickname: string }> = ({ nickname }) => {
     localStorage.setItem(DUB_GENDER_KEY, g);
     window.dispatchEvent(new CustomEvent('superdub:mascot-changed'));
   };
-  const pickDubColor = (id: string, locked: boolean) => {
-    if (locked) return;
+  const pickDubColor = (id: string) => {
     localStorage.setItem(DUB_COLOR_KEY, id); setDubColorId(id);
     window.dispatchEvent(new CustomEvent('superdub:mascot-changed'));
   };
@@ -123,16 +122,15 @@ const OnboardingCustomize: React.FC<{ nickname: string }> = ({ nickname }) => {
           </div>
         </div>
         <div className="asc-shelf" style={{ marginTop: 10 }}>
+          {/* Every colour is free to pick — Dub's look is personalisation, not a prize. */}
           {DUB_COLORS.map(dc => {
-            const locked = !isUnlocked(dc.unlock, ONB_CTX);
             const active = dc.id === dubColorId;
             return (
-              <button key={dc.id} className={`ringtheme-chip${active ? ' active' : ''}${locked ? ' locked' : ''}`} onClick={() => pickDubColor(dc.id, locked)} disabled={locked} title={locked ? `Unlocks: ${unlockLabel(dc.unlock)}` : dc.name}>
+              <button key={dc.id} className={`ringtheme-chip${active ? ' active' : ''}`} onClick={() => pickDubColor(dc.id)} title={dc.name}>
                 <span className="ringtheme-swatch" style={{ background: `linear-gradient(135deg, ${dc.bodyFrom}, ${dc.bodyTo})`, boxShadow: active ? `0 0 12px ${dc.accent}66` : undefined }}>
-                  {locked && <span className="ringtheme-lock"><LockIc /></span>}
-                  {active && !locked && <span className="ringtheme-check">✓</span>}
+                  {active && <span className="ringtheme-check">✓</span>}
                 </span>
-                <span className="ringtheme-name">{locked ? unlockLabel(dc.unlock) : dc.name}</span>
+                <span className="ringtheme-name">{dc.name}</span>
               </button>
             );
           })}

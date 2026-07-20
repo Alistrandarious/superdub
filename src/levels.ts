@@ -75,10 +75,12 @@ export function unlockLabel(u: Unlock | undefined): string {
   return '';
 }
 
-// ── The Global habit reward: white "Aurora" dub ─────────────────────────────
+// ── The Global habit reward: the Aurora White ring ──────────────────────────
 // Earned when the shared monthly total hits 10k AND this user has personally
 // added ≥100 XP (participants only). A localStorage flag latches it so it stays
-// earned; the swatch shelf then shows it as pickable (never auto-equipped).
+// earned; the ring shelf then shows it as pickable (never auto-equipped).
+// The reward used to be a Dub colour, but the Dub colour picker went away when
+// Dub was retired from the main app (v2.447), leaving nowhere to equip it.
 export const DUB_WHITE_KEY = 'superdub.dub.white';
 export const whiteUnlocked = (total: number, mine: number) => total >= 10000 && mine >= 100;
 export const globalWhiteEarned = () =>
@@ -113,6 +115,9 @@ export const RING_THEMES: RingTheme[] = [
   { id: 'inferno', name: 'Inferno',     from: '#FFD23F', to: '#FF3D3D', glow: 'rgba(255,61,61,0.4)',    unlock: { level: 12 }, animated: true, fill: 'liquid' },
   { id: 'eclipse', name: 'Eclipse',     from: '#B79CFF', to: '#3A2E6E', glow: 'rgba(183,156,255,0.35)', unlock: { level: 14 } },
   { id: 'prism',   name: 'Prism',       from: '#FF5E8A', to: '#2E8BFF', glow: 'rgba(255,255,255,0.4)',  unlock: { level: 15 }, animated: true, fill: 'liquid' },
+  // The community reward — earned as a world, not by levelling. Gold glow so it
+  // reads as the Global tab's own colour rather than another level prize.
+  { id: 'aurorawhite', name: 'Aurora White', from: '#FFFFFF', to: '#E6ECF5', glow: 'rgba(255,185,40,0.40)', unlock: { special: 'globalWhite' } },
 ];
 
 export const DEFAULT_THEME_ID = 'slate';
@@ -138,16 +143,19 @@ try {
 } catch { /* storage unavailable */ }
 
 // ── Dub colours — recolour the mascot ───────────────────────────────────────
-export interface DubColor { id: string; name: string; bodyFrom: string; bodyTo: string; accent: string; unlock?: Unlock; }
+// A free personalisation picked during onboarding, NOT a reward: the unlock
+// gates came off when the Dub colour picker was retired with Dub (v2.447), so
+// nothing was left to equip a locked colour with. The community prize moved to
+// the Aurora White ring theme above.
+export interface DubColor { id: string; name: string; bodyFrom: string; bodyTo: string; accent: string; }
 export const DUB_COLORS: DubColor[] = [
   { id: 'steel',  name: 'Steel',   bodyFrom: '#9AA3BA', bodyTo: '#5A6276', accent: '#2FD27E' },
-  { id: 'mint',   name: 'Mint',    bodyFrom: '#7EE6B8', bodyTo: '#2FB07E', accent: '#2FD27E', unlock: { level: 2 } },
-  { id: 'sky',    name: 'Sky',     bodyFrom: '#86C8FF', bodyTo: '#3E84D6', accent: '#5AD1FF', unlock: { level: 3 } },
-  { id: 'rose',   name: 'Rose',    bodyFrom: '#FFA6C4', bodyTo: '#E0668F', accent: '#FF7E9B', unlock: { level: 5 } },
-  { id: 'gold',   name: 'Golden',  bodyFrom: '#FFE08A', bodyTo: '#E0A22E', accent: '#FFC42E', unlock: { streak: 7 } },
-  { id: 'violet', name: 'Violet',  bodyFrom: '#C3A6FF', bodyTo: '#7E54C8', accent: '#B79CFF', unlock: { level: 8 } },
-  { id: 'shadow', name: 'Shadow',  bodyFrom: '#454B5E', bodyTo: '#22262F', accent: '#6C8BFF', unlock: { level: 11 } },
-  { id: 'white',  name: 'Aurora White', bodyFrom: '#FFFFFF', bodyTo: '#E6ECF5', accent: '#FFB928', unlock: { special: 'globalWhite' } },
+  { id: 'mint',   name: 'Mint',    bodyFrom: '#7EE6B8', bodyTo: '#2FB07E', accent: '#2FD27E' },
+  { id: 'sky',    name: 'Sky',     bodyFrom: '#86C8FF', bodyTo: '#3E84D6', accent: '#5AD1FF' },
+  { id: 'rose',   name: 'Rose',    bodyFrom: '#FFA6C4', bodyTo: '#E0668F', accent: '#FF7E9B' },
+  { id: 'gold',   name: 'Golden',  bodyFrom: '#FFE08A', bodyTo: '#E0A22E', accent: '#FFC42E' },
+  { id: 'violet', name: 'Violet',  bodyFrom: '#C3A6FF', bodyTo: '#7E54C8', accent: '#B79CFF' },
+  { id: 'shadow', name: 'Shadow',  bodyFrom: '#454B5E', bodyTo: '#22262F', accent: '#6C8BFF' },
 ];
 export const DUB_COLOR_KEY = 'superdub.dubColor';
 export function getDubColor(): DubColor {
