@@ -378,8 +378,8 @@ const WeeklyPerformance: React.FC<{
       <h2 className="diet-heading">This Week</h2>
       <div className="weekly-perf-grid">
         {trackerDays.map((d, i) => {
-          const isPast = d.day < today;
-          const isToday = d.day === today;
+          const isPast = d.isoDay < today;
+          const isToday = d.isoDay === today;
           const cal = Number(d?.calories) || 0;
           const prot = Number(d?.protein) || 0;
           const carbs = Number(d?.carbs) || 0;
@@ -394,7 +394,7 @@ const WeeklyPerformance: React.FC<{
           const stepPct = stepTarget > 0 ? Math.min(100, (steps / stepTarget) * 100) : 0;
 
           return (
-            <div key={d.day} className={`weekly-day-card${isToday ? ' today' : ''}${!isPast && !isToday ? ' future' : ''}`}>
+            <div key={d.isoDay} className={`weekly-day-card${isToday ? ' today' : ''}${!isPast && !isToday ? ' future' : ''}`}>
               <span className="weekly-day-label">{DAY_LABELS[i]}</span>
               {!hasData && !isPast && !isToday ? (
                 <span className="weekly-day-empty">—</span>
@@ -468,6 +468,61 @@ const StepLogger: React.FC<{ onSaved: (steps: number) => void }> = ({ onSaved })
   );
 };
 
+const WeekSparkline: React.FC<{ weekData: any[] }> = ({ weekData }) => {
+  const weights = weekData.map(d => {
+    const w = parseFloat(d?.weight);
+    return isNaN(w) || w <= 0 ? null : w;
+  });
+  const valid = weights.filter((w): w is number => w !== null);
+  const DAY_LABELS_SHORT = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
+  if (valid.length === 0) {
+    return (
+      <div className="tp-spark-empty">Log weight daily to see your trend</div>
+    );
+  }
+
+  const W = 200, H = 60, PAD = 8;
+  const minW = Math.min(...valid) - 0.3;
+  const maxW = Math.max(...valid) + 0.3;
+  const range = maxW - minW || 1;
+
+  const pts = weights.map((w, i) => ({
+    x: PAD + (i / 6) * (W - 2 * PAD),
+    y: w !== null ? H - PAD - ((w - minW) / range) * (H - 2 * PAD) : null,
+    w,
+  }));
+
+  let path = '';
+  pts.forEach(p => {
+    if (p.y === null) return;
+    path += path === '' ? `M ${p.x.toFixed(1)} ${p.y.toFixed(1)}` : ` L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`;
+  });
+
+  return (
+    <div className="tp-spark-wrap">
+      <svg viewBox={`0 0 ${W} ${H}`} className="tp-spark-svg" preserveAspectRatio="none">
+        {path && (
+          <path d={path} stroke="#00e5ff" strokeWidth="2" fill="none"
+            strokeLinecap="round" strokeLinejoin="round" />
+        )}
+        {pts.map((p, i) => p.y !== null && (
+          <g key={i}>
+            <circle cx={p.x} cy={p.y} r={weekData[i]?.isToday ? 5 : 3}
+              fill={weekData[i]?.isToday ? '#fff' : '#00e5ff'}
+              stroke={weekData[i]?.isToday ? '#00e5ff' : 'none'} strokeWidth="2" />
+          </g>
+        ))}
+      </svg>
+      <div className="tp-spark-labels">
+        {DAY_LABELS_SHORT.map((l, i) => (
+          <span key={i} className={`tp-spark-lbl${weekData[i]?.isToday ? ' today' : ''}`}>{l}</span>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const Diet: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -487,6 +542,8 @@ const Diet: React.FC = () => {
   const [yesterdaySteps, setYesterdaySteps] = useState<number | null>(null);
   const [weekTrackerDays, setWeekTrackerDays] = useState<any[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [wsGoalWeight, setWsGoalWeight] = useState('');
+  const [wsLossPerWeek, setWsLossPerWeek] = useState('0.5');
 
   useEffect(() => {
     Promise.all([
@@ -495,7 +552,8 @@ const Diet: React.FC = () => {
       api.getDietSettings(),
       api.getDietPlans(),
       api.getTracker(),
-    ]).then(([profileData, targetData, settingsData, plansData, trackerData]) => {
+      api.getWeightSettings(),
+    ]).then(([profileData, targetData, settingsData, plansData, trackerData, weightSettingsData]) => {
       const td = trackerData as any;
       const allDays: any[] = td.days ?? [];
 
@@ -511,14 +569,18 @@ const Diet: React.FC = () => {
       const mon = new Date(now);
       mon.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1));
       mon.setHours(0, 0, 0, 0);
+      const todayIso = new Date().toISOString().split('T')[0];
       const weekDays = Array.from({ length: 7 }, (_, i) => {
         const d = new Date(mon);
         d.setDate(mon.getDate() + i);
-        return d.toISOString().split('T')[0];
+        const iso = d.toISOString().split('T')[0];
+        const parts = iso.split('-');
+        const ddmm = `${parts[2]}/${parts[1]}`;
+        return { iso, ddmm };
       });
-      const weekData = weekDays.map(day => {
-        const found = allDays.find((d: any) => d.day === day);
-        return { day, ...found };
+      const weekData = weekDays.map(({ iso, ddmm }) => {
+        const found = allDays.find((d: any) => d.day === ddmm);
+        return { isoDay: iso, day: ddmm, isToday: iso === todayIso, ...found };
       });
       setWeekTrackerDays(weekData);
       const p = profileData as ProfileData & { name: string };
@@ -545,6 +607,9 @@ const Diet: React.FC = () => {
         meals: r.meals,
         totals: r.totals,
       })));
+      const wsData = weightSettingsData as any;
+      setWsGoalWeight(wsData.goalWeight ?? '');
+      setWsLossPerWeek(wsData.lossPerWeek ?? '0.5');
       setLoaded(true);
     }).catch(() => setLoaded(true));
   }, []);
@@ -745,6 +810,71 @@ const Diet: React.FC = () => {
     { name: 'Fats', value: target.fats * 9, color: MACRO_COLORS.fats },
   ].filter(d => d.value > 0);
 
+  // Safety gates (NHS/WHO best practice)
+  const minCalories = profile.sex === 'female' ? 1200 : 1500;
+  const HARD_MAX_DEFICIT = 1000; // kcal/day cap
+
+  // Most recently logged weight this week (for adaptive plan)
+  const recentTrackerWeight = (() => {
+    for (let i = weekTrackerDays.length - 1; i >= 0; i--) {
+      const w = parseFloat((weekTrackerDays[i] as any)?.weight);
+      if (w > 0) return w;
+    }
+    return 0;
+  })();
+  const isAdaptive = recentTrackerWeight > 0;
+  const adaptedWeight = recentTrackerWeight || kg || 0;
+
+  // BMR + TDEE from adapted weight
+  const adaptedBmr = adaptedWeight > 0 && cm > 0 && age > 0
+    ? (profile.sex === 'female'
+      ? 10 * adaptedWeight + 6.25 * cm - 5 * age - 161
+      : 10 * adaptedWeight + 6.25 * cm - 5 * age + 5)
+    : 0;
+  const adaptedTdee = adaptedBmr > 0 ? Math.round(adaptedBmr * activity) : 0;
+  const adaptedMaintenance = adaptedTdee + walkBurn;
+
+  // Desired deficit from loss goal
+  const goalKg = parseFloat(wsGoalWeight) || 0;
+  const lossRateKgPerWeek = parseFloat(wsLossPerWeek) || 0.5;
+  const desiredDeficit = Math.round((lossRateKgPerWeek * 7700) / 7);
+
+  // Safety-clamped deficit
+  const maxSafeDeficit = adaptedMaintenance > 0
+    ? Math.min(HARD_MAX_DEFICIT, adaptedMaintenance - minCalories)
+    : HARD_MAX_DEFICIT;
+  const actualDeficit = Math.min(desiredDeficit, maxSafeDeficit);
+  const wasClamped = actualDeficit < desiredDeficit && adaptedMaintenance > 0;
+  const planTargetCals = adaptedMaintenance > 0
+    ? Math.max(minCalories, adaptedMaintenance - actualDeficit)
+    : 0;
+
+  // Adapted macros
+  const adaptedProtein = adaptedWeight > 0 ? Math.round(adaptedWeight * 2.0) : target.protein;
+  const adaptedFats = adaptedWeight > 0 ? Math.round(adaptedWeight * 0.8) : target.fats;
+  const remainingCarbCals = Math.max(0, planTargetCals - adaptedProtein * 4 - adaptedFats * 9);
+  const adaptedCarbs = Math.max(50, Math.round(remainingCarbCals / 4));
+
+  // Total effective deficit including steps burn
+  const totalEffectiveDeficit = actualDeficit + walkBurn;
+  const effectiveLossKgPerWeek = totalEffectiveDeficit * 7 / 7700;
+
+  // Time to goal
+  const remainingKg = goalKg > 0 && adaptedWeight > goalKg ? adaptedWeight - goalKg : 0;
+  const weeksToGoal = effectiveLossKgPerWeek > 0 && remainingKg > 0
+    ? Math.ceil(remainingKg / effectiveLossKgPerWeek) : 0;
+  const goalDateStr = (() => {
+    if (!weeksToGoal) return '';
+    const d = new Date();
+    d.setDate(d.getDate() + weeksToGoal * 7);
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  })();
+
+  // Exercise suggestion
+  const exerciseKcalPerMin = adaptedWeight > 0 ? Math.round(adaptedWeight * 0.095) : 8;
+  const suggestedMins = 30;
+  const suggestedExerciseBurn = Math.round(suggestedMins * exerciseKcalPerMin / 10) * 10;
+
   if (!loaded) {
     return (
       <div className="app" style={{ '--theme': '#00e5ff', '--theme-dim': '#00e5ff66', '--theme-glow': '#00e5ff33' } as React.CSSProperties}>
@@ -776,97 +906,156 @@ const Diet: React.FC = () => {
           <button className={`diet-tab${activeTab === 'meals' ? ' active' : ''}`} onClick={() => setSearchParams({ tab: 'meals' })}>Meal Plans</button>
         </div>
 
-        {/* Maintenance card */}
-        <div className="diet-maintenance-card">
-          {maintenance > 0 ? (
-            <>
-              <div className="diet-maint-top">
-                <span className="diet-maint-label">Daily Calorie Target</span>
-                <span className="diet-maint-badge">{energyBalance}</span>
-              </div>
-              <div className="diet-maint-kcal">{macroCalories.toLocaleString()} <span className="diet-maint-unit">kcal / day</span></div>
-              <div className="diet-maint-bar-wrap">
-                <div className="diet-maint-bar">
-                  <div
-                    className="diet-maint-fill"
-                    style={{ width: `${Math.min(100, (macroCalories / maintenance) * 100)}%` }}
-                  />
-                  <div className="diet-maint-marker" />
+        {activeTab === 'targets' && (
+          <>
+            {/* Hero — weight journey + sparkline */}
+            <div className="tp-hero">
+              <div className="tp-weight-pair">
+                <div className="tp-weight-block">
+                  <span className="tp-wt-lbl">Current</span>
+                  <span className="tp-wt-val">{adaptedWeight > 0 ? `${adaptedWeight.toFixed(1)} kg` : '—'}</span>
+                  {isAdaptive && <span className="tp-adaptive-chip">⚡ Live</span>}
                 </div>
-                <div className="diet-maint-labels">
-                  <span>0</span>
-                  <span style={{ marginLeft: 'auto' }}>Maintenance: {maintenance.toLocaleString()} kcal</span>
-                </div>
+                {goalKg > 0 && adaptedWeight > 0 && (
+                  <>
+                    <div className="tp-wt-arrow">
+                      <span className="tp-wt-dir">{adaptedWeight > goalKg ? '▼' : '▲'}</span>
+                      <span className="tp-wt-diff">{Math.abs(adaptedWeight - goalKg).toFixed(1)} kg</span>
+                      <span className="tp-wt-to-go">to go</span>
+                    </div>
+                    <div className="tp-weight-block tp-goal-block">
+                      <span className="tp-wt-lbl">Goal</span>
+                      <span className="tp-wt-val goal">{goalKg.toFixed(1)} kg</span>
+                    </div>
+                  </>
+                )}
               </div>
-              <div className="diet-maint-breakdown">
-                Your body burns ~{maintenance.toLocaleString()} kcal/day
-                {macroCalories < maintenance
-                  ? ` — eating ${(maintenance - macroCalories).toLocaleString()} kcal less creates your deficit`
-                  : macroCalories > maintenance
-                  ? ` — eating ${(macroCalories - maintenance).toLocaleString()} kcal more builds a surplus`
-                  : ' — you are eating at maintenance'}
-                {walkBurn > 0 && ` (includes ${walkBurn} kcal from steps)`}
-              </div>
-            </>
-          ) : (
-            <div className="diet-maint-empty">
-              <span>Set up your profile to unlock calorie predictions</span>
-              <Link to="/profile" className="diet-profile-link">Go to Profile →</Link>
+              <WeekSparkline weekData={weekTrackerDays} />
             </div>
-          )}
-        </div>
 
-        {activeTab === 'targets' && (<>
-
-        {/* Weekly macro completion */}
-        <WeeklyPerformance target={target} stepTarget={stepTarget} trackerDays={weekTrackerDays} />
-
-        {/* Step Performance */}
-        <div className="diet-section">
-          <h2 className="diet-heading">Daily Steps</h2>
-          <div className="step-perf-card">
-            <div className="step-perf-target-row">
-              <span className="step-perf-label">Target</span>
-              <input
-                className="step-target-input"
-                type="text"
-                inputMode="numeric"
-                value={stepTarget}
-                onChange={e => setStepTarget(parseInt(e.target.value) || stepTarget)}
-                onBlur={() => api.updateProfile({ stepTarget }).catch(() => {})}
-                onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-              />
-              <span className="step-perf-unit">steps / day</span>
-            </div>
-            {yesterdaySteps !== null && (
-              <div className="step-perf-yesterday">
-                <div className="step-perf-bar-wrap">
-                  <div className="step-perf-bar">
-                    <div className="step-perf-fill" style={{ width: `${Math.min(100, (yesterdaySteps / stepTarget) * 100)}%`, background: yesterdaySteps >= stepTarget ? '#30d158' : '#ff9f0a' }} />
-                  </div>
-                </div>
-                <div className="step-perf-row">
-                  <span className="step-perf-count">{yesterdaySteps.toLocaleString()} yesterday</span>
-                  <span className={`step-perf-badge${yesterdaySteps >= stepTarget ? ' hit' : ' miss'}`}>
-                    {yesterdaySteps >= stepTarget ? '✓ Target hit' : `${(stepTarget - yesterdaySteps).toLocaleString()} short`}
+            {/* Calorie plan card */}
+            {adaptedMaintenance > 0 ? (
+              <div className="tp-plan-card">
+                <div className="tp-plan-head">
+                  <span className="tp-plan-title">Today's Calorie Plan</span>
+                  <span className={`tp-plan-badge${isAdaptive ? ' adaptive' : ''}`}>
+                    {isAdaptive ? '⚡ Adaptive' : '🎯 Goal-based'}
                   </span>
                 </div>
+
+                <div className="tp-cal-equation">
+                  <div className="tp-cal-cell">
+                    <span className="tp-cal-num">{adaptedMaintenance.toLocaleString()}</span>
+                    <span className="tp-cal-desc">Maintenance</span>
+                  </div>
+                  <span className="tp-cal-op">−</span>
+                  <div className="tp-cal-cell">
+                    <span className="tp-cal-num">{actualDeficit.toLocaleString()}</span>
+                    <span className="tp-cal-desc">Deficit</span>
+                  </div>
+                  <span className="tp-cal-op">=</span>
+                  <div className="tp-cal-cell target">
+                    <span className="tp-cal-num">{planTargetCals.toLocaleString()}</span>
+                    <span className="tp-cal-desc">Your target</span>
+                  </div>
+                </div>
+
+                {wasClamped && (
+                  <div className="tp-safety-note">
+                    🔒 Deficit reduced for safety — min {minCalories.toLocaleString()} kcal/day ({profile.sex})
+                  </div>
+                )}
+
+                {weeksToGoal > 0 && (
+                  <div className="tp-timeline">
+                    <span className="tp-tl-main">~{weeksToGoal} weeks to goal</span>
+                    {goalDateStr && <span className="tp-tl-date">est. {goalDateStr}</span>}
+                    <span className="tp-tl-rate">{effectiveLossKgPerWeek.toFixed(2)} kg/week</span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="tp-setup-prompt">
+                <span>Complete your profile to get a personalised plan</span>
+                <Link to="/profile" className="tp-setup-link">Go to Profile →</Link>
               </div>
             )}
-            <StepLogger onSaved={steps => setYesterdaySteps(steps)} />
-          </div>
-        </div>
 
-        {/* Macro Analysis link */}
-        <Link to="/diet/macro" className="diet-macro-link-card">
-          <div className="diet-macro-link-left">
-            <span className="diet-macro-link-title">Macro Analysis</span>
-            <span className="diet-macro-link-sub">Split · Classification · Balance</span>
-          </div>
-          <span className="diet-macro-link-arrow">→</span>
-        </Link>
+            {/* Daily Macros */}
+            {planTargetCals > 0 && (
+              <div className="tp-section-card">
+                <h3 className="tp-section-title">Daily Macros</h3>
+                {([
+                  { label: 'Protein', icon: '🥩', g: adaptedProtein, cal: adaptedProtein * 4, color: '#ff6ec7' },
+                  { label: 'Carbs',   icon: '🌾', g: adaptedCarbs,   cal: adaptedCarbs * 4,   color: '#00e5ff' },
+                  { label: 'Fats',    icon: '🧈', g: adaptedFats,    cal: adaptedFats * 9,    color: '#ffd60a' },
+                ] as const).map(({ label, icon, g, cal, color }) => (
+                  <div key={label} className="tp-macro-row">
+                    <span className="tp-macro-icon">{icon}</span>
+                    <span className="tp-macro-label">{label}</span>
+                    <div className="tp-macro-bar-track">
+                      <div className="tp-macro-bar-fill"
+                        style={{ width: `${Math.min(100, (cal / planTargetCals) * 100)}%`, background: color }} />
+                    </div>
+                    <span className="tp-macro-g">{g}g</span>
+                    <span className="tp-macro-kcal">{cal} kcal</span>
+                  </div>
+                ))}
+                <p className="tp-macro-note">2g protein/kg · 0.8g fat/kg · carbs fill the rest</p>
+              </div>
+            )}
 
-        </>)}
+            {/* Steps & Exercise */}
+            <div className="tp-section-card">
+              <h3 className="tp-section-title">Steps & Exercise</h3>
+              <div className="tp-act-row">
+                <span className="tp-act-icon">👟</span>
+                <div className="tp-act-text">
+                  <span className="tp-act-name">Daily steps</span>
+                  <span className="tp-act-sub">{stepTarget.toLocaleString()} steps target</span>
+                </div>
+                <div className="tp-act-right">
+                  <span className="tp-act-burn">+{walkBurn > 0 ? walkBurn : '—'} kcal</span>
+                </div>
+              </div>
+              <div className="tp-act-row">
+                <span className="tp-act-icon">🏋️</span>
+                <div className="tp-act-text">
+                  <span className="tp-act-name">Cardio session</span>
+                  <span className="tp-act-sub">~{suggestedMins} min moderate effort</span>
+                </div>
+                <div className="tp-act-right">
+                  <span className="tp-act-burn">+{suggestedExerciseBurn} kcal</span>
+                </div>
+              </div>
+              {adaptedMaintenance > 0 && (
+                <div className="tp-total-row">
+                  <span>Total deficit (food + steps + cardio)</span>
+                  <strong>~{(actualDeficit + walkBurn + suggestedExerciseBurn).toLocaleString()} kcal/day</strong>
+                </div>
+              )}
+              <p className="tp-act-note">
+                Consistent cardio accelerates your timeline without increasing food restriction.
+              </p>
+            </div>
+
+            {/* Weekly macro/step performance */}
+            <WeeklyPerformance target={adaptedProtein > 0
+              ? { calories: planTargetCals || target.calories, protein: adaptedProtein, carbs: adaptedCarbs, fats: adaptedFats }
+              : target}
+              stepTarget={stepTarget}
+              trackerDays={weekTrackerDays} />
+
+            {/* Macro Analysis link */}
+            <Link to="/diet/macro" className="diet-macro-link-card">
+              <div className="diet-macro-link-left">
+                <span className="diet-macro-link-title">Macro Analysis</span>
+                <span className="diet-macro-link-sub">Split · Classification · Balance</span>
+              </div>
+              <span className="diet-macro-link-arrow">→</span>
+            </Link>
+          </>
+        )}
 
         {activeTab === 'meals' && (<>
 
