@@ -17,6 +17,7 @@ import PinnedXpBar from './PinnedXpBar';
 import LevelCustomizer from './LevelCustomizer';
 import LevelLadder from './LevelLadder';
 import { eveningPending } from './EveningPrompt';
+import { weatherEnabled } from './promptPrefs';
 import './HabitsPopup.css';
 import {
   CalendarIc, TrophyIc, WalkIc, BookIc, NoSmokeIc, MealIc, MoneyIc, HealthIc,
@@ -168,7 +169,7 @@ function getRank(totalDays: number): { title: string; color: string } {
 // WMO weather code → SVG icon (was an emoji; style guide: no emoji chrome).
 const WeatherIc: React.FC<IconProps & { code: number }> = ({ code, ...p }) => {
   if (code === 0)  return <SunIc {...p} />;
-  if (code <= 3)   return <CloudSunIc {...p} />;
+  if (code <= 2)   return <CloudSunIc {...p} />;  // 3 is overcast — no sun peeking through
   if (code <= 48)  return <CloudIc {...p} />;
   if (code <= 65)  return <RainIc {...p} />;   // drizzle + rain
   if (code <= 77)  return <SnowIc {...p} />;
@@ -1314,6 +1315,7 @@ const Habits: React.FC = () => {
   const [ht, setHt] = useState<HabitTracker>({});
   const [weather, setWeather] = useState<WeatherState | null>(null);
   const [weatherOpen, setWeatherOpen] = useState(false); // weather breakdown sheet
+  const [weatherOn, setWeatherOn] = useState(weatherEnabled); // menu toggle: show the chip at all
   // `stuck` = the cadence section has reached the top and its header is pinned, so
   // the XP bar + dots show as one glass capsule. One sticky element, no seam.
   const [stuck, setStuck] = useState(false);
@@ -1505,6 +1507,14 @@ const Habits: React.FC = () => {
     const handler = () => setAddOpen(true);
     window.addEventListener('superdub:open-add-habit', handler);
     return () => window.removeEventListener('superdub:open-add-habit', handler);
+  }, []);
+
+  // The weather toggle lives in the cog menu, which sits in our own header — pick the
+  // new value up live so the chip goes without waiting for a remount.
+  useEffect(() => {
+    const handler = () => setWeatherOn(weatherEnabled());
+    window.addEventListener('superdub:weather-toggled', handler);
+    return () => window.removeEventListener('superdub:weather-toggled', handler);
   }, []);
 
   // "Discover Habits" from the cog: un-dismiss the banner and open the sheet.
@@ -1931,7 +1941,7 @@ const Habits: React.FC = () => {
             login-streak ticks at the top of the page now; the weather chip is tappable
             (opens the WeatherSheet breakdown). */}
         <SuperdubHeader>
-          {weather && (
+          {weatherOn && weather && (
             <button
               type="button"
               className="hb-weather"

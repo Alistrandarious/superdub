@@ -25,3 +25,12 @@ export function promptEnabled(k: PromptKey): boolean {
 export function setPromptEnabled(k: PromptKey, on: boolean): void {
   localStorage.setItem(keyOf(k), on ? 'true' : 'false');
 }
+
+// The weather chip in the Habits header. Not a PromptKey — it isn't a daily question,
+// it's a piece of header furniture. On unless the user turns it off in the menu.
+const WEATHER_KEY = 'superdub.weather.enabled';
+
+export const weatherEnabled = (): boolean => localStorage.getItem(WEATHER_KEY) !== 'false';
+
+export const setWeatherEnabled = (on: boolean): void =>
+  localStorage.setItem(WEATHER_KEY, on ? 'true' : 'false');

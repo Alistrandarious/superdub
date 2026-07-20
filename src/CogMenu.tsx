@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { enablePush, disablePush, pushIsEnabled, pushSupported, getReminderHour, setReminderHour, getEveningHour, setEveningHour, getWorkoutHour, setWorkoutHour } from './push';
 import { clearToken } from './api';
 import { BUILD_TAG } from './version';
-import { promptEnabled, setPromptEnabled, PromptKey } from './promptPrefs';
+import { promptEnabled, setPromptEnabled, PromptKey, weatherEnabled, setWeatherEnabled } from './promptPrefs';
+import { SunIc } from './icons';
 
 function readPlanBadge(): { active: boolean; calories: number | null; onTrack: boolean | null } | null {
   try {
@@ -42,6 +43,7 @@ const CogMenu: React.FC = () => {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [checkinEnabled, setCheckinEnabled] = useState(readCheckinEnabled);
+  const [weatherOn, setWeatherOn] = useState(weatherEnabled);
   const [pushOn, setPushOn] = useState(pushIsEnabled);
   const [pushBusy, setPushBusy] = useState(false);
   const [reminderHour, setReminderHourState] = useState(getReminderHour);
@@ -100,6 +102,13 @@ const CogMenu: React.FC = () => {
     setCheckinEnabled(next);
     localStorage.setItem('superdub.checkin.enabled', next ? 'true' : 'false');
   };
+  // The Habits header renders the chip live, so tell it rather than waiting for a remount.
+  const toggleWeather = () => {
+    const next = !weatherOn;
+    setWeatherEnabled(next);
+    setWeatherOn(next);
+    window.dispatchEvent(new CustomEvent('superdub:weather-toggled'));
+  };
 
   return (
     <div style={{ position: 'relative' }}>
@@ -144,6 +153,10 @@ const CogMenu: React.FC = () => {
             <button className="cog-menu-item" onClick={toggleCheckin}>
               <span className="cog-mi-ico"><Ic><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" /></Ic></span> Daily Check-in
               <span className={`checkin-toggle-pill ${checkinEnabled ? 'on' : 'off'}`} style={{ marginLeft: 'auto' }}>{checkinEnabled ? 'ON' : 'OFF'}</span>
+            </button>
+            <button className="cog-menu-item" onClick={toggleWeather}>
+              <span className="cog-mi-ico"><SunIc size={15} /></span> Weather
+              <span className={`checkin-toggle-pill ${weatherOn ? 'on' : 'off'}`} style={{ marginLeft: 'auto' }}>{weatherOn ? 'ON' : 'OFF'}</span>
             </button>
 
             <div className="cog-menu-label">Daily prompts</div>
