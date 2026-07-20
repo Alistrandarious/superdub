@@ -50,10 +50,6 @@
   font-family: 'Kanit', sans-serif; font-style: italic; font-weight: 600;
   font-size: 1.1rem; line-height: 1.2; color: var(--text); margin: 2px 0 0;
 }
-.coach-hero-brief {
-  font-family: var(--font-ui); font-size: 0.84rem; line-height: 1.55;
-  color: var(--text-dim); margin: 0;
-}
 
 /* Steps-today nudge — Space Mono number */
 .coach-steps {
