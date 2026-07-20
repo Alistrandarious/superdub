@@ -1929,7 +1929,7 @@ h1, h2, h3, h4, .sora {
 
 /* One framed chart at a fixed height so ChartFill measures a definite box (the
    vertical layout removed the carousel's flex-grown height — percentage heights
-   would collapse to 0 and blank the chart). Mirrors the .cc-slide-viz chain. */
+   would collapse to 0 and blank the chart). */
 .progress-v .chart-section { height: 380px; display: flex; flex-direction: column; margin: 6px 16px 0; width: auto; }
 .progress-v .chart-section-inner { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .progress-v .chart-container { flex: 1; min-height: 0; display: flex; flex-direction: column; }
@@ -1947,72 +1947,11 @@ h1, h2, h3, h4, .sora {
 .progress-verdict { margin: 4px 16px 8px; font-size: 0.85rem; color: rgba(255,255,255,0.72); line-height: 1.45; }
 .progress-history > .story-panel--stats { margin: 0 16px; }
 
-.chart-carousel {
-  flex: 1; min-height: 0; display: flex; flex-direction: column;
-}
-.cc-tabs {
-  flex-shrink: 0;
-  display: flex; gap: 10px; overflow-x: auto; padding: 12px 16px 14px;
-  scrollbar-width: none; -webkit-overflow-scrolling: touch;
-}
-.cc-tabs::-webkit-scrollbar { display: none; }
-.cc-tab {
-  flex: 0 0 auto; padding: 8px 16px; cursor: pointer;
-  background: var(--glass-bg); border: 1px solid var(--glass-border);
-  border-radius: var(--r-pill);
-  font-family: var(--font-data); font-size: 0.64rem; font-weight: 700;
-  letter-spacing: 0.06em; text-transform: uppercase;
-  color: rgba(255,255,255,0.4);
-  transition: color 0.15s, border-color 0.15s, background 0.15s;
-  white-space: nowrap;
-}
-.cc-tab.active {
-  color: var(--theme, #2E8BFF); border-color: var(--theme-dim, #2E8BFF66);
-  background: var(--theme-glow, rgba(46,139,255,0.14));
-}
-.cc-track {
-  flex: 1; min-height: 0;
-  display: flex; overflow-x: auto; overflow-y: hidden;
-  scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-.cc-track::-webkit-scrollbar { display: none; }
-.cc-slide {
-  flex: 0 0 100%; width: 100%; height: 100%; scroll-snap-align: center;
-  scroll-snap-stop: always; /* one swipe advances exactly one page — never skip slides on a fast fling */
-  display: flex; flex-direction: column;
-  overflow: hidden;          /* height-locked: the page itself never scrolls */
-}
-
 /* Dub speaks at the top of every slide; tapping him opens the full coach read. */
-.cc-dubbar {
-  flex-shrink: 0; display: flex; align-items: center; gap: 10px;
-  margin: 10px 16px 0; padding: 10px 12px; text-align: left; cursor: pointer;
-  background: var(--glass-bg); border: 1px solid var(--glass-border);
-  border-radius: var(--r-md); color: inherit;
-  transition: transform 0.12s ease, border-color 0.15s ease;
-}
-.cc-dubbar:active { transform: scale(0.99); }
-.cc-dubbar--static { cursor: default; }
-.cc-dubbar--static:active { transform: none; }
 /* line-height 0: without it the inline span adds ~4px of baseline descender under
    the mascot, shoving his head up into the bar's top border (the "cut off" look). */
-.cc-dubbar-pet { flex-shrink: 0; line-height: 0; }
-.cc-dubbar-text {
-  margin: 0; flex: 1; min-width: 0;
-  font-family: var(--font-ui); font-size: 0.8rem; line-height: 1.45; color: rgba(255,255,255,0.72);
-  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
-}
-.cc-dubbar-more { flex-shrink: 0; color: var(--theme, #2E8BFF); font-size: 1.3rem; font-weight: 700; line-height: 1; }
-
 /* Visualization space — fills the remaining locked height. A little padding
    between Dub's bar and the canvas; scrolls internally only for tall Stats. */
-.cc-slide-viz {
-  flex: 1; min-height: 0; display: flex; flex-direction: column;
-  overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;
-  padding: 10px 0;
-}
-.cc-slide-viz::-webkit-scrollbar { display: none; }
 /* The bottom fade only makes sense where content actually scrolls — the tall
    Stats panels. ChartCarousel adds the --fade class per slide; the fade itself
    is the shared sticky ::after strip (see the scroll-fade block near
@@ -2021,34 +1960,21 @@ h1, h2, h3, h4, .sora {
 /* Chart-fill chain: the section and its wrappers grow to fill the viz so the
    graph canvas is as tall as possible. Headers (title/legend/pager) keep their
    content height (flex-grow 0 by default) and don't stretch. */
-.cc-slide-viz > .chart-section { flex: 1; min-height: 0; display: flex; flex-direction: column; margin: 0 16px; width: auto; }
-.cc-slide-viz .chart-section-inner { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 /* chart-container must be a flex COLUMN (not the base block) or .chart-fill's
    flex:1 is ignored and the box collapses to 0 — the real cause of blank charts. */
-.cc-slide-viz .chart-container { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 /* ChartFill (in App.tsx) measures this box and gives recharts an explicit pixel
    height — percentage heights collapse to 0 against a flex-grown parent. */
 .chart-fill { flex: 1; min-height: 0; overflow: hidden; }
 /* Sleep & Mood stacks two charts — split the height between them. */
-.cc-slide-viz > .chart-section--sleepmood .chart-fill { flex: 1 1 50%; min-height: 0; }
 /* Habits slide carries a cadence list BELOW the chart in the same locked column.
    Guard the chart a real height so it isn't crushed to 0 (flex-collapse pitfall),
    and let the list give way by scrolling instead of stealing the canvas. */
-.cc-slide-viz > .chart-section--habits .chart-section-inner { min-height: 160px; }
-.cc-slide-viz > .chart-section--habits .cadence-habit-list { flex: 0 1 auto; min-height: 0; overflow-y: auto; }
 /* Chips moved below the visualization space — now the last row before BottomNav,
    so it carries the safe-area inset. Pagination dots were removed entirely. */
-.cc-tabs--under {
-  padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
-}
-
 /* Story panels: intro (Today) fills the locked height; stats scrolls. */
 .story-panel { display: flex; flex-direction: column; }
-.cc-slide-viz > .story-panel--intro { flex: 1; min-height: 0; margin: 0 16px; }
 /* Stats legitimately runs taller than a screen — keep its natural height so the
    viz wrapper scrolls it (the one panel that's allowed to). */
-.cc-slide-viz > .story-panel--stats { flex-shrink: 0; }
-
 /* ── Today placeholder — a simple centred "coming soon" card in the locked box ── */
 .today-soon { align-items: center; justify-content: center; }
 .today-soon-card {
@@ -2081,9 +2007,6 @@ h1, h2, h3, h4, .sora {
 /* ── Today panel = the Plan (gauge + weekly chart + steps) folded into Progress.
    It runs taller than the height-locked box, so it keeps its natural height and
    the viz area scrolls it (same trick as the Stats panel). ── */
-.cc-slide-viz > .today-plan {
-  flex-shrink: 0; margin: 0 16px; display: flex; flex-direction: column; gap: 12px;
-}
 .plan-hero--today { margin: 0; }
 .plan-hero--today .plan-hero-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
 .plan-hero-title { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; color: #F0F4FF; }
@@ -2095,9 +2018,6 @@ h1, h2, h3, h4, .sora {
 /* ── "Today" feed panel: to-dos due this week + habits about to lapse.
    flex-shrink:0 so the column-flex viz shell doesn't crush it (see the flex
    collapse pitfall). ── */
-.cc-slide-viz > .today-feed {
-  flex: 0 1 auto; margin: 0 16px; display: flex; flex-direction: column; gap: 12px;
-}
 .today-feed-head { display: flex; align-items: center; gap: 10px; }
 .today-feed-head .plan-hero-edit { margin-left: auto; }
 .today-feed-list { display: flex; flex-direction: column; gap: 8px; }
@@ -2418,8 +2338,8 @@ h1, h2, h3, h4, .sora {
 .ltm-focus.done .ltm-focus-cta { color: rgba(255,255,255,0.35); }
 
 /* Stats: the one panel that legitimately runs taller than a screen. Hold it at
-   its natural content height (flex-shrink:0) so the .cc-slide column-flex shell
-   can't crush it — the slide's overflow-y:auto then scrolls. See the flex-collapse
+   its natural content height (flex-shrink:0) so a column-flex shell can't crush
+   it — the panel's own overflow-y:auto then scrolls. See the flex-collapse
    pitfall: shrinkable children get squashed instead of scrolling. */
 .story-panel--stats { flex-shrink: 0; }
 
@@ -5057,7 +4977,6 @@ h1, h2, h3, h4, .sora {
 .tasks-content::after,
 .diet-content::after,
 .profile-content::after,
-.cc-slide-viz--fade::after,
 .plan-page::after {
   content: ''; position: sticky;
   /* Pull the sticky pin DOWN by the container's own padding-bottom: a plain
@@ -5074,7 +4993,6 @@ h1, h2, h3, h4, .sora {
 }
 .habits-page-scroll { --fade-drop: calc(80px + env(safe-area-inset-bottom, 0px)); }
 .tasks-content, .diet-content, .profile-content { --fade-drop: calc(72px + env(safe-area-inset-bottom, 0px)); }
-.cc-slide-viz--fade { --fade-drop: 10px; }
 .plan-page { --fade-drop: 90px; }
 .plan-page::after {
   height: 96px; margin-top: -96px;
@@ -9162,48 +9080,6 @@ h1, h2, h3, h4, .sora {
 .archived-entry:hover { color: #fff; background: var(--glass-bg-strong); border-color: var(--theme-dim); }
 .archived-entry-arrow { margin-left: auto; font-size: 1.1rem; opacity: 0.6; }
 
-/* ── Success Kit page ────────────────────────────────────── */
-.success-scroll {
-  flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
-  display: flex; flex-direction: column;
-  padding: 4px 18px;
-  padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
-}
-.success-head { padding: 8px 2px 14px; }
-.success-title { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.55rem; color: #fff; margin: 0 0 6px; }
-.success-sub { font-size: 0.85rem; line-height: 1.45; color: rgba(255,255,255,0.5); margin: 0; }
-.success-section { margin-top: 22px; }
-.success-section-title { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1rem; color: #fff; margin: 0 0 3px; }
-.success-section-blurb { font-size: 0.76rem; color: rgba(255,255,255,0.4); margin: 0 0 12px; }
-.success-grid { display: flex; flex-direction: column; gap: 10px; }
-.success-card {
-  text-align: left; width: 100%;
-  background:
-    radial-gradient(120% 90% at 0% 0%, rgba(255,185,40,0.08), transparent 55%),
-    var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-left: 3px solid var(--gold);
-  border-radius: var(--r-card);
-  padding: 14px 16px;
-  cursor: pointer;
-  transition: border-color 0.15s, transform 0.1s, box-shadow 0.2s;
-}
-.success-card:hover { border-color: rgba(255,185,40,0.4); box-shadow: 0 0 24px -10px rgba(255,185,40,0.4); }
-.success-card:active { transform: scale(0.99); }
-.success-card.no-link { cursor: default; border-left-color: var(--glass-border); }
-.success-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
-.success-card-tag {
-  font-family: 'Space Mono', monospace; font-size: 0.58rem; font-weight: 700;
-  letter-spacing: 0.06em; text-transform: uppercase;
-  color: var(--gold); background: rgba(255,185,40,0.12);
-  padding: 2px 8px; border-radius: var(--r-pill);
-}
-.success-card-link { color: var(--gold); font-size: 0.95rem; opacity: 0.8; }
-.success-card-title { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.02rem; color: #fff; line-height: 1.2; }
-.success-card-by { font-size: 0.75rem; color: rgba(255,255,255,0.45); margin: 1px 0 8px; }
-.success-card-why { font-size: 0.82rem; line-height: 1.5; color: rgba(255,255,255,0.68); }
-/* What's New — compact rows that open their own reader page */
 .update-list { display: flex; flex-direction: column; gap: 7px; }
 .update-row {
   display: flex; align-items: center; gap: 11px; width: 100%; text-align: left;
@@ -9218,14 +9094,6 @@ h1, h2, h3, h4, .sora {
 .update-row-date { font-family: 'Space Mono', monospace; font-size: 0.62rem; color: rgba(255,255,255,0.4); }
 .update-row-chev { color: rgba(255,255,255,0.3); font-size: 1.3rem; flex-shrink: 0; }
 
-/* Update reader cover */
-.reader-cover--update {
-  background: linear-gradient(135deg, #FFB928, #FF8A3C);
-  align-items: center; justify-content: center;
-}
-.reader-cover-emoji { font-size: 3rem; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3)); }
-
-/* Recommended reading — collapsible shelves */
 .shelf-list { display: flex; flex-direction: column; gap: 8px; }
 .shelf { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--r-md); overflow: hidden; }
 .shelf.open { border-color: rgba(255,185,40,0.25); }
@@ -9242,7 +9110,6 @@ h1, h2, h3, h4, .sora {
 .shelf-body { overflow: hidden; min-height: 0; padding: 0 13px; }
 .shelf.open .shelf-body { padding-bottom: 13px; }
 
-/* Featured article cards — horizontal scroller */
 .article-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -9267,13 +9134,6 @@ h1, h2, h3, h4, .sora {
 .article-card-title { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 0.92rem; color: #fff; line-height: 1.25; }
 .article-card-meta { font-size: 0.7rem; color: rgba(255,255,255,0.45); margin-top: 6px; }
 
-/* Article reader overlay */
-.reader-overlay {
-  position: fixed; inset: 0; z-index: 3000;
-  background: rgba(5,6,10,0.7); backdrop-filter: blur(4px);
-  display: flex; align-items: flex-end; justify-content: center;
-  animation: fadeIn 0.2s ease both;
-}
 .reader {
   position: relative;
   width: 100%; max-width: 640px; max-height: 92vh;
@@ -9283,113 +9143,9 @@ h1, h2, h3, h4, .sora {
   animation: sheetUp 0.32s cubic-bezier(0.22,1,0.36,1) both;
 }
 @keyframes sheetUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-.reader-close {
-  position: absolute; top: 12px; right: 12px; z-index: 2;
-  width: 32px; height: 32px; border-radius: 50%;
-  background: rgba(0,0,0,0.4); border: none; color: #fff; font-size: 0.9rem; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-}
-.reader-cover { height: 130px; display: flex; align-items: flex-end; padding: 14px 18px; }
-.reader-tag {
-  font-family: 'Space Mono', monospace; font-size: 0.62rem; font-weight: 700;
-  letter-spacing: 0.08em; text-transform: uppercase; color: #07120B;
-  background: rgba(255,255,255,0.9); padding: 3px 10px; border-radius: var(--r-pill);
-}
-.reader-body { padding: 20px 20px 80px; }
-.reader-title { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.5rem; line-height: 1.2; color: #fff; margin: 0 0 8px; }
-.reader-meta { font-size: 0.8rem; color: rgba(255,255,255,0.5); margin-bottom: 14px; }
-.reader-meta strong { color: var(--accent); }
-.reader-dek { font-size: 1.02rem; line-height: 1.5; color: rgba(255,255,255,0.75); font-style: italic; margin: 0 0 18px; padding-bottom: 18px; border-bottom: 1px solid var(--glass-border); }
-.reader-h { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.08rem; color: #fff; margin: 22px 0 8px; }
-.reader-p { font-size: 0.96rem; line-height: 1.65; color: rgba(255,255,255,0.82); margin: 0 0 14px; }
-.reader-li { font-size: 0.96rem; line-height: 1.55; color: rgba(255,255,255,0.82); margin: 0 0 8px 4px; list-style: none; position: relative; padding-left: 18px; }
-.reader-li::before { content: ''; position: absolute; left: 2px; top: 9px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
-.reader-quote {
-  margin: 18px 0; padding: 14px 16px;
-  border-left: 3px solid var(--accent);
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
-  border-radius: 0 12px 12px 0;
-  font-family: 'Sora', sans-serif; font-weight: 700; font-size: 1.05rem; line-height: 1.4; color: #fff;
-}
-.reader-end { margin-top: 24px; font-size: 0.82rem; color: rgba(255,255,255,0.4); font-style: italic; }
-
-.success-foot { text-align: center; font-size: 0.78rem; color: rgba(255,255,255,0.4); margin: 28px 0 0; }
-.success-foot-link { background: none; border: none; color: var(--gold); font: inherit; cursor: pointer; padding: 0; text-decoration: underline; }
-
-/* ── Success Kit v2 — varied editorial layout ── */
-.sk-section { margin-top: 24px; }
-.sk-label {
-  font-family: var(--font-data); font-size: 0.62rem; font-weight: 700;
-  letter-spacing: 0.14em; text-transform: uppercase;
-  color: rgba(255,255,255,0.35); margin-bottom: 10px;
-}
-
 /* Hero article — big featured card */
-.sk-hero-card {
-  display: block; width: 100%; text-align: left; padding: 0;
-  background: var(--glass-bg); border: 1px solid var(--glass-border);
-  border-radius: var(--r-card); overflow: hidden; cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.2s, border-color 0.2s;
-}
-.sk-hero-card:hover { border-color: rgba(255,255,255,0.22); box-shadow: 0 12px 40px -14px rgba(0,0,0,0.7); }
-.sk-hero-card:active { transform: scale(0.99); }
-.sk-hero-cover {
-  height: 140px; display: flex; align-items: flex-end; justify-content: space-between;
-  padding: 14px 16px;
-}
-.sk-hero-tag {
-  font-family: 'Space Mono', monospace; font-size: 0.58rem; font-weight: 700;
-  letter-spacing: 0.06em; text-transform: uppercase;
-  background: rgba(0,0,0,0.5); color: #fff; padding: 3px 9px; border-radius: var(--r-pill);
-}
-.sk-hero-read {
-  font-family: 'Space Mono', monospace; font-size: 0.58rem;
-  color: rgba(255,255,255,0.7); background: rgba(0,0,0,0.4);
-  padding: 3px 9px; border-radius: var(--r-pill);
-}
-.sk-hero-body { padding: 14px 16px 18px; }
-.sk-hero-title {
-  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.15rem;
-  color: #fff; line-height: 1.25; margin-bottom: 6px;
-}
-.sk-hero-dek { font-size: 0.85rem; line-height: 1.5; color: rgba(255,255,255,0.58); margin-bottom: 10px; }
-.sk-hero-author { font-size: 0.75rem; color: var(--gold); }
-
 /* 2-col article grid — for remaining articles */
-.sk-article-grid {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 10px; margin-top: 10px;
-}
-.sk-article-card {
-  display: flex; flex-direction: column; text-align: left; padding: 0;
-  background: var(--glass-bg); border: 1px solid var(--glass-border);
-  border-radius: var(--r-card); overflow: hidden; cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.2s, border-color 0.2s;
-}
-.sk-article-card:hover { border-color: rgba(255,255,255,0.18); box-shadow: 0 8px 24px -10px rgba(0,0,0,0.6); }
-.sk-article-card:active { transform: scale(0.99); }
-.sk-article-cover { height: 80px; display: flex; align-items: flex-end; padding: 9px; }
-.sk-article-tag {
-  font-family: 'Space Mono', monospace; font-size: 0.52rem; font-weight: 700;
-  letter-spacing: 0.05em; text-transform: uppercase;
-  background: rgba(0,0,0,0.45); color: #fff; padding: 2px 7px; border-radius: var(--r-pill);
-}
-.sk-article-body { padding: 10px 11px 13px; flex: 1; }
-.sk-article-title {
-  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 0.82rem;
-  color: #fff; line-height: 1.25;
-}
-.sk-article-meta { font-size: 0.67rem; color: rgba(255,255,255,0.38); margin-top: 5px; }
-
 /* Horizontal scroller — shared by updates + book rows */
-.sk-hscroll {
-  display: flex; gap: 10px; overflow-x: auto; overflow-y: visible;
-  padding: 2px 0 10px; scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-.sk-hscroll::-webkit-scrollbar { display: none; }
-
 /* ── The Maths page ─────────────────────────────────────────── */
 .maths-where {
   margin: 0 0 10px; font-family: var(--font-data); font-weight: 700; font-size: 0.62rem;
@@ -9414,122 +9170,9 @@ h1, h2, h3, h4, .sora {
   font-family: 'Sora', sans-serif;
 }
 
-/* What's New — featured latest update */
-.sk-update-hero {
-  display: block; width: 100%; text-align: left; cursor: pointer;
-  padding: 16px 16px 14px;
-  background: linear-gradient(160deg, rgba(255,185,40,0.13), rgba(255,185,40,0.03) 55%, var(--glass-bg));
-  border: 1px solid rgba(255,185,40,0.30);
-  border-radius: var(--r-lg);
-  transition: border-color 0.15s, transform 0.1s, box-shadow 0.2s;
-}
-.sk-update-hero:hover { border-color: rgba(255,185,40,0.55); box-shadow: 0 4px 24px rgba(255,185,40,0.10); }
-.sk-update-hero:active { transform: scale(0.99); }
-.sk-update-hero-top { display: flex; align-items: center; gap: 13px; margin-bottom: 10px; }
-.sk-update-hero-emoji {
-  flex-shrink: 0; font-size: 1.8rem; line-height: 1;
-  width: 52px; height: 52px; display: flex; align-items: center; justify-content: center;
-  background: rgba(255,185,40,0.14); border: 1px solid rgba(255,185,40,0.25);
-  border-radius: 14px;
-}
-.sk-update-hero-headings { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.sk-update-hero-badge {
-  font-family: 'Space Mono', monospace; font-size: 0.58rem; letter-spacing: 0.12em;
-  text-transform: uppercase; color: #FFB928;
-}
-.sk-update-hero-title {
-  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.05rem;
-  color: #fff; line-height: 1.2;
-}
-.sk-update-hero-summary {
-  margin: 0 0 10px; font-size: 0.8rem; line-height: 1.55;
-  color: rgba(255,255,255,0.62); font-family: 'Sora', sans-serif;
-}
-.sk-update-hero-more {
-  font-family: 'Sora', sans-serif; font-size: 0.72rem; font-weight: 700; color: #FFB928;
-}
-
 /* Previous updates — collapsible list under the hero */
-.sk-prev-toggle {
-  display: flex; align-items: center; gap: 8px; width: 100%;
-  margin-top: 10px; padding: 11px 14px; cursor: pointer;
-  background: var(--glass-bg); border: 1px solid var(--glass-border);
-  border-radius: var(--r-md);
-  font-family: 'Sora', sans-serif; font-size: 0.75rem; font-weight: 700;
-  color: rgba(255,255,255,0.6);
-  transition: color 0.15s, border-color 0.15s;
-}
-.sk-prev-toggle:hover { color: #fff; border-color: rgba(255,185,40,0.35); }
-.sk-prev-count {
-  font-family: 'Space Mono', monospace; font-size: 0.62rem;
-  padding: 1px 7px; border-radius: 20px;
-  background: rgba(255,185,40,0.14); color: #FFB928;
-}
-.sk-prev-chev { margin-left: auto; transition: transform 0.2s; font-size: 0.7rem; }
-.sk-prev-chev.open { transform: rotate(180deg); }
-.sk-prev-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
-.sk-prev-row {
-  display: flex; align-items: center; gap: 11px; width: 100%; text-align: left;
-  padding: 10px 13px; cursor: pointer;
-  background: var(--glass-bg); border: 1px solid var(--glass-border);
-  border-radius: var(--r-md);
-  transition: border-color 0.15s, background 0.15s;
-}
-.sk-prev-row:hover { border-color: rgba(255,185,40,0.4); background: var(--glass-bg-strong); }
-.sk-prev-row:active { transform: scale(0.99); }
-.sk-prev-emoji { font-size: 1.15rem; line-height: 1; flex-shrink: 0; }
-.sk-prev-title {
-  font-family: 'Sora', sans-serif; font-weight: 700; font-size: 0.78rem; color: #fff;
-  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.sk-prev-date {
-  margin-left: auto; flex-shrink: 0;
-  font-family: 'Space Mono', monospace; font-size: 0.6rem; color: rgba(255,255,255,0.38);
-}
-
 /* Book shelves — label + horizontal scroll per category */
-.sk-shelf { margin-bottom: 20px; }
-.sk-shelf:last-child { margin-bottom: 0; }
-.sk-shelf-head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
-.sk-shelf-emoji { font-size: 1.2rem; line-height: 1; margin-top: 1px; flex-shrink: 0; }
-.sk-shelf-info { display: flex; flex-direction: column; gap: 1px; }
-.sk-shelf-title {
-  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 0.9rem; color: #fff;
-}
-.sk-shelf-blurb { font-size: 0.73rem; color: rgba(255,255,255,0.38); line-height: 1.35; }
-
 /* Book cards — snap items in horizontal scroll */
-.sk-book-card {
-  flex: 0 0 210px; scroll-snap-align: start;
-  display: flex; flex-direction: column; text-align: left; padding: 14px;
-  background: var(--glass-bg); border: 1px solid var(--glass-border);
-  border-left: 3px solid var(--card-accent, #FFB928);
-  border-radius: var(--r-card); cursor: pointer;
-  transition: border-color 0.15s, box-shadow 0.2s, transform 0.1s;
-}
-.sk-book-card:hover { box-shadow: 0 6px 24px -8px rgba(0,0,0,0.6); border-color: color-mix(in srgb, var(--card-accent, #FFB928) 50%, transparent); }
-.sk-book-card:active { transform: scale(0.98); }
-.sk-book-tag {
-  display: inline-block; align-self: flex-start;
-  font-family: 'Space Mono', monospace; font-size: 0.55rem; font-weight: 700;
-  letter-spacing: 0.05em; text-transform: uppercase;
-  padding: 2px 8px; border-radius: var(--r-pill); margin-bottom: 8px;
-}
-.sk-book-title {
-  font-family: 'Sora', sans-serif; font-weight: 800; font-size: 0.9rem;
-  color: #fff; line-height: 1.2; margin-bottom: 3px;
-}
-.sk-book-by { font-size: 0.7rem; color: rgba(255,255,255,0.4); margin-bottom: 8px; }
-.sk-book-why {
-  font-size: 0.78rem; line-height: 1.5; color: rgba(255,255,255,0.65);
-  flex: 1;
-  display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
-}
-.sk-book-link {
-  display: block; margin-top: 10px; font-size: 0.7rem;
-  color: var(--card-accent, #FFB928); font-family: 'Space Mono', monospace;
-}
-
 /* Archived Habits page — standalone scroller (mirrors .habits-page-scroll) */
 .archived-scroll {
   flex: 1;

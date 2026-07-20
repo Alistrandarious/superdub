@@ -80,10 +80,10 @@ function AppRouter() {
   // A scroll-only listener LATCHED fade-end wrong (a scroll event while content
   // was short/still loading marked the page "at bottom" forever, killing the
   // gradient), so a slow sweep re-evaluates every faded scroller as content
-  // grows. ponytail: 1.5s polling over per-scroller ResizeObservers — a 6-element
+  // grows. ponytail: 1.5s polling over per-scroller ResizeObservers — a 5-element
   // querySelectorAll; upgrade if it ever shows in a profile.
   useEffect(() => {
-    const SEL = '.habits-page-scroll, .tasks-content, .diet-content, .profile-content, .cc-slide-viz, .plan-page';
+    const SEL = '.habits-page-scroll, .tasks-content, .diet-content, .profile-content, .plan-page';
     const apply = (el: HTMLElement) => {
       const canScroll = el.scrollHeight > el.clientHeight + 4;
       el.classList.toggle('fade-end', !canScroll || el.scrollTop + el.clientHeight >= el.scrollHeight - 2);
