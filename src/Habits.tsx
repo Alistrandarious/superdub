@@ -2005,6 +2005,21 @@ const Habits: React.FC = () => {
         })()}
         <WeekStrip ht={ht} rewindDay={rewindDay} onPick={setRewindDay} perfectWeek={isPerfectWeek} celebrating={weekCelebrating} />
 
+        {/* Rewind banner — the page is showing a past day. It sits directly under the
+            ticks that changed the day, so the "Viewing …/Back to today" read lands
+            where the tap happened rather than at the foot of the page. */}
+        {rewindDay && (
+          <div className="hb-rewind-banner">
+            <span className="hb-rewind-label">
+              Viewing {(() => {
+                const d = new Date(loggingNow().getFullYear(), parseInt(rewindDay.slice(3), 10) - 1, parseInt(rewindDay.slice(0, 2), 10));
+                return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+              })()}
+            </span>
+            <button className="hb-rewind-back" onClick={() => setRewindDay(null)}>Back to today</button>
+          </div>
+        )}
+
         {/* Today's log — the app's own inputs (weigh-in / steps / check-in), pulled up
             with the ticks so your day sits together at the top. Follows the week strip's
             selected day; check-in reuses the mandatory-habit signal. */}
@@ -2047,19 +2062,6 @@ const Habits: React.FC = () => {
 
         {/* Weekly Recap, Sunday only, right under the gold circles */}
         {isSunday && <WeeklyRecap />}
-
-        {/* Rewind banner — cards are showing a past day; tap to return to today */}
-        {rewindDay && (
-          <div className="hb-rewind-banner">
-            <span className="hb-rewind-label">
-              Viewing {(() => {
-                const d = new Date(loggingNow().getFullYear(), parseInt(rewindDay.slice(3), 10) - 1, parseInt(rewindDay.slice(0, 2), 10));
-                return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
-              })()}
-            </span>
-            <button className="hb-rewind-back" onClick={() => setRewindDay(null)}>Back to today</button>
-          </div>
-        )}
 
         </>}
 
