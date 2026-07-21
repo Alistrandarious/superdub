@@ -55,8 +55,12 @@ const PlanGauge: React.FC<{
         <div className="plan-gauge-center">
           <span className="plan-gauge-now">{displayWeight > 0 ? kgToUnitValue(displayWeight, unit).toFixed(1) : '—'}</span>
           <span className="plan-gauge-now-unit">{unitLabel(unit)} now</span>
+          {/* .plan-gauge-accent takes its colour from --theme-ink rather than an
+              inline `accent`: an inline colour beats the stylesheet, so the accent
+              stayed full strength and vanished as type on the light ground. The
+              arc above still uses `accent` directly. */}
           {weightPct !== null && (
-            <span className="plan-gauge-pct" style={{ color: accent }}>{Math.round(weightPct * 100)}% there</span>
+            <span className="plan-gauge-pct plan-gauge-accent">{Math.round(weightPct * 100)}% there</span>
           )}
         </div>
         <div className="plan-gauge-ends">
@@ -65,7 +69,7 @@ const PlanGauge: React.FC<{
             <span className="plan-gauge-end-lbl">Start</span>
           </div>
           <div className="plan-gauge-end right">
-            <span className="plan-gauge-end-val" style={{ color: accent }}>{targetW != null ? kgToUnitValue(targetW, unit).toFixed(1) : '—'}</span>
+            <span className="plan-gauge-end-val plan-gauge-accent">{targetW != null ? kgToUnitValue(targetW, unit).toFixed(1) : '—'}</span>
             <span className="plan-gauge-end-lbl">Goal</span>
           </div>
         </div>

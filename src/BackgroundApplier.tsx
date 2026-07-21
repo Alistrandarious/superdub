@@ -14,6 +14,10 @@ const BackgroundApplier: React.FC = () => {
       root.dataset.theme = theme;
       if (theme === 'light') root.style.removeProperty('--app-bg-base');
       else root.style.setProperty('--app-bg-base', getBackground().grad);
+      // Keep the PWA status bar with the theme. index.html sets this at boot from
+      // storage; without this the bar stays on the old colour until a full reload.
+      document.querySelector('meta[name="theme-color"]')
+        ?.setAttribute('content', theme === 'light' ? '#F5F6FA' : '#0E0E14');
     };
     apply();
     window.addEventListener('superdub:bg-changed', apply);

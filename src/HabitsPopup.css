@@ -21,6 +21,10 @@
   transition: --hp-accent 0.7s ease;
 }
 .hp-overlay.all-done { --hp-accent: #FFB928; }
+/* Accent as type: green and gold both vanish on the light ground, so the text
+   uses a darkened cut of whichever accent is current (it still morphs). */
+.hp-overlay { --hp-ink: var(--hp-accent); }
+:root[data-theme="light"] .hp-overlay { --hp-ink: color-mix(in srgb, var(--hp-accent) 62%, #000); }
 
 .hp-glow {
   position: absolute; inset: 0; pointer-events: none;
@@ -39,12 +43,12 @@
 .hp-eyebrow {
   font-family: 'Space Mono', monospace; font-size: 0.62rem; font-weight: 700;
   letter-spacing: 0.14em; text-transform: uppercase;
-  color: var(--hp-accent); transition: color 0.7s ease;
+  color: var(--hp-ink); transition: color 0.7s ease;
 }
 .hp-close {
   width: 30px; height: 30px; border-radius: 50%; flex: none;
-  border: 1px solid var(--glass-border, #252532); background: rgba(255, 255, 255, 0.03);
-  color: var(--text-dim, rgba(255, 255, 255, 0.62)); display: grid; place-items: center; cursor: pointer;
+  border: 1px solid var(--glass-border, #252532); background: rgba(var(--fg-rgb),0.03);
+  color: var(--text-dim, rgba(var(--fg-rgb),0.62)); display: grid; place-items: center; cursor: pointer;
 }
 
 .hp-hero { display: flex; align-items: center; gap: 16px; margin: 16px 0 10px; }
@@ -53,7 +57,7 @@
   font-family: 'Kanit', sans-serif; font-style: italic; font-weight: 800;
   font-size: 1.5rem; line-height: 1.05; margin: 0; color: var(--text, #E0E0F0);
 }
-.hp-sub { margin: 5px 0 0; font-size: 0.82rem; color: var(--text-dim, rgba(255, 255, 255, 0.62)); line-height: 1.4; }
+.hp-sub { margin: 5px 0 0; font-size: 0.82rem; color: var(--text-dim, rgba(var(--fg-rgb),0.62)); line-height: 1.4; }
 
 .hp-ring { flex: 0 0 auto; width: 88px; height: 88px; position: relative; display: grid; place-items: center; }
 .hp-ring svg { position: absolute; inset: 0; width: 88px; height: 88px; }
@@ -64,10 +68,10 @@
 }
 .hp-ring-c { text-align: center; }
 .hp-ring-c b { font-family: 'Space Mono', monospace; font-weight: 700; font-size: 1.5rem; line-height: 1; color: var(--text, #E0E0F0); }
-.hp-ring-c b small { font-size: 0.9rem; color: var(--text-mute, rgba(255, 255, 255, 0.4)); }
+.hp-ring-c b small { font-size: 0.9rem; color: var(--text-mute, rgba(var(--fg-rgb),0.4)); }
 .hp-ring-c span {
   display: block; font-family: 'Space Mono', monospace; font-size: 0.5rem;
-  letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-mute, rgba(255, 255, 255, 0.4)); margin-top: 2px;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-mute, rgba(var(--fg-rgb),0.4)); margin-top: 2px;
 }
 
 .hp-rows { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; overflow-y: auto; }
@@ -75,12 +79,12 @@
   display: flex; align-items: center; gap: 12px; text-align: left; cursor: pointer;
   /* Opaque raised surface — --card-bg is half-transparent, which read as washed-out
      rows once they sat on the solid ground. */
-  background: var(--glass-bg-strong, #15151E); border: 1px solid var(--glass-border, #252532);
+  background: var(--glass-bg-strong, var(--glass-bg-strong)); border: 1px solid var(--glass-border, #252532);
   border-radius: 14px; padding: 13px 14px; color: inherit;
 }
 .hp-chk {
   width: 26px; height: 26px; border-radius: 8px; flex: none; display: grid; place-items: center;
-  border: 1.5px solid var(--glass-border, #252532); color: var(--text-mute, rgba(255, 255, 255, 0.4));
+  border: 1.5px solid var(--glass-border, #252532); color: var(--text-mute, rgba(var(--fg-rgb),0.4));
   transition: background 0.3s ease, border-color 0.3s ease;
 }
 .hp-chk svg { width: 15px; height: 15px; }
@@ -88,18 +92,18 @@
   background: var(--hp-accent); border-color: var(--hp-accent); color: #07090C;
   transition: background 0.7s ease, border-color 0.7s ease;
 }
-.hp-row.failed .hp-chk { color: var(--danger, #FF5470); border-color: color-mix(in srgb, var(--danger, #FF5470) 45%, transparent); }
+.hp-row.failed .hp-chk { color: var(--danger-ink); border-color: color-mix(in srgb, var(--danger, #FF5470) 45%, transparent); }
 .hp-plus { font-family: 'Space Mono', monospace; font-size: 1.1rem; line-height: 1; }
 .hp-name { flex: 1; font-size: 0.92rem; font-weight: 600; color: var(--text, #E0E0F0); }
-.hp-row.done .hp-name { color: var(--text-dim, rgba(255, 255, 255, 0.62)); }
-.hp-empty { text-align: center; color: var(--text-dim, rgba(255, 255, 255, 0.62)); font-size: 0.9rem; margin: 30px 0; }
+.hp-row.done .hp-name { color: var(--text-dim, rgba(var(--fg-rgb),0.62)); }
+.hp-empty { text-align: center; color: var(--text-dim, rgba(var(--fg-rgb),0.62)); font-size: 0.9rem; margin: 30px 0; }
 
 .hp-foot { margin-top: auto; padding-top: 16px; display: flex; flex-direction: column; gap: 9px; }
-.hp-msg { text-align: center; font-size: 0.84rem; color: var(--text-dim, rgba(255, 255, 255, 0.62)); margin: 0; transition: color 0.7s ease; }
-.hp-overlay.all-done .hp-msg { color: var(--hp-accent); font-weight: 600; }
+.hp-msg { text-align: center; font-size: 0.84rem; color: var(--text-dim, rgba(var(--fg-rgb),0.62)); margin: 0; transition: color 0.7s ease; }
+.hp-overlay.all-done .hp-msg { color: var(--hp-ink); font-weight: 600; }
 .hp-dismiss {
   width: 100%; padding: 12px; border: none; border-radius: 12px; cursor: pointer;
-  background: none; color: var(--text-mute, rgba(255, 255, 255, 0.4)); font-family: 'Sora', sans-serif; font-size: 0.9rem;
+  background: none; color: var(--text-mute, rgba(var(--fg-rgb),0.4)); font-family: 'Sora', sans-serif; font-size: 0.9rem;
 }
 .hp-overlay.all-done .hp-dismiss {
   background: var(--hp-accent); color: #07090C; font-weight: 800;
