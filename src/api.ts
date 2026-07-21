@@ -453,7 +453,7 @@ export const api = {
 
   // ── Friends / social ──
   getFriends: (): Promise<{
-    friends: { id: number; name: string; email: string; streak: number | null; doneDays: number | null; lastActive: string | null; sharedHabits: string[]; shares: boolean }[];
+    friends: { id: number; name: string; email: string; streak: number | null; activeDays: number | null; lastActive: string | null; sharedHabits: string[]; shares: boolean }[];
     incoming: { id: number; name: string; email: string }[];
     outgoing: { id: number; name: string; email: string }[];
   }> => request('/friends'),
@@ -469,7 +469,7 @@ export const api = {
     request('/friends/habit-share', { method: 'POST', body: JSON.stringify({ name, shared }) }),
   getFriendProfile: (userId: number): Promise<{
     id: number; name: string; email: string; memberSince: string; shares: boolean;
-    streak: number | null; doneDays: number | null; sharedHabits: string[]; lastActive: string | null;
+    streak: number | null; activeDays: number | null; sharedHabits: string[]; lastActive: string | null;
   }> => request(`/friends/${userId}/profile`),
   // 429 (nudged too recently) surfaces as a thrown Error with the server message.
   nudgeFriend: (userId: number): Promise<{ ok: true; delivered: boolean }> =>

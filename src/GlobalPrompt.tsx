@@ -82,6 +82,7 @@ const GlobalPrompt: React.FC = () => {
       title="Do a good deed today."
       subtitle="One good deed counts for everyone."
       closeOnBackdrop
+      dismissLabel="Close"
       onDismiss={close}
     >
       {d && (

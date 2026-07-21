@@ -184,7 +184,7 @@ const FriendsPanel: React.FC = () => {
         const email = profile?.email ?? openFriend.email;
         const shares = profile?.shares ?? openFriend.shares;
         const streak = profile?.streak ?? openFriend.streak;
-        const doneDays = profile?.doneDays ?? openFriend.doneDays;
+        const activeDays = profile?.activeDays ?? openFriend.activeDays;
         const lastActive = profile?.lastActive ?? openFriend.lastActive;
         const sharedHabits = profile?.sharedHabits ?? openFriend.sharedHabits;
         return (
@@ -198,8 +198,8 @@ const FriendsPanel: React.FC = () => {
 
               {shares ? (
                 <div className="fdetail-stats">
-                  <div className="fdetail-stat"><span className="fdetail-stat-val">{streak ?? 0}d</span><span className="fdetail-stat-label">streak</span></div>
-                  <div className="fdetail-stat"><span className="fdetail-stat-val">{doneDays ?? 0}</span><span className="fdetail-stat-label">days done</span></div>
+                  <div className="fdetail-stat"><span className="fdetail-stat-val">{streak ?? 0}d</span><span className="fdetail-stat-label">check-in streak</span></div>
+                  <div className="fdetail-stat"><span className="fdetail-stat-val">{activeDays ?? 0}<em>/7</em></span><span className="fdetail-stat-label">days active</span></div>
                   <div className="fdetail-stat"><span className="fdetail-stat-val">{lastActive ? relTime(lastActive) : '–'}</span><span className="fdetail-stat-label">last active</span></div>
                 </div>
               ) : (

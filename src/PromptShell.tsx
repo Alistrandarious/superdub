@@ -89,6 +89,9 @@ const PromptShell: React.FC<PromptShellProps> = ({
       </div>
 
       <div className="prompt-fs-screen" ref={screenRef} tabIndex={-1}>
+        {/* Always-there way out, pinned to the top corner. The bottom dismiss can be
+            scrolled off on a short screen; this one never is. */}
+        <button className="prompt-fs-close" onClick={onDismiss} aria-label="Close">✕</button>
         <div className="prompt-fs-hero">
           {eyebrow && <span className="prompt-fs-eyebrow">{eyebrow}</span>}
           {mascot && <div className="prompt-fs-mascot">{mascot}</div>}

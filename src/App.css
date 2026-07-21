@@ -5887,6 +5887,7 @@ h1, h2, h3, h4, .sora {
 .fdetail-stats { display: flex; gap: 8px; margin: 16px 0; }
 .fdetail-stat { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 6px; border-radius: var(--r-md); background: var(--glass-bg); border: 1px solid var(--glass-border); }
 .fdetail-stat-val { font-family: var(--font-data); font-weight: 700; font-size: 1.05rem; color: #FFE08A; }
+.fdetail-stat-val em { font-style: normal; color: var(--text-mute); font-size: 0.8em; }
 .fdetail-stat-label { font-family: var(--font-ui); font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-mute); }
 .fdetail-private { margin: 16px 0; font-family: var(--font-ui); font-size: 0.82rem; color: var(--text-mute); }
 .fdetail-shares { margin: 0 0 16px; }
@@ -14642,7 +14643,10 @@ details[open] > .plan-collapse-summary::before { content: '▾'; }
   position: fixed; inset: 0; z-index: 1300;
   display: flex; align-items: stretch; justify-content: center;
   background: var(--void);
-  overflow: hidden;
+  /* Scrolls, never clips: a tall prompt (Global's ring + climb + deed button) used
+     to push "Not now" past the fold with overflow:hidden, leaving no way out. */
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 /* Accent radial glow from the top — the hero light in place of a mascot. */
 .prompt-fs-glow {
@@ -14681,6 +14685,16 @@ details[open] > .plan-collapse-summary::before { content: '▾'; }
   animation: prompt-fs-in .34s ease;
 }
 @keyframes prompt-fs-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.prompt-fs-close {
+  position: sticky; top: 0; align-self: flex-end; z-index: 2;
+  width: 34px; height: 34px; margin: -8px -4px 0 0;
+  display: grid; place-items: center;
+  background: none; border: none; cursor: pointer;
+  color: var(--text-mute); font-size: 1rem; line-height: 1;
+  transition: color 0.15s;
+}
+.prompt-fs-close:hover { color: var(--text); }
+.prompt-fs-close:focus-visible { outline: 2px solid var(--theme); outline-offset: 2px; border-radius: 8px; }
 .prompt-fs-hero { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
 .prompt-fs-eyebrow {
   font-family: var(--font-data, 'Space Mono', monospace);

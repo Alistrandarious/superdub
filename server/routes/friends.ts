@@ -44,14 +44,37 @@ async function isAcceptedFriend(me: number, other: number): Promise<boolean> {
   return rows.length > 0;
 }
 
+// Distinct days in the last 7 (today back) where they ticked any habit other than
+// the automatic login one. 0-7, so it reads the same for a friend with two habits
+// and a friend with twenty — unlike a lifetime "done" count, which just rewards
+// having more habits. tracker_habits keys days as 'DD/MM' + year, so the window is
+// built in JS from the last two years of rows.
+async function activeDays7(userId: number): Promise<number> {
+  const thisYear = new Date().getFullYear();
+  const { rows } = await pool.query(
+    `SELECT year, day FROM tracker_habits
+      WHERE user_id = $1 AND state = 'done' AND habit_name <> $2 AND year >= $3`,
+    [userId, LOGIN_HABIT, thisYear - 1],
+  );
+  const done = new Set<string>();
+  for (const r of rows) {
+    const [dd, mm] = String(r.day).split('/');
+    if (dd && mm) done.add(`${r.year}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`);
+  }
+  let n = 0;
+  const d = new Date();
+  for (let i = 0; i < 7; i++) { if (done.has(isoOf(d))) n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+
 // The permitted summary for a friend (already checked: accepted + share_activity on).
-async function friendSummary(userId: number): Promise<{ streak: number; doneDays: number; sharedHabits: string[] }> {
-  const [streak, doneAgg, shared] = await Promise.all([
+async function friendSummary(userId: number): Promise<{ streak: number; activeDays: number; sharedHabits: string[] }> {
+  const [streak, activeDays, shared] = await Promise.all([
     checkInStreak(userId),
-    pool.query(`SELECT COUNT(*)::int AS n FROM tracker_habits WHERE user_id = $1 AND state = 'done'`, [userId]),
+    activeDays7(userId),
     pool.query(`SELECT name FROM habits WHERE user_id = $1 AND shared_with_friends = TRUE AND (archived = FALSE OR archived IS NULL) ORDER BY name`, [userId]),
   ]);
-  return { streak, doneDays: doneAgg.rows[0]?.n ?? 0, sharedHabits: shared.rows.map((r: any) => r.name) };
+  return { streak, activeDays, sharedHabits: shared.rows.map((r: any) => r.name) };
 }
 
 // GET / — accepted friends (with permitted summaries) + incoming/outgoing requests.
@@ -76,7 +99,7 @@ router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
       if (l.status === 'accepted') {
         const summary = l.share_activity
           ? { ...(await friendSummary(l.other_id)), lastActive: l.last_active_at, shares: true }
-          : { streak: null, doneDays: null, sharedHabits: [], lastActive: null, shares: false };
+          : { streak: null, activeDays: null, sharedHabits: [], lastActive: null, shares: false };
         friends.push({ ...base, ...summary });
       } else if (l.status === 'pending') {
         if (l.requester_id === me) outgoing.push(base);
@@ -203,7 +226,7 @@ router.get('/:userId/profile', requireAuth as any, async (req: AuthRequest, res:
     if (rows.length === 0) return res.status(404).json({ error: 'Not found.' });
     const r = rows[0];
     const base = { id: other, name: r.name || r.email.split('@')[0], email: r.email, memberSince: r.created_at };
-    if (!r.share_activity) return res.json({ ...base, shares: false, streak: null, doneDays: null, sharedHabits: [], lastActive: null });
+    if (!r.share_activity) return res.json({ ...base, shares: false, streak: null, activeDays: null, sharedHabits: [], lastActive: null });
     const summary = await friendSummary(other);
     res.json({ ...base, shares: true, ...summary, lastActive: r.last_active_at });
   } catch (err: any) {
