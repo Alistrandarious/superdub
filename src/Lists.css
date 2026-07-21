@@ -1,0 +1,360 @@
+/* =====================================================================
+   LISTS (/tasks) — To-Do · Shopping · Goals · Journal
+   Lifted out of App.css so the page owns its own sheet, the way Coach.css
+   and HabitsPopup.css do. Every colour here is a token: the page ships in
+   both themes, and the old hardcoded greys went white-on-white in light
+   mode. --theme / --theme-dim / --theme-glow are set per tab by Tasks.tsx.
+   ===================================================================== */
+
+.tasks-content {
+  overflow-y: auto;
+  flex: 1;
+  padding-bottom: 48px;
+}
+
+/* ── Hero: what this tab is, and how far through it you are ───────────── */
+.lists-hero {
+  flex-shrink: 0;                 /* column-flex shells crush shrinkable children */
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--glass-border);
+  background:
+    radial-gradient(120% 140% at 0% 0%, var(--theme-glow) 0%, transparent 62%),
+    var(--glass-bg);
+}
+.lists-hero-eyebrow {
+  display: block;
+  font-family: var(--font-data, 'Space Mono', monospace);
+  font-size: 0.56rem; font-weight: 700; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--theme-ink);
+  opacity: 0.9; margin-bottom: 7px;
+}
+.lists-hero-line { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.lists-hero-count {
+  font-family: var(--font-display, 'Kanit', sans-serif);
+  font-size: 1.6rem; font-weight: 800; line-height: 1;
+  color: var(--text); letter-spacing: -0.01em;
+}
+/* The denominator sits quieter than the number you actually earned. */
+.lists-hero-count em { font-style: normal; font-weight: 700; color: var(--text-dim); font-size: 1.05rem; }
+.lists-hero-label {
+  font-family: var(--font-ui); font-size: 0.82rem; font-weight: 600;
+  color: var(--text-dim); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.lists-hero-track {
+  position: relative; height: 5px; margin-top: 10px;
+  border-radius: var(--r-pill, 999px);
+  background: var(--glass-border); overflow: hidden;
+}
+.lists-hero-fill {
+  height: 100%; border-radius: inherit;
+  background: linear-gradient(90deg, var(--theme-dim), var(--theme));
+  box-shadow: 0 0 12px -2px var(--theme-dim);
+  transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.lists-hero-sub {
+  margin-top: 8px;
+  font-family: var(--font-data, 'Space Mono', monospace);
+  font-size: 0.62rem; font-weight: 700; letter-spacing: 0.06em;
+  color: var(--text-dim);
+}
+.lists-hero-sub .late { color: var(--danger-ink); }
+.lists-hero-sub .mood-dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  margin-right: 6px; vertical-align: -1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lists-hero-fill { transition: none; }
+}
+
+/* ── Tab switcher: the Progress "trend chips" pattern, reused ─────────── */
+.lists-chips {
+  flex-shrink: 0;
+  display: flex; gap: 7px; overflow-x: auto;
+  padding: 10px 16px; scrollbar-width: none;
+  border-bottom: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+}
+.lists-chips::-webkit-scrollbar { display: none; }
+.lists-chip {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 13px; border-radius: var(--r-pill, 999px); cursor: pointer;
+  background: var(--surface-raised); border: 1px solid var(--glass-border);
+  color: var(--text-dim); font-family: var(--font-ui);
+  font-size: 0.78rem; font-weight: 600; white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  /* Same story as --theme-ink: the tab's own accent, dark enough to read as
+     type on the light chip. Declared here because --chip arrives inline. */
+  --chip-ink: var(--chip);
+}
+:root[data-theme="light"] .lists-chip { --chip-ink: color-mix(in srgb, var(--chip) 62%, #000); }
+.lists-chip svg { flex-shrink: 0; opacity: 0.85; }
+.lists-chip:hover { color: var(--text); border-color: var(--glass-border-strong); }
+.lists-chip.active {
+  color: var(--chip-ink); border-color: var(--chip);
+  background: color-mix(in srgb, var(--chip) 12%, transparent);
+}
+.lists-chip.active svg { opacity: 1; }
+/* A small count so you can see where the work is without switching tabs. */
+.lists-chip-n {
+  font-family: var(--font-data, 'Space Mono', monospace);
+  font-size: 0.6rem; font-weight: 700; opacity: 0.75;
+}
+
+/* ── Add row ──────────────────────────────────────────────────────────── */
+.lists-input-block { margin-bottom: var(--gutter); }
+.lists-input-row { display: flex; gap: 8px; }
+.lists-input {
+  flex: 1; min-width: 0; padding: 12px 14px; background: var(--surface-raised);
+  border: 1px solid var(--glass-border); border-radius: var(--r-sm); color: var(--text);
+  font-size: 0.9rem; font-family: var(--font-ui); outline: none;
+  transition: border-color 0.15s;
+}
+.lists-input::placeholder { color: var(--text-dim); opacity: 0.7; }
+.lists-input:focus { border-color: var(--theme-ink); }
+.lists-add-btn {
+  width: 44px; height: 44px; border: none; border-radius: var(--r-sm);
+  background: var(--theme); color: #000; cursor: pointer;
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  transition: filter 0.15s, transform 0.12s;
+}
+.lists-add-btn:hover { filter: brightness(1.08); }
+.lists-add-btn:active { transform: scale(0.94); }
+.lists-add-btn:disabled { opacity: 0.4; cursor: default; }
+
+/* Due date lives in a dropdown under the row, not as a raw native box inline. */
+.lists-date-toggle {
+  flex-shrink: 0; display: flex; align-items: center; gap: 6px;
+  height: 44px; padding: 0 12px; border-radius: var(--r-sm); cursor: pointer;
+  background: var(--surface-raised); border: 1px solid var(--glass-border);
+  color: var(--text-dim); font-family: var(--font-data, 'Space Mono', monospace);
+  font-size: 0.72rem; font-weight: 700;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.lists-date-toggle.open,
+.lists-date-toggle.has-date { border-color: var(--theme-ink); color: var(--theme-ink); }
+.lists-date-toggle-val { white-space: nowrap; }
+.lists-date-drop {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
+  animation: lists-date-in 0.16s ease;
+}
+@keyframes lists-date-in { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .lists-date-drop { animation: none; } }
+.lists-date-chip {
+  position: relative; display: inline-flex; align-items: center; gap: 5px;
+  padding: 7px 12px; border-radius: var(--r-pill, 999px); cursor: pointer;
+  background: var(--surface-raised); border: 1px solid var(--glass-border);
+  color: var(--text-dim); font-family: var(--font-ui); font-size: 0.76rem; font-weight: 600;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.lists-date-chip:hover { border-color: var(--theme-dim); color: var(--text); }
+.lists-date-chip.active { border-color: var(--theme-ink); color: var(--theme-ink); background: var(--theme-glow); }
+.lists-date-pick { color: var(--theme-ink); border-color: var(--theme-dim); }
+/* Native date input hidden but tappable over the "Pick…" chip — no ugly box. */
+.lists-date-pick input[type="date"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.lists-date-clear { color: var(--danger-ink); border-color: transparent; background: none; }
+
+/* ── Rows ─────────────────────────────────────────────────────────────── */
+.lists-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.lists-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; background: var(--surface-raised);
+  border: 1px solid var(--glass-border); border-radius: var(--r-sm);
+  /* The accent rides the left edge, so a glance down the list reads as one list. */
+  border-left: 2px solid var(--theme-dim);
+  transition: opacity 0.15s, border-color 0.15s, background 0.15s;
+}
+.lists-item--done { opacity: 0.5; border-left-color: var(--glass-border); }
+.lists-item--overdue { border-left-color: var(--danger-ink); }
+
+/* A new row eases in instead of appearing mid-list. Deliberately no
+   animation-fill-mode: with `both` the final keyframe would pin opacity to 1
+   and beat .lists-item--done's 0.5, so a row ticked off would stay full
+   strength. Without a fill the row settles back onto the normal cascade. */
+@keyframes lists-item-in {
+  from { opacity: 0; transform: translateY(-4px); }
+}
+.lists-item { animation: lists-item-in 0.22s cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* Switching tab swaps the whole list, so the panel fades rather than cuts. */
+@keyframes lists-panel-in {
+  from { opacity: 0; transform: translateY(3px); }
+}
+.lists-panel { animation: lists-panel-in 0.2s ease; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lists-item, .lists-panel { animation: none; }
+}
+.lists-check {
+  width: 22px; height: 22px; border-radius: var(--r-pill, 999px); background: none;
+  border: 2px solid var(--glass-border-strong); cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: transparent;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.12s;
+}
+.lists-check:hover { border-color: var(--theme-dim); }
+.lists-check:active { transform: scale(0.9); }
+.lists-item--done .lists-check { background: var(--theme); border-color: var(--theme-ink); color: #000; }
+.lists-text-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.lists-text { font-size: 0.88rem; color: var(--text); line-height: 1.4; overflow-wrap: anywhere; }
+.lists-item--done .lists-text { text-decoration: line-through; color: var(--text-dim); }
+.lists-due {
+  font-family: var(--font-data, 'Space Mono', monospace);
+  font-size: 0.62rem; font-weight: 700; letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+.lists-due--overdue { color: var(--danger-ink); }
+.lists-remove {
+  background: none; border: none; color: var(--text-dim); cursor: pointer;
+  padding: 4px; flex-shrink: 0; opacity: 0.55; display: flex; align-items: center;
+  transition: color 0.12s, opacity 0.12s;
+}
+.lists-remove:hover { color: var(--danger-ink); opacity: 1; }
+
+.lists-clear-btn {
+  width: 100%; margin-top: 12px; padding: 9px;
+  background: none; border: 1px solid var(--glass-border); color: var(--text-dim);
+  border-radius: var(--r-xs); font-size: 0.78rem; font-weight: 600;
+  cursor: pointer; font-family: var(--font-ui); transition: color 0.12s, border-color 0.12s;
+}
+.lists-clear-btn:hover { color: var(--danger-ink); border-color: var(--danger-ink); }
+
+/* ── Empty states ─────────────────────────────────────────────────────── */
+.lists-empty { text-align: center; padding: 44px 16px; }
+.lists-empty-icon { color: var(--theme-ink); opacity: 0.5; margin-bottom: 14px; display: flex; justify-content: center; }
+.lists-empty-title { font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 6px; font-family: var(--font-ui); }
+.lists-empty-sub { font-size: 0.8rem; color: var(--text-dim); line-height: 1.5; max-width: 30ch; margin: 0 auto; }
+
+/* ── Goals + Journal: the "new" button and its form ───────────────────── */
+.goals-new-btn {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px; margin-bottom: var(--gutter);
+  background: var(--surface-raised); border: 1px dashed var(--glass-border-strong);
+  border-radius: var(--r-sm); color: var(--theme-ink);
+  font-family: var(--font-ui); font-size: 0.85rem; font-weight: 600; cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.goals-new-btn:hover { border-color: var(--theme-ink); background: var(--theme-glow); }
+.goals-new-plus { font-size: 1.1rem; font-weight: 700; line-height: 1; }
+
+.goals-form {
+  background: var(--surface-raised); border: 1px solid var(--glass-border);
+  border-radius: var(--r-sm); padding: 14px; margin-bottom: var(--gutter);
+  display: flex; flex-direction: column; gap: 12px;
+}
+.goals-title-input, .goals-field-input, .goals-date-input, .journal-input {
+  width: 100%; padding: 10px 12px; background: var(--glass-bg);
+  border: 1px solid var(--glass-border); border-radius: var(--r-xs);
+  color: var(--text); font-family: var(--font-ui); font-size: 0.85rem;
+  outline: none; transition: border-color 0.15s; resize: vertical;
+}
+.goals-title-input { font-size: 0.95rem; font-weight: 600; }
+.goals-title-input:focus, .goals-field-input:focus, .goals-date-input:focus, .journal-input:focus { border-color: var(--theme-ink); }
+.goals-title-input::placeholder, .goals-field-input::placeholder, .journal-input::placeholder { color: var(--text-dim); opacity: 0.7; }
+.goals-field { display: flex; gap: 10px; align-items: flex-start; }
+.goals-field-body { flex: 1; min-width: 0; }
+.goals-field-label {
+  display: block; margin-bottom: 4px;
+  font-family: var(--font-data, 'Space Mono', monospace);
+  font-size: 0.58rem; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-dim);
+}
+.goals-badge {
+  flex-shrink: 0; width: 22px; height: 22px; border-radius: var(--r-xs);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-data, 'Space Mono', monospace);
+  font-size: 0.72rem; font-weight: 700; color: #000; margin-top: 16px;
+}
+.goals-badge.sm { width: 17px; height: 17px; font-size: 0.6rem; margin-top: 1px; }
+.goals-form-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.goals-cancel, .goals-save {
+  padding: 9px 16px; border-radius: var(--r-xs); cursor: pointer;
+  font-family: var(--font-ui); font-size: 0.82rem; font-weight: 600;
+  transition: filter 0.15s, border-color 0.15s;
+}
+.goals-cancel { background: none; border: 1px solid var(--glass-border); color: var(--text-dim); }
+.goals-cancel:hover { color: var(--text); border-color: var(--glass-border-strong); }
+.goals-save { border: none; background: var(--theme); color: #000; }
+.goals-save:hover { filter: brightness(1.08); }
+.goals-save:disabled { opacity: 0.4; cursor: default; }
+
+/* ── Goal cards ───────────────────────────────────────────────────────── */
+.goals-list, .journal-list { display: flex; flex-direction: column; gap: 10px; }
+.goal-card, .journal-card {
+  background: var(--surface-raised); border: 1px solid var(--glass-border);
+  border-left: 2px solid var(--theme-dim);
+  border-radius: var(--r-sm); padding: 13px 14px;
+  transition: opacity 0.15s, border-color 0.15s;
+}
+.goal-card--done { opacity: 0.5; border-left-color: var(--glass-border); }
+.goal-card-head { display: flex; align-items: center; gap: 10px; }
+.goal-check {
+  width: 20px; height: 20px; border-radius: var(--r-pill, 999px); background: none;
+  border: 2px solid var(--glass-border-strong); cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; color: transparent;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.goal-check:hover { border-color: var(--theme-dim); }
+.goal-card--done .goal-check { background: var(--theme); border-color: var(--theme-ink); color: #000; }
+.goal-title {
+  flex: 1; min-width: 0; font-family: var(--font-ui);
+  font-size: 0.92rem; font-weight: 700; color: var(--text); line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.goal-card--done .goal-title { text-decoration: line-through; color: var(--text-dim); }
+.goal-remove {
+  background: none; border: none; color: var(--text-dim); cursor: pointer;
+  padding: 4px; flex-shrink: 0; opacity: 0.55; display: flex; align-items: center;
+  transition: color 0.12s, opacity 0.12s;
+}
+.goal-remove:hover { color: var(--danger-ink); opacity: 1; }
+.goal-deadline {
+  margin: 8px 0 0 30px;
+  font-family: var(--font-data, 'Space Mono', monospace);
+  font-size: 0.62rem; font-weight: 700; letter-spacing: 0.04em; color: var(--text-dim);
+}
+.goal-deadline.overdue { color: var(--danger-ink); }
+.goal-deadline-date { opacity: 0.7; }
+.goal-smart { margin: 10px 0 0 30px; display: flex; flex-direction: column; gap: 7px; }
+.goal-smart-row { display: flex; gap: 8px; align-items: flex-start; }
+.goal-smart-text { flex: 1; min-width: 0; font-size: 0.8rem; line-height: 1.45; color: var(--text-dim); overflow-wrap: anywhere; }
+
+/* ── Journal ──────────────────────────────────────────────────────────── */
+.journal-mood-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.journal-mood-label {
+  font-family: var(--font-data, 'Space Mono', monospace);
+  font-size: 0.58rem; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-dim);
+}
+.journal-mood-dots { display: flex; gap: 7px; }
+.journal-mood-dot {
+  width: 24px; height: 24px; border-radius: var(--r-pill, 999px); cursor: pointer;
+  background: none; border: 1px solid var(--glass-border);
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color 0.15s, transform 0.12s;
+}
+.journal-mood-dot:hover { border-color: var(--m); transform: scale(1.08); }
+.journal-mood-dot.active { border-color: var(--m); }
+.journal-mood-fill {
+  width: 11px; height: 11px; border-radius: 50%; background: var(--m);
+  opacity: 0.45; transition: opacity 0.15s, box-shadow 0.15s;
+}
+.journal-mood-dot.active .journal-mood-fill { opacity: 1; box-shadow: 0 0 9px var(--m); }
+.journal-mood-picked {
+  font-family: var(--font-ui); font-size: 0.76rem; font-weight: 600; color: var(--text-dim);
+}
+.journal-card-head { display: flex; align-items: center; gap: 8px; }
+.journal-card-mood { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.journal-card-when {
+  font-family: var(--font-data, 'Space Mono', monospace);
+  font-size: 0.62rem; font-weight: 700; letter-spacing: 0.04em; color: var(--text-dim);
+}
+.journal-card-moodlbl {
+  font-family: var(--font-ui); font-size: 0.7rem; font-weight: 600;
+  color: var(--text-dim); opacity: 0.8;
+}
+.journal-card-head .goal-remove { margin-left: auto; }
+.journal-card-body {
+  margin: 8px 0 0; font-size: 0.85rem; line-height: 1.55;
+  color: var(--text); white-space: pre-wrap; overflow-wrap: anywhere;
+}
