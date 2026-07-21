@@ -117,6 +117,14 @@
   --flame-ink:  #FF8A00;
   --danger:     #FF5470;
   --danger-ink: #FF5470;
+  --goldtint-ink: #FFD233;
+  --goldsoft-ink: #FFE08A;
+  --mint-ink:     #3CF08E;
+  --sky-ink:      #46C2FF;
+  --peri-ink:     #6C8BFF;
+  --slate-ink:    #9FB2CC;
+  --rose-ink:     #FF9DAC;
+  --alert-ink:    #ff453a;
 }
 :root[data-theme="light"] {
   --health-ink: color-mix(in srgb, #2FD27E 62%, #000);
@@ -126,6 +134,14 @@
   --violet-ink: color-mix(in srgb, #8B5CF6 88%, #000);
   --flame-ink:  color-mix(in srgb, #FF8A00 66%, #000);
   --danger-ink: color-mix(in srgb, #FF5470 74%, #000);
+  --goldtint-ink: color-mix(in srgb, #FFD233 58%, #000);
+  --goldsoft-ink: color-mix(in srgb, #FFE08A 55%, #000);
+  --mint-ink:     color-mix(in srgb, #3CF08E 58%, #000);
+  --sky-ink:      color-mix(in srgb, #46C2FF 66%, #000);
+  --peri-ink:     color-mix(in srgb, #6C8BFF 82%, #000);
+  --slate-ink:    color-mix(in srgb, #9FB2CC 62%, #000);
+  --rose-ink:     color-mix(in srgb, #FF9DAC 62%, #000);
+  --alert-ink:    color-mix(in srgb, #ff453a 88%, #000);
 }
 
 /* Animatable CSS custom property for the ring */
@@ -1210,7 +1226,7 @@ h1, h2, h3, h4, .sora {
 }
 
 .progress-labels .over {
-  color: #ff453a;
+  color: var(--alert-ink);
 }
 
 .progress-track {
@@ -1323,7 +1339,7 @@ h1, h2, h3, h4, .sora {
 .food-remove {
   background: none;
   border: none;
-  color: #ff453a;
+  color: var(--alert-ink);
   cursor: pointer;
   font-size: 0.8rem;
   padding: 2px 6px;
@@ -1851,7 +1867,7 @@ h1, h2, h3, h4, .sora {
 }
 .today-soon-eyebrow {
   font-family: var(--font-data); font-size: 0.6rem; font-weight: 700;
-  letter-spacing: 0.16em; color: #FFD233;
+  letter-spacing: 0.16em; color: var(--goldtint-ink);
 }
 .today-soon-title {
   margin: 10px 0 8px; font-family: var(--font-display); font-weight: 700;
@@ -1868,7 +1884,7 @@ h1, h2, h3, h4, .sora {
   padding: 12px 6px; border-radius: 12px;
   background: var(--card-bg); border: 1px solid var(--glass-border);
 }
-.today-target-val { font-family: var(--font-data); font-weight: 700; font-size: 1.15rem; color: #FFE08A; line-height: 1; }
+.today-target-val { font-family: var(--font-data); font-weight: 700; font-size: 1.15rem; color: var(--goldsoft-ink); line-height: 1; }
 .today-target-lbl { font-family: var(--font-ui); font-size: 0.58rem; color: var(--text-mute); text-align: center; }
 
 /* ── Today panel = the Plan (gauge + weekly chart + steps) folded into Progress.
@@ -1907,11 +1923,11 @@ h1, h2, h3, h4, .sora {
 }
 .today-feed-item:active { transform: scale(0.98); }
 .today-feed-item.overdue { border-color: rgba(255,84,112,0.45); }
-.today-feed-ico { display: inline-flex; align-items: center; justify-content: center; width: 22px; color: #FFD233; flex-shrink: 0; }
+.today-feed-ico { display: inline-flex; align-items: center; justify-content: center; width: 22px; color: var(--goldtint-ink); flex-shrink: 0; }
 .today-feed-dot { width: 9px; height: 9px; border-radius: 50%; }
 .today-feed-text { flex: 1; font-family: var(--font-ui); font-size: 0.86rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .today-feed-when { font-family: var(--font-data); font-size: 0.62rem; color: var(--text-mute); flex-shrink: 0; }
-.today-feed-item.overdue .today-feed-when { color: #FF9DAC; }
+.today-feed-item.overdue .today-feed-when { color: var(--rose-ink); }
 .today-feed-empty {
   display: flex; flex-direction: column; align-items: center; gap: 12px;
   padding: 20px 20px; color: var(--text-mute); text-align: center;
@@ -1968,12 +1984,12 @@ h1, h2, h3, h4, .sora {
   background: rgba(var(--fg-rgb),0.06); color: var(--text-mute);
 }
 .cadence-habit-row--done .cadence-habit-mark { background: rgba(47,210,126,0.16); color: var(--health-ink); }
-.cadence-habit-row--failed .cadence-habit-mark { background: rgba(255,84,112,0.16); color: #FF9DAC; }
-.cadence-habit-row--na .cadence-habit-mark { background: rgba(120,140,170,0.16); color: #9FB2CC; }
+.cadence-habit-row--failed .cadence-habit-mark { background: rgba(255,84,112,0.16); color: var(--rose-ink); }
+.cadence-habit-row--na .cadence-habit-mark { background: rgba(120,140,170,0.16); color: var(--slate-ink); }
 .cadence-habit-name { flex: 1; font-family: var(--font-ui); font-size: 0.84rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cadence-habit-status { font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.04em; color: var(--text-mute); flex-shrink: 0; }
 .cadence-habit-row--done .cadence-habit-status { color: var(--health-ink); }
-.cadence-habit-row--failed .cadence-habit-status { color: #FF9DAC; }
+.cadence-habit-row--failed .cadence-habit-status { color: var(--rose-ink); }
 
 /* ── Vitals prompt — sleek sleep/mood/energy sliders that reveal in sequence ── */
 .vitals-step { margin: 16px 0 2px; }
@@ -1981,7 +1997,7 @@ h1, h2, h3, h4, .sora {
   display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;
   font-family: var(--font-ui); font-size: 0.9rem; font-weight: 600; color: var(--text);
 }
-.vitals-value { font-family: var(--font-data); font-weight: 700; font-size: 1.15rem; color: #FFD233; }
+.vitals-value { font-family: var(--font-data); font-weight: 700; font-size: 1.15rem; color: var(--goldtint-ink); }
 .vitals-of { font-size: 0.68rem; color: var(--text-mute); font-weight: 700; }
 /* Native range tinted gold (accent-color fills the track up to the value and
    colours the thumb) — sleek, cross-browser, and a comfortable tap target. */
@@ -2017,7 +2033,7 @@ h1, h2, h3, h4, .sora {
 }
 .exercise-btn:active { transform: scale(0.97); }
 .exercise-btn.yes { border-color: rgba(255,185,40,0.5); }
-.exercise-btn.yes:hover { background: linear-gradient(135deg, rgba(255,185,40,0.18), rgba(255,185,40,0.05)); color: #FFE08A; }
+.exercise-btn.yes:hover { background: linear-gradient(135deg, rgba(255,185,40,0.18), rgba(255,185,40,0.05)); color: var(--goldsoft-ink); }
 .exercise-btn.no:hover { border-color: rgba(var(--fg-rgb),0.25); }
 
 /* ── Sleep "between" slider — two thumbs on a 6pm→6pm track ── */
@@ -2152,17 +2168,17 @@ h1, h2, h3, h4, .sora {
   transition: stroke-dasharray 0.5s cubic-bezier(0.22,1,0.36,1);
 }
 .ltm-ring-center { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.ltm-ring-num { font-family: var(--font-data); font-weight: 700; font-size: 0.94rem; line-height: 1; color: #FFE08A; }
-.ltm-ring-num.over { color: #FFD233; }
+.ltm-ring-num { font-family: var(--font-data); font-weight: 700; font-size: 0.94rem; line-height: 1; color: var(--goldsoft-ink); }
+.ltm-ring-num.over { color: var(--goldtint-ink); }
 /* Range form inside the ring, e.g. "1.8–2.3k" — smaller so the band fits on one line. */
-.ltm-ring-range { font-family: var(--font-data); font-weight: 700; font-size: 0.66rem; line-height: 1; letter-spacing: -0.01em; color: #FFE08A; white-space: nowrap; }
-.ltm-ring-range.over { color: #FFD233; }
+.ltm-ring-range { font-family: var(--font-data); font-weight: 700; font-size: 0.66rem; line-height: 1; letter-spacing: -0.01em; color: var(--goldsoft-ink); white-space: nowrap; }
+.ltm-ring-range.over { color: var(--goldtint-ink); }
 .ltm-ring-unit { font-family: var(--font-ui); font-size: 0.5rem; color: var(--text-mute); margin-top: 2px; }
 /* Metric line (steps / sleep) */
 .ltm-metric { font-family: var(--font-data); font-weight: 700; font-size: 1.35rem; line-height: 1; color: var(--text); margin-top: 12px; }
 .ltm-metric-unit { font-family: var(--font-ui); font-size: 0.52rem; color: var(--text-mute); margin-left: 4px; }
 .ltm-metric.ltm-empty { color: var(--text-mute); }
-.ltm-metric.ltm-cleared { color: #FFD233; }
+.ltm-metric.ltm-cleared { color: var(--goldtint-ink); }
 /* Calorie range — slightly smaller than a single figure since a range is ~2× the
    width; colour stays uniform white, the accent lives in the bar + eyebrow. */
 .ltm-metric--range { font-size: 1.2rem; letter-spacing: -0.01em; }
@@ -2174,10 +2190,10 @@ h1, h2, h3, h4, .sora {
 .ltm-sub { font-family: var(--font-ui); font-size: 0.58rem; line-height: 1.3; color: var(--text-mute); margin-top: 6px; }
 .ltm-breakdown { font-family: var(--font-data); font-size: 0.5rem; letter-spacing: 0.02em; line-height: 1.3; color: var(--text-mute); margin-top: 3px; }
 .ltm-caveat { font-family: 'Sora', sans-serif; font-size: 0.56rem; line-height: 1.35; color: var(--text-dim); margin-top: 4px; max-width: 15ch; }
-.ltm-sub.good { color: #FFD233; }
+.ltm-sub.good { color: var(--goldtint-ink); }
 .ltm-sub.warn { color: var(--text-mute); }
 .ltm-sub.ltm-empty { color: var(--text-mute); }
-.ltm-energy { color: #FFD233; font-weight: 700; }
+.ltm-energy { color: var(--goldtint-ink); font-weight: 700; }
 /* Over target — steady yellow, no flash (a nudge, not an alarm). */
 .ltm-alert {
   font-family: var(--font-data); font-size: 0.56rem; font-weight: 700; letter-spacing: 0.04em;
@@ -2869,7 +2885,7 @@ h1, h2, h3, h4, .sora {
 }
 
 .cell-under .macro-input {
-  color: #FFD233;
+  color: var(--goldtint-ink);
   border-bottom-color: rgba(255,153,0,0.5);
 }
 
@@ -3346,22 +3362,22 @@ h1, h2, h3, h4, .sora {
 
 .checkin-habit.failed {
   border-color: rgba(255,84,112,0.5);
-  color: #FF9DAC;
+  color: var(--rose-ink);
 }
 .checkin-habit.failed .checkin-tick {
   background: rgba(255,84,112,0.18);
   border-color: rgba(255,84,112,0.5);
-  color: #FF9DAC;
+  color: var(--rose-ink);
 }
 
 .checkin-habit.na {
   border-color: rgba(140,160,190,0.45);
-  color: #9FB2CC;
+  color: var(--slate-ink);
 }
 .checkin-habit.na .checkin-tick {
   background: rgba(120,140,170,0.18);
   border-color: rgba(140,160,190,0.45);
-  color: #9FB2CC;
+  color: var(--slate-ink);
 }
 
 .checkin-tick {
@@ -4071,7 +4087,7 @@ h1, h2, h3, h4, .sora {
 }
 
 .auth-error {
-  color: #ff453a;
+  color: var(--alert-ink);
   font-size: 0.82rem;
   margin: 0;
   padding: 9px 13px;
@@ -4618,7 +4634,7 @@ h1, h2, h3, h4, .sora {
 }
 
 .profile-danger-link:hover {
-  color: #ff453a;
+  color: var(--alert-ink);
 }
 
 .about-name-link {
@@ -4648,7 +4664,7 @@ h1, h2, h3, h4, .sora {
 .delete-account-btn {
   background: transparent;
   border: 1px solid rgba(255, 69, 58, 0.5);
-  color: #ff453a;
+  color: var(--alert-ink);
   font-family: inherit;
   font-size: 0.85rem;
   font-weight: 600;
@@ -4670,7 +4686,7 @@ h1, h2, h3, h4, .sora {
 }
 
 .delete-account-error {
-  color: #ff453a;
+  color: var(--alert-ink);
   font-size: 0.82rem;
   margin: 0;
   font-family: inherit;
@@ -4703,7 +4719,7 @@ h1, h2, h3, h4, .sora {
   flex: 2;
   background: rgba(255, 69, 58, 0.15);
   border: 1px solid #ff453a;
-  color: #ff453a;
+  color: var(--alert-ink);
   font-family: inherit;
   font-size: 0.85rem;
   font-weight: 700;
@@ -5257,7 +5273,7 @@ h1, h2, h3, h4, .sora {
   font-size: 3.2rem;
   font-weight: 800;
   line-height: 0.95;
-  color: #FFD233;
+  color: var(--goldtint-ink);
   /* Dark outline for contrast on ANY fill — the number is tinted with the theme
      accent (theme.to), which can match the water colour on liquid themes. */
   text-shadow: 0 2px 6px rgba(0,0,0,0.6), 0 0 14px rgba(0,0,0,0.4);
@@ -5456,7 +5472,7 @@ h1, h2, h3, h4, .sora {
   color: var(--health-ink);
 }
 .hb-week-tick.fail { color: var(--danger-ink); }
-.hb-week-tick.na { color: #9FB2CC; font-weight: 800; }
+.hb-week-tick.na { color: var(--slate-ink); font-weight: 800; }
 
 /* ── Week gold celebration ── */
 @keyframes circle-flip {
@@ -5767,7 +5783,7 @@ h1, h2, h3, h4, .sora {
 .community-hero-copy { flex-shrink: 0; display: flex; flex-direction: column; gap: 3px; }
 .community-hero-title {
   font-family: var(--font-display, 'Kanit'), sans-serif; font-weight: 700;
-  font-size: 1.5rem; line-height: 1.08; color: #FFE08A; margin: 0;
+  font-size: 1.5rem; line-height: 1.08; color: var(--goldsoft-ink); margin: 0;
   text-shadow: 0 2px 12px rgba(255,185,40,0.25);
 }
 @media (prefers-reduced-motion: reduce) {
@@ -5784,7 +5800,7 @@ h1, h2, h3, h4, .sora {
   margin: 6px 0 0; font-family: var(--font-ui); font-size: 0.82rem; line-height: 1.45;
   color: var(--text-dim);
 }
-.community-sub b { color: #FFE08A; font-weight: 700; }
+.community-sub b { color: var(--goldsoft-ink); font-weight: 700; }
 /* The shared climb, front and centre under the ring */
 .community-hero-total {
   font-family: var(--font-data); font-weight: 700; font-size: 1.85rem;
@@ -5886,14 +5902,14 @@ h1, h2, h3, h4, .sora {
 .fdetail-since { display: block; font-family: var(--font-data); font-size: 0.66rem; color: rgba(255,185,40,0.7); margin-top: 6px; }
 .fdetail-stats { display: flex; gap: 8px; margin: 16px 0; }
 .fdetail-stat { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 6px; border-radius: var(--r-md); background: var(--glass-bg); border: 1px solid var(--glass-border); }
-.fdetail-stat-val { font-family: var(--font-data); font-weight: 700; font-size: 1.05rem; color: #FFE08A; }
+.fdetail-stat-val { font-family: var(--font-data); font-weight: 700; font-size: 1.05rem; color: var(--goldsoft-ink); }
 .fdetail-stat-val em { font-style: normal; color: var(--text-mute); font-size: 0.8em; }
 .fdetail-stat-label { font-family: var(--font-ui); font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-mute); }
 .fdetail-private { margin: 16px 0; font-family: var(--font-ui); font-size: 0.82rem; color: var(--text-mute); }
 .fdetail-shares { margin: 0 0 16px; }
 .fdetail-shares-label { display: block; font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-mute); margin-bottom: 6px; }
 .fdetail-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.fdetail-chip { padding: 4px 10px; border-radius: var(--r-pill); background: rgba(255,185,40,0.12); border: 1px solid rgba(255,185,40,0.25); color: #FFE08A; font-family: var(--font-ui); font-size: 0.72rem; }
+.fdetail-chip { padding: 4px 10px; border-radius: var(--r-pill); background: rgba(255,185,40,0.12); border: 1px solid rgba(255,185,40,0.25); color: var(--goldsoft-ink); font-family: var(--font-ui); font-size: 0.72rem; }
 .fdetail-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
 .fdetail-nudge-btn {
   width: 100%; padding: 13px 16px; border-radius: var(--r-lg); border: none; cursor: pointer;
@@ -5902,7 +5918,7 @@ h1, h2, h3, h4, .sora {
 }
 .fdetail-nudge-btn:disabled { opacity: 0.6; cursor: default; }
 .fdetail-nudge-note { margin: -2px 0 0; font-family: var(--font-ui); font-size: 0.72rem; color: var(--text-mute); text-align: center; }
-.fdetail-nudge-error { color: #ff453a; }
+.fdetail-nudge-error { color: var(--alert-ink); }
 .fdetail-share-btn {
   width: 100%; padding: 12px 16px; border-radius: var(--r-lg); cursor: pointer;
   background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text);
@@ -5925,7 +5941,7 @@ h1, h2, h3, h4, .sora {
   align-self: center; background: none; border: none; cursor: pointer; margin-top: 6px;
   font-family: var(--font-ui); font-size: 0.78rem; color: var(--text-mute);
 }
-.fdetail-remove-btn:hover { color: #ff453a; }
+.fdetail-remove-btn:hover { color: var(--alert-ink); }
 
 /* ── Daily Log — the "Daily Superdub" vitals strip ──────────── */
 .daily-log { margin: 16px 16px 4px; }
@@ -5967,8 +5983,8 @@ h1, h2, h3, h4, .sora {
 .dl-row.done .dl-row-ico { color: var(--metric); }
 .dl-row.done .dl-row-val { color: var(--text); }
 /* Everything logged today — the strip ascends to gold */
-.dl-row.all-done .dl-row-ico { color: #FFD233; }
-.dl-row.all-done .dl-row-val { color: #FFE08A; }
+.dl-row.all-done .dl-row-ico { color: var(--goldtint-ink); }
+.dl-row.all-done .dl-row-val { color: var(--goldsoft-ink); }
 .daily-log.all-done .daily-log-title { color: rgba(255,224,138,0.6); }
 
 /* (Core Habits Matrix removed — the home Today's Log is the single status strip.) */
@@ -6025,7 +6041,7 @@ h1, h2, h3, h4, .sora {
 .global-you-badge {
   flex-shrink: 0; width: 46px; height: 46px; border-radius: 14px;
   display: grid; place-items: center; line-height: 1;
-  border: 1px solid rgba(255,185,40,0.28); color: #FFE08A;
+  border: 1px solid rgba(255,185,40,0.28); color: var(--goldsoft-ink);
   background: linear-gradient(135deg, rgba(255,185,40,0.18), rgba(255,185,40,0.04));
 }
 .global-you-badge small {
@@ -6349,7 +6365,7 @@ h1, h2, h3, h4, .sora {
   font-family: 'Sora', sans-serif;
   font-size: 0.7rem;
   font-weight: 700;
-  color: #FFD233;
+  color: var(--goldtint-ink);
   background: rgba(255,210,51,0.1);
   border: 1px solid rgba(255,210,51,0.25);
   border-radius: 8px;
@@ -6603,7 +6619,7 @@ h1, h2, h3, h4, .sora {
   font-family: 'Sora', sans-serif;
   font-size: 0.82rem;
   font-weight: 800;
-  color: #FFD233;
+  color: var(--goldtint-ink);
   background: rgba(255,210,51,0.12);
   border: 1px solid rgba(255,210,51,0.3);
   border-radius: 999px;
@@ -7047,12 +7063,12 @@ h1, h2, h3, h4, .sora {
 .hcard-icon-btn.failed {
   background: rgba(255,69,58,0.14);
   border-color: #ff453a;
-  color: #FF9DAC;
+  color: var(--rose-ink);
 }
 .hcard-icon-btn.na {
   background: rgba(120,140,170,0.14);
   border-color: rgba(140,160,190,0.5);
-  color: #9FB2CC;
+  color: var(--slate-ink);
 }
 .hcard-icon-glyph { font-size: 0.7rem; font-weight: 800; line-height: 1; }
 .hcard-icon-glyph.na { font-size: 0.82rem; }
@@ -7135,7 +7151,7 @@ h1, h2, h3, h4, .sora {
   transition: color 0.2s, background 0.2s;
 }
 .hcard-delete-icon.visible { display: inline-flex; }
-.hcard-delete-icon.visible:hover { color: #ff453a; background: rgba(255,69,58,0.1); }
+.hcard-delete-icon.visible:hover { color: var(--alert-ink); background: rgba(255,69,58,0.1); }
 
 /* ── Elevated collapsed-card stats (no pills) ──────────────────────────────────
    LV is a small embossed crest; the streak is a bare icon + number — together
@@ -7306,7 +7322,7 @@ h1, h2, h3, h4, .sora {
 .gp-head { display: block; text-align: center; margin-bottom: 12px; }
 .gp-title {
   font-family: var(--font-display, 'Kanit'), sans-serif; font-size: 1.3rem; font-weight: 700;
-  color: #FFE08A; margin: 4px 0 0;
+  color: var(--goldsoft-ink); margin: 4px 0 0;
 }
 
 /* Hero: the wireframe globe centred inside the gold community-progress ring */
@@ -7321,7 +7337,7 @@ h1, h2, h3, h4, .sora {
 
 /* The shared climb, front and centre */
 .gp-climb { text-align: center; margin-bottom: 12px; }
-.gp-climb-total { display: block; font-family: var(--font-data); font-weight: 700; font-size: 1.5rem; color: #FFE08A; letter-spacing: 0.01em; }
+.gp-climb-total { display: block; font-family: var(--font-data); font-weight: 700; font-size: 1.5rem; color: var(--goldsoft-ink); letter-spacing: 0.01em; }
 .gp-climb-total em { font-style: normal; font-size: 0.9rem; color: rgba(255,224,138,0.55); }
 .gp-climb-sub { display: block; font-family: var(--font-ui); font-size: 0.78rem; color: var(--text-mute); margin-top: 3px; }
 
@@ -7335,7 +7351,7 @@ h1, h2, h3, h4, .sora {
 .gp-earned {
   margin: 4px 0 14px; padding: 10px 12px; border-radius: 12px;
   background: rgba(255,185,40,0.12); border: 1px solid rgba(255,185,40,0.3);
-  font-family: var(--font-ui); font-size: 0.8rem; color: #FFE08A; text-align: center;
+  font-family: var(--font-ui); font-size: 0.8rem; color: var(--goldsoft-ink); text-align: center;
 }
 .gp-save { background: var(--grad-ascension); color: #2A1B00; }
 /* The deed toggle reuses .checkin-habit but pinned to ascension gold, full width */
@@ -7458,7 +7474,7 @@ h1, h2, h3, h4, .sora {
 .asc-ladder-row.locked .asc-ladder-title,
 .asc-ladder-row.locked .asc-ladder-reward { opacity: 0.5; }
 .asc-ladder-row.current .asc-ladder-lv,
-.asc-ladder-row.current .asc-ladder-title { color: #FFD233; }
+.asc-ladder-row.current .asc-ladder-title { color: var(--goldtint-ink); }
 
 /* Badge medals — geometric, gold when earned */
 .badge-medal {
@@ -7490,7 +7506,7 @@ h1, h2, h3, h4, .sora {
   background: var(--void); border: 1px solid rgba(var(--fg-rgb),0.18);
   color: var(--text-dim);
 }
-.ringtheme-fillbadge.liquid { color: #46C2FF; border-color: rgba(70,194,255,0.45); }
+.ringtheme-fillbadge.liquid { color: var(--sky-ink); border-color: rgba(70,194,255,0.45); }
 
 /* Collapsible sections on the Level page */
 .lvl-collapse {
@@ -7572,7 +7588,7 @@ h1, h2, h3, h4, .sora {
   margin-left: auto; padding: 5px 11px; border-radius: var(--r-pill);
   font-family: var(--font-data); font-size: 0.68rem; font-weight: 700;
 }
-.verdict-chip.good { background: rgba(47,210,126,0.12); border: 1px solid rgba(47,210,126,0.35); color: #3CF08E; }
+.verdict-chip.good { background: rgba(47,210,126,0.12); border: 1px solid rgba(47,210,126,0.35); color: var(--mint-ink); }
 .verdict-chip.bad  { background: rgba(255,84,112,0.1);  border: 1px solid rgba(255,84,112,0.35);  color: var(--danger-ink); }
 .verdict-row2 {
   display: flex; align-items: center; gap: 10px; margin-top: 10px;
@@ -7582,7 +7598,7 @@ h1, h2, h3, h4, .sora {
   font-family: var(--font-data); font-size: 0.62rem; font-weight: 700;
   letter-spacing: 0.04em; text-transform: uppercase;
 }
-.verdict-tag.zone { color: #FFD233; }
+.verdict-tag.zone { color: var(--goldtint-ink); }
 .verdict-tag.off  { color: var(--danger-ink); }
 .verdict-week {
   margin-left: auto; font-family: var(--font-data); font-size: 0.66rem;
@@ -8130,7 +8146,7 @@ h1, h2, h3, h4, .sora {
 .hsp-stat-lbl { font-family: 'Sora', sans-serif; font-size: 0.52rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-mute); }
 
 .hcard-remove:hover {
-  color: #ff453a;
+  color: var(--alert-ink);
   background: rgba(255,69,58,0.12);
 }
 
@@ -8355,8 +8371,8 @@ h1, h2, h3, h4, .sora {
   color: var(--text-dim);
 }
 .cadence-cal-cell.done { background: color-mix(in srgb, var(--theme) 22%, transparent); border-color: var(--theme-dim); color: var(--theme-ink); }
-.cadence-cal-cell.failed { background: rgba(255,84,112,0.14); border-color: rgba(255,84,112,0.4); color: #FF9DAC; }
-.cadence-cal-cell.na { background: rgba(120,140,170,0.14); border-color: rgba(140,160,190,0.4); color: #9FB2CC; }
+.cadence-cal-cell.failed { background: rgba(255,84,112,0.14); border-color: rgba(255,84,112,0.4); color: var(--rose-ink); }
+.cadence-cal-cell.na { background: rgba(120,140,170,0.14); border-color: rgba(140,160,190,0.4); color: var(--slate-ink); }
 .cadence-cal-cell.future { opacity: 0.35; cursor: default; }
 .cadence-cal-tick { height: 14px; display: flex; align-items: center; }
 .cadence-cal-lbl { font-family: 'Space Mono', monospace; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.04em; }
@@ -8452,7 +8468,7 @@ h1, h2, h3, h4, .sora {
 
 .hcard-day-tick.hcard-day-undeclared {
   font-size: 0.72rem;
-  color: #FFD233;
+  color: var(--goldtint-ink);
   font-weight: 700;
   line-height: 1;
 }
@@ -8466,7 +8482,7 @@ h1, h2, h3, h4, .sora {
 
 .hcard-day-tick.hcard-day-na {
   font-size: 0.8rem;
-  color: #9FB2CC;
+  color: var(--slate-ink);
   font-weight: 800;
   line-height: 1;
 }
@@ -8552,7 +8568,7 @@ h1, h2, h3, h4, .sora {
 
 .hcard-today-btn.failed {
   border-color: #ff453a;
-  color: #ff453a;
+  color: var(--alert-ink);
   background: rgba(255,69,58,0.1);
 }
 
@@ -8917,7 +8933,7 @@ h1, h2, h3, h4, .sora {
 }
 .maths-formula code {
   font-family: 'Space Mono', monospace; font-size: 0.72rem; line-height: 1.5;
-  color: #46C2FF; white-space: pre-wrap; overflow-wrap: anywhere;
+  color: var(--sky-ink); white-space: pre-wrap; overflow-wrap: anywhere;
 }
 .maths-example {
   margin: 10px 0 0; padding: 9px 12px;
@@ -8954,7 +8970,7 @@ h1, h2, h3, h4, .sora {
   cursor: pointer;
   transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
-.graveyard-delete-btn:hover:not(:disabled) { background: rgba(255,69,58,0.18); color: #ff453a; border-color: rgba(255,69,58,0.5); }
+.graveyard-delete-btn:hover:not(:disabled) { background: rgba(255,69,58,0.18); color: var(--alert-ink); border-color: rgba(255,69,58,0.5); }
 .graveyard-delete-btn:disabled { opacity: 0.4; cursor: default; }
 .confirm-ok--danger { background: #ff453a; border-color: #ff453a; color: var(--text); }
 .archived-head { padding: 8px 4px 18px; }
@@ -9550,7 +9566,7 @@ h1, h2, h3, h4, .sora {
 
 .settings-dropdown-danger:hover {
   background: rgba(255,69,58,0.1);
-  color: #ff453a;
+  color: var(--alert-ink);
 }
 
 /* =====================================================================
@@ -10012,7 +10028,7 @@ h1, h2, h3, h4, .sora {
 .checkin-later-btn:disabled { opacity: 0.5; cursor: default; }
 
 .checkin-error {
-  font-size: 0.75rem; color: #ff453a; text-align: center;
+  font-size: 0.75rem; color: var(--alert-ink); text-align: center;
   margin: 0 0 8px; padding: 8px 12px;
   background: rgba(255,69,58,0.1); border-radius: 8px;
   border: 1px solid rgba(255,69,58,0.25);
@@ -10153,7 +10169,7 @@ h1, h2, h3, h4, .sora {
 /* hit = target met, so the tint matches its green text (was a pink tint behind
    green type — a stray colour that read as an error state on a good day). */
 .step-perf-badge.hit  { background: rgba(47,210,126,0.15); color: var(--health-ink); }
-.step-perf-badge.miss { background: rgba(255,210,51,0.15); color: #FFD233; }
+.step-perf-badge.miss { background: rgba(255,210,51,0.15); color: var(--goldtint-ink); }
 
 /* ── Habits header cog ── */
 .habits-header-actions {
@@ -10200,7 +10216,7 @@ h1, h2, h3, h4, .sora {
 }
 .cog-menu-sep { height: 1px; background: rgba(var(--fg-rgb),0.08); margin: 4px 6px; }
 .cog-menu-item--danger { color: #ff6b6b; }
-.cog-menu-item--danger:hover { background: rgba(255,69,58,0.12); color: #ff453a; }
+.cog-menu-item--danger:hover { background: rgba(255,69,58,0.12); color: var(--alert-ink); }
 .cog-menu--full .reminder-time-select {
   background: rgba(var(--fg-rgb),0.06); color: var(--text-dim); border: 1px solid rgba(var(--fg-rgb),0.12);
   border-radius: 7px; padding: 3px 6px; font-size: 0.78rem;
@@ -10358,7 +10374,7 @@ h1, h2, h3, h4, .sora {
 
 /* ── Profile calorie warning ── */
 .profile-cal-warn {
-  font-size: 0.72rem; color: #FFD233; margin-top: 4px; display: block;
+  font-size: 0.72rem; color: var(--goldtint-ink); margin-top: 4px; display: block;
 }
 
 /* ── Profile body goals updated layout ── */
@@ -10538,7 +10554,7 @@ h1, h2, h3, h4, .sora {
   display: flex; flex-direction: column; gap: 4px;
 }
 .profile-rate-hint strong { color: var(--text-dim); }
-.profile-rate-floored { color: #FFD233; font-size: 0.68rem; }
+.profile-rate-floored { color: var(--goldtint-ink); font-size: 0.68rem; }
 
 /* ── Profile: maintenance + strategy ── */
 .profile-maintenance-row {
@@ -10616,7 +10632,7 @@ h1, h2, h3, h4, .sora {
   background: rgba(255,136,0, 0.15);
   border-color: var(--theme-ink, #FFD233);
 }
-.profile-cal-warn { font-size: 0.72rem; color: #ff453a; }
+.profile-cal-warn { font-size: 0.72rem; color: var(--alert-ink); }
 .profile-cal-vs { font-size: 0.72rem; color: var(--text-mute); }
 /* ── Unit prefs ── */
 .unit-pref-row { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end; }
@@ -10697,11 +10713,11 @@ h1, h2, h3, h4, .sora {
 }
 .cal-floor-badge {
   font-size: 0.6rem; font-weight: 700; background: rgba(255,69,58,0.2);
-  color: #ff453a; border: 1px solid rgba(255,69,58,0.4);
+  color: var(--alert-ink); border: 1px solid rgba(255,69,58,0.4);
   border-radius: 5px; padding: 1px 5px; text-transform: uppercase; letter-spacing: 0.05em;
 }
 .cal-floor-msg {
-  font-size: 0.7rem; color: #FFD233; background: rgba(255,136,0,0.07);
+  font-size: 0.7rem; color: var(--goldtint-ink); background: rgba(255,136,0,0.07);
   border-radius: 8px; padding: 6px 10px; line-height: 1.5;
 }
 
@@ -10737,11 +10753,11 @@ h1, h2, h3, h4, .sora {
 .profile-macro-mismatch {
   display: flex; align-items: center; justify-content: space-between;
   background: rgba(255,69,58,0.08); border: 1px solid rgba(255,69,58,0.25);
-  border-radius: 10px; padding: 8px 12px; font-size: 0.72rem; color: #ff453a;
+  border-radius: 10px; padding: 8px 12px; font-size: 0.72rem; color: var(--alert-ink);
 }
 .profile-macro-rebalance-btn {
   background: rgba(255,69,58,0.15); border: 1px solid rgba(255,69,58,0.4);
-  border-radius: 8px; padding: 4px 10px; font-size: 0.72rem; color: #ff453a;
+  border-radius: 8px; padding: 4px 10px; font-size: 0.72rem; color: var(--alert-ink);
   cursor: pointer; font-family: inherit; white-space: nowrap;
   transition: background 0.15s;
 }
@@ -10827,7 +10843,7 @@ h1, h2, h3, h4, .sora {
   background: linear-gradient(135deg, #FFD23344, #FFD23322);
   border: 2px solid #FFD23355;
   display: flex; align-items: center; justify-content: center;
-  font-size: 1.5rem; font-weight: 800; color: #FFD233;
+  font-size: 1.5rem; font-weight: 800; color: var(--goldtint-ink);
   position: relative;
 }
 .avatar-btn {
@@ -10836,7 +10852,7 @@ h1, h2, h3, h4, .sora {
 }
 .avatar-btn:hover { border-color: var(--theme-ink); box-shadow: 0 0 16px var(--theme-glow); }
 .profile-avatar-img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%; }
-.profile-avatar-initial { font-size: 1.5rem; font-weight: 800; color: #FFD233; }
+.profile-avatar-initial { font-size: 1.5rem; font-weight: 800; color: var(--goldtint-ink); }
 .profile-avatar-edit-badge {
   position: absolute; bottom: 0; right: 0;
   width: 18px; height: 18px; border-radius: 50%;
@@ -10930,7 +10946,7 @@ h1, h2, h3, h4, .sora {
   width: 24px; height: 24px; border-radius: 6px; transition: all 0.15s;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
-.aer-remove:hover { background: rgba(255,69,58,0.15); color: #ff453a; }
+.aer-remove:hover { background: rgba(255,69,58,0.15); color: var(--alert-ink); }
 
 /* Add activity trigger */
 .add-activity-trigger {
@@ -11171,7 +11187,7 @@ h1, h2, h3, h4, .sora {
 
 .sa-apply-btn {
   width: 100%; background: rgba(255,136,0,0.12); border: 1px solid rgba(255,136,0,0.4);
-  color: #FFD233; padding: 11px; border-radius: 10px; font-size: 0.85rem; font-weight: 700;
+  color: var(--goldtint-ink); padding: 11px; border-radius: 10px; font-size: 0.85rem; font-weight: 700;
   cursor: pointer; transition: all 0.2s;
 }
 .sa-apply-btn:hover { background: rgba(255,136,0,0.22); border-color: #FFD233; }
@@ -11192,7 +11208,7 @@ h1, h2, h3, h4, .sora {
 .cals-deficit { margin-bottom: 6px; }
 .cals-deficit-num { color: var(--health-ink); font-weight: 700; font-size: 0.95rem; }
 .cals-deficit-label { color: var(--text-mute); font-size: 0.82rem; }
-.cals-hint { font-size: 0.78rem; color: #FFD233; margin-top: 8px; line-height: 1.45; }
+.cals-hint { font-size: 0.78rem; color: var(--goldtint-ink); margin-top: 8px; line-height: 1.45; }
 
 /* ====================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================
    Macro Targets section (2.5)
@@ -11228,7 +11244,7 @@ h1, h2, h3, h4, .sora {
 }
 .insight-good   { background: rgba(255,77,141,0.07);  color: var(--health-ink); border: 1px solid rgba(255,77,141,0.18); }
 .insight-great  { background: rgba(46,139,255,0.07);  color: var(--growth-ink); border: 1px solid rgba(46,139,255,0.18); }
-.insight-behind { background: rgba(255,136,0,0.07); color: #FFD233; border: 1px solid rgba(255,136,0,0.18); }
+.insight-behind { background: rgba(255,136,0,0.07); color: var(--goldtint-ink); border: 1px solid rgba(255,136,0,0.18); }
 .insight-nodata { background: rgba(var(--fg-rgb),0.03); color: var(--text-mute); border: 1px solid var(--glass-bg-strong); }
 .trend-stats { display: flex; gap: 20px; margin-top: 12px; flex-wrap: wrap; }
 .trend-stat { display: flex; flex-direction: column; gap: 2px; }
@@ -11519,7 +11535,7 @@ h1, h2, h3, h4, .sora {
 .mp-macro-val { font-size: 0.78rem; font-weight: 700; color: var(--text-dim); min-width: 60px; text-align: right; }
 .mp-macro-target { font-weight: 400; color: var(--text-mute); }
 .mp-macro-ok   { font-size: 0.75rem; color: var(--health-ink); }
-.mp-macro-warn { font-size: 0.75rem; color: #FFD233; }
+.mp-macro-warn { font-size: 0.75rem; color: var(--goldtint-ink); }
 
 .mp-meals-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
 
@@ -11648,7 +11664,7 @@ h1, h2, h3, h4, .sora {
 }
 .mp-export-btn {
   flex: 1; padding: 8px 12px; background: #FFD23318;
-  border: 1px solid #FFD23344; color: #FFD233; border-radius: 7px;
+  border: 1px solid #FFD23344; color: var(--goldtint-ink); border-radius: 7px;
   font-size: 0.75rem; font-weight: 600; cursor: pointer; font-family: inherit;
   transition: background 0.12s;
 }
@@ -11740,7 +11756,7 @@ h1, h2, h3, h4, .sora {
 }
 .mp-add-list-btn {
   width: 100%; padding: 13px; background: #FFD2331A;
-  border: 1px solid #FFD23344; color: #FFD233; border-radius: 10px;
+  border: 1px solid #FFD23344; color: var(--goldtint-ink); border-radius: 10px;
   font-size: 0.88rem; font-weight: 700; cursor: pointer; font-family: inherit;
   transition: background 0.15s;
 }
@@ -12530,7 +12546,7 @@ h3, h4,
   font-family: 'Space Mono', monospace;
   font-weight: 700;
   font-size: 5rem;
-  color: #FFD233;
+  color: var(--goldtint-ink);
   line-height: 1;
   letter-spacing: -0.03em;
 }
@@ -12571,7 +12587,7 @@ h3, h4,
   font-style: italic;
   font-weight: 700;
   font-size: 0.78rem;
-  color: #FFD233;
+  color: var(--goldtint-ink);
   letter-spacing: 0.02em;
 }
 
@@ -12675,7 +12691,7 @@ h3, h4,
   margin-bottom: 3px;
 }
 
-.wr-kpi-gold { color: #FFD233 !important; }
+.wr-kpi-gold { color: var(--goldtint-ink) !important; }
 .wr-kpi-green { color: var(--health-ink) !important; }
 .wr-kpi-hidden { color: rgba(var(--fg-rgb),0.25) !important; letter-spacing: 0.2em; }
 
@@ -14318,9 +14334,9 @@ details[open] > .plan-collapse-summary::before { content: '▾'; }
 .mini-hm-cell.mini-hm-pad { background: none; cursor: default; }
 .mini-hm-cell.done { background: #2FD27E; color: #06210F; }
 .mini-hm-cell.failed { background: #FF5470; color: #2a0a10; }
-.mini-hm-cell.na { background: rgba(120,140,170,0.18); color: #9FB2CC; }
+.mini-hm-cell.na { background: rgba(120,140,170,0.18); color: var(--slate-ink); }
 /* Not reported: a past day on/after the habit start you never logged. */
-.mini-hm-cell.undeclared { background: rgba(255,210,51,0.14); color: #FFD233; }
+.mini-hm-cell.undeclared { background: rgba(255,210,51,0.14); color: var(--goldtint-ink); }
 /* Steps calendar: logged but under goal (matches the chart's stepMiss flame). */
 .mini-hm-cell.miss { background: #FF8A00; color: #2a1400; }
 .mini-hm-cell.future { opacity: 0.25; cursor: default; }
@@ -14580,7 +14596,7 @@ details[open] > .plan-collapse-summary::before { content: '▾'; }
 .plan-rate-arrow { color: var(--text-mute); margin: 0 6px; }
 .plan-rate-flag { font-size: 0.66rem; font-weight: 700; white-space: nowrap; }
 .plan-rate-flag.ok { color: var(--health-ink); }
-.plan-rate-flag.warn { color: #FFD233; }
+.plan-rate-flag.warn { color: var(--goldtint-ink); }
 
 /* Generic plan card (today's meal plan etc.) */
 .plan-card {
