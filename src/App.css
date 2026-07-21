@@ -6157,9 +6157,26 @@ h1, h2, h3, h4, .sora {
 .cadx--compact .cadx-title { display: none; }
 .cadx-dotrow { display: flex; gap: 18px; justify-content: center; align-items: center; }
 .cadx-dot2 {
+  position: relative;
   width: 11px; height: 11px; border-radius: 50%; border: none; padding: 0; cursor: pointer;
   background: color-mix(in srgb, var(--chip) 32%, transparent);
   transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+}
+/* The dot is 11px because that is how big it should LOOK. The tappable area is
+   a transparent box centred on it, so switching cadence on a phone does not
+   need a precise stab at an 11px circle. Pseudo-element rather than padding so
+   the dot size, the 18px gap and the active scale transform stay as drawn.
+   Width is the row pitch (11px dot + 18px gap), NOT the full 44px: at 44 the
+   neighbouring boxes overlap by 15px each side and the tap lands on the wrong
+   cadence. Height takes the full 44 — nothing sits above or below to collide
+   with. ponytail: a taller-than-wide target is the most reachable shape the
+   existing 18px spacing allows; widening it further means respacing the row. */
+.cadx-dot2::after {
+  content: '';
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 29px; height: 44px;
+  transform: translate(-50%, -50%);
 }
 .cadx-dot2.active { background: var(--chip); transform: scale(1.4); box-shadow: 0 0 10px -1px var(--chip); }
 /* Dots (and the label, riding last) stagger in as the dock forms. `translate`
