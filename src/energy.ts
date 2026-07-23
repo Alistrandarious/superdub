@@ -46,6 +46,11 @@ export function workoutCalories(intensity: string | null | undefined, durationMi
   return Math.round(met * kg * (durationMin / 60));
 }
 
+/** What each rung of the evening "eating vs target" answer (−2..+2) claims in kcal,
+ *  relative to the day's target. Shared by the intake band and intakeTruth.ts, so
+ *  the self-report is read the same way everywhere. */
+export const ADHERENCE_OFFSET: Record<number, number> = { [-2]: -700, [-1]: -350, 0: 0, 1: 350, 2: 700 };
+
 /**
  * Honest daily-intake RANGE. One day's true intake can't be recovered from one day's
  * weigh-in (day-to-day scale weight is mostly water/waste), so instead of a false-precise
@@ -84,8 +89,7 @@ export function estimateIntakeRange(opts: {
   }
 
   // Self-report estimate: target shifted by the −2..+2 "eating vs target" answer.
-  const OFFSET: Record<number, number> = { [-2]: -700, [-1]: -350, 0: 0, 1: 350, 2: 700 };
-  const srIntake = adherenceLevel != null ? targetCalories + (OFFSET[adherenceLevel] ?? 0) : null;
+  const srIntake = adherenceLevel != null ? targetCalories + (ADHERENCE_OFFSET[adherenceLevel] ?? 0) : null;
 
   const signals = [ebIntake, srIntake].filter((v): v is number => v != null);
   if (signals.length === 0) return null;   // no weigh-in and no self-report → no honest estimate

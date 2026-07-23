@@ -17,6 +17,7 @@ import './App.css';
 import { api } from './api';
 import { BUILD_TAG } from './version';
 import { kcalPerStep as kcalPerStepFor, stepsToKm, estimateIntakeKcal, estimateIntakeRange, workoutCalories } from './energy';
+import { assessIntakeTruth } from './intakeTruth';
 import { loggingNow, getLoggingDay } from './day';
 import { useNavigate } from 'react-router-dom';
 import { pageTheme, GROWTH, HEALTH, TEAL } from './theme';
@@ -1205,6 +1206,23 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const calorieEstVals = calorieChartData.map(d => d.intake).filter((v): v is number => v != null);
   const calorieHasData = calorieEstVals.length > 0;
   const avgEstIntake = calorieHasData ? Math.round(calorieEstVals.reduce((a, b) => a + b, 0) / calorieEstVals.length) : 0;
+
+  // ── Does what they SAY they ate match what the scale says? ──────────────────
+  // The evening "eating vs target" answers, priced in kcal, against the same
+  // energy-balance estimate the chart above draws. A persistent gap is the most
+  // common reason a plan stalls while someone swears they're on target, and it's
+  // the one thing a food diary would tell them that we otherwise can't.
+  const intakeTruth = (() => {
+    if (!calorieHasData) return null;
+    const isoInRange = new Set(chartDayRange.map(({ ddmm }) => {
+      const [d, m] = ddmm.split('/');
+      return `${new Date().getFullYear()}-${m}-${d}`;
+    }));
+    const reports = Object.entries(adherenceLevelByDate)
+      .filter(([iso]) => isoInRange.has(iso))
+      .map(([, adherenceLevel]) => ({ adherenceLevel, targetCalories }));
+    return assessIntakeTruth({ reports, estimatedIntake: avgEstIntake, spanDays: chartDayRange.length });
+  })();
 
   // ── Verdict hero: yesterday's estimated intake vs target, corridor status,
   // and this week's actual change. Computed over a fixed trailing window so it
@@ -2449,6 +2467,20 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               </p>
             )}
             <p className="calorie-chart-note">Back-calculated from energy balance (weight trend + steps + activity), assuming ~7,700 kcal/kg. It's an estimate, not a measurement.</p>
+            {/* Reported vs actual — the calibration check. Only appears once there
+                are enough evening answers and enough weigh-ins to mean something. */}
+            {intakeTruth && (
+              <div className={`intake-truth intake-truth--${intakeTruth.verdict}`}>
+                <p className="intake-truth-head">{intakeTruth.headline}</p>
+                <div className="intake-truth-nums">
+                  <span><b>{intakeTruth.reportedKcal.toLocaleString()}</b> you reported</span>
+                  <span className="intake-truth-sep">vs</span>
+                  <span><b>{intakeTruth.actualKcal.toLocaleString()}</b> the scale says</span>
+                </div>
+                <p className="intake-truth-detail">{intakeTruth.detail}</p>
+                <p className="intake-truth-foot">Across {intakeTruth.daysCounted} evening check-ins.</p>
+              </div>
+            )}
           </div>
         </div>
       </section>

@@ -125,6 +125,12 @@
   --slate-ink:    #9FB2CC;
   --rose-ink:     #FF9DAC;
   --alert-ink:    #ff453a;
+  /* A missed habit day. Deliberately NOT red: a miss is information, not an
+     alarm, and a rough week should not look like a fire. Red now means only
+     "something is wrong you need to act on". Sits a step brighter than the
+     neutral --slate-ink used for 'na', so skipped and missed still read apart. */
+  --miss:         #7C8AA0;
+  --miss-fill:    rgba(124,138,160,0.20);
 }
 :root[data-theme="light"] {
   --health-ink: color-mix(in srgb, #2FD27E 62%, #000);
@@ -142,6 +148,8 @@
   --slate-ink:    color-mix(in srgb, #9FB2CC 62%, #000);
   --rose-ink:     color-mix(in srgb, #FF9DAC 62%, #000);
   --alert-ink:    color-mix(in srgb, #ff453a 88%, #000);
+  --miss:         color-mix(in srgb, #7C8AA0 68%, #000);
+  --miss-fill:    rgba(124,138,160,0.22);
 }
 
 /* Animatable CSS custom property for the ring */
@@ -1984,12 +1992,12 @@ h1, h2, h3, h4, .sora {
   background: rgba(var(--fg-rgb),0.06); color: var(--text-mute);
 }
 .cadence-habit-row--done .cadence-habit-mark { background: rgba(47,210,126,0.16); color: var(--health-ink); }
-.cadence-habit-row--failed .cadence-habit-mark { background: rgba(255,84,112,0.16); color: var(--rose-ink); }
+.cadence-habit-row--failed .cadence-habit-mark { background: var(--miss-fill); color: var(--miss); }
 .cadence-habit-row--na .cadence-habit-mark { background: rgba(120,140,170,0.16); color: var(--slate-ink); }
 .cadence-habit-name { flex: 1; font-family: var(--font-ui); font-size: 0.84rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cadence-habit-status { font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.04em; color: var(--text-mute); flex-shrink: 0; }
 .cadence-habit-row--done .cadence-habit-status { color: var(--health-ink); }
-.cadence-habit-row--failed .cadence-habit-status { color: var(--rose-ink); }
+.cadence-habit-row--failed .cadence-habit-status { color: var(--miss); }
 
 /* ── Vitals prompt — sleek sleep/mood/energy sliders that reveal in sequence ── */
 .vitals-step { margin: 16px 0 2px; }
@@ -3361,13 +3369,13 @@ h1, h2, h3, h4, .sora {
 }
 
 .checkin-habit.failed {
-  border-color: rgba(255,84,112,0.5);
-  color: var(--rose-ink);
+  border-color: rgba(124,138,160,0.5);
+  color: var(--miss);
 }
 .checkin-habit.failed .checkin-tick {
-  background: rgba(255,84,112,0.18);
-  border-color: rgba(255,84,112,0.5);
-  color: var(--rose-ink);
+  background: var(--miss-fill);
+  border-color: rgba(124,138,160,0.5);
+  color: var(--miss);
 }
 
 .checkin-habit.na {
@@ -5442,8 +5450,8 @@ h1, h2, h3, h4, .sora {
               0 0 8px color-mix(in srgb, #2FD27E 25%, transparent);
 }
 .hb-week-circle.failed {
-  background: rgba(255,69,58,0.12);
-  border-color: #ff453a;
+  background: var(--miss-fill);
+  border-color: var(--miss);
 }
 .hb-week-circle.na {
   background: rgba(120,140,170,0.12);
@@ -6322,7 +6330,7 @@ h1, h2, h3, h4, .sora {
   background: linear-gradient(100deg, rgba(34,197,94,0.07), transparent 60%);
 }
 .hrow.failed {
-  border-color: rgba(255,77,141,0.25);
+  border-color: rgba(124,138,160,0.3);
 }
 .hrow-check {
   width: 34px;
@@ -6342,9 +6350,11 @@ h1, h2, h3, h4, .sora {
   background: #2FD27E;
   border-color: #2FD27E;
 }
+/* The border was green here, left over from the done state — a missed row should
+   not wear the done colour. */
 .hrow.failed .hrow-check {
-  border-color: #2FD27E;
-  background: rgba(255,77,141,0.15);
+  border-color: var(--miss);
+  background: var(--miss-fill);
 }
 .hrow-tick {
   font-size: 1rem;
@@ -7078,9 +7088,9 @@ h1, h2, h3, h4, .sora {
               0 2px 10px color-mix(in srgb, var(--theme) 45%, transparent);
 }
 .hcard-icon-btn.failed {
-  background: rgba(255,69,58,0.14);
-  border-color: #ff453a;
-  color: var(--rose-ink);
+  background: var(--miss-fill);
+  border-color: var(--miss);
+  color: var(--miss);
 }
 .hcard-icon-btn.na {
   background: rgba(120,140,170,0.14);
@@ -8388,7 +8398,7 @@ h1, h2, h3, h4, .sora {
   color: var(--text-dim);
 }
 .cadence-cal-cell.done { background: color-mix(in srgb, var(--theme) 22%, transparent); border-color: var(--theme-dim); color: var(--theme-ink); }
-.cadence-cal-cell.failed { background: rgba(255,84,112,0.14); border-color: rgba(255,84,112,0.4); color: var(--rose-ink); }
+.cadence-cal-cell.failed { background: var(--miss-fill); border-color: rgba(124,138,160,0.45); color: var(--miss); }
 .cadence-cal-cell.na { background: rgba(120,140,170,0.14); border-color: rgba(140,160,190,0.4); color: var(--slate-ink); }
 .cadence-cal-cell.future { opacity: 0.35; cursor: default; }
 .cadence-cal-tick { height: 14px; display: flex; align-items: center; }
@@ -8472,8 +8482,8 @@ h1, h2, h3, h4, .sora {
 }
 
 .hcard-day.failed .hcard-day-circle {
-  background: rgba(255,69,58,0.12);
-  border-color: #ff453a;
+  background: var(--miss-fill);
+  border-color: var(--miss);
 }
 
 /* Undeclared: a past due day you never marked. Yellow "?" ring — reads as
@@ -8528,11 +8538,11 @@ h1, h2, h3, h4, .sora {
   border-color: var(--theme-ink);
   box-shadow: 0 0 0 2px var(--theme-glow);
 }
-/* A failed/done day that happens to be today keeps its own colour — the green
-   "today" ring must not override a red failed (or green done) state. */
+/* A missed/done day that happens to be today keeps its own colour — the green
+   "today" ring must not override a missed (or done) state. */
 .hcard-day.is-today.failed .hcard-day-circle {
-  border-color: #ff453a;
-  box-shadow: 0 0 0 2px rgba(255,69,58,0.22);
+  border-color: var(--miss);
+  box-shadow: 0 0 0 2px rgba(124,138,160,0.26);
 }
 .hcard-day.is-today.done .hcard-day-circle {
   border-color: #2FD27E;
@@ -8584,9 +8594,9 @@ h1, h2, h3, h4, .sora {
 }
 
 .hcard-today-btn.failed {
-  border-color: #ff453a;
-  color: var(--alert-ink);
-  background: rgba(255,69,58,0.1);
+  border-color: var(--miss);
+  color: var(--miss);
+  background: var(--miss-fill);
 }
 
 .hcard-today-btn:hover:not(.done):not(.failed) {
@@ -12158,7 +12168,7 @@ h3, h4,
   font-family: var(--font-data); font-size: 0.7rem; font-weight: 700; color: var(--text-dim);
 }
 .hy-done { background: #2FD27E; }
-.hy-failed { background: #FF5470; }
+.hy-failed { background: var(--miss); }
 .hy-na { background: rgba(159,178,204,0.5); }
 .hy-off { background: rgba(var(--fg-rgb),0.09); }     /* on app, nothing logged — grey box */
 .hy-future { background: rgba(var(--fg-rgb),0.045); } /* the year ahead, waiting — faint grey box */
@@ -14350,7 +14360,7 @@ details[open] > .plan-collapse-summary::before { content: '▾'; }
 .mini-hm-cell:not(:disabled):active { transform: scale(0.88); }
 .mini-hm-cell.mini-hm-pad { background: none; cursor: default; }
 .mini-hm-cell.done { background: #2FD27E; color: #06210F; }
-.mini-hm-cell.failed { background: #FF5470; color: #2a0a10; }
+.mini-hm-cell.failed { background: var(--miss); color: #10161f; }
 .mini-hm-cell.na { background: rgba(120,140,170,0.18); color: var(--slate-ink); }
 /* Not reported: a past day on/after the habit start you never logged. */
 .mini-hm-cell.undeclared { background: rgba(255,210,51,0.14); color: var(--goldtint-ink); }
@@ -14902,3 +14912,112 @@ details[open] > .plan-collapse-summary::before { content: '▾'; }
 
 /* PlanGauge type that follows the page accent (the arc keeps full strength). */
 .plan-gauge-accent { color: var(--theme-ink); }
+
+/* ── The comeback strip (LapseBanner) ─────────────────────────────────────────
+   Shown only to someone who has drifted or lapsed. Deliberately quiet: slate,
+   not red, not gold. It is an open door, not a warning, and it must never be
+   the loudest thing on the page. */
+.lapse-strip {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 14px 40px 14px 15px;
+  border-radius: 16px;
+  border: 1px solid rgba(124,138,160,0.3);
+  background: var(--miss-fill);
+}
+.lapse-strip-head {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.lapse-strip-sub {
+  margin: 4px 0 0;
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--text-mute);
+}
+.lapse-strip-btn {
+  align-self: flex-start;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--miss);
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+.lapse-strip-btn:hover:not(:disabled) { background: rgba(124,138,160,0.16); border-color: var(--text); }
+.lapse-strip-btn:disabled { opacity: 0.55; cursor: default; }
+.lapse-strip-x {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-mute);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.lapse-strip-x:hover { background: rgba(124,138,160,0.18); color: var(--text); }
+
+/* ── Reported vs actual intake (the calibration check) ────────────────────────
+   Sits under the intake chart. Neutral by default; only the under-reporting
+   case gets a warm edge, because that's the one worth acting on. */
+.intake-truth {
+  margin: 12px 16px 4px;
+  padding: 13px 15px;
+  border-radius: 14px;
+  border: 1px solid rgba(var(--fg-rgb),0.1);
+  background: rgba(var(--fg-rgb),0.035);
+}
+.intake-truth--under_reporting { border-color: rgba(255,138,0,0.34); }
+.intake-truth--aligned { border-color: rgba(47,210,126,0.3); }
+.intake-truth-head {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.intake-truth-nums {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 9px 0 8px;
+  font-family: var(--font-data);
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  color: var(--text-mute);
+}
+.intake-truth-nums b { font-size: 1.02rem; color: var(--text); }
+.intake-truth-sep { opacity: 0.5; }
+.intake-truth-detail {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 0.79rem;
+  line-height: 1.5;
+  color: var(--text-mute);
+}
+.intake-truth-foot {
+  margin: 7px 0 0;
+  font-family: var(--font-data);
+  font-size: 0.6rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+  opacity: 0.65;
+}

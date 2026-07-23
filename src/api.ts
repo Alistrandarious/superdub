@@ -19,6 +19,18 @@ export interface StepEntry {
 
 // ── Shared response shapes (mirrors server/routes/*.ts res.json(...) payloads) ──
 
+/** GET /api/lapse — raw recency signals. `daysSinceLog` is null when they have
+ *  never logged (JSON can't carry the Infinity the server derives). */
+export interface LapseSignalsResponse {
+  daysSinceLog: number | null;
+  hadPriorActivity: boolean;
+  daysSinceReturn: number | null;
+  lastGapDays: number;
+  weekMarks: number;
+  weekDue: number;
+  restoreAvailable: boolean;
+}
+
 export interface SignupCohort {
   cohortName: string;
   cohortSize: number;
@@ -427,6 +439,12 @@ export const api = {
   getCheckInHistory: (days = 90): Promise<{ entries: { date: string; energy: number | null; mood: number | null; adherence: string | null; adherenceLevel: number | null; workoutIntensity: string | null; workoutDurationMin: number | null; sleep: number | null; bedtime: string | null; waketime: string | null }[] }> =>
     request(`/checkin/history?days=${days}`),
   getCoachingMessage: (): Promise<CoachingResponse> => request('/checkin/coaching'),
+
+  // lapse protocol — raw signals; src/lapse.ts turns them into a state
+  getLapse: (): Promise<LapseSignalsResponse> =>
+    request(`/lapse?tzOffset=${new Date().getTimezoneOffset()}`),
+  restoreStreak: (): Promise<{ ok: true; daysRestored: number }> =>
+    request(`/lapse/restore?tzOffset=${new Date().getTimezoneOffset()}`, { method: 'POST' }),
   getWeeklyIntention: (weekStart: string): Promise<{ intention: string | null }> =>
     request(`/checkin/weekly-intention?weekStart=${encodeURIComponent(weekStart)}`),
   saveWeeklyIntention: (weekStart: string, intention: string): Promise<{ ok: true }> =>

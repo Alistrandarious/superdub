@@ -18,6 +18,7 @@ import goalsRoutes from './routes/goals';
 import globalRoutes from './routes/global';
 import journalRoutes from './routes/journal';
 import friendsRoutes from './routes/friends';
+import lapseRoutes, { daysSinceLastLog } from './routes/lapse';
 import { sendPush, pushEnabled } from './services/push';
 import { reminderDue, scheduleMatchesToday } from './reminderSchedule';
 import { pool } from './db';
@@ -45,6 +46,7 @@ app.use('/api/goals', goalsRoutes);
 app.use('/api/global', globalRoutes);
 app.use('/api/journal', journalRoutes);
 app.use('/api/friends', friendsRoutes);
+app.use('/api/lapse', lapseRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
@@ -364,6 +366,11 @@ const migrations = [
     sent_at  TIMESTAMPTZ DEFAULT NOW()
   )`,
   `CREATE INDEX IF NOT EXISTS friend_nudges_pair_idx ON friend_nudges (from_id, to_id, sent_at)`,
+  // ── Lapse protocol ─────────────────────────────────────────────────────────
+  // One streak restore a month; NULL = never used.
+  `ALTER TABLE profile ADD COLUMN IF NOT EXISTS last_streak_restore DATE`,
+  // Local date of the last comeback push, so a lapse nudges once and then stops.
+  `ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS last_lapse_push DATE`,
 ];
 (async () => {
   for (const sql of migrations) {
@@ -394,7 +401,8 @@ async function runReminders() {
   try {
     const { rows } = await pool.query(
       `SELECT id, user_id, subscription, tz_offset, reminder_hour,
-              nutrition_hour, workout_hour, last_reminded, last_nutrition, last_workout
+              nutrition_hour, workout_hour, last_reminded, last_nutrition, last_workout,
+              last_lapse_push
          FROM push_subscriptions`
     );
     for (const r of rows) {
@@ -458,6 +466,29 @@ async function runReminders() {
           if (!ok) { await prune(r.id); continue; }
         }
         await stamp('last_workout', r.id, localDate);
+      }
+
+      // 3b. The comeback nudge — the one push a lapse gets. Fires at their morning
+      // hour once they've been quiet for LAPSE_DAYS, then stays silent for the rest
+      // of that lapse (a later lapse re-arms it, because the stamp predates it).
+      // No guilt, no streak talk: the copy's whole job is to make opening the app
+      // feel cheap. Everything else about coming back waits inside the app.
+      if (hour === morningHour) {
+        const quiet = await daysSinceLastLog(r.user_id, localDate);
+        const lapseStart = new Date(Date.parse(`${localDate}T00:00:00Z`) - quiet * 86400000)
+          .toISOString().slice(0, 10);
+        const alreadyNudged = r.last_lapse_push &&
+          new Date(r.last_lapse_push).toISOString().slice(0, 10) >= lapseStart;
+        if (Number.isFinite(quiet) && quiet >= 3 && !alreadyNudged) {
+          const ok = await sendPush(r.subscription, {
+            title: 'superdub',
+            body: 'Still here whenever you are. One mark is enough to pick it back up.',
+            url: '/?prompt=comeback',
+            tag: 'comeback',
+          });
+          if (!ok) { await prune(r.id); continue; }
+          await stamp('last_lapse_push', r.id, localDate);
+        }
       }
 
       // 4. Per-habit reminders — each opted-in habit nudges at its own hour, at most

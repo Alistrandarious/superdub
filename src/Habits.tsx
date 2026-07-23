@@ -10,6 +10,7 @@ import CadenceCarousel from './CadenceCarousel';
 import { useUserStage } from './userStage';
 import SuperdubHeader from './SuperdubHeader';
 import DailyLog from './DailyLog';
+import LapseBanner from './LapseBanner';
 import HomeOnTrack from './HomeOnTrack';
 import AnimatedFlame from './AnimatedFlame';
 import LevelHeroRing from './LevelHeroRing';
@@ -2042,6 +2043,11 @@ const Habits: React.FC = () => {
             <button className="hb-rewind-back" onClick={() => setRewindDay(null)}>Back to today</button>
           </div>
         )}
+
+        {/* The comeback strip — only renders for someone who has drifted or lapsed,
+            and sits above the day's inputs so the first thing they see is an
+            invitation rather than a wall of unmarked days. */}
+        <LapseBanner />
 
         {/* Today's log — the app's own inputs (weigh-in / steps / check-in), pulled up
             with the ticks so your day sits together at the top. Follows the week strip's
