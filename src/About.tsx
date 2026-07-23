@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import './App.css';
 import { pageTheme, GROWTH } from './theme';
+import HealthDisclaimer from './HealthDisclaimer';
 
 const LEVEL_GATES = [
   [0, 'Rookie'], [100, 'Beginner'], [300, 'Novice'], [700, 'Apprentice'],
@@ -131,6 +132,11 @@ const About: React.FC = () => {
           >
             Ali.Shah@Layerdigital.uk
           </a>
+        </div>
+
+        <div className="diet-section" style={{ marginBottom: 40 }}>
+          <h2 className="diet-heading">The small print</h2>
+          <HealthDisclaimer variant="block" />
         </div>
 
       </div>

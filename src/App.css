@@ -15124,3 +15124,27 @@ details[open] > .plan-collapse-summary::before { content: '▾'; }
 .load-error-retry:hover { filter: brightness(1.08); }
 .load-error-retry:active { transform: scale(0.96); }
 .load-error-retry:focus-visible { outline: 2px solid var(--theme); outline-offset: 3px; }
+
+/* ── Health disclaimer ─────────────────────────────────────────────────────────
+   Quiet, never alarming. It has to be readable (it is the point) but it must not
+   compete with the number it sits under. */
+.health-disclaimer {
+  font-family: var(--font-ui, 'Sora', sans-serif);
+  /* --text-mute lands at 3.8:1, under the 4.5:1 WCAG AA wants for small text.
+     A disclaimer nobody can read is decoration, so this one takes --text-dim.
+     Quiet, but legible. */
+  color: var(--text-dim);
+  margin: 0;
+}
+.health-disclaimer--inline {
+  font-size: 0.68rem; line-height: 1.5;
+  margin-top: 10px; text-align: center; max-width: 42ch;
+  margin-left: auto; margin-right: auto;
+}
+.health-disclaimer--block {
+  font-size: 0.76rem; line-height: 1.6;
+  padding: 12px 14px; margin-top: 14px;
+  border-left: 2px solid var(--glass-border);
+  background: rgba(var(--fg-rgb),0.02);
+  border-radius: var(--r-xs, 6px);
+}

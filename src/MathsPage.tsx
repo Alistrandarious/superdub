@@ -4,6 +4,7 @@ import './App.css';
 import SuperdubHeader from './SuperdubHeader';
 import { STRIDE_M, KCAL_PER_KG_KM, KCAL_PER_KG, kcalPerStep } from './energy';
 import { pageTheme, GROWTH_BRIGHT } from './theme';
+import HealthDisclaimer from './HealthDisclaimer';
 
 // ── The Maths — every number the app shows, written out so you can
 // cross-reference it against what you see. This page documents what the code
@@ -198,6 +199,9 @@ const MathsPage: React.FC = () => {
             {s.example && <p className="maths-example">Worked: {s.example}</p>}
           </div>
         ))}
+        {/* This page exists to show the working, which is exactly where the
+            "these are estimates, not medical advice" line belongs. */}
+        <HealthDisclaimer variant="block" />
       </div>
     </div>
   );

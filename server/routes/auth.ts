@@ -92,6 +92,15 @@ router.post('/signup', async (req: Request, res: Response) => {
 
   const age = ageFromDob(dob);
 
+  // The privacy policy states Superdub is not for under-13s. The client checks
+  // this too, but the client is only the pretty face — a direct POST bypasses it.
+  // ponytail: 13 is duplicated from MIN_AGE_YEARS in src/age.ts; nothing in
+  // server/ imports from src/ (same reason energy.ts is duplicated, ROADMAP E2.3).
+  if (age !== '' && Number(age) < 13) {
+    res.status(400).json({ error: 'You need to be at least 13 to use Superdub' });
+    return;
+  }
+
   let client: any;
   try {
     client = await pool.connect();

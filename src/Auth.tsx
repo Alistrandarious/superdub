@@ -6,6 +6,8 @@ import OnboardingDaily from './OnboardingDaily';
 import OnboardingCustomize from './OnboardingCustomize';
 import DubCoach from './DubCoach';
 import { onboardingScreens, onbProgressPct, dubLine } from './onboarding';
+import { ageFromDob, isUnderMinAge, MIN_AGE_YEARS } from './age';
+import HealthDisclaimer from './HealthDisclaimer';
 import './App.css';
 import { GROWTH } from './theme';
 import { nickToWordmark, setBrandNick } from './brand';
@@ -212,6 +214,13 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
     }
     if (cur === 'body') {
       if (!dob) { setError('Please enter your date of birth'); return; }
+      if (ageFromDob(dob) === null) { setError('That date of birth does not look right'); return; }
+      // The privacy policy says under-13s aren't permitted; enforce it here
+      // rather than only promising it. The server checks again at signup.
+      if (isUnderMinAge(dob)) {
+        setError(`You need to be at least ${MIN_AGE_YEARS} to use Superdub`);
+        return;
+      }
     }
     if (cur === 'habits') {
       if (habits.length === 0) { setError('Pick at least one habit.'); return; }
@@ -582,7 +591,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
             const w = parseFloat(weightKg) || 0;
             const h = parseFloat(heightCm) || 0;
             const act = parseFloat(activityLevel) || 1.55;
-            const dobAge = dob ? (() => { const b = new Date(dob); const t = new Date(); let a = t.getFullYear() - b.getFullYear(); if (t.getMonth() - b.getMonth() < 0 || (t.getMonth() === b.getMonth() && t.getDate() < b.getDate())) a--; return a; })() : 25;
+            const dobAge = ageFromDob(dob) ?? 25;
             const bmr = w && h ? (sex === 'male' ? 10*w + 6.25*h - 5*dobAge + 5 : 10*w + 6.25*h - 5*dobAge - 161) : 0;
             const tdee = Math.round(bmr * act);
             const lpw = parseFloat(lossPerWeek) || 0.5;
@@ -716,6 +725,10 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
                       )}
                     </div>
                   )}
+                  {/* The first calorie target the user ever sees. If the
+                      "not medical advice" line appears anywhere, it appears
+                      the first time the app tells someone what to eat. */}
+                  {targetCals > 0 && <HealthDisclaimer />}
                 </div>
               </>
             );
