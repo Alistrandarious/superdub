@@ -5,6 +5,7 @@ import { getLoggingISO, getLoggingDay } from './day';
 import { WEIGHED_IN } from './systemHabits';
 import { useWeightUnit, formatWeightKg } from './weightUnit';
 import WeightInput from './WeightInput';
+import WeightTrendStrip from './WeightTrendStrip';
 
 // Log Weight modal with a month calendar of the days you've weighed in, mirroring
 // the Steps logger. Green = weighed in, grey = nothing logged. Tap a day to see
@@ -22,6 +23,8 @@ const WeightEntry: React.FC = () => {
   const [date, setDate] = useState(todayISO());
   const [weightKg, setWeightKg] = useState('');   // canonical kg string
   const [byDay, setByDay] = useState<Map<string, number>>(new Map()); // DD/MM -> kg
+  const [days, setDays] = useState<any[]>([]);                        // raw rows, for the trend strip
+  const [goalKg, setGoalKg] = useState<number | undefined>(undefined);
   const [monthOffset, setMonthOffset] = useState(0);
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
@@ -31,6 +34,7 @@ const WeightEntry: React.FC = () => {
   // day's weight into the input so tapping a day shows what you logged.
   const load = useCallback((focusIso?: string) => {
     api.getTracker().then((data: any) => {
+      setDays(data?.days ?? []);
       const map = new Map<string, number>();
       for (const d of (data?.days ?? [])) {
         const w = parseFloat(d.weight);
@@ -54,6 +58,16 @@ const WeightEntry: React.FC = () => {
     window.addEventListener('superdub:show-weight', handler);
     return () => window.removeEventListener('superdub:show-weight', handler);
   }, [load]);
+
+  // Goal weight only decides which direction the trend dots call progress.
+  useEffect(() => {
+    let live = true;
+    api.getWeightSettings().then(ws => {
+      const g = parseFloat(ws?.goalWeight ?? '');
+      if (live && g > 0) setGoalKg(g);
+    }).catch(() => {});
+    return () => { live = false; };
+  }, []);
 
   const dismiss = () => setShow(false);
   const pickDay = (iso: string) => {
@@ -117,6 +131,7 @@ const WeightEntry: React.FC = () => {
           <span className="modal-title">Log Weight</span>
           <button className="modal-close" onClick={dismiss}>✕</button>
         </div>
+        <WeightTrendStrip days={days} goalKg={goalKg} />
         <p className="step-entry-sub">
           Tap a day to log or edit it. Green means you weighed in, grey means nothing logged.
           The window stays open so you can fill several days at once.

@@ -8,6 +8,7 @@ import { useWeightUnit, formatWeightKg } from './weightUnit';
 import { promptEnabled } from './promptPrefs';
 import { getLoggingDay } from './day';
 import { WEIGHED_IN } from './systemHabits';
+import WeightTrendStrip from './WeightTrendStrip';
 
 const CHECKIN_KEY = 'superdub.weight.checkin';
 const SNOOZE_KEY = 'superdub.weight.snooze';   // timestamp (ms) to re-ask after "Ask me later"
@@ -24,12 +25,26 @@ function ddmmNum(ddmm: string): number {
   return (m || 0) * 100 + (d || 0);
 }
 
+// The "not now" reasons, and what we say back. Nobody is talked out of logging
+// with guilt: each one names why the reading is still worth having, because a
+// slightly-off point beats a hole in the line.
+const REASONS = [
+  { key: 'eaten', chip: "I've eaten already", line: "Food and drink read as a kilo or two. The trend sees through it, so log what the scale says." },
+  { key: 'late',  chip: 'It is not the morning', line: 'An afternoon reading sits heavier than a morning one. Log it anyway, one honest point still moves the line.' },
+  { key: 'shy',   chip: "I'd rather not see it", line: "Then don't look. Type it, tap log, and the number goes straight to your line. No chart, no score." },
+] as const;
+type ReasonKey = typeof REASONS[number]['key'];
+
 const DailyCheckIn: React.FC = () => {
   const [show, setShow] = useState(false);
   // 'ask' = the "Did you weigh yourself?" Yes/No gate (auto-prompt only);
+  // 'later' = the "log it anyway" nudge behind "Ask me later";
   // 'input' = the weight field. Manual triggers jump straight to 'input'.
-  const [gate, setGate] = useState<'ask' | 'input'>('ask');
+  const [gate, setGate] = useState<'ask' | 'later' | 'input'>('ask');
+  const [reason, setReason] = useState<ReasonKey | null>(null);
   const [weight, setWeight] = useState('');   // the typed value
+  const [days, setDays] = useState<any[]>([]); // tracker rows, for the trend strip
+  const [goalKg, setGoalKg] = useState<number | undefined>(undefined);
   const [saving, setSaving] = useState(false);
   const [done, setDone]     = useState(false);
   const [error, setError]   = useState<string | null>(null);
@@ -40,6 +55,7 @@ const DailyCheckIn: React.FC = () => {
   const prefillWeight = async () => {
     try {
       const data: any = await api.getTracker();
+      setDays(data?.days ?? []);
       const today = ddmmNum(todayStr());
       const weighed = (data?.days ?? [])
         .filter((d: any) => d.weight && ddmmNum(d.day) <= today)
@@ -56,6 +72,16 @@ const DailyCheckIn: React.FC = () => {
     } catch {}
   };
 
+  // Goal weight only decides which direction the trend dots call progress.
+  useEffect(() => {
+    let live = true;
+    api.getWeightSettings().then(ws => {
+      const g = parseFloat(ws?.goalWeight ?? '');
+      if (live && g > 0) setGoalKg(g);
+    }).catch(() => {});
+    return () => { live = false; };
+  }, []);
+
   useEffect(() => {
     if (localStorage.getItem(CHECKIN_KEY) === todayStr()) return;
     // Off for people who don't want a daily weigh-in (default: on only while a weight
@@ -65,6 +91,7 @@ const DailyCheckIn: React.FC = () => {
     let tid: ReturnType<typeof setTimeout>;
     api.getTracker().then((data: any) => {
       if (cancelled) return;
+      setDays(data?.days ?? []);
       const today = todayStr();
       const todayEntry = data?.days?.find((d: any) => d.day === today);
       if (todayEntry?.weight) {
@@ -91,6 +118,7 @@ const DailyCheckIn: React.FC = () => {
     const handler = () => {
       setDone(false);
       setError(null);
+      setReason(null);
       setGate('input');   // explicit "Log Weight", skip the Yes/No gate
       prefillWeight();
       setShow(true);
@@ -156,21 +184,52 @@ const DailyCheckIn: React.FC = () => {
         onDismiss={dismiss}
         dismissLabel="No, try tomorrow"
       >
-        <button className="checkin-later-btn" onClick={askLater}>Ask me later</button>
+        <WeightTrendStrip days={days} goalKg={goalKg} />
+        <button className="checkin-later-btn" onClick={() => setGate('later')}>Ask me later</button>
       </PromptShell>
     );
   }
+
+  // "Later" doesn't mean "never": one more ask, because a gap in the line costs
+  // more than a slightly-off reading. Pick what's true and we take it from there.
+  if (gate === 'later') {
+    return (
+      <PromptShell
+        accent={HEALTH}
+        eyebrow="Morning Check-in"
+        title="Log it anyway?"
+        subtitle="A missing day is a hole in your trend. An imperfect number is not. Tell us what's up and log it as it is."
+        onDismiss={dismiss}
+        dismissLabel="Not today"
+      >
+        <div className="checkin-reasons">
+          {REASONS.map(r => (
+            <button key={r.key} className="checkin-reason" onClick={() => { setReason(r.key); setGate('input'); }}>
+              {r.chip}
+            </button>
+          ))}
+        </div>
+        <button className="checkin-later-btn" onClick={askLater}>Remind me in 2 hours</button>
+      </PromptShell>
+    );
+  }
+
+  const reasonLine = REASONS.find(r => r.key === reason)?.line;
 
   return (
     <PromptShell
       accent={HEALTH}
       eyebrow="Weigh-in · Morning"
       title="Log your weight"
-      subtitle="No judgment, just data."
+      subtitle={reasonLine ?? 'No judgment, just data.'}
       cta={done ? undefined : { label: saving ? 'Saving…' : error ? 'Retry' : 'Log it', onClick: save, disabled: saving }}
       onDismiss={dismiss}
       dismissLabel="Skip today"
     >
+      {/* "I'd rather not see it" means exactly that — the trend is hidden, the
+          number still lands. Every other path gets the map it's adding to. */}
+      {reason !== 'shy' && <WeightTrendStrip days={days} goalKg={goalKg} />}
+
       {/* Tap-to-type weight, entered in the user's unit, stored as kg */}
       <div className="checkin-weight-input-wrap">
         <WeightInput
@@ -185,7 +244,7 @@ const DailyCheckIn: React.FC = () => {
       </div>
 
       {done ? (
-        <div className="checkin-done">✓ Logged!</div>
+        <div className="checkin-done">{reason ? '✓ Logged anyway. That is the habit.' : '✓ Logged!'}</div>
       ) : (
         <>
           {error && <p className="checkin-error">{error}</p>}

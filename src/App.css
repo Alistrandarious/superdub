@@ -10054,6 +10054,33 @@ h1, h2, h3, h4, .sora {
 }
 .checkin-later-btn:disabled { opacity: 0.5; cursor: default; }
 
+/* ── "Log it anyway" reasons (the nudge behind "Ask me later") ── */
+.checkin-reasons { display: flex; flex-direction: column; gap: 8px; }
+.checkin-reason {
+  width: 100%; padding: 13px 16px; text-align: left; cursor: pointer;
+  border-radius: 12px; border: 1px solid var(--glass-border);
+  background: rgba(var(--fg-rgb),0.04);
+  font-family: var(--font-ui); font-size: 0.88rem; font-weight: 600; color: var(--text);
+  transition: background 0.15s, border-color 0.15s, transform 0.12s;
+}
+.checkin-reason:hover { background: rgba(var(--fg-rgb),0.08); border-color: var(--theme-ink, #2FD27E); }
+.checkin-reason:active { transform: scale(0.985); }
+
+/* ── Weight trend strip (WeightTrendStrip) ──
+   Mint dot = the weigh-in moved toward your goal, slate = it held or drifted.
+   Never red: one heavy morning is water, not a lapse. */
+.wts { flex-shrink: 0; margin: 0 auto 4px; width: 100%; max-width: 320px; }
+.wts-svg { display: block; width: 100%; height: auto; overflow: visible; }
+.wts-line { fill: none; stroke: rgba(var(--fg-rgb),0.22); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.wts-toward { fill: var(--mint-ink); }
+.wts-hold { fill: var(--slate-ink); }
+.wts-halo { fill: none; stroke: var(--text); stroke-width: 1.5; opacity: 0.55; }
+.wts-caption {
+  margin: 2px 0 0; text-align: center;
+  font-family: var(--font-data); font-size: 0.7rem;
+  letter-spacing: 0.02em; color: var(--text-dim);
+}
+
 .checkin-error {
   font-size: 0.75rem; color: var(--alert-ink); text-align: center;
   margin: 0 0 8px; padding: 8px 12px;
