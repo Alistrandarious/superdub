@@ -272,19 +272,90 @@ export function isLoggedIn() {
   return !!getToken();
 }
 
+/**
+ * Why a request failed, so a screen can tell the user something true.
+ * Every screen used to catch a bare Error and render its empty state, which
+ * made "we could not reach the server" look identical to "you have nothing
+ * here" — on a habit tracker that reads as lost data.
+ */
+export type ApiErrorKind = 'offline' | 'timeout' | 'auth' | 'server';
+
+export class ApiError extends Error {
+  kind: ApiErrorKind;
+  status?: number;
+  constructor(kind: ApiErrorKind, message: string, status?: number) {
+    super(message);
+    this.name = 'ApiError';
+    this.kind = kind;
+    this.status = status;
+  }
+  /** True when retrying might work — i.e. we never reached the server. */
+  get retryable() { return this.kind !== 'auth'; }
+}
+
+/** Human copy for a failed load. One place, so every screen says the same thing. */
+export function apiErrorMessage(err: unknown): string {
+  if (err instanceof ApiError) {
+    switch (err.kind) {
+      case 'offline': return "You're offline. Your saved data is safe.";
+      case 'timeout': return 'The server took too long to answer.';
+      case 'auth':    return 'Your session expired. Sign in again.';
+      default:        return 'Something went wrong at our end.';
+    }
+  }
+  return 'Something went wrong.';
+}
+
+// Render's free tier cold-starts, so a request can hang for a minute with no
+// signal. 20s is past a normal cold start but short enough to still feel like
+// an answer rather than a freeze.
+const REQUEST_TIMEOUT_MS = 20_000;
+
 async function request<T = any>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
-  const res = await fetch(`${BASE}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers ?? {}),
-    },
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error ?? 'Request failed');
-  return data;
+
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    throw new ApiError('offline', 'No connection');
+  }
+
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), REQUEST_TIMEOUT_MS);
+
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      ...options,
+      signal: ctl.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(options.headers ?? {}),
+      },
+    });
+  } catch (e: any) {
+    // fetch only rejects when the request never completed: abort or no network.
+    throw e?.name === 'AbortError'
+      ? new ApiError('timeout', 'Request timed out')
+      : new ApiError('offline', 'Could not reach the server');
+  } finally {
+    clearTimeout(timer);
+  }
+
+  // A 401 means the 90-day token expired. Drop it and tell the app, so the user
+  // gets the sign-in screen instead of a page of silently empty panels.
+  if (res.status === 401) {
+    clearToken();
+    window.dispatchEvent(new CustomEvent('superdub:auth-expired'));
+    throw new ApiError('auth', 'Session expired', 401);
+  }
+
+  // A gateway/proxy error is HTML, not JSON — parsing it would throw a
+  // SyntaxError and lose the real status.
+  let data: any = null;
+  try { data = await res.json(); } catch { /* keep null, handled below */ }
+
+  if (!res.ok) throw new ApiError('server', data?.error ?? `Request failed (${res.status})`, res.status);
+  return data as T;
 }
 
 // ── Shared read caches (E2.2) ──────────────────────────────────────────────

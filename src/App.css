@@ -15093,3 +15093,34 @@ details[open] > .plan-collapse-summary::before { content: '▾'; }
   line-height: 1.35;
   color: var(--text-mute);
 }
+/* =====================================================================
+   LOAD FAILURE — "we couldn't reach the server", never a fake empty state
+   ---------------------------------------------------------------------
+   A habit tracker's whole value is accumulated history, so an empty screen
+   after a failed fetch reads as "my data is gone". This says what happened,
+   says the data is safe, and offers the retry.
+   ===================================================================== */
+.load-error {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; padding: 32px 24px; text-align: center;
+}
+.load-error-ico { color: var(--text-mute); margin-bottom: 2px; }
+.load-error-title {
+  margin: 0; font-family: var(--font-display, 'Kanit', sans-serif);
+  font-style: italic; font-weight: 800; font-size: 1.25rem; color: var(--text);
+}
+.load-error-msg { margin: 0; font-family: var(--font-ui); font-size: 0.9rem; color: var(--text-dim); }
+.load-error-reassure {
+  margin: 0; font-family: var(--font-data, 'Space Mono', monospace);
+  font-size: 0.66rem; letter-spacing: 0.05em; color: var(--text-mute); max-width: 30ch;
+}
+.load-error-retry {
+  margin-top: 8px; padding: 11px 26px; border: none; border-radius: var(--r-pill, 999px);
+  background: var(--theme); color: #0E0E14; cursor: pointer;
+  font-family: var(--font-ui); font-size: 0.9rem; font-weight: 700;
+  transition: filter 0.15s, transform 0.12s;
+}
+.load-error-retry:hover { filter: brightness(1.08); }
+.load-error-retry:active { transform: scale(0.96); }
+.load-error-retry:focus-visible { outline: 2px solid var(--theme); outline-offset: 3px; }

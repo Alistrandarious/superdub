@@ -52,6 +52,15 @@ function AppRouter() {
     setAuthed(false);
   };
 
+  // The 90-day token expires eventually. api.ts clears it on any 401 and fires
+  // this, so an expired session lands on the sign-in screen instead of leaving
+  // every panel silently empty.
+  useEffect(() => {
+    const onExpired = () => setAuthed(false);
+    window.addEventListener('superdub:auth-expired', onExpired);
+    return () => window.removeEventListener('superdub:auth-expired', onExpired);
+  }, []);
+
   // Keep last_active_at current: fire on mount, tab focus, and every 5 min
   useEffect(() => {
     if (!authed) return;

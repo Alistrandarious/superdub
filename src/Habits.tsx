@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 import { useXP } from './XPContext';
 import './App.css';
-import { api } from './api';
+import { api, apiErrorMessage } from './api';
 import { loggingNow, getLoggingDay } from './day';
 import { cycleState, type HabitState } from './habitState';
 import { scheduleLabel, scheduledDateInPeriod, scheduleDdmm, WEEKDAYS_FULL } from './habitSchedule';
@@ -1345,6 +1345,10 @@ const Habits: React.FC = () => {
     if (c) setStuck(c.getBoundingClientRect().top <= scTop + 4);
   };
   const [loaded, setLoaded] = useState(false);
+  // Why the load failed, or null when it worked. Without this an unreachable
+  // server rendered the same "add a habit" page as a brand-new account, which
+  // on a streak tracker reads as "my data is gone".
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [newHabit, setNewHabit] = useState('');
   const [pendingRemove, setPendingRemove] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
@@ -1418,7 +1422,8 @@ const Habits: React.FC = () => {
   // XP bar intro: start at 0 on mount, then let the CSS width transition rise it
   // up to the real value (never animate down from a stale/full width on login).
 
-  useEffect(() => {
+  const loadHabits = useCallback(() => {
+    setLoadError(null);
     Promise.all([api.getHabits(), api.getTracker()]).then(([loadedHabits, trackerData]) => {
       let names = loadedHabits.map(h => h.name);
       const dates: Record<string, string | null> = {};
@@ -1468,8 +1473,10 @@ const Habits: React.FC = () => {
 
       setHt(map);
       setLoaded(true);
-    }).catch(() => setLoaded(true));
+    }).catch(err => { setLoadError(apiErrorMessage(err)); setLoaded(true); });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { loadHabits(); }, [loadHabits]);
 
   useEffect(() => {
     if (!navigator.geolocation) return;
@@ -1745,6 +1752,30 @@ const Habits: React.FC = () => {
     return (
       <div className="app" style={pageTheme(HEALTH)}>
         <div className="sd-loader-wrap"><div className="sd-loader"><img className="sd-loader-logo" src="/superdub-logo.png" alt="" /></div></div>
+      </div>
+    );
+  }
+
+  // Both habits AND the tracker come from one Promise.all, so a failure means we
+  // know nothing about this user. Rendering the normal page here would show an
+  // empty week and "add a habit" — indistinguishable from a wiped account. Say
+  // what actually happened and offer the retry instead.
+  if (loadError) {
+    return (
+      <div className="app" style={pageTheme(HEALTH)}>
+        <SuperdubHeader />
+        <div className="load-error" role="alert">
+          <svg className="load-error-ico" viewBox="0 0 24 24" width="34" height="34" fill="none"
+               stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true">
+            <path d="M12 3a9 9 0 1 0 9 9" /><path d="M12 8v5" /><path d="M12 16.5v.01" />
+          </svg>
+          <h2 className="load-error-title">Couldn't load your habits</h2>
+          <p className="load-error-msg">{loadError}</p>
+          <p className="load-error-reassure">Nothing has been lost. Your streaks are on the server.</p>
+          <button className="load-error-retry" onClick={() => { setLoaded(false); loadHabits(); }}>
+            Try again
+          </button>
+        </div>
       </div>
     );
   }
