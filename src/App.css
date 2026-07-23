@@ -15021,3 +15021,48 @@ details[open] > .plan-collapse-summary::before { content: '▾'; }
   color: var(--text-mute);
   opacity: 0.65;
 }
+
+/* ── Day streak hero (top of Habits) ──────────────────────────────────────────
+   The number is the hero; the sub-line is why it sits here rather than in a
+   badge — it names what today still needs. Flame accent, never red: falling
+   short of 75% is a state of the day, not an error. */
+.hb-streak {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin: 2px 16px 12px;
+  padding: 11px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(var(--fg-rgb),0.09);
+  background: rgba(var(--fg-rgb),0.035);
+}
+.hb-streak--kept {
+  border-color: rgba(255,138,0,0.34);
+  background: linear-gradient(180deg, rgba(255,138,0,0.11), rgba(255,138,0,0.03));
+}
+.hb-streak-flame { display: flex; flex-shrink: 0; opacity: 0.5; }
+.hb-streak--kept .hb-streak-flame { opacity: 1; }
+.hb-streak-num {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 2rem;
+  line-height: 1;
+  font-weight: 800;
+  color: var(--text);
+  flex-shrink: 0;
+}
+.hb-streak--kept .hb-streak-num { color: var(--flame-ink); }
+.hb-streak-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.hb-streak-label {
+  font-family: var(--font-data);
+  font-size: 0.6rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+}
+.hb-streak-sub {
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: var(--text-mute);
+}

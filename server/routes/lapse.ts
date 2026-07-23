@@ -102,9 +102,14 @@ router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
 });
 
 // ── POST /api/lapse/restore ───────────────────────────────────────────────────
-// Fill the quiet days with neutral 'na' marks against the login habit. 'na' is
-// already a non-breaking skip in computeHabitStats, so the streak survives with
-// no new streak maths anywhere. One restore per RESTORE_COOLDOWN_DAYS.
+// Fill the quiet days with neutral 'na' marks across every daily habit. 'na' is
+// already out of the denominator in src/dayStreak.ts, so a fully-'na' day scores
+// as 'neutral' and the walk steps over it — the streak survives with no new
+// streak maths anywhere. One restore per RESTORE_COOLDOWN_DAYS.
+//
+// (This used to mark only the login habit, which was enough when the streak
+// counted logins. The streak now counts 75% of the day's habits, so neutralising
+// a day means neutralising all of them.)
 router.post('/restore', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
     const today = localDate(req);
@@ -120,13 +125,22 @@ router.post('/restore', requireAuth as any, async (req: AuthRequest, res: Respon
     const gap = gapDayKeys(await logDays(req.userId!), today);
     if (gap.length === 0) return res.status(400).json({ error: 'Nothing to restore' });
 
+    const { rows: habitRows } = await pool.query(
+      `SELECT name FROM habits
+        WHERE user_id = $1 AND (archived = FALSE OR archived IS NULL)
+          AND COALESCE(cadence, 'daily') = 'daily' AND name <> $2`,
+      [req.userId, MANDATORY_HABIT],
+    ).catch(() => ({ rows: [] as any[] }));
+    const names = habitRows.map((h: any) => h.name);
+    if (names.length === 0) return res.status(400).json({ error: 'No daily habits to restore' });
+
     for (const { day, year } of gap) {
       // Never overwrite a real mark — a day they explicitly failed stays failed.
       await pool.query(
         `INSERT INTO tracker_habits (user_id, day, habit_name, state, year)
-         VALUES ($1, $2, $3, 'na', $4)
+         SELECT $1, $2, name, 'na', $4 FROM unnest($3::text[]) AS name
          ON CONFLICT (user_id, day, habit_name) DO NOTHING`,
-        [req.userId, day, MANDATORY_HABIT, year],
+        [req.userId, day, names, year],
       ).catch(() => {});
     }
     await pool.query(

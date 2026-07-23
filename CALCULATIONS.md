@@ -138,6 +138,25 @@ each habit earns XP per day based on streak length (streak gates at
 7/14/30/60/100/200/365 days). Levels are XP thresholds
 (Rookie 0 → Beginner 100 → Novice 300 → …).
 
+### The day streak   `src/dayStreak.ts`
+Separate from per-habit streaks, and **not** a login count. A day continues the
+run when at least **75%** of that day's *due* habits are done:
+```
+kept(day)  ⟺  done / due ≥ 0.75          due = daily habits live that day, minus 'na'
+```
+- Only **daily**-cadence habits count (a weekly habit isn't due every day), and
+  the 'Logging into Superdub' habit is excluded — attendance is not the metric.
+- `'na'` leaves the **denominator**, so a deliberate skip never counts against
+  you. A day where everything due is `'na'` (or nothing was due yet) scores
+  `neutral`: the walk steps over it without counting or breaking.
+- **No grace day.** One day under 75% and the streak is 0. A grace day is just a
+  6/7 rule in disguise.
+- Today only counts once it already qualifies, so a half-finished morning never
+  reads as a break.
+
+A streak restore (the lapse protocol) works by writing `'na'` across every daily
+habit on the quiet days, which turns them `neutral` — no special-casing anywhere.
+
 ---
 
 ## 11. Learned personal maintenance (TDEE)   `server/services/tdeeEstimator.ts`

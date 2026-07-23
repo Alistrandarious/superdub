@@ -11,6 +11,7 @@ import { useUserStage } from './userStage';
 import SuperdubHeader from './SuperdubHeader';
 import DailyLog from './DailyLog';
 import LapseBanner from './LapseBanner';
+import { computeDayStreak, todayProgress } from './dayStreak';
 import HomeOnTrack from './HomeOnTrack';
 import AnimatedFlame from './AnimatedFlame';
 import LevelHeroRing from './LevelHeroRing';
@@ -1542,22 +1543,31 @@ const Habits: React.FC = () => {
     return () => window.removeEventListener('superdub:show-featured', handler);
   }, []);
 
-  // Login-streak stats for the mandatory check-in habit — one source for the flame
-  // badge cache below and the streak hero on the page.
-  const mandatoryStats = useMemo(
-    () => computeHabitStats(MANDATORY_HABIT, ht, today, startDates[MANDATORY_HABIT], xpCarry[MANDATORY_HABIT] ?? 0),
-    [ht, today, startDates, xpCarry],
-  );
+  // The day streak — days you did the work, not days you opened the app. A day
+  // counts when 75% of that day's due habits are done; anything less is back to
+  // zero. Only daily habits are in scope (a weekly habit isn't "due" every day),
+  // and the login habit is excluded — attendance is not the metric.
+  const streakInput = useMemo(() => ({
+    allDays: ALL_DAYS,
+    today,
+    habits: habits.filter(h => h !== MANDATORY_HABIT && (habitCadence[h] ?? 'daily') === 'daily'),
+    states: ht as Record<string, Record<string, string | null | undefined>>,
+    startDay: Object.fromEntries(
+      Object.entries(startDates).map(([h, sd]) => [h, sd ? startDateToKey(sd) ?? undefined : undefined]),
+    ),
+  }), [habits, habitCadence, ht, today, startDates]);
+  const dayStreak = useMemo(() => computeDayStreak(streakInput), [streakInput]);
+  const streakToday = useMemo(() => todayProgress(streakInput), [streakInput]);
 
-  // Cache the check-in streak so the flame badge can show it on every page.
+  // Cache the day streak so the flame badge can show it on every page.
   useEffect(() => {
     if (!loaded) return;
-    const s = mandatoryStats.streak;
+    const s = dayStreak;
     if (localStorage.getItem('superdub.dayStreak') !== String(s)) {
       localStorage.setItem('superdub.dayStreak', String(s));
       window.dispatchEvent(new CustomEvent('superdub:streak-updated'));
     }
-  }, [loaded, mandatoryStats]);
+  }, [loaded, dayStreak]);
 
   // The community habit is now a single dedicated habit ("do a good deed"), logged
   // from the Global planet overlay (GlobalPrompt) — no longer fed by daily-habit
@@ -2027,6 +2037,24 @@ const Habits: React.FC = () => {
             </div>
           );
         })()}
+        {/* Day streak — back at the top, and it now means something: days where 75%
+            of the day's habits got done. The sub-line is the whole point of putting
+            it here, it tells you what today still needs rather than just scoring you. */}
+        {streakToday.due > 0 && (
+          <div className={`hb-streak${streakToday.kept ? ' hb-streak--kept' : ''}`}>
+            <span className="hb-streak-flame"><AnimatedFlame size={26} /></span>
+            <span className="hb-streak-num">{dayStreak}</span>
+            <span className="hb-streak-body">
+              <span className="hb-streak-label">day streak</span>
+              <span className="hb-streak-sub">
+                {streakToday.kept
+                  ? `Today is in the bag at ${streakToday.done} of ${streakToday.due}.`
+                  : `${streakToday.done} of ${streakToday.due} done. ${streakToday.needed} more keeps it.`}
+              </span>
+            </span>
+          </div>
+        )}
+
         <WeekStrip ht={ht} rewindDay={rewindDay} onPick={setRewindDay} perfectWeek={isPerfectWeek} celebrating={weekCelebrating} />
 
         {/* Rewind banner — the page is showing a past day. It sits directly under the
@@ -2085,7 +2113,7 @@ const Habits: React.FC = () => {
         {activeCadence === 'daily' && !rewindDay && <HomeOnTrack />}
 
         {/* New / lapsed users get a gentle coaching line instead of a bare gap. */}
-        {(stage === 'new' || mandatoryStats.streak < 1) && (
+        {(stage === 'new' || dayStreak < 1) && (
           <p className="hb-week-coach">Tick a habit each day to grow your streak. Dub coaches you as you go.</p>
         )}
 
