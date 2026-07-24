@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from './api';
+import { api, PlanReplanProposal } from './api';
 import WeightInput from './WeightInput';
 import PlanJourneyChart from './PlanJourneyChart';
 import { useWeightUnit, formatWeightKg, unitLabel } from './weightUnit';
@@ -99,6 +99,8 @@ const PlanPage: React.FC = () => {
   const [cycle, setCycle] = useState<CycleData | null>(null);
   const [latestWeight, setLatestWeight] = useState<number | null>(null);
   const [trackerDays, setTrackerDays] = useState<any[]>([]);
+  const [replan, setReplan] = useState<PlanReplanProposal | null>(null);
+  const [replanSaving, setReplanSaving] = useState(false);
   const unit = useWeightUnit();
 
   // Form state
@@ -126,12 +128,14 @@ const PlanPage: React.FC = () => {
         setHistory(statusData.history ?? []);
         setTargetWeight(String(statusData.goal.targetWeight));
         setTargetDate(statusData.goal.targetDate.slice(0, 10));
+        setReplan(statusData.replan ?? null);
       } else {
         setActiveGoal(null);
         setCurrentTarget(null);
         setHistory([]);
         setTargetWeight('');
         setTargetDate('');
+        setReplan(null);
       }
 
       // Keep the full day list for the journey chart, and find the latest weigh-in.
@@ -207,6 +211,23 @@ const PlanPage: React.FC = () => {
     if (pct <= 0) return;
     const weeksNeeded = Math.abs(tw - latestWeight) / latestWeight / pct;
     setTargetDate(formatDate(addWeeks(new Date(), weeksNeeded)));
+  };
+
+  // Accept the proposed plan: same goal weight, honest new date. Goes through the
+  // ordinary goal endpoint, which keeps the original start anchor — the journey
+  // so far is history, not a mistake to be wiped.
+  const acceptReplan = async () => {
+    if (!replan || !activeGoal) return;
+    setReplanSaving(true);
+    setError('');
+    try {
+      await api.createPlanGoal(activeGoal.targetWeight, replan.newTargetDate);
+      await loadAll();
+    } catch (err: any) {
+      setError(err?.message ?? 'Could not start the new plan');
+    } finally {
+      setReplanSaving(false);
+    }
   };
 
   const handleSave = async () => {
@@ -415,6 +436,37 @@ const PlanPage: React.FC = () => {
         <div className="plan-page-loading">Loading…</div>
       ) : hasGoal && activeGoal && currentTarget ? (
         <div className="plan-page-body">
+
+          {/* ── The plan you're on has stopped being true ── */}
+          {replan && (
+            <div className="plan-replan">
+              <span className="plan-replan-eyebrow">
+                {replan.gapDays >= 14 ? `Back after ${replan.gapDays} quiet days` : 'Your plan needs a new date'}
+              </span>
+              <p className="plan-replan-headline">{replan.headline}</p>
+              <div className="plan-replan-figures">
+                <div className="plan-replan-fig">
+                  <span className="plan-replan-fig-val">{formatWeightKg(replan.kgToGo, unit)}</span>
+                  <span className="plan-replan-fig-key">Still to go</span>
+                </div>
+                <div className="plan-replan-fig">
+                  <span className="plan-replan-fig-val">{replan.safeRate.toFixed(2)}<span className="plan-replan-fig-unit"> kg/wk</span></span>
+                  <span className="plan-replan-fig-key">New pace</span>
+                </div>
+                <div className="plan-replan-fig">
+                  <span className="plan-replan-fig-val">{shortDate(replan.newTargetDate)}</span>
+                  <span className="plan-replan-fig-key">New date</span>
+                </div>
+              </div>
+              <p className="plan-replan-note">
+                Your goal of {formatWeightKg(activeGoal.targetWeight, unit)} doesn't move, and everything you've logged stays on the chart.
+              </p>
+              <button className="plan-replan-btn" onClick={acceptReplan} disabled={replanSaving}>
+                {replanSaving ? 'Starting…' : `Start the new plan`}
+              </button>
+              <button className="plan-replan-skip" onClick={() => setReplan(null)}>Keep the plan I've got</button>
+            </div>
+          )}
 
           {/* ── Hero: the journey chart, calorie target, and pace ── */}
           <div className={`plan-hero ${onTrack === false ? 'plan-hero-off' : 'plan-hero-on'}`}>

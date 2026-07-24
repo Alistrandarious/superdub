@@ -63,6 +63,15 @@ const OUTLIER_ALPHA = EMA_ALPHA * 0.2; // flagged points get 1/5th the normal pu
 const TOLERANCE_PCT_BW = 0.001; // 0.1% body weight per week tolerance band
 const KCAL_PER_KG = 7700;      // approximate energy density of body fat
 const MAX_ADJ_FRACTION = 0.40; // correction capped at 40% of weekly rate's kcal equivalent
+export const GAP_DAYS = 14;    // quiet days that count as a real break in the story
+
+/** The run of points since the last break of GAP_DAYS or more. */
+export function sinceLastGap(pts: EMAPoint[]): EMAPoint[] {
+  for (let i = pts.length - 1; i > 0; i--) {
+    if ((pts[i].date.getTime() - pts[i - 1].date.getTime()) / 86400000 >= GAP_DAYS) return pts.slice(i);
+  }
+  return pts;
+}
 
 // ── BMR / TDEE ────────────────────────────────────────────────────────────────
 
@@ -89,11 +98,18 @@ export function computeEMA(points: WeightPoint[]): EMAPoint[] {
 
   for (let i = 1; i < sorted.length; i++) {
     const w = sorted[i].weight;
+    const gapDays = Math.max(1, Math.round((sorted[i].date.getTime() - sorted[i - 1].date.getTime()) / 86400000));
     // Flag if the raw reading jumps more than OUTLIER_PCT from the running EMA.
     // These aren't silently dropped — they're included with reduced weight so
     // a genuine large change still moves the trend, just more slowly.
-    const flagged = Math.abs(w - ema) / ema > OUTLIER_PCT;
-    const alpha = flagged ? OUTLIER_ALPHA : EMA_ALPHA;
+    // The allowance scales with the days elapsed: 2.5% overnight is water, 2.5%
+    // across two quiet months is your actual body, and calling that an outlier is
+    // how the engine ends up prescribing for someone who isn't there any more.
+    const flagged = Math.abs(w - ema) / ema > Math.min(1, OUTLIER_PCT * gapDays);
+    // Compound the daily pull over the days that actually passed, so the first
+    // weigh-in back carries the weight of the mornings it stands for.
+    const base = flagged ? OUTLIER_ALPHA : EMA_ALPHA;
+    const alpha = 1 - (1 - base) ** gapDays;
     ema = +(alpha * w + (1 - alpha) * ema).toFixed(3);
     out.push({ day: sorted[i].day, date: sorted[i].date, raw: w, ema, flagged });
   }
@@ -103,7 +119,11 @@ export function computeEMA(points: WeightPoint[]): EMAPoint[] {
 // ── Trend slope from EMA series ───────────────────────────────────────────────
 
 // Linear regression over (days-since-first, ema) → slope in kg/day → scaled to kg/week.
-export function weeklySlope(emaPoints: EMAPoint[]): number | null {
+export function weeklySlope(all: EMAPoint[]): number | null {
+  // Only the run since the last real break. A regression drawn across a quiet
+  // month describes a rate of change nobody lived. Mirrors sinceLastGap in
+  // src/weightMath.ts.
+  const emaPoints = sinceLastGap(all);
   if (emaPoints.length < 2) return null;
   const t0 = emaPoints[0].date.getTime();
   const xs = emaPoints.map(p => (p.date.getTime() - t0) / 86400000);

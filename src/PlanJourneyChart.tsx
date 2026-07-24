@@ -91,8 +91,10 @@ const PlanJourneyChart: React.FC<{ days: any[]; goal: JourneyGoal }> = ({ days, 
         />
 
         {/* Green smoothed trend: area fill + line */}
-        <Area type="monotone" dataKey="ema" stroke="none" fill="url(#pjFill)" connectNulls isAnimationActive={false} />
-        <Line type="monotone" dataKey="ema" stroke={HEALTH} strokeWidth={3} dot={false} connectNulls isAnimationActive={false} name="Your trend" />
+        {/* No connectNulls: journeyMath bridges the days between weigh-ins, so a
+            hole that survives to here is a real break and the line should break too. */}
+        <Area type="monotone" dataKey="ema" stroke="none" fill="url(#pjFill)" isAnimationActive={false} />
+        <Line type="monotone" dataKey="ema" stroke={HEALTH} strokeWidth={3} dot={false} isAnimationActive={false} name="Your trend" />
 
         {/* Blue dashed projection to target */}
         <Line type="monotone" dataKey="projection" stroke={PROJECT} strokeWidth={2.4} strokeDasharray="2 6" strokeLinecap="round" dot={false} connectNulls isAnimationActive={false} name="Projected" />

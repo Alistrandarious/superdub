@@ -45,6 +45,7 @@ const full: DubData = {
   plan: {
     active: true, tdee: { observedTDEE: 2400, blendedTDEE: 2450, formulaTDEE: 2500, confidence: 0.62, intakeUsed: 2000, intakeIsLogged: false },
     stall: null,
+    replan: null,
     goal: { id: 'g', goalType: 'lose', startWeight: 88, startDate: iso(60), targetWeight: 82, targetDate: iso(-84), ratePctBw: 0.5 },
     currentTarget: { calories: 1950, reason: 'plan', effectiveFrom: iso(10) },
     history: [],

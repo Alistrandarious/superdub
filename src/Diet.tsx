@@ -8,7 +8,7 @@ import WeightSparkline from './WeightSparkline';
 import PlanGauge from './PlanGauge';
 import { kcalPerStep } from './energy';
 import { pageTheme, GROWTH, HEALTH } from './theme';
-import { linearReg, localYMD, isoToDDMM } from './weightMath';
+import { linearReg, localYMD, isoToDDMM, emaStep } from './weightMath';
 
 interface ProfileData {
   dob: string;
@@ -583,9 +583,14 @@ const Diet: React.FC = () => {
 
       // EMA (alpha=0.25) of logged weights → most-recent value, for the plan card.
       let ema: number | null = null;
+      let prevDay: number | null = null;
       for (const d of unique) {
         const w = parseFloat(d.weight);
-        if (w > 0) ema = ema == null ? w : 0.25 * w + 0.75 * ema;
+        if (!(w > 0)) continue;
+        const [dd, mm] = String(d.day).split('/').map(Number);
+        const dayNum = mm ? Math.round(Date.UTC(new Date().getFullYear(), mm - 1, dd) / 86400000) : null;
+        ema = emaStep(ema, w, dayNum != null && prevDay != null ? dayNum - prevDay : 1);
+        prevDay = dayNum;
       }
       setLastEMAValue(ema);
 

@@ -102,6 +102,28 @@ MET by intensity: light ≈ 3.5, moderate ≈ 6, hard ≈ 8.
 - **Trend line** — least-squares linear regression over the last 28 logged days.
 - **Weekly rate** = regression slope × 7. + = gaining, − = losing.
 
+### Gaps in the record
+Smoothing exists to shrug off day-to-day water. It has no business shrugging off
+a fortnight. So α is **compounded over the days actually elapsed** between two
+weigh-ins:
+```
+alpha = 1 − (1 − 0.25)^daysSinceLastWeighIn
+```
+A weekly weigh-in pulls seven days' worth; the first weigh-in back after two
+quiet months effectively *becomes* the trend. The outlier guard scales the same
+way — a 2.5% jump overnight is water, a 2.5% jump across two months is your
+body, and the engine used to call the second one an outlier and keep prescribing
+for a person who wasn't there any more.
+
+A break of **14 days or more** (`GAP_DAYS`) restarts the trend line: the
+regression only runs over the weigh-ins **since the last gap**, because a rate of
+change measured across a silence describes nobody. On the charts the line breaks
+over the quiet stretch rather than drawing straight through it; shorter holes
+between weigh-ins are bridged so a normal week still reads as one line.
+
+Implemented once in `emaStep`/`sinceLastGap` (`src/weightMath.ts`) and mirrored
+in `computeEMA`/`weeklySlope` (`server/services/planEngine.ts`).
+
 ## 7. Safe-zone corridor
 A ±1.5 kg band around the ideal straight line from start weight → goal weight
 over your goal timeframe. On the weekly chart the band is ±0.75 kg.
@@ -113,6 +135,32 @@ calorieAdj = −deviation × 7700 / 7     (capped ±500 kcal/day)
 newTarget  = clamp(calorieTarget + calorieAdj, 1200, 5000)
 ```
 If you're gaining when you mean to lose, deviation is positive → it cuts calories.
+
+## 8b. Re-plan   `server/services/replan.ts`
+Smart Adjust moves your calories. It cannot move your **date** — so a plan you've
+drifted off keeps solving for the old deadline, and the pace it demands climbs
+every cycle until it's asking for something no body does and no calorie target
+can buy. Nothing errors, so nothing tells you.
+
+Every `/plan/status` asks whether the plan is still a true statement:
+```
+safeRate = min(currentWeight × 1%,  (TDEE − BMR) × 7 / 7700)   # ≥ 0.05 kg/wk
+requiredRate = |currentEMA − targetWeight| / weeksLeft
+```
+`safeRate` is capped by body size **and** by the BMR floor, because a pace you
+could only hit by eating below your resting need isn't a pace, it's a promise the
+engine will refuse to keep. It sits under the 1.5% velocity that trips Metabolic
+Protection (§8) — the plan should never *prescribe* a rate the engine would flag.
+
+If `requiredRate > safeRate` (or the target date has already passed with weight
+still to go), Superdub proposes: **same goal weight, new date**, at
+`weeksNeeded = ceil(kgToGo / safeRate)`. It is **offered, never applied** — one
+tap accepts, and accepting goes through the ordinary goal endpoint, which keeps
+the original start anchor so the journey so far stays on the chart.
+
+A missed target date no longer marks the goal `completed`. Filing a missed goal
+as complete is a comfortable lie the app then has nothing to say after; it stays
+active so the re-plan can be offered instead.
 
 ## 9. Estimated intake (Progress chart)
 > **This is the single source of truth for calories.** Superdub reverse-engineers

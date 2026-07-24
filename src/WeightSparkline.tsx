@@ -1,7 +1,7 @@
 import React from 'react';
 import { ComposedChart, Line, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useWeightUnit, formatWeightKg, kgToUnitValue } from './weightUnit';
-import { DAY_SHORT, linearReg, localYMD, isoToDDMM } from './weightMath';
+import { DAY_SHORT, linearReg, localYMD, isoToDDMM, emaStep } from './weightMath';
 
 // "Weight This Week" — a weekly weight chart (logged + EMA-smoothed + 28-day trend
 // + a golden safe-zone corridor) with Mon–Sun day circles and a plain-English
@@ -52,8 +52,10 @@ const WeightSparkline: React.FC<{
     const found = allTrackerDays.find((day: any) => day.day === ddmm);
     const w = found ? parseFloat(found.weight) : NaN;
     if (w > 0) {
-      histPts.push({ x: 27 - i, y: w });
-      emaAcc = emaAcc === null ? w : 0.25 * w + 0.75 * emaAcc;
+      const x = 27 - i;
+      const prevX = histPts.length > 0 ? histPts[histPts.length - 1].x : x;
+      histPts.push({ x, y: w });
+      emaAcc = emaStep(emaAcc, w, x - prevX);
       emaByDDMM[ddmm] = parseFloat(emaAcc.toFixed(2));
     }
   }

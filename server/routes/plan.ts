@@ -7,6 +7,7 @@ import {
 import type { WeightPoint, Biometrics, Goal, EMAPoint } from '../services/planEngine';
 import { estimatePersonalTDEE } from '../services/tdeeEstimator';
 import { predictStall } from '../services/plateauPredictor';
+import { proposeReplan } from '../services/replan';
 
 // ── Gather recent behavioural metrics for the ML models ──────────────────────
 async function getRecentMetrics(userId: number) {
@@ -178,6 +179,7 @@ router.get('/status', requireAuth as any, async (req: AuthRequest, res: Response
     // ── ML: personalized TDEE + plateau/stall prediction ────────────────────
     let tdee: any = null;
     let stall: any = null;
+    let replan: any = null;
     try {
       const pts = await getWeightPoints(req.userId!);
       const emaPoints = computeEMA(pts);
@@ -206,6 +208,23 @@ router.get('/status', requireAuth as any, async (req: AuthRequest, res: Response
           moodAvg: metrics.moodAvg,
           loggingRate: metrics.loggingRate,
         });
+
+        // Is this plan still a true statement? Off the back of a quiet stretch
+        // the required pace climbs silently until it's fiction — say so, and
+        // offer the same goal on an honest date. Never applied automatically.
+        const lastTwo = emaPoints.slice(-2);
+        const gapDays = lastTwo.length === 2
+          ? Math.round((lastTwo[1].date.getTime() - lastTwo[0].date.getTime()) / 86400000)
+          : 0;
+        replan = proposeReplan({
+          goalType: goal.goal_type as 'lose' | 'gain' | 'maintain',
+          targetWeight: Number(goal.target_weight),
+          targetDate: new Date(goal.target_date),
+          currentWeight: emaPoints[emaPoints.length - 1].ema,
+          tdee: tdee?.blendedTDEE ?? formulaTDEE,
+          bmr: computeBMR(bio),
+          gapDays,
+        });
       }
     } catch (e: any) {
       console.error('[plan/status ml]', e?.message);
@@ -215,6 +234,7 @@ router.get('/status', requireAuth as any, async (req: AuthRequest, res: Response
       active: true,
       tdee,
       stall,
+      replan,
       goal: {
         id: goal.id,
         goalType: goal.goal_type,
@@ -424,13 +444,16 @@ router.post('/cycle', requireAuth as any, async (req: AuthRequest, res: Response
     const bio = await getBiometrics(req.userId!, latestWeight);
     if (!bio) return res.json({ ran: false, reason: 'Profile incomplete', ...reachedPayload });
 
-    // Auto-complete goal if target date has passed
+    // Target date gone by. Only call it complete if they actually got there —
+    // filing a missed goal as "completed" is the app telling a comfortable lie
+    // and then having nothing to say. A missed date stays active so /status can
+    // offer the same goal on an honest date.
     if (new Date(goal.target_date) < new Date()) {
-      await pool.query(
-        `UPDATE weight_goals SET status = 'completed' WHERE id = $1`,
-        [goal.id]
-      );
-      return res.json({ ran: false, reason: 'Goal target date has passed — marked complete', ...reachedPayload });
+      if (goalReached) {
+        await pool.query(`UPDATE weight_goals SET status = 'completed' WHERE id = $1`, [goal.id]);
+        return res.json({ ran: false, reason: 'Goal reached — marked complete', ...reachedPayload });
+      }
+      return res.json({ ran: false, reason: 'Target date has passed with weight still to go', needsReplan: true, ...reachedPayload });
     }
 
     const result = runCycle(rowToGoal(goal), currentCalories, emaPoints, bio);

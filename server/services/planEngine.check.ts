@@ -85,4 +85,28 @@ const fast: EMAPoint[] = Array.from({ length: 21 }, (_, i) => ({
 }));
 assert.strictEqual(detectMetabolicProtection(fast, 80), true);
 
+// ── Coming back after a long quiet stretch ─────────────────────────────────────
+// Logs daily, disappears for eleven weeks, returns 3 kg heavier. The old engine
+// called that reading an outlier and kept prescribing for the body they used to
+// have; the trend must land on the body standing on the scale today.
+const returned = computeEMA([
+  mkPoint(0, 90), mkPoint(1, 89.9), mkPoint(2, 89.8), mkPoint(3, 89.7),
+  mkPoint(80, 93),
+]);
+const back = returned[returned.length - 1];
+assert.strictEqual(back.flagged, false, 'a 3% change over eleven weeks is a body, not an outlier');
+assert.ok(Math.abs(back.ema - 93) < 0.01, 'the weigh-in back re-anchors the trend');
+
+// The rate is measured from the return onwards, never smeared across the silence.
+assert.strictEqual(weeklySlope(returned), null, 'one point since the break is not a trend');
+const settled = computeEMA([
+  mkPoint(0, 90), mkPoint(1, 89.9), mkPoint(80, 93), mkPoint(87, 92.5), mkPoint(94, 92),
+]);
+const rate = weeklySlope(settled);
+assert.ok(rate !== null && rate < 0 && rate > -1.2, `post-gap rate is the real one, got ${rate}`);
+
+// Same-day-scale noise is still smoothed away — the fix must not un-smooth normal use.
+const noisy = computeEMA([mkPoint(0, 90), mkPoint(1, 92)]);
+assert.ok(noisy[1].ema < 90.6, 'an overnight jump still barely moves the trend');
+
 console.log('planEngine: all checks passed');

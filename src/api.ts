@@ -179,12 +179,26 @@ export interface PlanTargetHistoryEntry {
   reason: string;
   effectiveFrom: string;
 }
+/** The plan the engine would write today, when the one you're on has stopped
+ *  being reachable at a safe pace. Offered on the Plan page, never auto-applied.
+ *  Mirrors ReplanProposal in server/services/replan.ts. */
+export interface PlanReplanProposal {
+  cause: 'unreachable' | 'date-passed';
+  kgToGo: number;
+  requiredRate: number;
+  safeRate: number;
+  weeksNeeded: number;
+  newTargetDate: string;
+  gapDays: number;
+  headline: string;
+}
 export type PlanStatusResponse =
   | { active: false }
   | {
       active: true;
       tdee: PlanTDEEEstimate | null;
       stall: PlanStallSignal | null;
+      replan: PlanReplanProposal | null;
       goal: PlanGoal;
       currentTarget: { calories: number; reason: string; effectiveFrom: string } | null;
       history: PlanTargetHistoryEntry[];

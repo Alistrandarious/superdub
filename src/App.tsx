@@ -19,6 +19,7 @@ import { BUILD_TAG } from './version';
 import { kcalPerStep as kcalPerStepFor, stepsToKm, estimateIntakeKcal, estimateIntakeRange, workoutCalories } from './energy';
 import { assessIntakeTruth } from './intakeTruth';
 import { loggingNow, getLoggingDay } from './day';
+import { emaStep } from './weightMath';
 import { useNavigate } from 'react-router-dom';
 import { pageTheme, GROWTH, HEALTH, TEAL } from './theme';
 import PlanGauge from './PlanGauge';
@@ -874,9 +875,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const chartEMA: Record<number, number> = {};
   {
     let ema: number | null = null;
+    let prevI: number | null = null;
     for (const { i, w } of weightPoints) {
-      ema = ema === null ? w : 0.25 * w + 0.75 * ema;
+      ema = emaStep(ema, w, prevI == null ? 1 : i - prevI);
       chartEMA[i] = +ema.toFixed(2);
+      prevI = i;
     }
   }
 

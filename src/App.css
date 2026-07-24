@@ -14473,6 +14473,91 @@ details[open] > .plan-collapse-summary::before { content: '▾'; }
   font-weight: 700;
 }
 
+/* ── Re-plan card ── the plan you're on has stopped being true.
+   Amber, not red: a date that slipped is a fact to update, not a telling-off. */
+.plan-replan {
+  border: 1px solid rgba(255, 138, 0, 0.34);
+  border-radius: var(--r-card);
+  background: linear-gradient(180deg, rgba(255, 138, 0, 0.09), rgba(255, 138, 0, 0.02));
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.plan-replan-eyebrow {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: #FF8A00;
+  font-weight: 700;
+}
+.plan-replan-headline {
+  margin: 0;
+  font-family: 'Sora', sans-serif;
+  font-size: 0.98rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--text-primary, #fff);
+}
+.plan-replan-figures {
+  display: flex;
+  gap: 10px;
+}
+.plan-replan-fig {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 8px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+}
+.plan-replan-fig-val {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #FF8A00;
+  white-space: nowrap;
+}
+.plan-replan-fig-unit { font-size: 0.66rem; opacity: 0.75; }
+.plan-replan-fig-key {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.5);
+}
+.plan-replan-note {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.7);
+}
+.plan-replan-btn {
+  border: none;
+  border-radius: var(--r-pill);
+  padding: 13px 18px;
+  font-family: 'Sora', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #1A0E00;
+  background: #FF8A00;
+  cursor: pointer;
+}
+.plan-replan-btn:disabled { opacity: 0.6; cursor: default; }
+.plan-replan-skip {
+  border: none;
+  background: none;
+  padding: 4px;
+  font-family: 'Sora', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+}
+
 /* ── Hero card ── */
 .plan-hero {
   border: 1px solid var(--glass-border);

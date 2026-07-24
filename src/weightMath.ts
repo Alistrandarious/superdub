@@ -15,6 +15,29 @@ export function linearReg(pts: { x: number; y: number }[]): { slope: number; wee
   return { slope, weeklyRate: slope * 7, intercept: my - slope * mx };
 }
 
+// ── Gap-aware smoothing ──────────────────────────────────────────────────
+// Smoothing exists to shrug off day-to-day water. It has no business shrugging
+// off a fortnight. The daily pull is compounded over the days actually elapsed,
+// so a weigh-in after a quiet spell moves the trend as hard as the days it
+// stands for, and the first weigh-in back after a long gap simply *is* the
+// trend. Mirrored server-side in planEngine.computeEMA.
+export const EMA_ALPHA = 0.25;
+/** Quiet days that count as a real break in the story, not a missed morning. */
+export const GAP_DAYS = 14;
+
+export function emaStep(prev: number | null, weight: number, gapDays = 1): number {
+  if (prev === null) return weight;
+  const alpha = 1 - (1 - EMA_ALPHA) ** Math.max(1, gapDays);
+  return alpha * weight + (1 - alpha) * prev;
+}
+
+/** Only the run of points since the last real break — a trend line drawn across
+ *  a gap describes a person who wasn't there. */
+export function sinceLastGap<T extends { x: number }>(pts: T[], gap = GAP_DAYS): T[] {
+  for (let i = pts.length - 1; i > 0; i--) if (pts[i].x - pts[i - 1].x >= gap) return pts.slice(i);
+  return pts;
+}
+
 export function localYMD(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
