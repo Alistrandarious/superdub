@@ -9003,6 +9003,8 @@ h1, h2, h3, h4, .sora {
 .archived-head { padding: 8px 4px 18px; }
 .archived-title { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.5rem; color: var(--text); margin: 0 0 6px; }
 .archived-sub { font-size: 0.85rem; color: var(--text-mute); margin: 0; }
+/* Why a restore was turned down (a full plan, or the server being unreachable). */
+.archived-sub--warn { color: var(--gold-ink); margin-top: 8px; }
 .archived-empty { text-align: center; padding: 48px 20px; }
 .archived-empty-icon { font-size: 3rem; margin-bottom: 12px; }
 .archived-empty-title { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 1.05rem; color: var(--text); margin: 0 0 4px; }

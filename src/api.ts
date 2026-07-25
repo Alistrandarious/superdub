@@ -31,6 +31,15 @@ export interface LapseSignalsResponse {
   restoreAvailable: boolean;
 }
 
+/** GET /api/entitlement — mirrors EntitlementState in server/middleware/entitlement.ts. */
+export interface EntitlementResponse {
+  entitlement: 'free' | 'trial' | 'pro';
+  trialEndsAt: string;
+  /** How many of your own habits you may keep. null = no ceiling. */
+  habitLimit: number | null;
+  habitCount: number;
+}
+
 export interface SignupCohort {
   cohortName: string;
   cohortSize: number;
@@ -426,6 +435,10 @@ export const api = {
   restoreHabit: (name: string): Promise<{ ok: true }> => request(`/habits/${encodeURIComponent(name)}/restore`, { method: 'POST' }),
   deleteHabitPermanently: (name: string): Promise<{ ok: true }> => request(`/habits/${encodeURIComponent(name)}/permanent`, { method: 'DELETE' }),
   getGraveyard: (): Promise<{ name: string; startDate: string | null }[]> => request('/habits/graveyard'),
+
+  // entitlement — what this account may do. Read-only; the server enforces it
+  // again on every route that gates something. `habitLimit: null` = no ceiling.
+  getEntitlement: (): Promise<EntitlementResponse> => request('/entitlement'),
 
   // tracker
   getTracker: (): Promise<TrackerResponse> => request('/tracker'),

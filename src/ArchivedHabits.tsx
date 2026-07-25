@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './App.css';
-import { api } from './api';
+import { api, ApiError, apiErrorMessage } from './api';
 import { BUILD_TAG } from './version';
 import CogMenu from './CogMenu';
 import { pageTheme, HEALTH } from './theme';
@@ -14,6 +14,7 @@ const ArchivedHabits: React.FC = () => {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
   const [restoring, setRestoring] = useState<string | null>(null);
+  const [restoreError, setRestoreError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
 
@@ -27,6 +28,7 @@ const ArchivedHabits: React.FC = () => {
 
   const restore = async (name: string) => {
     setRestoring(name);
+    setRestoreError(null);
     try {
       await api.restoreHabit(name);
       window.dispatchEvent(new CustomEvent('superdub:tracker-updated'));
@@ -34,7 +36,10 @@ const ArchivedHabits: React.FC = () => {
         setGraveyard(prev => prev.filter(h => h.name !== name));
         setRestoring(null);
       }, 650);
-    } catch {
+    } catch (err: unknown) {
+      // A restore can be refused for a reason worth saying out loud: it grows the
+      // active list, so a full plan turns it down. Silence here read as a dead button.
+      setRestoreError(err instanceof ApiError && err.status === 402 ? err.message : apiErrorMessage(err));
       setRestoring(null);
     }
   };
@@ -83,6 +88,7 @@ const ArchivedHabits: React.FC = () => {
         <div className="archived-head">
           <h1 className="archived-title">📦 Archived Habits</h1>
           <p className="archived-sub">Restore one to start it fresh from today, or delete it forever.</p>
+          {restoreError && <p className="archived-sub archived-sub--warn">{restoreError}</p>}
         </div>
 
         {!loaded ? (

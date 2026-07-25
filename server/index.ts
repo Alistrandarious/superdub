@@ -19,6 +19,7 @@ import globalRoutes from './routes/global';
 import journalRoutes from './routes/journal';
 import friendsRoutes from './routes/friends';
 import lapseRoutes, { daysSinceLastLog } from './routes/lapse';
+import entitlementRoutes from './routes/entitlement';
 import { sendPush, pushEnabled } from './services/push';
 import { reminderDue, scheduleMatchesToday } from './reminderSchedule';
 import { pool } from './db';
@@ -47,6 +48,7 @@ app.use('/api/global', globalRoutes);
 app.use('/api/journal', journalRoutes);
 app.use('/api/friends', friendsRoutes);
 app.use('/api/lapse', lapseRoutes);
+app.use('/api/entitlement', entitlementRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
@@ -371,6 +373,15 @@ const migrations = [
   `ALTER TABLE profile ADD COLUMN IF NOT EXISTS last_streak_restore DATE`,
   // Local date of the last comeback push, so a lapse nudges once and then stops.
   `ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS last_lapse_push DATE`,
+  // ── Entitlement (server-side plan state) ───────────────────────────────────
+  // What billing granted: 'free' | 'pro'. Only the server writes it. The trial
+  // and the early-adopter grant need no columns — both derive from created_at
+  // (see server/entitlement.ts).
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS plan TEXT NOT NULL DEFAULT 'free'`,
+  // Paid-through date from the store. NULL on a 'pro' plan means forever, which
+  // is how a lifetime grant is written; a date is how "cancelled, keeps the
+  // month" is honoured.
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS pro_until TIMESTAMPTZ`,
 ];
 (async () => {
   for (const sql of migrations) {

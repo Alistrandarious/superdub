@@ -1,8 +1,14 @@
 import { Router, Response } from 'express';
 import { pool } from '../db';
 import { requireAuth, AuthRequest } from '../middleware/auth';
+import { withEntitlement, EntitledRequest } from '../middleware/entitlement';
+import { habitListAllowed, FREE_HABIT_LIMIT } from '../entitlement';
 
 const router = Router();
+
+// What a refused habit says. 402 (not 403) so the client can tell "you need to
+// upgrade" apart from "you're not allowed here".
+const CAP_MESSAGE = `Superdub Free keeps ${FREE_HABIT_LIMIT} habits at a time. Archive one to make room, or Superdub Pro takes the ceiling off.`;
 
 router.get('/graveyard', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
@@ -28,7 +34,7 @@ router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   }
 });
 
-router.put('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
+router.put('/', requireAuth as any, withEntitlement as any, async (req: EntitledRequest, res: Response) => {
   try {
     const { habits: rawHabits } = req.body as { habits: (string | { name: string; cadence?: string })[] };
     // Accept both plain strings (legacy) and { name, cadence } objects.
@@ -45,6 +51,13 @@ router.put('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
       [req.userId]
     );
     const existingMap = new Map<string, string | null>(currentRes.rows.map((r: any) => [r.name as string, r.start_date as string | null]));
+
+    // The free habit cap, enforced where it counts. This route is a whole-list
+    // replace, so it's the one place a list can grow — the client's version of
+    // this check is only there to explain the ceiling before someone hits it.
+    if (!habitListAllowed(habits.map(h => h.name), Array.from(existingMap.keys()), req.entitlement ?? 'free')) {
+      return res.status(402).json({ error: CAP_MESSAGE });
+    }
 
     const habitSet = new Set<string>(habits.map(h => h.name));
     const removed = Array.from(existingMap.keys()).filter((n: string) => !habitSet.has(n));
@@ -206,10 +219,20 @@ router.delete('/:name/permanent', requireAuth as any, async (req: AuthRequest, r
   }
 });
 
-router.post('/:name/restore', requireAuth as any, async (req: AuthRequest, res: Response) => {
+router.post('/:name/restore', requireAuth as any, withEntitlement as any, async (req: EntitledRequest, res: Response) => {
   try {
     const { name } = req.params;
     const today = new Date().toISOString().slice(0, 10);
+    // Bringing a habit back from the graveyard grows the active list, so it meets
+    // the same cap the add path does.
+    const activeRes = await pool.query(
+      'SELECT name FROM habits WHERE user_id = $1 AND (archived = FALSE OR archived IS NULL)',
+      [req.userId]
+    );
+    const active = activeRes.rows.map((r: any) => r.name as string);
+    if (!active.includes(name) && !habitListAllowed([...active, name], active, req.entitlement ?? 'free')) {
+      return res.status(402).json({ error: CAP_MESSAGE });
+    }
     const posRes = await pool.query(
       'SELECT COALESCE(MAX(position), -1) as maxpos FROM habits WHERE user_id = $1 AND (archived = FALSE OR archived IS NULL)',
       [req.userId]

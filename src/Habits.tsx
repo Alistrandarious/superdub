@@ -1352,6 +1352,10 @@ const Habits: React.FC = () => {
   const [newHabit, setNewHabit] = useState('');
   const [pendingRemove, setPendingRemove] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  // How many habits this plan may keep (null = no ceiling, which is every account
+  // until the free tier goes live). The server decides and enforces it; this copy
+  // exists only so the ceiling is explained before someone walks into it.
+  const [habitLimit, setHabitLimit] = useState<number | null>(null);
   const [featuredOpen, setFeaturedOpen] = useState(false);
   // The Featured banner can be dismissed (X) and brought back from the cog's
   // "Discover Habits". Persisted so it stays hidden across sessions until restored.
@@ -1477,6 +1481,10 @@ const Habits: React.FC = () => {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { loadHabits(); }, [loadHabits]);
+
+  // Kept out of loadHabits' Promise.all: not knowing the cap must never turn into
+  // "we couldn't load your habits".
+  useEffect(() => { api.getEntitlement().then(e => setHabitLimit(e.habitLimit)).catch(() => {}); }, []);
 
   useEffect(() => {
     if (!navigator.geolocation) return;
@@ -1621,8 +1629,16 @@ const Habits: React.FC = () => {
     setHonestyPending(null);
   };
 
+  // The check-in habit is ours, not theirs, so it never eats one of their slots —
+  // same rule the server counts by.
+  const ownHabitCount = habits.filter(h => h !== MANDATORY_HABIT).length;
+  const atHabitCap = habitLimit != null && ownHabitCount >= habitLimit;
+
   const handleAddFeatured = useCallback((name: string, cadence: Cadence = 'daily') => {
     if (habits.includes(name)) return;
+    // At the ceiling, open the sheet instead of silently doing nothing — the sheet
+    // is where the cap is explained.
+    if (atHabitCap) { setAddOpen(true); return; }
     const today = new Date().toISOString().slice(0, 10);
     const updated = [...habits, name];
     setHabits(updated);
@@ -1634,11 +1650,11 @@ const Habits: React.FC = () => {
       return next;
     });
     persistHabits(updated, { [name]: cadence });
-  }, [habits, persistHabits]);
+  }, [habits, persistHabits, atHabitCap]);
 
   const addHabit = () => {
     const n = newHabit.trim();
-    if (!n || habits.includes(n)) return;
+    if (!n || habits.includes(n) || atHabitCap) return;
     const startDate = new Date().toISOString().slice(0, 10);
     const updated = [...habits, n];
     setHabits(updated);
@@ -1880,8 +1896,24 @@ const Habits: React.FC = () => {
       )}
 
 
+      {/* The ceiling, when they've filled their plan's habits. Its own sheet rather
+          than a disabled form: there's nothing to fill in, only a choice to make. */}
+      {addOpen && atHabitCap && (
+        <div className="hb-sheet-overlay" onClick={() => setAddOpen(false)}>
+          <div className="hb-sheet" onClick={e => e.stopPropagation()}>
+            <div className="hb-sheet-grip" />
+            <div className="hb-sheet-head">
+              <h3 className="hb-sheet-title">You're at {habitLimit} habits</h3>
+              <button className="hb-sheet-close" onClick={() => setAddOpen(false)} aria-label="Close">✕</button>
+            </div>
+            <p className="hb-sheet-sub">That's what Superdub Free keeps at once. Archive one to make room, or Superdub Pro takes the ceiling off.</p>
+            <p className="hb-sheet-hint">Nothing you've built goes anywhere. An archived habit keeps its whole history in the Graveyard, and you can bring it back any time.</p>
+          </div>
+        </div>
+      )}
+
       {/* Add habit sheet */}
-      {addOpen && (
+      {addOpen && !atHabitCap && (
         <div className="hb-sheet-overlay" onClick={() => setAddOpen(false)}>
           <div className="hb-sheet" onClick={e => e.stopPropagation()}>
             <div className="hb-sheet-grip" />

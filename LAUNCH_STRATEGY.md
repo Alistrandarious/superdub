@@ -116,10 +116,15 @@ Core to the brand and worth building deliberately:
 
 - **Distribution:** harden the existing **Capacitor** shells (`android/`, `ios/`, `capacitor.config.ts`) into shippable App Store + Play Store builds. Keep the PWA/web app alive as the free web surface and marketing entry.
 - **Billing:** use **RevenueCat** to unify **Apple StoreKit + Google Play Billing** (and optionally Stripe for web) behind one entitlement. It handles receipt validation, renewals, grace periods, the paid-through date, and cross-platform "is this user Pro?", the hard part we do not want to hand-roll. ~1% on top of store fees. *(Stack pending confirmation, §8.)*
-- **Server is the source of truth for entitlement — confirmed.** Today `requireAuth` (`server/middleware/auth.ts`) only checks token validity, and all gating in `src/levels.ts` is **client-side localStorage**, trivially bypassed. We add a server-side entitlement: RevenueCat webhook writes subscription state to `users` (or a `subscriptions` table); `requireAuth` attaches `req.entitlement` (`free` | `trial` | `pro`); premium routes and feature checks read it. **The 5-habit cap, the daily-only cadence gate, the 90-day history window, and every Pro feature are enforced server-side.** The client is only the pretty face.
+- **Server is the source of truth for entitlement — built (v2.475).** `server/entitlement.ts` resolves every account to `free` | `trial` | `pro` from three `users` columns, and `withEntitlement` (`server/middleware/entitlement.ts`) attaches `req.entitlement` to the routes that gate something. `GET /api/entitlement` tells the client what it may show; the client is only the pretty face.
+  - **Two columns, not five.** `users.plan` (`free` | `pro`, written only by the server) and `users.pro_until` (paid-through date; `NULL` on a `pro` plan means forever). The 25-day trial and the early-adopter grant both derive from `users.created_at`, so they need no columns and can never drift.
+  - **The 5-habit cap is live.** `PUT /api/habits` and the graveyard restore both refuse a list that would grow past `FREE_HABIT_LIMIT` on a free plan, with a `402` the client explains. Being over the cap already never locks anyone out: you keep, reorder and archive what you built, you just can't grow it. The auto-managed check-in habit never eats a slot. Covered by `server/entitlement.check.ts`.
+  - **Still to enforce:** the daily-only cadence gate, the 90-day history window, and the Dub-coaching / analytics / premium-friends gates. Each is now a one-line `req.entitlement` read on the route that serves it.
 - **Reuse the existing gate.** Extend the `Unlock` / `isUnlocked` / `UnlockCtx` model in `src/levels.ts` with a `plan`/`pro` dimension so the same picker code that gates cosmetics also gates Pro features and cadences, with the server as the real enforcer behind it.
 
-Directional only; concrete schema, routes, and SDK wiring are a future implementation plan.
+Billing (RevenueCat, receipts, renewals) is still a future implementation plan. What exists now is the entitlement layer it will write into: a webhook only has to set `plan` and `pro_until`.
+
+**Nothing changes for anyone today.** Every existing account was created before `2026-08-01`, so every account resolves to `pro` and sees no ceiling. The cap only begins to bite for accounts created after the cutoff, once their 25 days are up.
 
 ---
 
@@ -134,4 +139,4 @@ Decided: tier split with Free at 5 habits / Pro unlimited (§3); pricing $4.99/m
 
 ## 9. Next step
 
-Once §8 is closed, the follow-on is a separate **implementation plan**: entitlement schema, RevenueCat integration, the trial clock, the day-21 job, the 5-habit and cadence gates, the `UnlockCtx` extension, the early-adopter greeting, the four-step paywall build, and the About/positioning rewrite.
+The entitlement schema, the trial clock, and the 5-habit gate are built (§7). What's left, once §8 is closed: RevenueCat integration, the day-21 nudge job, the cadence and history gates, the `UnlockCtx` extension, the early-adopter greeting, the four-step paywall build, and the About/positioning rewrite.
