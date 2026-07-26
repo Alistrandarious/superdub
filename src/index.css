@@ -19,6 +19,16 @@ html, body, #root {
   overflow: hidden;
 }
 
+/* The <main> landmark wrapping the routed page. Takes the flex:1 slot the page
+   used to hold directly, and is itself a column so the page's own .app (flex:1)
+   fills it — layout is unchanged, the landmark is added. */
+.route-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 body {
   background: var(--void, #070810);
   color: var(--text, #e2e8f0);

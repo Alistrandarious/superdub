@@ -163,7 +163,7 @@ const GoalSheet: React.FC<GoalSheetProps> = ({ open, onClose, latestWeight, onGo
       <div className="modal goal-sheet" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <span className="modal-title">Weight Goal</span>
-          <button className="modal-close" onClick={onClose}>✕</button>
+          <button className="modal-close" aria-label="Close" onClick={onClose}>✕</button>
         </div>
 
         {loading ? (

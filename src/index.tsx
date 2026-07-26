@@ -153,6 +153,11 @@ function AppRouter() {
 
   return (
     <>
+      {/* The one <main> landmark, so screen-reader users can jump straight to the
+          page content past the header/nav. A real flex box (not display:contents,
+          which some screen readers drop from the a11y tree) so the landmark is
+          guaranteed while the existing full-height layout is preserved. */}
+      <main className="route-main">
       <Suspense fallback={null}>
       <Routes>
         <Route path="/" element={<Habits />} />
@@ -170,6 +175,7 @@ function AppRouter() {
         <Route path="/stages" element={<StagesPreview />} />
       </Routes>
       </Suspense>
+      </main>
       {needConsent && <ConsentGate onDecided={() => setNeedConsent(false)} />}
       <DailyCheckIn />
       <VitalsPrompt />

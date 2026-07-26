@@ -1688,7 +1688,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <span className="modal-title">Customize Habits</span>
-              <button className="modal-close" onClick={() => setHabitsModalOpen(false)}>✕</button>
+              <button className="modal-close" aria-label="Close" onClick={() => setHabitsModalOpen(false)}>✕</button>
             </div>
             <div className="habits-list">
               {habits.map(h => (
@@ -1718,7 +1718,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <span className="modal-title">Weight Settings</span>
-              <button className="modal-close" onClick={closeWeightModal}>✕</button>
+              <button className="modal-close" aria-label="Close" onClick={closeWeightModal}>✕</button>
             </div>
             <div className="plan-row">
               <label>
@@ -1822,7 +1822,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <span className="modal-title">Nutrition Calculator</span>
-              <button className="modal-close" onClick={closeNutritionModal}>✕</button>
+              <button className="modal-close" aria-label="Close" onClick={closeNutritionModal}>✕</button>
             </div>
             <div className="plan-row">
               <label>
@@ -2719,7 +2719,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       <div className="modal tracker-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <span className="modal-title">Habits &amp; Nutrition</span>
-          <button className="modal-close" onClick={() => setTrackerModalOpen(false)}>✕</button>
+          <button className="modal-close" aria-label="Close" onClick={() => setTrackerModalOpen(false)}>✕</button>
         </div>
       {/* Week selector, filters the tracker below */}
       <div className="week-bar">

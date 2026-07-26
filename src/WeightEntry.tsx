@@ -129,7 +129,7 @@ const WeightEntry: React.FC = () => {
       <div className="modal step-entry-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <span className="modal-title">Log Weight</span>
-          <button className="modal-close" onClick={dismiss}>✕</button>
+          <button className="modal-close" aria-label="Close" onClick={dismiss}>✕</button>
         </div>
         <WeightTrendStrip days={days} goalKg={goalKg} />
         <p className="step-entry-sub">

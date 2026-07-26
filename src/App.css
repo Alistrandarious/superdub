@@ -1559,6 +1559,7 @@ h1, h2, h3, h4, .sora {
 }
 
 .modal-close {
+  position: relative;
   background: none;
   border: none;
   color: var(--theme-ink);
@@ -1568,6 +1569,16 @@ h1, h2, h3, h4, .sora {
   border-radius: 8px;
   font-family: inherit;
   transition: background 0.15s;
+}
+/* The glyph is small, but the tap target is a transparent 44px square centred on
+   it (Apple's minimum). These sit alone in a corner, so the full 44px never
+   collides with a neighbour. */
+.modal-close::after {
+  content: '';
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 44px; height: 44px;
+  transform: translate(-50%, -50%);
 }
 
 .modal-close:hover {

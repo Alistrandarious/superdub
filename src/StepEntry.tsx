@@ -151,7 +151,7 @@ const StepEntry: React.FC = () => {
       <div className="modal step-entry-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <span className="modal-title">Log Steps</span>
-          <button className="modal-close" onClick={dismiss}>✕</button>
+          <button className="modal-close" aria-label="Close" onClick={dismiss}>✕</button>
         </div>
         <p className="step-entry-sub">
           Tap a day to log or override it. Green means you hit your goal, orange means under it,
