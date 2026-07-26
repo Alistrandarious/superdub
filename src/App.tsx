@@ -16,7 +16,7 @@ import {
 import './App.css';
 import { api } from './api';
 import { BUILD_TAG } from './version';
-import { kcalPerStep as kcalPerStepFor, stepsToKm, estimateIntakeKcal, estimateIntakeRange, workoutCalories } from './energy';
+import { kcalPerStep as kcalPerStepFor, stepsToKm, estimateIntakeRange, workoutCalories } from './energy';
 import { assessIntakeTruth } from './intakeTruth';
 import { loggingNow, getLoggingDay } from './day';
 import { emaStep } from './weightMath';
@@ -1177,7 +1177,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   // The energy-balance maths (and its clamps) live in estimateIntakeKcal().
   const kcalPerStep = kcalPerStepFor(startWeight);
   const calorieChartData = (() => {
-    if (!(bmr > 0)) return [] as { day: string; intake: number | null; target: number }[];
+    if (!(bmr > 0)) return [] as { day: string; intake: number | null; band: [number, number] | null; target: number }[];
     const EMA_A = 0.25;
     let ema: number | null = null;
     const rows = chartDayRange.map(({ ddmm }) => {
@@ -1191,24 +1191,40 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       // Only estimate when there's a REAL weigh-in within the last 3 days — a stale
       // carried-forward EMA (or steps alone) isn't enough to know intake.
       const recentWeighIn = rows.slice(Math.max(0, i - 3), i + 1).some(x => x.w != null);
-      if (!recentWeighIn) return { day: r.ddmm, intake: null, target: targetCalories };
+      if (!recentWeighIn) return { day: r.ddmm, intake: null, band: null, target: targetCalories };
       // smooth daily slope over up to WIN days
       const j = Math.max(0, i - WIN);
       const wForBmr = r.ema ?? startWeight;
       const dayBmr = (10 * wForBmr) + (6.25 * ht) - (5 * ag) + sexConst;
-      const intake = estimateIntakeKcal({
+      const spanDays = i - j;
+      const emaThen = rows[j].ema;
+      const slopePerDay = (spanDays > 0 && r.ema != null && emaThen != null)
+        ? (r.ema - emaThen) / spanDays
+        : 0;
+      // One day's intake can't be pinned to a single number (day-to-day weight is
+      // mostly water), so we plot the honest band estimateIntakeRange computes and
+      // its centre. Same estimator the "Yesterday" verdict already uses, so the two
+      // surfaces agree. adherenceLevel is null here — the chart has no per-day
+      // self-report, so the band rides on energy balance alone.
+      const range = estimateIntakeRange({
         maintenance: dayBmr * al,
-        stepDev: walkAvg > 0 ? (r.steps - walkAvg) * kcalPerStep : 0,
-        emaNow: r.ema,
-        emaThen: rows[j].ema,
-        spanDays: i - j,
+        stepBurn: walkAvg > 0 ? (r.steps - walkAvg) * kcalPerStep : 0,
+        gymBurn: 0,
+        weightDeltaKg: slopePerDay,
+        adherenceLevel: null,
+        targetCalories,
       });
-      return { day: r.ddmm, intake, target: targetCalories };
+      if (!range || range.central <= 600) return { day: r.ddmm, intake: null, band: null, target: targetCalories };
+      return { day: r.ddmm, intake: range.central, band: [range.low, range.high] as [number, number], target: targetCalories };
     });
   })();
   const calorieEstVals = calorieChartData.map(d => d.intake).filter((v): v is number => v != null);
   const calorieHasData = calorieEstVals.length > 0;
   const avgEstIntake = calorieHasData ? Math.round(calorieEstVals.reduce((a, b) => a + b, 0) / calorieEstVals.length) : 0;
+  // The band the header + prose quote: average the per-day low/high.
+  const calorieBands = calorieChartData.map(d => d.band).filter((b): b is [number, number] => b != null);
+  const avgEstLow = calorieBands.length ? Math.round(calorieBands.reduce((a, b) => a + b[0], 0) / calorieBands.length) : 0;
+  const avgEstHigh = calorieBands.length ? Math.round(calorieBands.reduce((a, b) => a + b[1], 0) / calorieBands.length) : 0;
 
   // ── Does what they SAY they ate match what the scale says? ──────────────────
   // The evening "eating vs target" answers, priced in kcal, against the same
@@ -1498,7 +1514,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       ? `Averaging ${cn(walkAvg)} steps, ${walkAvg >= effectiveStepTarget ? 'at or above' : `${cn(effectiveStepTarget - walkAvg)} short of`} your ${cn(effectiveStepTarget)} goal.`
       : `Log your steps and I'll track them against your ${cn(effectiveStepTarget)} goal.` },
     { name: 'Intake', show: true, note: calorieHasData
-      ? `Estimated intake's averaging ${cn(avgEstIntake)} kcal vs a ${cn(targetCalories)} target, ${avgEstIntake <= targetCalories ? 'nicely under' : 'running over'}.`
+      ? `Estimated intake's landing around ${cn(avgEstLow)} to ${cn(avgEstHigh)} kcal against a ${cn(targetCalories)} target, ${avgEstHigh <= targetCalories ? 'nicely under' : avgEstLow >= targetCalories ? 'running over' : 'right about there'}.`
       : `As your weight and steps build up, I'll estimate your intake here.` },
     { name: 'Sleep', show: sleepEver,
       note: sleepAvg != null
@@ -2430,7 +2446,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               {renderChartPager()}
               {calorieHasData && (
                 <div className="step-chart-stats">
-                  <span className="step-stat"><span className="step-stat-val color-cal">{avgEstIntake.toLocaleString()}</span> avg kcal</span>
+                  <span className="step-stat"><span className="step-stat-val color-cal">{avgEstLow.toLocaleString()} to {avgEstHigh.toLocaleString()}</span> kcal/day</span>
                   <span className="step-stat-sep">·</span>
                   <span className="step-stat">from weight trend, steps &amp; activity</span>
                 </div>
@@ -2457,7 +2473,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                     formatter={(v: any) => [`${Number(v).toLocaleString()} kcal`, 'Est. intake']}
                   />
                   <ReferenceLine y={targetCalories} stroke="#2E8BFF" strokeDasharray="4 4" label={{ value: `${targetCalories} target`, fill: '#2E8BFF', fontSize: 10, position: 'insideTopRight' }} />
-                  <Area type="monotone" dataKey="intake" stroke="none" fill="url(#intakeFill)" connectNulls isAnimationActive={false} legendType="none" />
+                  {/* The shaded band is the honest low–high range; the line is its
+                      centre. The band carries no tooltip so only the centre reads. */}
+                  <Area type="monotone" dataKey="band" stroke="none" fill="url(#intakeFill)" connectNulls isAnimationActive={false} legendType="none" tooltipType="none" />
                   <Line type="monotone" dataKey="intake" name="Est. intake" stroke="#FF8A00" strokeWidth={2.5} dot={{ r: 3, fill: '#0E0E14', stroke: '#FF8A00', strokeWidth: 2 }} connectNulls isAnimationActive={false} />
                 </ComposedChart>
               </ResponsiveContainer>

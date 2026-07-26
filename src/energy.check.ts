@@ -62,4 +62,16 @@ assert.strictEqual(
 const srOnly = estimateIntakeRange({ maintenance: 2600, stepBurn: 0, gymBurn: 0, weightDeltaKg: null, adherenceLevel: 0, targetCalories: 2200 })!;
 assert.strictEqual(srOnly.central, 2200);
 
+// ── Chart mode: the Intake trend now calls estimateIntakeRange with a real weight
+// slope and adherenceLevel: null (no per-day self-report). It MUST still return a
+// band — if this went null the chart would blank days that used to show a value —
+// and the band must bracket its own centre so the shaded area straddles the line.
+const chart = estimateIntakeRange({ maintenance: 2500, stepBurn: 100, gymBurn: 0, weightDeltaKg: -0.07, adherenceLevel: null, targetCalories: 2000 });
+assert.ok(chart !== null, 'chart mode (energy balance only) still yields a band');
+assert.ok(chart!.low < chart!.central && chart!.central < chart!.high, 'band brackets its own centre');
+// A flat day (no trend yet, e.g. the first charted day) rides on maintenance + steps,
+// still a real band — the chart passes weightDeltaKg: 0 rather than null here.
+const chartFlat = estimateIntakeRange({ maintenance: 2500, stepBurn: 100, gymBurn: 0, weightDeltaKg: 0, adherenceLevel: null, targetCalories: 2000 })!;
+assert.strictEqual(chartFlat.central, 2600, 'flat day centres on expenditure (maintenance + step burn)');
+
 console.log('energy.check.ts — all assertions passed');
