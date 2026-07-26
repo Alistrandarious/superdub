@@ -22,6 +22,13 @@ import DubChat from './DubChat';
 import TrendSheet from './TrendSheet';
 import BackgroundApplier from './BackgroundApplier';
 import NightSky from './NightSky';
+import ConsentGate from './ConsentGate';
+import { initAnalytics, analyticsConfigured } from './analytics';
+import { analyticsConsent } from './consent';
+
+// Start analytics on load. No-ops unless a key is configured AND consent was
+// granted, so on a keyless build (today) this does nothing.
+initAnalytics();
 
 // Habits (home) stays eager for instant first paint; everything else splits
 // into its own chunk so recharts etc. load only when the page is visited.
@@ -45,7 +52,15 @@ const HEARTBEAT_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
 function AppRouter() {
   const [authed, setAuthed] = useState(isLoggedIn());
+  // Existing users get a single full-screen analytics notice; new users accept
+  // during signup, so they never see it. Only shown on builds that actually have
+  // analytics configured, and only when the user has not been asked before.
+  const [needConsent, setNeedConsent] = useState(false);
   const location = useLocation();
+
+  useEffect(() => {
+    if (authed && analyticsConfigured() && analyticsConsent() === null) setNeedConsent(true);
+  }, [authed]);
 
   const handleLogout = () => {
     clearToken();
@@ -155,6 +170,7 @@ function AppRouter() {
         <Route path="/stages" element={<StagesPreview />} />
       </Routes>
       </Suspense>
+      {needConsent && <ConsentGate onDecided={() => setNeedConsent(false)} />}
       <DailyCheckIn />
       <VitalsPrompt />
       <ExercisePrompt />

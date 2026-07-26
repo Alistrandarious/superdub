@@ -71,8 +71,9 @@ const PrivacyPolicy: React.FC = () => {
             <p style={{ marginTop: 10 }}>We retain your data for as long as your account exists. When you delete your account, all your personal data is permanently and irreversibly deleted within 30 days.</p>
           </Section>
 
-          <Section title="6. Cookies & Local Storage">
-            <p>Superdub does not use tracking cookies or third-party analytics. We store a single authentication token in your browser's <strong style={{ color: 'var(--text)' }}>localStorage</strong> to keep you logged in. This token is not shared with any third party and can be removed by logging out.</p>
+          <Section title="6. Cookies & Analytics">
+            <p>Superdub uses <strong style={{ color: 'var(--text)' }}>privacy-first product analytics</strong> (PostHog, hosted in the EU) to understand which parts of the app help and which get in the way, so we can improve it. We do <strong style={{ color: 'var(--text)' }}>not</strong> use third-party advertising or cross-site tracking, and we never sell your data. Analytics is only switched on with your consent: you agree when you create your account, and existing users are asked once. You can decline, and Superdub works fully either way.</p>
+            <p style={{ marginTop: 12 }}>We do not capture the values you type. We store a single authentication token in your browser's <strong style={{ color: 'var(--text)' }}>localStorage</strong> to keep you logged in; it is not shared with any third party and is removed when you log out.</p>
           </Section>
 
           <Section title="7. Third-Party Services">
@@ -81,6 +82,7 @@ const PrivacyPolicy: React.FC = () => {
               <li><strong style={{ color: 'var(--text)' }}>Neon (database):</strong> Stores your account and health data. EU-based. <a href="https://neon.tech/privacy" target="_blank" rel="noreferrer" style={{ color: THEME }}>Privacy policy →</a></li>
               <li><strong style={{ color: 'var(--text)' }}>Render (hosting):</strong> Hosts the Superdub server. <a href="https://render.com/privacy" target="_blank" rel="noreferrer" style={{ color: THEME }}>Privacy policy →</a></li>
               <li><strong style={{ color: 'var(--text)' }}>Resend (email):</strong> Sends transactional emails. <a href="https://resend.com/legal/privacy-policy" target="_blank" rel="noreferrer" style={{ color: THEME }}>Privacy policy →</a></li>
+              <li><strong style={{ color: 'var(--text)' }}>PostHog (analytics):</strong> Privacy-first product analytics, EU-hosted, only with your consent. <a href="https://posthog.com/privacy" target="_blank" rel="noreferrer" style={{ color: THEME }}>Privacy policy →</a></li>
               <li><strong style={{ color: 'var(--text)' }}>Browser push services:</strong> If you enable notifications, reminders are delivered through your browser/device vendor's push service (e.g. Google, Mozilla, or Apple). This only happens if you opt in.</li>
             </ul>
           </Section>

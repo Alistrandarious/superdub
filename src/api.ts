@@ -1,4 +1,5 @@
 import { makeCache } from './apiCache';
+import { capture } from './analytics';
 
 // Inside a Capacitor native shell the webview origin is capacitor://localhost, so the
 // relative '/api' + CRA dev proxy don't apply — point at the hosted backend directly.
@@ -341,6 +342,10 @@ async function request<T = any>(path: string, options: RequestInit = {}): Promis
     throw new ApiError('offline', 'No connection');
   }
 
+  // Coarse endpoint label for telemetry: digits (ids) stripped so no user id or
+  // date ever reaches analytics. e.g. /friends/42/nudge → /friends/:id/nudge.
+  const ep = path.split('?')[0].replace(/\d+/g, ':id');
+
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), REQUEST_TIMEOUT_MS);
 
@@ -357,9 +362,11 @@ async function request<T = any>(path: string, options: RequestInit = {}): Promis
     });
   } catch (e: any) {
     // fetch only rejects when the request never completed: abort or no network.
-    throw e?.name === 'AbortError'
-      ? new ApiError('timeout', 'Request timed out')
-      : new ApiError('offline', 'Could not reach the server');
+    if (e?.name === 'AbortError') {
+      capture('api_error', { kind: 'timeout', path: ep });
+      throw new ApiError('timeout', 'Request timed out');
+    }
+    throw new ApiError('offline', 'Could not reach the server');
   } finally {
     clearTimeout(timer);
   }
@@ -377,7 +384,10 @@ async function request<T = any>(path: string, options: RequestInit = {}): Promis
   let data: any = null;
   try { data = await res.json(); } catch { /* keep null, handled below */ }
 
-  if (!res.ok) throw new ApiError('server', data?.error ?? `Request failed (${res.status})`, res.status);
+  if (!res.ok) {
+    capture('api_error', { kind: 'server', status: res.status, path: ep });
+    throw new ApiError('server', data?.error ?? `Request failed (${res.status})`, res.status);
+  }
   return data as T;
 }
 
