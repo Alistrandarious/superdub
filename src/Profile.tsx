@@ -71,6 +71,14 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
   const navigate = useNavigate();
   const deleteAccount = useDeleteAccount(onLogout);
 
+  // GDPR data export — downloads everything we hold as one JSON file.
+  const [exportState, setExportState] = useState<'idle' | 'working' | 'error'>('idle');
+  const exportData = async () => {
+    setExportState('working');
+    try { await api.exportData(); setExportState('idle'); }
+    catch { setExportState('error'); }
+  };
+
   const [name, setName] = useState('');
   const [nickname, setNickname] = useState('');
   const [profile, setProfile] = useState<ProfileData>(DEFAULT_PROFILE);
@@ -459,6 +467,13 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
           <button className="more-menu-item" onClick={() => navigate('/privacy')}>
             <span className="more-menu-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
             <span className="more-menu-label">Privacy Policy</span>
+            <span className="more-menu-arrow">›</span>
+          </button>
+          <button className="more-menu-item" onClick={exportData} disabled={exportState === 'working'}>
+            <span className="more-menu-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span>
+            <span className="more-menu-label">
+              {exportState === 'working' ? 'Preparing your data…' : exportState === 'error' ? 'Export failed, tap to retry' : 'Export my data'}
+            </span>
             <span className="more-menu-arrow">›</span>
           </button>
           {onLogout && (

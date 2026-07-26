@@ -425,6 +425,26 @@ export const api = {
     request<{ ok: true }>('/profile', { method: 'PUT', body: JSON.stringify(data) })
       .then(r => { profileCache.invalidate(); planStatusCache.invalidate(); return r; }),
   deleteAccount: (): Promise<{ ok: true }> => request('/profile', { method: 'DELETE' }),
+
+  // GDPR data export. Not routed through request() because the response is a file
+  // download, not JSON — we stream it to a Blob and save it. Errors surface as an
+  // ApiError so the caller can show the shared message.
+  exportData: async (): Promise<void> => {
+    const token = getToken();
+    const res = await fetch(`${BASE}/profile/export`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    }).catch(() => { throw new ApiError('offline', 'Could not reach the server'); });
+    if (!res.ok) throw new ApiError('server', 'Export failed', res.status);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `superdub-data-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  },
   heartbeat: (): Promise<{ ok: true }> => request('/profile/heartbeat', { method: 'POST' }),
 
   // habits

@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import { pool } from '../db';
 import { requireAuth, AuthRequest } from '../middleware/auth';
+import { redactExportRow } from '../exportRedact';
 
 const router = Router();
 
@@ -161,6 +162,46 @@ router.delete('/', requireAuth as any, async (req: AuthRequest, res: Response) =
   try {
     await pool.query('DELETE FROM users WHERE id = $1', [req.userId]);
     res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// GDPR right to portability: hand the user a copy of everything we hold about
+// them, as one downloadable JSON file. Every table that carries a user_id is
+// discovered from the schema rather than hardcoded, so a new feature table is
+// included automatically and can never be silently forgotten. Sensitive columns
+// (password hash, API key, push secrets) are stripped by redactExportRow.
+router.get('/export', requireAuth as any, async (req: AuthRequest, res: Response) => {
+  try {
+    const data: Record<string, unknown> = {};
+
+    // The account row itself keys on `id`, not `user_id`, and we hand-pick its
+    // columns so the password hash never even leaves the database.
+    const account = await pool.query(
+      'SELECT id, email, created_at, last_login_at, last_active_at FROM users WHERE id = $1',
+      [req.userId],
+    );
+    data.account = account.rows[0] ?? null;
+
+    // Every other user-owned table.
+    const tables = await pool.query(
+      `SELECT DISTINCT table_name FROM information_schema.columns
+       WHERE table_schema = 'public' AND column_name = 'user_id'
+       ORDER BY table_name`,
+    );
+    for (const { table_name } of tables.rows as { table_name: string }[]) {
+      // table_name comes from the schema catalogue, not user input, but validate
+      // the shape anyway before interpolating it — defence in depth.
+      if (!/^[a-z_][a-z0-9_]*$/.test(table_name)) continue;
+      const rows = await pool.query(`SELECT * FROM ${table_name} WHERE user_id = $1`, [req.userId]);
+      data[table_name] = rows.rows.map(r => redactExportRow(table_name, r));
+    }
+
+    const filename = `superdub-data-${new Date().toISOString().slice(0, 10)}.json`;
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(JSON.stringify({ exportedAt: new Date().toISOString(), ...data }, null, 2));
   } catch {
     res.status(500).json({ error: 'Server error' });
   }
