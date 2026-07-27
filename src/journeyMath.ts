@@ -2,7 +2,7 @@
 // Kept free of React/recharts so it stays unit-checkable under node
 // (see PlanJourneyChart.check.ts). The α=0.25 EMA mirrors the server engine
 // and the Progress chart (App.tsx) / WeightSparkline.
-import { linearReg, localYMD, isoToDDMM, emaStep, sinceLastGap, GAP_DAYS } from './weightMath';
+import { linearReg, localYMD, isoToDDMM, emaStep, sinceLastGap, bridgeGaps } from './weightMath';
 
 const DAY = 86400000;
 
@@ -69,16 +69,7 @@ export function buildJourneySeries(
     }
   }
 
-  // Bridge the days between two weigh-ins so a normal week reads as one line,
-  // but leave a real break empty: the chart should show the quiet stretch, not
-  // invent a body through it.
-  for (let p = 1; p < regPts.length; p++) {
-    const a = regPts[p - 1].x, b = regPts[p].x;
-    if (b - a < 2 || b - a >= GAP_DAYS) continue;
-    for (let i = a + 1; i < b; i++) {
-      emaByIdx[i] = +(emaByIdx[a] + ((emaByIdx[b] - emaByIdx[a]) * (i - a)) / (b - a)).toFixed(2);
-    }
-  }
+  bridgeGaps(emaByIdx, regPts.map(p => p.x));
 
   // Project from who you are now, not from an average of you and who you were
   // before the break.

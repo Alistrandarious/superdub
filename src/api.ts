@@ -237,7 +237,7 @@ export interface PlanCycleResponse {
   // omit them) — kept non-optional here because an existing caller (PlanPage's
   // CycleData) already assumed they're always present; that pre-existing assumption
   // is unchanged by this typing pass.
-  onTrack: boolean;
+  onTrack: boolean | null;   // null = not enough weight data to judge yet
   actualSlope: number | null;
   targetSlope: number;
   flaggedDays: string[];

@@ -21,7 +21,7 @@ import friendsRoutes from './routes/friends';
 import lapseRoutes, { daysSinceLastLog } from './routes/lapse';
 import entitlementRoutes from './routes/entitlement';
 import { sendPush, pushEnabled } from './services/push';
-import { reminderDue, scheduleMatchesToday } from './reminderSchedule';
+import { pushesAllowed, reminderDue, scheduleMatchesToday } from './reminderSchedule';
 import { pool } from './db';
 
 dotenv.config();
@@ -411,18 +411,22 @@ async function runReminders() {
 
   try {
     const { rows } = await pool.query(
-      `SELECT id, user_id, subscription, tz_offset, reminder_hour,
-              nutrition_hour, workout_hour, last_reminded, last_nutrition, last_workout,
-              last_lapse_push
-         FROM push_subscriptions`
+      `SELECT ps.id, ps.user_id, ps.subscription, ps.tz_offset, ps.reminder_hour,
+              ps.nutrition_hour, ps.workout_hour, ps.last_reminded, ps.last_nutrition,
+              ps.last_workout, ps.last_lapse_push, u.last_active_at
+         FROM push_subscriptions ps
+         LEFT JOIN users u ON u.id = ps.user_id`
     );
     for (const r of rows) {
       const { local, localDate, hour } = localHelper(r);
+      // The daily reminders stand down during a lapse so the one comeback push
+      // below is not buried under dozens the person has stopped acting on.
+      const dailyOk = pushesAllowed(r.last_active_at, new Date());
       const dayDDMM = `${String(local.getUTCDate()).padStart(2, '0')}/${String(local.getUTCMonth() + 1).padStart(2, '0')}`;
 
       // 1. Morning weigh-in — skip if they've already weighed in today (local)
       const morningHour = Number.isInteger(r.reminder_hour) ? r.reminder_hour : 8;
-      if (reminderDue(morningHour, hour, r.last_reminded, localDate)) {
+      if (dailyOk && reminderDue(morningHour, hour, r.last_reminded, localDate)) {
         const ddmm = `${String(local.getUTCDate()).padStart(2, '0')}/${String(local.getUTCMonth() + 1).padStart(2, '0')}`;
         const w = await pool.query(
           `SELECT 1 FROM tracker WHERE user_id = $1 AND day = $2 AND year = $3
@@ -444,7 +448,7 @@ async function runReminders() {
       // 2. Evening reflection — mood + eating; skip if today's check-in is already in.
       // Reuses the nutrition_hour column (default 8 PM) freed when food logging went.
       const eveningHour = Number.isInteger(r.nutrition_hour) ? r.nutrition_hour : 20;
-      if (reminderDue(eveningHour, hour, r.last_nutrition, localDate)) {
+      if (dailyOk && reminderDue(eveningHour, hour, r.last_nutrition, localDate)) {
         const c = await pool.query(
           'SELECT 1 FROM daily_checkins WHERE user_id = $1 AND date = $2 AND mood IS NOT NULL LIMIT 1',
           [r.user_id, localDate]
@@ -462,7 +466,7 @@ async function runReminders() {
       }
 
       // 3. Post-workout check-in — opt-in (NULL = off); skip if already logged today
-      if (reminderDue(r.workout_hour, hour, r.last_workout, localDate)) {
+      if (dailyOk && reminderDue(r.workout_hour, hour, r.last_workout, localDate)) {
         const wo = await pool.query(
           'SELECT 1 FROM daily_checkins WHERE user_id = $1 AND date = $2 AND workout_done = true LIMIT 1',
           [r.user_id, localDate]
@@ -504,7 +508,7 @@ async function runReminders() {
 
       // 4. Per-habit reminders — each opted-in habit nudges at its own hour, at most
       // once a local day, and is skipped if it's already marked done today.
-      const habitRows = await pool.query(
+      const habitRows = !dailyOk ? { rows: [] as any[] } : await pool.query(
         `SELECT name, reminder_hour, reminder_last_fired, COALESCE(cadence, 'daily') AS cadence, schedule FROM habits
            WHERE user_id = $1 AND reminder_hour IS NOT NULL AND (archived = FALSE OR archived IS NULL)`,
         [r.user_id]

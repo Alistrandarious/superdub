@@ -10,7 +10,11 @@ const AdaptiveWeightPlanCard: React.FC<{
   planCycle: any;
   coachingMsg: any;
   lastEMAValue: number | null;
-}> = ({ planStatus, planCycle, coachingMsg, lastEMAValue }) => {
+  /** Someone who has drifted or lapsed. Hides the check-in signal row: churn risk
+   *  goes CRITICAL on absence alone, so it would tell a returning user their data
+   *  is poor when the truth is there is simply no data. */
+  softened?: boolean;
+}> = ({ planStatus, planCycle, coachingMsg, lastEMAValue, softened }) => {
   const unit = useWeightUnit();
   // No active plan — teach instead of vanishing.
   if (!planStatus?.active || !planStatus.currentTarget) {
@@ -104,7 +108,7 @@ const AdaptiveWeightPlanCard: React.FC<{
       </div>
 
       {/* Check-in signal indicator */}
-      {signalLabel && (
+      {signalLabel && !softened && (
         <div className="plan-engine-signal">
           <span className="plan-engine-signal-dot" style={{ background: signalColor }} />
           <span className="plan-engine-signal-text">Check-in signal: <strong style={{ color: signalColor }}>{signalLabel}</strong> · confidence {signalLabel === 'Strong' ? 'high' : signalLabel === 'Moderate' ? 'moderate' : 'reduced'}</span>

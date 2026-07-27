@@ -30,6 +30,20 @@ export interface DayStreakInput {
 export type DayVerdict = 'kept' | 'broken' | 'neutral';
 
 /**
+ * Did anyone touch this day at all? Absence is not failure: a day with no marks
+ * of any kind is a day the person wasn't here, and every surface that counts
+ * "not done" as "missed" has to stop at the edge of a gap rather than manufacture
+ * a run of failures out of silence. See the lapse protocol in lapse.ts.
+ *
+ * Every real mark is truthy ('done' | 'failed' | 'na' | true) and every way of
+ * saying "untouched" is falsy (undefined | null | false), which is what lets one
+ * predicate serve all three map shapes in the app: coach.ts's sparse map, Habits'
+ * map pre-seeded with null, and App's tracker pre-seeded with false.
+ */
+export const dayWasMarked = (day: Record<string, unknown> | undefined): boolean =>
+  !!day && Object.values(day).some(Boolean);
+
+/**
  * How one day scored. `neutral` means nothing was due (no habits yet, or every
  * due habit was marked 'na') — those days are skipped rather than counted, so a
  * deliberate rest day doesn't punish anyone and a brand-new account isn't

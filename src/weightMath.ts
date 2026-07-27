@@ -38,6 +38,22 @@ export function sinceLastGap<T extends { x: number }>(pts: T[], gap = GAP_DAYS):
   return pts;
 }
 
+/**
+ * Fill the days between consecutive weigh-ins so a normal week reads as one line,
+ * while leaving a real break empty: the chart should show the quiet stretch, not
+ * invent a body through it. `xs` are the indices that actually hold a value.
+ * Mutates `byIdx` in place.
+ */
+export function bridgeGaps(byIdx: Record<number, number>, xs: number[], gap = GAP_DAYS): void {
+  for (let p = 1; p < xs.length; p++) {
+    const a = xs[p - 1], b = xs[p];
+    if (b - a < 2 || b - a >= gap) continue;
+    for (let i = a + 1; i < b; i++) {
+      byIdx[i] = +(byIdx[a] + ((byIdx[b] - byIdx[a]) * (i - a)) / (b - a)).toFixed(2);
+    }
+  }
+}
+
 export function localYMD(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
@@ -62,6 +78,14 @@ export interface StripPoint { ddmm: string; kg: number; x: number; y: number; to
 
 const ddmmNum = (s: string) => { const [d, m] = s.split('/').map(Number); return (m || 0) * 100 + (d || 0); };
 
+/** Days since 1 Jan, so the strip can space points by when they happened rather
+ *  than by how many of them there are. A fixed non-leap year keeps it pure.
+ *  ponytail: within-year only, the same Dec to Jan wrap ALL_DAYS carries everywhere. */
+const ddmmDay = (s: string) => {
+  const [d, m] = s.split('/').map(Number);
+  return Math.round((Date.UTC(2001, (m || 1) - 1, d || 1) - Date.UTC(2001, 0, 1)) / 86400000);
+};
+
 export function trendSeries(days: any[], goalKg?: number, max = 14): { pts: StripPoint[]; deltaKg: number } {
   const logged = (days ?? [])
     .map((d: any) => ({ ddmm: String(d?.day ?? ''), kg: parseFloat(d?.weight) }))
@@ -77,10 +101,16 @@ export function trendSeries(days: any[], goalKg?: number, max = 14): { pts: Stri
   // Bulking (goal above where you started) flips which direction counts as progress.
   const dir = goalKg && goalKg > logged[0].kg ? 1 : -1;
 
+  // Spaced by date, not by position in the list. Index spacing drew 14 weigh-ins
+  // identically whether they spanned a fortnight or half a year, which hid the
+  // gap on the one screen built to show you the map you're adding a point to.
+  const t0 = ddmmDay(logged[0].ddmm);
+  const dateSpan = Math.max(1, ddmmDay(logged[logged.length - 1].ddmm) - t0);
+
   const pts: StripPoint[] = logged.map((d, i) => ({
     ddmm: d.ddmm,
     kg: d.kg,
-    x: logged.length === 1 ? STRIP_W / 2 : PAD_X + (i / (logged.length - 1)) * (STRIP_W - PAD_X * 2),
+    x: logged.length === 1 ? STRIP_W / 2 : PAD_X + ((ddmmDay(d.ddmm) - t0) / dateSpan) * (STRIP_W - PAD_X * 2),
     y: PAD_Y + (1 - (d.kg - (mid - span / 2)) / span) * (STRIP_H - PAD_Y * 2),
     tone: i > 0 && (d.kg - logged[i - 1].kg) * dir > MOVE_EPS ? 'toward' : 'hold',
   }));

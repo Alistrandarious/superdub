@@ -21,6 +21,29 @@ export function reminderDue(
   return true;
 }
 
+/** Quiet days before the daily reminders stand down. Mirrors LAPSE_DAYS in
+ *  src/lapse.ts; the server does not import from src/ anywhere (see lapseWindow.ts,
+ *  which mirrors the same way). */
+export const PUSH_QUIET_DAYS = 3;
+
+/**
+ * Should the ordinary daily reminders fire at all? Someone who has been gone three
+ * weeks was getting a weigh-in, an evening, a workout and a per-habit nudge every
+ * single day of it, which buries the one comeback push that was actually written
+ * for them under dozens that were not.
+ *
+ * ponytail: gates on last_active_at (did they OPEN the app) rather than on logging
+ * activity. Someone who opens daily without logging keeps their reminders, which is
+ * right — those reminders are the ones they need. The comeback push is deliberately
+ * exempt from this and keeps its own once-per-lapse rationing.
+ */
+export function pushesAllowed(lastActiveAt: string | Date | null | undefined, now: Date): boolean {
+  if (!lastActiveAt) return true;                  // no signal, never throttle
+  const last = new Date(lastActiveAt).getTime();
+  if (!Number.isFinite(last)) return true;
+  return (now.getTime() - last) / 86400000 < PUSH_QUIET_DAYS;
+}
+
 // Does the user's local "today" fall on a non-daily habit's scheduled day? A daily
 // (or quit, or unscheduled) habit matches every day. `local` is the Date whose UTC
 // fields already represent the user's local time (as built in the reminder loop).

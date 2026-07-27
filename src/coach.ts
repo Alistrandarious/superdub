@@ -6,6 +6,7 @@
 // adherence analysis for habits.
 // =====================================================================
 
+import { dayWasMarked } from './dayStreak';
 import { isSystemHabit } from './systemHabits';
 import { getWeightUnit, kgToUnitValue, unitLabel } from './weightUnit';
 
@@ -173,7 +174,14 @@ function analyseHabit(name: string, startDate: string | null, map: Record<string
   for (let i = startIdx; i <= todayIdx; i++) {
     if (map[allDays[i]]?.[name] === 'done') doneDays++;
   }
-  const elapsed = Math.max(1, todayIdx - startIdx + 1);
+  // Days they were actually here, not days on the calendar. Adherence then reads
+  // "of the days you showed up, how often did you do this", which survives a gap
+  // instead of collapsing into a verdict about three weeks of silence.
+  // ponytail: presence is inferred from habit marks only, so a day with just a
+  // weigh-in reads as absent. Upgrade path is to pass the check-in days in too.
+  let elapsed = 0;
+  for (let i = startIdx; i <= todayIdx; i++) if (dayWasMarked(map[allDays[i]])) elapsed++;
+  elapsed = Math.max(1, elapsed);
   // week-over-week volume, for the "most improved" win
   let done7 = 0, donePrev7 = 0;
   for (let i = Math.max(startIdx, todayIdx - 6); i <= todayIdx; i++) {
@@ -190,7 +198,10 @@ function analyseHabit(name: string, startDate: string | null, map: Record<string
   // recent consecutive misses before today
   let misses = 0;
   for (let i = todayIdx - 1; i >= startIdx && i >= todayIdx - 7; i--) {
-    if (map[allDays[i]]?.[name] !== 'done') misses++; else break;
+    const day = map[allDays[i]];
+    if (!dayWasMarked(day)) break;          // they weren't here. Silence is not a miss.
+    if (day?.[name] === 'na') continue;     // deliberate skip, out of the count as everywhere else
+    if (day?.[name] !== 'done') misses++; else break;
   }
   return { name, adherence: doneDays / elapsed, streak, misses, doneDays, elapsed, done7, donePrev7 };
 }
@@ -296,7 +307,10 @@ export function buildCoachReport(
   // Walkies — only when momentum has GENUINELY stalled (no live streak on any
   // habit), and at most once every 3 days. One struggling habit is the
   // struggle line's job, not a reason to nag for walks every day.
-  const globalStall = analyses.length > 0 && !analyses.some(a => a.streak >= 1);
+  // Being away is not a stall: someone back after three weeks has no live streak
+  // on anything, and their first morning back should not open with a nag.
+  const presentLately = allDays.slice(Math.max(0, todayIdx - 6), todayIdx + 1).some(d => dayWasMarked(map[d]));
+  const globalStall = analyses.length > 0 && presentLately && !analyses.some(a => a.streak >= 1);
   let wantsWalk = false;
   if (globalStall) {
     try {

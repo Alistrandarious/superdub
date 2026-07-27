@@ -49,7 +49,7 @@ export interface CycleResult {
   reason: string;
   actualSlope: number | null;  // kg/week, negative = losing
   targetSlope: number;          // kg/week required to reach goal on time
-  onTrack: boolean;
+  onTrack: boolean | null;      // null = no verdict yet (not enough weight data)
   bmrFloor: number;
   flaggedDays: string[];        // DD/MM entries with implausible overnight swings
   metabolicProtection?: boolean; // true when velocity > 1.5% BW/week for 2+ consecutive weeks
@@ -168,7 +168,10 @@ export function runCycle(
     return {
       shouldAdjust: false, newCalories: currentCalories, prevCalories: currentCalories,
       reason: 'Not enough weight data — log at least 2 weigh-ins to start the engine',
-      actualSlope: null, targetSlope, onTrack: false, bmrFloor, flaggedDays,
+      // null, not false: there is no verdict here, and saying "off pace" about a
+      // trend we cannot read puts a red badge on a card whose own body says there
+      // is not enough data. Every client already renders null as "calculating".
+      actualSlope: null, targetSlope, onTrack: null, bmrFloor, flaggedDays,
     };
   }
 

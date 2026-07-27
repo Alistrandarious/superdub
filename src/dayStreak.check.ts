@@ -1,7 +1,7 @@
 // Self-check for the 75%-of-habits day streak.
 // Run: npx tsx src/dayStreak.check.ts
 import assert from 'assert';
-import { computeDayStreak, judgeDay, todayProgress, DayStreakInput } from './dayStreak';
+import { computeDayStreak, dayWasMarked, judgeDay, todayProgress, DayStreakInput } from './dayStreak';
 
 const allDays = ['01/01', '02/01', '03/01', '04/01', '05/01'];
 const habits = ['a', 'b', 'c', 'd'];
@@ -62,5 +62,19 @@ assert(todayProgress(input({ '05/01': 'dddd' })).needed === 0, 'nothing needed o
 
 // A brand-new account with no habits is not born broken.
 assert(computeDayStreak({ allDays, today: '05/01', habits: [], states: {} }) === 0, 'no habits, no streak, no break');
+
+// ── absence is not failure ───────────────────────────────────────────────────
+// The predicate every "unmarked counts as missed" fix turns on. Habits pre-seeds
+// its map with null for every day/habit, so a day nobody touched is present-but-
+// all-null, not undefined: testing the values is what makes the guard real.
+assert(dayWasMarked(undefined) === false, 'a day with no row at all is untouched');
+assert(dayWasMarked({}) === false, 'an empty row is untouched');
+assert(dayWasMarked({ a: null, b: null }) === false, 'a pre-seeded all-null day is untouched');
+// App's tracker seeds every habit false rather than null, so falsy is the test,
+// not nullish. Getting this wrong makes every empty day look attended.
+assert(dayWasMarked({ a: false, b: false }) === false, 'a pre-seeded all-false day is untouched');
+assert(dayWasMarked({ a: false, b: true }) === true, 'one done habit means they were here');
+assert(dayWasMarked({ a: null, b: 'na' }) === true, 'a deliberate skip still means they were here');
+assert(dayWasMarked({ a: 'failed' }) === true, 'an explicit miss means they were here');
 
 console.log('dayStreak.check.ts OK');

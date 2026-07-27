@@ -6,6 +6,7 @@ import { getLoggingDay } from './day';
 import { EVENING_REFLECTION } from './systemHabits';
 import PromptShell from './PromptShell';
 import { TEAL } from './theme';
+import { lapsePending } from './LapseBanner';
 
 // ── Evening reflection — the sleek end-of-day step: how the day felt (mood) and
 // whether eating landed on plan. Time-locked to the evening (6 PM+, once/day) so
@@ -58,7 +59,8 @@ const EveningPrompt: React.FC = () => {
     // The manual/push trigger ('superdub:show-evening') bypasses the hour gate.
     const alreadyDone = () => localStorage.getItem(EVENING_KEY) === todayISO();
     let t: ReturnType<typeof setTimeout> | undefined;
-    if (isEnabled() && !alreadyDone() && new Date().getHours() >= 18) {
+    // lapsePending: the return screen gets the first open back to itself.
+    if (isEnabled() && !alreadyDone() && new Date().getHours() >= 18 && !lapsePending()) {
       t = setTimeout(open, 1500);
     }
     return () => { window.removeEventListener('superdub:show-evening', open); if (t) clearTimeout(t); };

@@ -10,8 +10,9 @@ import CadenceCarousel from './CadenceCarousel';
 import { useUserStage } from './userStage';
 import SuperdubHeader from './SuperdubHeader';
 import DailyLog from './DailyLog';
-import LapseBanner from './LapseBanner';
-import { computeDayStreak, todayProgress } from './dayStreak';
+import LapseBanner, { lapsePending, useLapse, useSoftened } from './LapseBanner';
+import { isSoftened } from './lapse';
+import { computeDayStreak, dayWasMarked, todayProgress } from './dayStreak';
 import HomeOnTrack from './HomeOnTrack';
 import AnimatedFlame from './AnimatedFlame';
 import LevelHeroRing from './LevelHeroRing';
@@ -240,6 +241,9 @@ function computeHabitStats(
   let misses = 0;
   if (totalDays > 0) {
     for (let i = todayIdx - 1; i > startIdx && i >= todayIdx - 4; i--) {
+      // A day nobody touched is a day they weren't here. Stop at the edge of the
+      // gap rather than reading three weeks of silence as four misses on every card.
+      if (!dayWasMarked(ht[ALL_DAYS[i]])) break;
       const state = ht[ALL_DAYS[i]]?.[habit];
       if (state === 'na') continue;
       if (state !== 'done') misses++;
@@ -555,6 +559,8 @@ const HabitCard: React.FC<{
   focused?: boolean;
 }> = ({ habit, stats, weekDays, ht, today, cadence, onToggleDay, onEditDay, onRequestRemove, startDate, starred, onToggleStar, dueDate, onSetDueDate, reminderHour, onSetReminder, schedule, onSetSchedule, sharedWithFriends, onToggleShare, dragHandle, focused }) => {
   const [histOpen, setHistOpen] = useState(false);
+  // Free to read per card: the provider fetches once for the whole app.
+  const softened = useSoftened();
   const [settingsOpen, setSettingsOpen] = useState(false); // per-habit config, hidden by default
   const [monthOffset, setMonthOffset] = useState(0); // 0 = this month, -1 = last month …
   // Shrink the name font when it wraps to more than one line. Measured at the base
@@ -614,6 +620,12 @@ const HabitCard: React.FC<{
     if (raw === 'done') return 'done';
     if (raw === 'failed') return 'failed';
     if (raw === 'na') return 'na';
+    // An unmarked past day is a day you weren't here, not a question you dodged.
+    // Coming back to a week of yellow "?" on every card is the wall this avoids.
+    // ponytail: drops the marker for the whole visible week while softened, not
+    // only for days inside the gap. The week is 7 days and the softening lasts 3,
+    // so the overlap is small; per-day precision would need daysSinceLog per day.
+    if (softened) return null;
     const idx = ALL_DAYS.indexOf(key);
     if (idx >= startIdx && idx < todayIdx) return 'undeclared'; // missed a due day
     return null;
@@ -1377,6 +1389,12 @@ const Habits: React.FC = () => {
   // Adapt the home surface to the user's stage: teach newcomers, stay out of veterans' way.
   const stage = useUserStage();
 
+  // Falling off is a state, not a failure. While this is set, the page holds its
+  // judgement: no flame over a zero, no wall of question marks, no recap of a week
+  // nobody was here for. See lapse.ts.
+  const lapse = useLapse();
+  const softened = useSoftened();
+
   const pwaKey = `superdub.pwa.${PWA_PROMPT_VERSION}`;
   const pwaDayKey = `superdub.pwa.day.${PWA_PROMPT_VERSION}`;
   const todayStr = new Date().toDateString();
@@ -1516,7 +1534,9 @@ const Habits: React.FC = () => {
   // If the evening reflection is about to auto-show, wait our turn — it hands over
   // via checkin-done (saved) or evening-closed (skipped) so the popups run one by one.
   useEffect(() => {
-    if (loaded && shouldAutoRefresh() && !eveningPending()) openDayOverlay();
+    // ponytail: suppressed prompts do not re-fire later in this session, they
+    // return tomorrow. Deliberate: the first open back gets one screen, not four.
+    if (loaded && shouldAutoRefresh() && !eveningPending() && !lapsePending()) openDayOverlay();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loaded]);
 
@@ -1591,7 +1611,7 @@ const Habits: React.FC = () => {
   // Fallback: check every 5 minutes if 6 hours have passed
   useEffect(() => {
     const id = setInterval(() => {
-      if (shouldAutoRefresh() && !eveningPending()) openDayOverlay();
+      if (shouldAutoRefresh() && !eveningPending() && !lapsePending()) openDayOverlay();
     }, 5 * 60 * 1000);
     return () => clearInterval(id);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2100,10 +2120,20 @@ const Habits: React.FC = () => {
             </div>
           );
         })()}
+        {/* The comeback strip — only renders for someone who has drifted or lapsed.
+            It leads the page so the first thing they meet is an invitation, which is
+            also why it has to sit above the streak hero and the week of blanks rather
+            than below them. */}
+        <LapseBanner />
+
         {/* Day streak — back at the top, and it now means something: days where 75%
             of the day's habits got done. The sub-line is the whole point of putting
-            it here, it tells you what today still needs rather than just scoring you. */}
-        {streakToday.due > 0 && (
+            it here, it tells you what today still needs rather than just scoring you.
+            Held back for someone coming off a gap: a flame over a 0 is the single
+            harshest thing on the page and the strip above already says the kind
+            version. A drifting user with a live streak keeps their flame. Gated on
+            `lapse` rather than `softened` so it never flashes 0 before the fetch lands. */}
+        {streakToday.due > 0 && lapse !== null && !(isSoftened(lapse.state) && dayStreak < 1) && (
           <div className={`hb-streak${streakToday.kept ? ' hb-streak--kept' : ''}`}>
             <span className="hb-streak-flame"><AnimatedFlame size={26} /></span>
             <span className="hb-streak-num">{dayStreak}</span>
@@ -2134,11 +2164,6 @@ const Habits: React.FC = () => {
             <button className="hb-rewind-back" onClick={() => setRewindDay(null)}>Back to today</button>
           </div>
         )}
-
-        {/* The comeback strip — only renders for someone who has drifted or lapsed,
-            and sits above the day's inputs so the first thing they see is an
-            invitation rather than a wall of unmarked days. */}
-        <LapseBanner />
 
         {/* Today's log — the app's own inputs (weigh-in / steps / check-in), pulled up
             with the ticks so your day sits together at the top. Follows the week strip's
@@ -2175,13 +2200,19 @@ const Habits: React.FC = () => {
             no separate streak tile here anymore. */}
         {activeCadence === 'daily' && !rewindDay && <HomeOnTrack />}
 
-        {/* New / lapsed users get a gentle coaching line instead of a bare gap. */}
-        {(stage === 'new' || dayStreak < 1) && (
+        {/* New users get a gentle coaching line instead of a bare gap. Someone
+            coming back is not new and does not need the how-it-works line: the
+            comeback strip at the top of the page already speaks to them, and two
+            coaching lines about the same thing is one too many. */}
+        {(stage === 'new' || (dayStreak < 1 && !softened)) && (
           <p className="hb-week-coach">Tick a habit each day to grow your streak. Dub coaches you as you go.</p>
         )}
 
-        {/* Weekly Recap, Sunday only, right under the gold circles */}
-        {isSunday && <WeeklyRecap />}
+        {/* Weekly Recap, Sunday only, right under the gold circles.
+            ponytail: suppressed while softened rather than fixed inside the
+            component. A recap of a week you were not here for has nothing to
+            recap, and it comes back next Sunday when there is a real week. */}
+        {isSunday && !softened && <WeeklyRecap />}
 
         </>}
 

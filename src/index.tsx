@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import Habits from './Habits';
 import DailyCheckIn from './DailyCheckIn';
+import ComebackPrompt from './ComebackPrompt';
 import VitalsPrompt from './VitalsPrompt';
 import ExercisePrompt from './ExercisePrompt';
 import EveningPrompt from './EveningPrompt';
@@ -17,6 +18,7 @@ import { isLoggedIn, clearToken, api } from './api';
 import { initStepSync } from './stepSync';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { XPProvider } from './XPContext';
+import { LapseProvider } from './LapseBanner';
 import LevelUpCelebration from './LevelUpCelebration';
 import DubChat from './DubChat';
 import TrendSheet from './TrendSheet';
@@ -127,8 +129,8 @@ function AppRouter() {
     };
   }, []);
 
-  // Deep-link from a push notification: ?prompt=weight|exercise opens the
-  // matching overlay (the SW lands us here). Strip the param so a refresh
+  // Deep-link from a push notification: ?prompt=weight|exercise|evening|comeback
+  // opens the matching overlay (the SW lands us here). Strip the param so a refresh
   // won't repeat.
   useEffect(() => {
     if (!authed) return;
@@ -137,7 +139,8 @@ function AppRouter() {
     if (!prompt) return;
     const evt = prompt === 'exercise' ? 'superdub:show-exercise'
       : prompt === 'evening' ? 'superdub:show-evening'
-      : prompt === 'weight' ? 'superdub:show-checkin' : null;
+      : prompt === 'weight' ? 'superdub:show-checkin'
+      : prompt === 'comeback' ? 'superdub:show-comeback' : null;
     window.history.replaceState({}, '', location.pathname);
     // Defer so the overlay listeners (siblings mounted this same tick) are attached.
     if (evt) setTimeout(() => window.dispatchEvent(new CustomEvent(evt)), 80);
@@ -177,6 +180,8 @@ function AppRouter() {
       </Suspense>
       </main>
       {needConsent && <ConsentGate onDecided={() => setNeedConsent(false)} />}
+      {/* First, and alone: someone back after a long gap gets one screen, not four. */}
+      <ComebackPrompt />
       <DailyCheckIn />
       <VitalsPrompt />
       <ExercisePrompt />
@@ -193,6 +198,7 @@ function Root() {
   return (
     <BrowserRouter>
       <XPProvider>
+        <LapseProvider>
         <BackgroundApplier />
         <NightSky />
         <UpdateBanner />
@@ -201,6 +207,7 @@ function Root() {
         <LevelUpCelebration />
         <DubChat />
         <TrendSheet />
+        </LapseProvider>
       </XPProvider>
     </BrowserRouter>
   );

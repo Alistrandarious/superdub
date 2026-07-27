@@ -27,5 +27,19 @@ if (flat.pts[0].y !== flat.pts[1].y) throw new Error('flat series should be leve
 if (trendSeries([day('01/07', 80)]).pts[0].x !== STRIP_W / 2) throw new Error('lone point should centre');
 if (trendSeries([]).pts.length !== 0) throw new Error('empty should be empty');
 
+// Points are spaced by date, not by their position in the list. A three-week
+// quiet spell has to occupy three weeks of the strip: index spacing used to
+// collapse it to the same step as a day, quietly hiding the gap on the one
+// screen whose whole job is showing you the map you're adding a point to.
+const gapped = trendSeries([day('01/07', 82), day('02/07', 81), day('23/07', 80)]);
+const step1 = gapped.pts[1].x - gapped.pts[0].x;   // 1 day
+const step2 = gapped.pts[2].x - gapped.pts[1].x;   // 21 days
+if (!(step2 > step1 * 10)) throw new Error('a 21-day gap must not render like a 1-day step');
+
+// Evenly spaced dates still come out evenly spaced.
+const even = trendSeries([day('01/07', 82), day('03/07', 81), day('05/07', 80)]);
+if (Math.abs((even.pts[1].x - even.pts[0].x) - (even.pts[2].x - even.pts[1].x)) > 0.001)
+  throw new Error('equal date steps should be equal pixel steps');
+
 console.log('WeightTrendStrip check passed');
 export {};

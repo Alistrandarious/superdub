@@ -1,7 +1,7 @@
 import React from 'react';
 import { ComposedChart, Line, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useWeightUnit, formatWeightKg, kgToUnitValue } from './weightUnit';
-import { DAY_SHORT, linearReg, localYMD, isoToDDMM, emaStep } from './weightMath';
+import { DAY_SHORT, linearReg, localYMD, isoToDDMM, emaStep, sinceLastGap } from './weightMath';
 
 // "Weight This Week" — a weekly weight chart (logged + EMA-smoothed + 28-day trend
 // + a golden safe-zone corridor) with Mon–Sun day circles and a plain-English
@@ -60,7 +60,12 @@ const WeightSparkline: React.FC<{
     }
   }
 
-  const reg = linearReg(histPts);
+  // Only the run since the last real break — the same slice /plan and the Progress
+  // chart use, so a 28-day window containing a gap can't report a rate for days
+  // nobody logged.
+  const trendRun = sinceLastGap(histPts);
+  const reg = linearReg(trendRun);
+  const firstTrendX = trendRun.length > 0 ? trendRun[0].x : 0;
   const weeklyRate = reg?.weeklyRate ?? null;
 
   const todayStart = new Date(now); todayStart.setHours(0, 0, 0, 0);
@@ -78,7 +83,7 @@ const WeightSparkline: React.FC<{
     const dayDate = new Date(iso + 'T00:00:00');
     const daysFromToday = Math.round((todayStart.getTime() - dayDate.getTime()) / 86400000);
     const x = 27 - daysFromToday;
-    const trend = reg ? parseFloat((reg.intercept + reg.slope * x).toFixed(2)) : undefined;
+    const trend = reg && x >= firstTrendX ? parseFloat((reg.intercept + reg.slope * x).toFixed(2)) : undefined;
     // Corridor band around the ideal path
     const zoneLow = expected !== undefined ? parseFloat((expected - ZONE_HALF).toFixed(2)) : undefined;
     const zoneBand = expected !== undefined ? ZONE_HALF * 2 : undefined;
@@ -179,8 +184,8 @@ const WeightSparkline: React.FC<{
             {/* Trendline, amber regression of your last 28 days */}
             <Line type="linear" dataKey="trend" stroke="#FF8A00" strokeWidth={2} strokeDasharray="6 4" dot={false} connectNulls name="trend" isAnimationActive={false} />
             {/* EMA smoothed, black line with a white halo */}
-            <Line type="monotone" dataKey="emaHalo" stroke="rgba(255,255,255,0.6)" strokeWidth={5} dot={false} connectNulls isAnimationActive={false} />
-            <Line type="monotone" dataKey="ema" stroke="#000000" strokeWidth={2.5} dot={false} connectNulls isAnimationActive={false} name="ema" />
+            <Line type="monotone" dataKey="emaHalo" stroke="rgba(255,255,255,0.6)" strokeWidth={5} dot={false} connectNulls={false} isAnimationActive={false} />
+            <Line type="monotone" dataKey="ema" stroke="#000000" strokeWidth={2.5} dot={false} connectNulls={false} isAnimationActive={false} name="ema" />
             {/* Actual logged weight, white line with hollow dots */}
             <Line type="monotone" dataKey="actual" stroke="#FFFFFF" strokeWidth={2.5} dot={{ r: 4, fill: '#0E0E14', stroke: '#FFFFFF', strokeWidth: 2 }} activeDot={{ r: 6 }} connectNulls={false} name="actual" />
           </ComposedChart>

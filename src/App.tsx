@@ -19,7 +19,8 @@ import { BUILD_TAG } from './version';
 import { kcalPerStep as kcalPerStepFor, stepsToKm, estimateIntakeRange, workoutCalories } from './energy';
 import { assessIntakeTruth } from './intakeTruth';
 import { loggingNow, getLoggingDay } from './day';
-import { emaStep } from './weightMath';
+import { bridgeGaps, emaStep, linearReg, sinceLastGap, GAP_DAYS } from './weightMath';
+import { dayWasMarked } from './dayStreak';
 import { useNavigate } from 'react-router-dom';
 import { pageTheme, GROWTH, HEALTH, TEAL } from './theme';
 import PlanGauge from './PlanGauge';
@@ -397,7 +398,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     history?: { id: string; calories: number; previousCalories: number; reason: string; effectiveFrom: string }[];
   } | null>(null);
   const [planCycle, setPlanCycle] = useState<{
-    onTrack: boolean; actualSlope: number | null; targetSlope: number; flaggedDays: string[];
+    onTrack: boolean | null; actualSlope: number | null; targetSlope: number; flaggedDays: string[];
     metabolicProtection?: boolean;
   } | null>(null);
   // "You reached your goal weight!" celebration
@@ -851,25 +852,29 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     ? Math.ceil((startWeight - goal) / (activeLoss / 7))
     : null;
 
-  // Trend (linear regression on actual logged weights within the chart range)
+  // Trend (linear regression on actual logged weights within the chart range).
+  // Only the run since the last real break: a line drawn across a fortnight of
+  // silence describes someone who wasn't there. Shares linearReg/sinceLastGap
+  // with the journey chart on /plan so the two pages cannot report different
+  // rates for the same data — see trendAgreement.check.ts.
   const weightPoints: { i: number; w: number }[] = [];
   chartDayRange.forEach(({ ddmm }, i) => {
     const w = parseFloat(tracker[ddmm]?.weight ?? '');
     if (w > 0) weightPoints.push({ i, w });
   });
 
-  let trendSlope = 0;
-  let trendIntercept = 0;
-  const hasTrend = weightPoints.length >= 2;
-  if (hasTrend) {
-    const n = weightPoints.length;
-    const sumX = weightPoints.reduce((s, p) => s + p.i, 0);
-    const sumY = weightPoints.reduce((s, p) => s + p.w, 0);
-    const sumXY = weightPoints.reduce((s, p) => s + p.i * p.w, 0);
-    const sumX2 = weightPoints.reduce((s, p) => s + p.i * p.i, 0);
-    trendSlope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
-    trendIntercept = (sumY - trendSlope * sumX) / n;
-  }
+  const trendRun = sinceLastGap(weightPoints.map(p => ({ x: p.i, y: p.w })));
+  const reg = linearReg(trendRun);
+  const trendSlope = reg?.slope ?? 0;
+  const trendIntercept = reg?.intercept ?? 0;
+  const hasTrend = reg != null;
+  /** Where the trend line is allowed to start drawing — the first point after the break. */
+  const firstTrendIdx = trendRun.length > 0 ? trendRun[0].x : 0;
+  /** And where it has to stop. A regression keeps producing numbers forever, so
+   *  without this the violet line marches confidently across the three weeks the
+   *  person wasn't here, which is the exact thing this whole change is about. One
+   *  ordinary gap of grace past the last weigh-in, then it stops. */
+  const lastTrendIdx = trendRun.length > 0 ? trendRun[trendRun.length - 1].x + GAP_DAYS : 0;
 
   // EMA (α=0.25, same as backend engine)
   const chartEMA: Record<number, number> = {};
@@ -881,7 +886,18 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       chartEMA[i] = +ema.toFixed(2);
       prevI = i;
     }
+    // Bridge the ordinary two or three day gaps so the line stays whole, and
+    // leave a real break empty so the chart shows the quiet stretch.
+    bridgeGaps(chartEMA, weightPoints.map(p => p.i));
   }
+
+  // The white weight line is drawn from a bridged copy rather than from the raw
+  // points: recharts' connectNulls is all or nothing, and this is the only way to
+  // keep a normal week joined up while a real break stays open. The dots and the
+  // tooltip still come from `weight`, so nothing invented is ever read out.
+  const weightLineByIdx: Record<number, number> = {};
+  for (const { i, w } of weightPoints) weightLineByIdx[i] = w;
+  bridgeGaps(weightLineByIdx, weightPoints.map(p => p.i));
 
   // Last EMA index/value — used for forward projection
   const lastEMAIndex = weightPoints.length > 0 ? weightPoints[weightPoints.length - 1].i : -1;
@@ -944,12 +960,18 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     // N/A days are deliberate skips — drop them from the day's total so they don't
     // inflate the grey "undeclared" bar.
     const na = visible.filter(h => d.habits[h] === 'na').length;
-    const undeclared = date.getTime() < todayStartMs ? visible.length - completed - failed - na : 0;
+    // A day with no marks of any kind is absence, not a set of undeclared habits.
+    // Three weeks away should read as empty, not as a wall of grey towers.
+    // ponytail: presence is read from habit marks only, so a day with just a
+    // weigh-in now shows no grey either.
+    const undeclared = dayWasMarked(d.habits) && date.getTime() < todayStartMs
+      ? visible.length - completed - failed - na : 0;
     const ema = chartEMA[i] != null ? chartEMA[i] : null;
-    // Only show trend line where we have real weight data nearby (within 3 days)
-    const trend = hasTrend ? +(trendIntercept + trendSlope * i).toFixed(2) : null;
+    // The trend starts at the first weigh-in after the last real break, so it
+    // never spans a gap it knows nothing about.
+    const trend = hasTrend && i >= firstTrendIdx && i <= lastTrendIdx ? +(trendIntercept + trendSlope * i).toFixed(2) : null;
     const { zoneLow, zoneBand, zoneHigh, zoneTarget } = getZone(date.getTime());
-    return { day: ddmm, completed, failed, undeclared, weight: d.weight ? Number(d.weight) : null, ema, trend, projection: null as number | null, zoneLow, zoneBand, zoneHigh, zoneTarget };
+    return { day: ddmm, completed, failed, undeclared, weight: d.weight ? Number(d.weight) : null, weightLine: (weightLineByIdx[i] ?? null) as number | null, ema, trend, projection: null as number | null, zoneLow, zoneBand, zoneHigh, zoneTarget };
   });
 
   // Forward projection days (EMA slope extended past today)
@@ -973,10 +995,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         const mm = String(futureDate.getMonth() + 1).padStart(2, '0');
         const futureIdx = chartDayRange.length + f;
         const proj = +(lastEMAValue! + trendSlope * (futureIdx - lastEMAIndex)).toFixed(1);
-        // Extend the regression trend line forward so it spans the whole chart on long views
-        const trend = hasTrend ? +(trendIntercept + trendSlope * futureIdx).toFixed(2) : null;
+        // Extend the regression trend line forward so it spans the whole chart on long
+        // views, but never past where the run itself ran out (see lastTrendIdx).
+        const trend = hasTrend && futureIdx <= lastTrendIdx ? +(trendIntercept + trendSlope * futureIdx).toFixed(2) : null;
         const { zoneLow, zoneBand, zoneHigh, zoneTarget } = getZone(futureDate.getTime());
-        return { day: `${dd}/${mm}`, completed: 0, failed: 0, undeclared: 0, weight: null as number | null, ema: null as number | null, trend, projection: proj as number | null, zoneLow, zoneBand, zoneHigh, zoneTarget };
+        return { day: `${dd}/${mm}`, completed: 0, failed: 0, undeclared: 0, weight: null as number | null, weightLine: null as number | null, ema: null as number | null, trend, projection: proj as number | null, zoneLow, zoneBand, zoneHigh, zoneTarget };
       })
     : [];
 
@@ -1004,6 +1027,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       .map(([wk, data]) => ({
         day: wk,
         weight: data.weights.length > 0 ? +(data.weights.reduce((a, b) => a + b, 0) / data.weights.length).toFixed(1) : null,
+        // Weekly buckets are already one point per week, so the stroke follows the
+        // same series as the dots — there are no in-between days left to bridge.
+        weightLine: data.weights.length > 0 ? +(data.weights.reduce((a, b) => a + b, 0) / data.weights.length).toFixed(1) : null,
         completed: data.done,
         failed: data.failed,
         undeclared: 0, // aggregate weeks sum multiple days; grey is a daily-view signal
@@ -2219,22 +2245,39 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             {hasTrend && (
               <Line yAxisId="right" type="linear" dataKey="trend" stroke="#B79CFF" strokeWidth={2.5} strokeDasharray="7 3" dot={false} name="Trend" connectNulls isAnimationActive={false} legendType="plainline" />
             )}
-            {/* ── Actual weight line ── */}
+            {/* ── Actual weight ──
+                Two series on purpose. The stroke follows the bridged copy so an
+                ordinary week joins up, and it stops dead at a real break instead of
+                drawing a fortnight you weren't here for. The dots and the tooltip
+                stay on the raw weigh-ins, so nothing bridged is ever read out. */}
+            <Line
+              yAxisId="right"
+              type="monotone"
+              dataKey="weightLine"
+              stroke="#FFFFFF"
+              strokeWidth={3}
+              dot={false}
+              activeDot={false}
+              name="Weight"
+              connectNulls={false}
+              isAnimationActive={false}
+              legendType="plainline"
+              tooltipType="none"
+            />
             <Line
               yAxisId="right"
               type="monotone"
               dataKey="weight"
-              stroke="#FFFFFF"
-              strokeWidth={3}
+              stroke="none"
               dot={(props: any) => {
                 const { cx, cy, payload, index } = props;
                 if (payload.weight == null) return <g key={`dot-empty-${index}`} />;
                 return <circle key={`dot-${index}`} cx={cx} cy={cy} r={5} fill="#0E0E14" stroke="#FFFFFF" strokeWidth={2} />;
               }}
               name="Weight"
-              connectNulls
+              connectNulls={false}
               isAnimationActive={false}
-              legendType="plainline"
+              legendType="none"
             />
             {/* ── EMA smoothed trend, black line with a white halo so it stays visible on dark ── */}
             {hasTrend && (
@@ -2245,7 +2288,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 stroke="rgba(255,255,255,0.65)"
                 strokeWidth={5}
                 dot={false}
-                connectNulls
+                connectNulls={false}
                 isAnimationActive={false}
                 legendType="none"
               />
@@ -2259,7 +2302,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 strokeWidth={2.5}
                 dot={false}
                 name="Smoothed"
-                connectNulls
+                connectNulls={false}
                 isAnimationActive={false}
                 legendType="plainline"
               />
@@ -2475,8 +2518,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                   <ReferenceLine y={targetCalories} stroke="#2E8BFF" strokeDasharray="4 4" label={{ value: `${targetCalories} target`, fill: '#2E8BFF', fontSize: 10, position: 'insideTopRight' }} />
                   {/* The shaded band is the honest low–high range; the line is its
                       centre. The band carries no tooltip so only the centre reads. */}
-                  <Area type="monotone" dataKey="band" stroke="none" fill="url(#intakeFill)" connectNulls isAnimationActive={false} legendType="none" tooltipType="none" />
-                  <Line type="monotone" dataKey="intake" name="Est. intake" stroke="#FF8A00" strokeWidth={2.5} dot={{ r: 3, fill: '#0E0E14', stroke: '#FF8A00', strokeWidth: 2 }} connectNulls isAnimationActive={false} />
+                  <Area type="monotone" dataKey="band" stroke="none" fill="url(#intakeFill)" connectNulls={false} isAnimationActive={false} legendType="none" tooltipType="none" />
+                  <Line type="monotone" dataKey="intake" name="Est. intake" stroke="#FF8A00" strokeWidth={2.5} dot={{ r: 3, fill: '#0E0E14', stroke: '#FF8A00', strokeWidth: 2 }} connectNulls={false} isAnimationActive={false} />
                 </ComposedChart>
               </ResponsiveContainer>
               </DraggableChart>
@@ -2544,8 +2587,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 formatter={(v: any) => [`${v} h`, 'Sleep']}
               />
               <ReferenceLine y={8} stroke="rgba(139,92,246,0.45)" strokeDasharray="4 4" label={{ value: '8h', fill: 'rgba(139,92,246,0.8)', fontSize: 10, position: 'insideTopRight' }} />
-              <Area type="monotone" dataKey="sleep" stroke="none" fill="url(#sleepFill)" connectNulls isAnimationActive={false} legendType="none" />
-              <Line type="monotone" dataKey="sleep" name="Sleep" stroke="#8B5CF6" strokeWidth={2.5} dot={{ r: 3, fill: '#0E0E14', stroke: '#8B5CF6', strokeWidth: 2 }} connectNulls isAnimationActive={false} />
+              <Area type="monotone" dataKey="sleep" stroke="none" fill="url(#sleepFill)" connectNulls={false} isAnimationActive={false} legendType="none" />
+              <Line type="monotone" dataKey="sleep" name="Sleep" stroke="#8B5CF6" strokeWidth={2.5} dot={{ r: 3, fill: '#0E0E14', stroke: '#8B5CF6', strokeWidth: 2 }} connectNulls={false} isAnimationActive={false} />
             </ComposedChart>
           </ResponsiveContainer>
           )}
@@ -2587,8 +2630,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 itemStyle={{ color: '#E8ECF4' }}
                 formatter={(v: any) => [`${v} / 10`, 'Mood']}
               />
-              <Area type="monotone" dataKey="mood" stroke="none" fill="url(#moodFill)" connectNulls isAnimationActive={false} legendType="none" />
-              <Line type="monotone" dataKey="mood" name="Mood" stroke={TEAL} strokeWidth={2.5} dot={{ r: 3, fill: '#0E0E14', stroke: TEAL, strokeWidth: 2 }} connectNulls isAnimationActive={false} />
+              <Area type="monotone" dataKey="mood" stroke="none" fill="url(#moodFill)" connectNulls={false} isAnimationActive={false} legendType="none" />
+              <Line type="monotone" dataKey="mood" name="Mood" stroke={TEAL} strokeWidth={2.5} dot={{ r: 3, fill: '#0E0E14', stroke: TEAL, strokeWidth: 2 }} connectNulls={false} isAnimationActive={false} />
             </ComposedChart>
           </ResponsiveContainer>
           </DraggableChart>

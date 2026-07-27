@@ -8,7 +8,8 @@ import WeightSparkline from './WeightSparkline';
 import PlanGauge from './PlanGauge';
 import { kcalPerStep } from './energy';
 import { pageTheme, GROWTH, HEALTH } from './theme';
-import { linearReg, localYMD, isoToDDMM, emaStep } from './weightMath';
+import { linearReg, localYMD, isoToDDMM, emaStep, sinceLastGap } from './weightMath';
+import { useSoftened } from './LapseBanner';
 
 interface ProfileData {
   dob: string;
@@ -292,9 +293,13 @@ const SmartAdjustCard: React.FC<{
       histPts.push({ x: 27 - i, y: parseFloat(found.weight) });
   }
 
-  if (histPts.length < 7 || lossPerWeek <= 0 || goal === 'maintain') return null;
+  // Judge the run since the last real break, not the raw 28 days. Five weigh-ins
+  // before a gap and two after is not seven days of evidence, and "Behind" drawn
+  // through three weeks nobody logged is a verdict on nothing.
+  const run = sinceLastGap(histPts);
+  if (run.length < 7 || lossPerWeek <= 0 || goal === 'maintain') return null;
 
-  const reg = linearReg(histPts);
+  const reg = linearReg(run);
   if (!reg) return null;
 
   const actualWeeklyKg = reg.weeklyRate;
@@ -340,7 +345,7 @@ const SmartAdjustCard: React.FC<{
         </div>
         <div className="sa-titles">
           <span className="sa-title">Adjust your target</span>
-          <span className="sa-subtitle">From your {histPts.length}-day weight trend</span>
+          <span className="sa-subtitle">From your {run.length}-day weight trend</span>
         </div>
         <span className="sa-status-pill" style={{ color: statusColor, borderColor: statusColor + '40', background: statusColor + '12' }}>
           {isBehind ? 'Behind' : 'Ahead'}
@@ -537,6 +542,7 @@ const ActivityTargetsCard: React.FC<{
 // ── Diet page ─────────────────────────────────────────────────────────────────
 const Diet: React.FC = () => {
   const navigate = useNavigate();
+  const softened = useSoftened();
   const [profile, setProfile] = useState<ProfileData>(DEFAULT_PROFILE);
   const [target, setTarget] = useState<MacroSet>(DEFAULT_TARGET);
   const [goal, setGoal] = useState<'cut' | 'maintain' | 'bulk'>('cut');
@@ -751,6 +757,7 @@ const Diet: React.FC = () => {
           planCycle={planCycle}
           coachingMsg={coachingMsg}
           lastEMAValue={lastEMAValue}
+          softened={softened}
         />
 
         {/* Weight This Week, prominent, with corridor + trend */}

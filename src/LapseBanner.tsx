@@ -5,24 +5,51 @@
 // something, or take the streak back. Anything longer would be another thing
 // to bounce off.
 // =====================================================================
-import React, { useCallback, useEffect, useState } from 'react';
-import { api } from './api';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { api, isLoggedIn } from './api';
 import type { LapseSignalsResponse } from './api';
-import { computeLapseState, lapseHeadline, LapseState } from './lapse';
+import { computeLapseState, isSoftened, lapseHeadline, LapseState } from './lapse';
 
-/** Fetches the raw signals and folds them into a state. Returns null while
- *  loading or on any failure — a broken endpoint must never block the page. */
-export function useLapse(): { state: LapseState; signals: LapseSignalsResponse } | null {
+type LapseValue = { state: LapseState; signals: LapseSignalsResponse } | null;
+
+const LapseCtx = createContext<LapseValue>(null);
+
+/** Set while the app is showing someone who has lapsed, so the daily prompts can
+ *  stand down. sessionStorage rather than state: the prompts read it inside
+ *  timers that fire before any of them subscribe to anything. */
+const PENDING_KEY = 'superdub.lapse.pending';
+export const lapsePending = (): boolean => sessionStorage.getItem(PENDING_KEY) === '1';
+export const clearLapsePending = (): void => sessionStorage.removeItem(PENDING_KEY);
+
+/**
+ * One fetch of the lapse signals for the whole app. It has to be shared: the
+ * softening reaches every habit card, so a per-component hook would fire a dozen
+ * identical requests on the one app-open we are trying to make gentle.
+ *
+ * ponytail: between first paint and this fetch landing, useSoftened() is false,
+ * so a softened surface can render unsoftened for a moment and then correct
+ * itself. Only the streak hero is loud enough to matter and it waits on
+ * useLapse() being non-null instead. Upgrade path if it ever spreads: seed the
+ * state from the ?prompt=comeback param, which is already proof of a lapse.
+ */
+export const LapseProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [signals, setSignals] = useState<LapseSignalsResponse | null>(null);
 
-  useEffect(() => {
-    let live = true;
-    api.getLapse().then(s => { if (live) setSignals(s); }).catch(() => {});
-    return () => { live = false; };
+  const load = useCallback(() => {
+    if (!isLoggedIn()) return;
+    api.getLapse().then(setSignals).catch(() => {});
   }, []);
 
-  if (!signals) return null;
-  return {
+  useEffect(() => { load(); }, [load]);
+
+  // The first mark of the day ends the lapse, so the strip must not outlive it.
+  useEffect(() => {
+    const handler = () => load();
+    window.addEventListener('superdub:tracker-updated', handler);
+    return () => window.removeEventListener('superdub:tracker-updated', handler);
+  }, [load]);
+
+  const value = useMemo<LapseValue>(() => signals && {
     signals,
     state: computeLapseState({
       // null means "never logged", which the state machine reads as no history.
@@ -32,7 +59,26 @@ export function useLapse(): { state: LapseState; signals: LapseSignalsResponse }
       weekDue: signals.weekDue,
       daysSinceReturn: signals.daysSinceReturn,
     }),
-  };
+  }, [signals]);
+
+  useEffect(() => {
+    if (value?.state === 'lapsed') sessionStorage.setItem(PENDING_KEY, '1');
+  }, [value?.state]);
+
+  return <LapseCtx.Provider value={value}>{children}</LapseCtx.Provider>;
+};
+
+/** The shared state, or null while loading or on any failure — a broken endpoint
+ *  must never block the page. */
+export function useLapse(): LapseValue {
+  return useContext(LapseCtx);
+}
+
+/** Should this surface hold its judgement? False while loading, so a broken
+ *  /api/lapse fails toward the honest treatment rather than softening everyone. */
+export function useSoftened(): boolean {
+  const lapse = useLapse();
+  return lapse ? isSoftened(lapse.state) : false;
 }
 
 const LapseBanner: React.FC = () => {

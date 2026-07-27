@@ -1,6 +1,6 @@
 // Self-check for the lapse state machine. Run: npx tsx src/lapse.check.ts
 import assert from 'assert';
-import { computeLapseState, isSoftened, lapseHeadline, LapseSignals } from './lapse';
+import { computeLapseState, isSoftened, lapseHeadline, lapseStartKey, shouldShowComeback, LapseSignals } from './lapse';
 
 const base: LapseSignals = {
   daysSinceLog: 0, hadPriorActivity: true, weekMarks: 10, weekDue: 14, daysSinceReturn: null,
@@ -34,5 +34,22 @@ assert(!isSoftened('active') && isSoftened('drifting') && isSoftened('lapsed'), 
 assert(lapseHeadline('active', 0) === null, 'active says nothing');
 assert(lapseHeadline('lapsed', 4)!.includes('4'), 'a short lapse names the days');
 assert(!lapseHeadline('lapsed', 30)!.includes('30'), 'a long lapse does not count days at you');
+
+// ── the return screen opens once per lapse, not once ever ────────────────────
+const TODAY = '2026-07-27';
+// 21 quiet days means the lapse began on the 6th.
+assert(lapseStartKey(21, TODAY) === '2026-07-06', 'the lapse is keyed by the day it began');
+
+assert(shouldShowComeback('lapsed', 21, null, TODAY), 'never shown, so show it');
+assert(!shouldShowComeback('lapsed', 21, '2026-07-06', TODAY), 'already shown for THIS lapse, stay quiet');
+// Tomorrow, still lapsed: same lapse, same key, still quiet. This is the assert
+// that stops the screen reopening on every refresh.
+assert(!shouldShowComeback('lapsed', 22, '2026-07-06', '2026-07-28'), 'one more quiet day is the same lapse');
+assert(shouldShowComeback('lapsed', 4, '2026-04-01', TODAY), 'a older lapse re-arms it');
+
+assert(!shouldShowComeback('drifting', 2, null, TODAY), 'drifting gets the strip, not a takeover');
+assert(!shouldShowComeback('returning', 1, null, TODAY), 'they are already back');
+assert(!shouldShowComeback('active', 0, null, TODAY), 'nothing to come back from');
+assert(!shouldShowComeback('lapsed', Infinity, null, TODAY), 'never logged is not a lapse');
 
 console.log('lapse.check.ts OK');

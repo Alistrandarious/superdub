@@ -4,6 +4,7 @@ import { api } from './api';
 import { getWorkoutHour } from './push';
 import PromptShell from './PromptShell';
 import { HEALTH } from './theme';
+import { lapsePending } from './LapseBanner';
 
 // ── Exercise prompt (#3) — the one-tap "did you close your loop?" from the spec.
 // Time-locked: auto-appears once you're past your set workout hour (cog menu →
@@ -24,7 +25,8 @@ const ExercisePrompt: React.FC = () => {
     // Time-lock: only if the user opted into a workout hour and it's passed.
     const wh = getWorkoutHour();
     let t: ReturnType<typeof setTimeout> | undefined;
-    if (wh != null && localStorage.getItem(EX_KEY) !== todayISO() && new Date().getHours() >= wh) {
+    // lapsePending: the return screen gets the first open back to itself.
+    if (wh != null && localStorage.getItem(EX_KEY) !== todayISO() && new Date().getHours() >= wh && !lapsePending()) {
       t = setTimeout(open, 1500);
     }
     return () => { window.removeEventListener('superdub:show-exercise', open); if (t) clearTimeout(t); };

@@ -75,6 +75,31 @@ export function isSoftened(state: LapseState): boolean {
   return state !== 'active';
 }
 
+/** A stable id for the lapse someone is currently in: the day it began, as
+ *  YYYY-MM-DD. Lets the return screen show once per lapse instead of once ever,
+ *  the same way the server rations the comeback push off last_lapse_push. */
+export function lapseStartKey(daysSinceLog: number, todayISO: string): string {
+  const t = new Date(`${todayISO}T00:00:00Z`);
+  t.setUTCDate(t.getUTCDate() - Math.floor(daysSinceLog));
+  return t.toISOString().slice(0, 10);
+}
+
+/**
+ * Should the full-screen return moment open? Only for a real lapse: 'drifting' is
+ * served proportionately by the strip on Habits, and 'returning' means they have
+ * already been here. `shownStamp` is the lapseStartKey last shown, if any, so a
+ * refresh stays quiet while a genuinely new lapse re-arms it.
+ */
+export function shouldShowComeback(
+  state: LapseState,
+  daysSinceLog: number,
+  shownStamp: string | null,
+  todayISO: string,
+): boolean {
+  if (state !== 'lapsed' || !Number.isFinite(daysSinceLog)) return false;
+  return shownStamp !== lapseStartKey(daysSinceLog, todayISO);
+}
+
 /** The one line the return screen leads with. Kept here so the tone is defined
  *  in one place rather than re-invented per surface. */
 export function lapseHeadline(state: LapseState, daysSinceLog: number): string | null {

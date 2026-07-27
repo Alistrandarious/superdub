@@ -6,6 +6,7 @@ import { HEALTH } from './theme';
 import WeightInput from './WeightInput';
 import { useWeightUnit, formatWeightKg } from './weightUnit';
 import { promptEnabled } from './promptPrefs';
+import { lapsePending } from './LapseBanner';
 import { getLoggingDay } from './day';
 import { WEIGHED_IN } from './systemHabits';
 import WeightTrendStrip from './WeightTrendStrip';
@@ -87,6 +88,13 @@ const DailyCheckIn: React.FC = () => {
     // Off for people who don't want a daily weigh-in (default: on only while a weight
     // plan is active). The manual "Log Weight" trigger below still works regardless.
     if (!promptEnabled('weight')) return;
+    // This is the MORNING weigh-in (PROMPTS.md) and every sibling prompt is
+    // time-locked, but this one never was: it auto-opened 800ms after load at any
+    // hour. The manual and push paths below bypass this, as they should.
+    if (new Date().getHours() >= 12) return;
+    // Someone back after a long gap gets the return screen and nothing else. The
+    // weigh-in sheet is about today and can wait until they have landed.
+    if (lapsePending()) return;
     let cancelled = false;
     let tid: ReturnType<typeof setTimeout>;
     api.getTracker().then((data: any) => {

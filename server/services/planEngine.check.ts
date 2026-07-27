@@ -52,6 +52,9 @@ const noData = runCycle(goal, 2000, single, bio);
 assert.strictEqual(noData.shouldAdjust, false);
 assert.strictEqual(noData.actualSlope, null);
 assert.match(noData.reason, /at least 2/);
+// No verdict, not a bad one. onTrack:false here used to put a red "Off pace" badge
+// on a card whose own body read "Not enough weight data".
+assert.strictEqual(noData.onTrack, null, 'no data means no verdict');
 
 // ── runCycle: on pace → no adjustment (within tolerance deadband) ────────────────
 // latestEMA 80 == targetWeight 80 → targetSlope 0; flat actual → gap 0.
@@ -64,6 +67,7 @@ assert.strictEqual(onPace.newCalories, 2000);
 // ── runCycle: behind pace → cut calories, capped at 40% of rate's kcal equiv ─────
 // latestEMA 79.9, target 76, 8 wks → targetSlope ≈ -0.4875; actual -0.1 → behind.
 const behind = runCycle(goal, 2000, losing, bio);
+// Still a real false: an honest off-pace verdict must survive the null change above.
 assert.strictEqual(behind.onTrack, false);
 assert.strictEqual(behind.shouldAdjust, true);
 assert.ok(behind.newCalories < 2000, 'behind pace should reduce calories');

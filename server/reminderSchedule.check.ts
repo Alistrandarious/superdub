@@ -1,6 +1,6 @@
 // Self-check for the reminder gate (run: npx tsx server/reminderSchedule.check.ts)
 import assert from 'assert';
-import { reminderDue, scheduleMatchesToday } from './reminderSchedule';
+import { reminderDue, scheduleMatchesToday, pushesAllowed } from './reminderSchedule';
 
 const TODAY = '2026-07-06';
 const YESTERDAY = '2026-07-05';
@@ -39,5 +39,18 @@ assert.strictEqual(scheduleMatchesToday('monthly', '31', FEB28), true, 'monthly 
 // No schedule / daily → always matches.
 assert.strictEqual(scheduleMatchesToday('daily', null, TUE), true, 'no schedule → every day');
 assert.strictEqual(scheduleMatchesToday('weekly', '', TUE), true, 'empty schedule → every day');
+
+// ── the daily reminders stand down during a lapse ────────────────────────────
+// Someone gone three weeks used to collect a weigh-in, an evening, a workout and
+// a per-habit nudge every day of it, burying the single comeback push.
+const NOW = new Date('2026-07-27T09:00:00Z');
+const daysAgo = (n: number) => new Date(NOW.getTime() - n * 86400000).toISOString();
+assert.strictEqual(pushesAllowed(daysAgo(0), NOW), true, 'here today, remind them');
+assert.strictEqual(pushesAllowed(daysAgo(2), NOW), true, 'two quiet days is not a lapse');
+assert.strictEqual(pushesAllowed(daysAgo(3), NOW), false, 'three quiet days and the dailies stop');
+assert.strictEqual(pushesAllowed(daysAgo(21), NOW), false, 'three weeks gone, definitely stop');
+// Missing or unreadable data must never silence someone who is actually active.
+assert.strictEqual(pushesAllowed(null, NOW), true, 'no signal, no throttle');
+assert.strictEqual(pushesAllowed('not a date', NOW), true, 'unparseable, no throttle');
 
 console.log('reminderSchedule.check.ts — all assertions passed');
