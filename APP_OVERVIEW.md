@@ -50,8 +50,9 @@ Superdub is a **habit + weight + nutrition tracker** built around a single loop:
   `CommunityPage.tsx`): one shared monthly habit (July 2026: "do a good deed today").
   Each user levels it up personally, but the XP feeds one community total
   (`global_months` / `global_contributions`, `GlobalPrompt.tsx`). Reaching 10k together,
-  with ≥100 XP of your own, unlocks the white "Aurora" Dub colour. A Friends layer is
-  coming soon (not yet built).
+  with ≥100 XP of your own, unlocks the white "Aurora" Dub colour. The **Friends
+  layer is built** (`FriendsPanel.tsx` + `server/routes/friends.ts`, rendered inside
+  `CommunityPage`): add friends, see their streaks, nudge them, share habits.
 
 ### 4. Dub — the coach
 - A small robotic Yorkie (cat at L2, wizard at 3 referred friends) and the app's
