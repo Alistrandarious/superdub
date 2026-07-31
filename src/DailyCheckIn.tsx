@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import { api } from './api';
+import { capture } from './analytics';
 import PromptShell from './PromptShell';
 import { HEALTH } from './theme';
 import WeightInput from './WeightInput';
@@ -160,6 +161,8 @@ const DailyCheckIn: React.FC = () => {
     setError(null);
     try {
       await api.updateTrackerDay(todayStr(), { weight: parsed });
+      capture('weight_logged', { source: 'checkin' });
+      capture('checkin_completed'); // both no-op until analytics is live
       await api.updateProfile({ weightKg: parsed }).catch(() => {});
       // Logging your weight earns XP via the "Weighed in" system habit.
       api.toggleTrackerHabit(getLoggingDay(), WEIGHED_IN, 'done')

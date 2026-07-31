@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import { api } from './api';
+import { capture } from './analytics';
 import { getLoggingISO, getLoggingDay } from './day';
 import { WEIGHED_IN } from './systemHabits';
 import { useWeightUnit, formatWeightKg } from './weightUnit';
@@ -85,6 +86,7 @@ const WeightEntry: React.FC = () => {
     setSaving(true); setError(null);
     try {
       await api.updateTrackerDay(isoToDDMM(date), { weight: String(parsed) });
+      capture('weight_logged', { source: 'weight_entry' }); // no-ops until analytics is live
       // Only sync the profile's "current" weight when logging today, so editing a
       // past day never overwrites your latest reading. Logging today also earns XP
       // via the "Weighed in" system habit (past-day backfill shouldn't farm XP).

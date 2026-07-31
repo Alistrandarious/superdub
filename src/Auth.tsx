@@ -8,7 +8,7 @@ import DubCoach from './DubCoach';
 import { onboardingScreens, onbProgressPct, dubLine } from './onboarding';
 import { ageFromDob, isUnderMinAge, MIN_AGE_YEARS } from './age';
 import HealthDisclaimer from './HealthDisclaimer';
-import { setAnalyticsConsent } from './analytics';
+import { setAnalyticsConsent, capture } from './analytics';
 import './App.css';
 import { GROWTH } from './theme';
 import { nickToWordmark, setBrandNick } from './brand';
@@ -250,6 +250,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
       // which now discloses privacy-first analytics, so record consent here. Existing
       // users who predate analytics get the one-time ConsentGate instead.
       setAnalyticsConsent(true);
+      capture('signup_completed'); // funnel top — no-ops until analytics is live
       // Persist cohort onboarding message so the dashboard can display it on first load
       if (result.cohort?.onboardingMessage) {
         localStorage.setItem('superdub:cohort-msg', result.cohort.onboardingMessage);

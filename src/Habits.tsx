@@ -2,6 +2,7 @@ import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useMe
 import { useXP } from './XPContext';
 import './App.css';
 import { api, apiErrorMessage } from './api';
+import { capture } from './analytics';
 import { loggingNow, getLoggingDay } from './day';
 import { cycleState, type HabitState } from './habitState';
 import { scheduleLabel, scheduledDateInPeriod, scheduleDdmm, WEEKDAYS_FULL } from './habitSchedule';
@@ -1620,8 +1621,12 @@ const Habits: React.FC = () => {
   const handleToggleDay = useCallback((habit: string, dayKey: string, state: HabitState) => {
     // A soft haptic tick on completion only (not on clear/fail). Single choke point
     // for every completion surface: weekday dots, the big done button, the check-in
-    // overlay, past-day backfill, and weekly/monthly unit toggles.
-    if (state === 'done' && 'vibrate' in navigator) navigator.vibrate([0, 45, 40, 55]);
+    // overlay, past-day backfill, and weekly/monthly unit toggles. Also the one
+    // place to count a habit completion for the activation funnel.
+    if (state === 'done') {
+      capture('habit_logged'); // no-ops until analytics is live
+      if ('vibrate' in navigator) navigator.vibrate([0, 45, 40, 55]);
+    }
     setHt(prev => ({ ...prev, [dayKey]: { ...prev[dayKey], [habit]: state } }));
     // Refresh global XP/level once the write commits so the top-of-page level ring
     // updates on the same tap. (Deliberately NOT superdub:tracker-updated — that
