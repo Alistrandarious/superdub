@@ -36,7 +36,7 @@ import YesterdayMatrix, { KPI_ACCENT } from './YesterdayMatrix';
 import GoalSheet from './GoalSheet';
 import SleepCandleChart, { hhmmToAxis, type SleepCandle } from './SleepCandleChart';
 import { CADENCE_ORDER, CADENCE_META, type Cadence } from './Habits';
-import HabitYearHeatmap from './HabitYearHeatmap';
+import HabitMatrix, { IsoHistory, isoOf } from './HabitMatrix';
 import { isSystemHabit, DAILY_LOG_HABITS, FULL_DAILY_LOG } from './systemHabits';
 import { scheduledDateInPeriod } from './habitSchedule';
 import { UsersIc, AppleIc, CalendarIc } from './icons';
@@ -365,6 +365,9 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   // Progress page tell a daily habit from a yearly one (chart filter + Yesterday).
   const [habitCadence, setHabitCadence] = useState<Record<string, Cadence>>({});
   const [habitSchedule, setHabitSchedule] = useState<Record<string, string | null>>({});
+  // Done-days per habit per calendar year. Only the yearly heatmaps read it, to
+  // fill a decade the current year's tracker rows can't reach.
+  const [carryByYear, setCarryByYear] = useState<Record<string, Record<number, number>>>({});
   const [chartCadence, setChartCadence] = useState<Cadence>('daily');
   // To-do items for the "Today" tab (due today → this week). Loaded once on mount.
   const [tasks, setTasks] = useState<{ id: string; text: string; done: boolean; type: string; dueDate?: string }[]>([]);
@@ -477,6 +480,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         }
       });
       setTracker(merged);
+      setCarryByYear((trackerData as any).carryByYear ?? {});
 
       // /weight-settings is the canonical merged view: the server coalesces
       // profile-first biometrics with legacy weight_settings fallbacks.
@@ -831,13 +835,27 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   }, [moodByDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Per-habit heatmaps (own panel after Stats): group habits by cadence, each
-  // rendered as a full-year grid (HabitYearHeatmap) at the right granularity.
+  // rendered as a full-year HabitMatrix at the right granularity.
   const habitsByCadence = useMemo(() => {
     const g: Record<Cadence, string[]> = { quit: [], daily: [], weekly: [], monthly: [], yearly: [] };
     for (const h of habits) g[habitCadence[h] ?? 'daily'].push(h);
     return g;
   }, [habits, habitCadence]);
   const hmYear = now.getFullYear();
+
+  // The matrix keys history by real dates; this page keys it DD/MM within the
+  // current year. One projection of the rows already in state, not a second fetch.
+  const isoHistory = useMemo<IsoHistory>(() => {
+    const out: IsoHistory = {};
+    for (const [ddmm, d] of Object.entries(tracker)) {
+      const row: IsoHistory[string] = {};
+      for (const [h, v] of Object.entries(d.habits)) {
+        row[h] = v === true ? 'done' : v === 'failed' ? 'failed' : v === 'na' ? 'na' : null;
+      }
+      out[`${hmYear}-${ddmm.slice(3)}-${ddmm.slice(0, 2)}`] = row;
+    }
+    return out;
+  }, [tracker, hmYear]);
 
   // How much history exists → grey out ranges we don't have data for yet
   const daysSinceCreation = Math.max(1, Math.floor((now.getTime() - accountCreatedDate.getTime()) / 86400000) + 1);
@@ -1607,7 +1625,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   // ── "Today" tab feed: to-dos due today → this week, plus weekly/monthly habits
   // whose period closes within 3 days and hasn't been done yet.
   const pad2 = (n: number) => String(n).padStart(2, '0');
-  const isoOf = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
   const todayISOv = isoOf(now);
   const weekAheadISO = (() => { const d = new Date(now); d.setDate(d.getDate() + 7); return isoOf(d); })();
   const dueTasks = tasks
@@ -2887,14 +2904,22 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       {habits.length > 0 && (
       <div className="story-panel story-panel--stats">
         <section className="report-card habit-heatmaps-section">
-          <p className="report-eyebrow">Habit heatmaps · your first year</p>
+          <p className="report-eyebrow">Habit heatmaps · your last year</p>
           {CADENCE_ORDER.filter(cad => cad !== 'quit' && habitsByCadence[cad].length > 0).map(cad => (
-            <div key={cad} className="hhm-group">
+            <div key={cad} className="hhm-group" style={{ '--theme': CADENCE_META[cad].color } as React.CSSProperties}>
               <p className="hhm-group-label" style={{ color: CADENCE_META[cad].color }}>{CADENCE_META[cad].label}</p>
               {habitsByCadence[cad].map(h => (
                 <div key={h} className="hhm-habit">
                   <span className="hhm-habit-name">{h}</span>
-                  <HabitYearHeatmap habit={h} cadence={cad} year={hmYear} tracker={tracker as any} since={accountCreatedDate} />
+                  <HabitMatrix
+                    habit={h}
+                    cadence={cad}
+                    history={isoHistory}
+                    today={now}
+                    span="year"
+                    startISO={isoOf(accountCreatedDate)}
+                    yearCounts={carryByYear[h]}
+                  />
                 </div>
               ))}
             </div>

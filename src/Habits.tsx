@@ -31,6 +31,8 @@ import {
 import { pageTheme, HEALTH } from './theme';
 import { quitProgress, quitElapsed, toLocalDatetimeValue } from './quit';
 import { moveItem, applyGroupReorder } from './reorder';
+import HabitMatrix, { type IsoHistory } from './HabitMatrix';
+import { useTapHold, HOLD_SLOP_PX } from './useTapHold';
 import { weekMonday, weekRangeLabel, weekTitle } from './weekRange';
 import { RECENT_ADD_DAYS, daysSince } from './habitAdd';
 import {
@@ -487,11 +489,20 @@ const DayCircle: React.FC<{
     }
   }, [displayState]);
   const cancelLong = () => { if (longRef.current) { clearTimeout(longRef.current); longRef.current = null; } };
-  const handlePointerDown = () => {
+  const origin = useRef({ x: 0, y: 0 });
+  // Cancel the hold once the finger wanders, so scrolling the page past these
+  // circles never silently marks a day not applicable. Same threshold as the
+  // card's own tap/hold, from useTapHold.
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!longRef.current) return;
+    const dx = e.clientX - origin.current.x;
+    const dy = e.clientY - origin.current.y;
+    if (dx * dx + dy * dy > HOLD_SLOP_PX * HOLD_SLOP_PX) cancelLong();
+  };
+  const handlePointerDown = (e: React.PointerEvent) => {
     if (isFuture) return;
     longFired.current = false;
-    // ponytail: plain hold timer, no pointer-move cancel — a small drag could still
-    // fire N/A on these tiny circles; add a move threshold if that ever bites.
+    origin.current = { x: e.clientX, y: e.clientY };
     longRef.current = setTimeout(() => {
       longRef.current = null;
       longFired.current = true;
@@ -520,8 +531,10 @@ const DayCircle: React.FC<{
         disabled={isFuture}
         onClick={handleTap}
         onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
         onPointerUp={cancelLong}
         onPointerLeave={cancelLong}
+        onPointerCancel={cancelLong}
         aria-label={`${label}: ${displayState ?? 'blank'}, tap to mark done, double-tap to mark failed, long-press for not applicable`}
       >
         {displayState === 'done' && <span className="hcard-day-tick"><CheckSVG size={15} strokeWidth={2} /></span>}
@@ -558,7 +571,11 @@ const HabitCard: React.FC<{
   onToggleShare: (habit: string, shared: boolean) => void;
   dragHandle?: React.ReactNode;
   focused?: boolean;
-}> = ({ habit, stats, weekDays, ht, today, cadence, onToggleDay, onEditDay, onRequestRemove, startDate, starred, onToggleStar, dueDate, onSetDueDate, reminderHour, onSetReminder, schedule, onSetSchedule, sharedWithFriends, onToggleShare, dragHandle, focused }) => {
+  /** Date-keyed history for the matrix. Year-safe, unlike the DD/MM `ht`. */
+  history: IsoHistory;
+  /** Done-days per calendar year, for a yearly habit's decade. */
+  yearCounts?: Record<number, number>;
+}> = ({ habit, stats, weekDays, ht, today, cadence, onToggleDay, onEditDay, onRequestRemove, startDate, starred, onToggleStar, dueDate, onSetDueDate, reminderHour, onSetReminder, schedule, onSetSchedule, sharedWithFriends, onToggleShare, dragHandle, focused, history, yearCounts }) => {
   const [histOpen, setHistOpen] = useState(false);
   // Free to read per card: the provider fetches once for the whole app.
   const softened = useSoftened();
@@ -601,14 +618,20 @@ const HabitCard: React.FC<{
     if (focused) cardRef.current?.scrollIntoView({ behavior: 'auto', block: 'center' });
   }, [focused]);
   const currentDone = isDaily ? todayState === 'done' : !!currentUnit?.done;
-  // What the header circle shows. Daily reflects today's full state (done/failed/na)
-  // so it mirrors the weekday circles' double-tap / long-press. Non-daily units only
-  // carry done, so they stay done-or-blank.
-  const headState: HabitState = isDaily ? todayState : (currentUnit?.done ? 'done' : null);
-  const toggleCurrent = () => {
-    if (isDaily) onToggleDay(habit, today, cycleState(todayState));
-    else if (currentUnit) toggleUnit(currentUnit);
-  };
+  // Tapping the card toggles done and nothing else. Missed and skipped are still
+  // reachable from the week strip and calendar behind the More cog, but a target
+  // this large must not be able to cycle you into "failed" by accident.
+  const [trayOpen, setTrayOpen] = useState(false);
+  const tapHold = useTapHold(
+    () => {
+      if (isDaily) onToggleDay(habit, today, todayState === 'done' ? null : 'done');
+      else if (currentUnit) toggleUnit(currentUnit);
+    },
+    () => {
+      setTrayOpen(o => !o);
+      if ('vibrate' in navigator) navigator.vibrate(30); // lighter than a completion
+    },
+  );
 
   // Undeclared: a past due day (on/after the habit's start, before today) that was
   // never marked shows the yellow "?", not red. Explicit fails stay red; N/A shows the
@@ -638,51 +661,82 @@ const HabitCard: React.FC<{
       className={`hcard ${expanded ? 'hcard--expanded' : 'hcard--collapsed'} ${hasDanger ? 'hcard-danger' : hasWarning ? 'hcard-warning' : ''}${focused ? ' hcard--focused' : ''}`}
       style={{ '--theme': accent, '--theme-dim': `${accent}66`, '--theme-glow': `${accent}22` } as React.CSSProperties}
     >
-      {/* Header — top row: circle + name; bottom row: level · chevron · streak.
-          Controls (star + archive) sit to the right. */}
-      <div className="hcard-summary" onClick={() => setExpanded(e => { const next = !e; if (!next) setHistOpen(false); return next; })}>
-        {dragHandle}
+      {/* Level left, name centred, streak right, and the habit's whole history
+          underneath. The tap surface is a real button sitting behind the content
+          so the drag grip stays clickable and the keyboard still reaches it. */}
+      <div className="hcard-summary">
         <button
-          className={`hcard-icon hcard-icon-btn ${headState === 'done' ? 'done' : headState === 'failed' ? 'failed' : headState === 'na' ? 'na' : ''}`}
-          onClick={e => { e.stopPropagation(); toggleCurrent(); }}
-          aria-label={`${headState ?? 'blank'}, tap to cycle`}
-        >
-          {headState === 'done' ? <CheckSVG size={14} strokeWidth={2.5} />
-            : headState === 'failed' ? <span className="hcard-icon-glyph fail">✗</span>
-            : headState === 'na' ? <span className="hcard-icon-glyph na">–</span>
-            : <span className="hcard-icon-empty-dot" />}
-        </button>
-        <div className="hcard-head">
+          className="hcard-tapsurface"
+          aria-pressed={currentDone}
+          aria-label={`${habit}. ${currentDone ? 'Done' : 'Not done'} this ${CADENCE_META[cadence].period}. Tap to change, hold for controls.`}
+          {...tapHold}
+        />
+        <div className="hcard-top">
+          <span className="hcard-top-left">
+            {dragHandle}
+            <span className="hcard-lv" title={`Level ${stats.level}, ${stats.totalDays} days logged, +${stats.xpPerDay} XP per day`}>LV<b>{stats.level}</b></span>
+          </span>
           <span ref={nameRef} className={`hcard-name${nameWrapped ? ' hcard-name--wrapped' : ''}`}>{habit}</span>
-          <div className="hcard-head-meta">
-            <span className="hcard-level-badge" title={`Level ${stats.level}, ${stats.totalDays} days logged · +${stats.xpPerDay} XP per day`}>LV{stats.level}</span>
-          </div>
+          <span className={`hcard-strk${stats.streak > 0 ? ' on' : ''}`} title={`${stats.streak} in a row`}>
+            <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" aria-hidden="true"><path d="M12 2c1 4-3 5-3 9a3 3 0 0 0 6 0c0-1-.4-2-1-3 2 1 4 3 4 6a6 6 0 0 1-12 0c0-5 6-6 6-12z"/></svg>
+            <b>{stats.streak}</b>
+          </span>
         </div>
-        <div className="hcard-head-controls">
-          {/* Star toggle — starred habits surface on Progress Today/Yesterday */}
+        <HabitMatrix
+          className="hcard-mx"
+          habit={habit}
+          cadence={cadence}
+          history={history}
+          today={nowD}
+          startISO={startDate ? startDate.slice(0, 10) : null}
+          yearCounts={yearCounts}
+        />
+      </div>
+
+      {/* Holding the card opens the cogs. Touch only reaches that gesture, so the
+          same toggle is here as a real button, revealed on keyboard focus. */}
+      <button className="hcard-tray-key" onClick={() => setTrayOpen(o => !o)} aria-expanded={trayOpen}>
+        Habit controls
+      </button>
+      <div className={`hcard-tray${trayOpen ? ' open' : ''}`}>
+        <div className="hcard-tray-in">
+          {/* Starred habits surface on Progress Today/Yesterday */}
           <button
-            className={`hcard-star${starred ? ' on' : ''}`}
-            onClick={e => { e.stopPropagation(); onToggleStar(habit); }}
+            className={`hcard-tray-cog${starred ? ' on' : ''}`}
+            onClick={() => onToggleStar(habit)}
             aria-label={starred ? 'Unstar habit' : 'Star habit'}
             aria-pressed={!!starred}
           >
             <svg viewBox="0 0 24 24" width="15" height="15" fill={starred ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
             </svg>
+            <span>Favourite</span>
+          </button>
+          {/* Straight to where the reminder hour is set */}
+          <button
+            className={`hcard-tray-cog${reminderHour != null ? ' on' : ''}`}
+            onClick={() => { setExpanded(true); setSettingsOpen(true); }}
+            aria-label="Habit reminder"
+          >
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span>Remind</span>
           </button>
           {/* Archive → confirm dialog. Permanent delete lives only on the Archived page. */}
+          <button className="hcard-tray-cog" onClick={() => onRequestRemove(habit)} aria-label="Archive habit">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+            <span>Archive</span>
+          </button>
+          {/* Everything else: rank, XP, this week, the calendar, the settings */}
           <button
-            className="hcard-archive-icon visible"
-            onClick={e => { e.stopPropagation(); onRequestRemove(habit); }}
-            aria-label="Archive habit"
+            className={`hcard-tray-cog${expanded ? ' on' : ''}`}
+            onClick={() => setExpanded(e => { const next = !e; if (!next) setHistOpen(false); return next; })}
+            aria-expanded={expanded}
+            aria-label="More about this habit"
           >
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+            <span>More</span>
           </button>
         </div>
-        {/* Expand affordance, far right so it reads as "open this card" */}
-        <span className={`hcard-chevron hcard-chevron--right ${expanded ? 'open' : ''}`} aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
-        </span>
       </div>
 
 
@@ -1344,6 +1398,10 @@ const Habits: React.FC = () => {
   const [newQuitStart, setNewQuitStart] = useState<string>(() => toLocalDatetimeValue(new Date()));
   const [xpCarry, setXpCarry] = useState<Record<string, number>>({});
   const [ht, setHt] = useState<HabitTracker>({});
+  // Date-keyed twin of `ht`, for the card matrices only. Same rows, one fetch.
+  const [isoHistory, setIsoHistory] = useState<IsoHistory>({});
+  // Done-days per habit per year, so a yearly habit's decade has something to show.
+  const [carryByYear, setCarryByYear] = useState<Record<string, Record<number, number>>>({});
   const [weather, setWeather] = useState<WeatherState | null>(null);
   const [weatherOpen, setWeatherOpen] = useState(false); // weather breakdown sheet
   const [weatherOn, setWeatherOn] = useState(weatherEnabled); // menu toggle: show the chip at all
@@ -1447,7 +1505,10 @@ const Habits: React.FC = () => {
 
   const loadHabits = useCallback(() => {
     setLoadError(null);
-    Promise.all([api.getHabits(), api.getTracker()]).then(([loadedHabits, trackerData]) => {
+    // Two years of habit rows: the card's matrix rolls back six months, which
+    // crosses 1 January for half the year. Everything else here still works off
+    // the current year alone.
+    Promise.all([api.getHabits(), api.getTracker(2)]).then(([loadedHabits, trackerData]) => {
       let names = loadedHabits.map(h => h.name);
       const dates: Record<string, string | null> = {};
       const cad: Record<string, Cadence> = {};
@@ -1482,14 +1543,24 @@ const Habits: React.FC = () => {
       setHabits(names);
       setStartDates(dates);
       setXpCarry((trackerData as any).xpCarry ?? {});
+      setCarryByYear((trackerData as any).carryByYear ?? {});
 
       const tod = todayKey();
       const map: HabitTracker = {};
       ALL_DAYS.forEach(d => { map[d] = {}; });
       names.forEach(name => ALL_DAYS.forEach(d => { map[d][name] = null; }));
+      // Second projection of the same rows, keyed by real dates so the matrix can
+      // span a year boundary. `ht` below stays DD/MM, which every other piece of
+      // this page (streaks, XP, the calendars) is built on.
+      const iso: IsoHistory = {};
       (trackerData.habits as any[]).forEach(row => {
-        if (map[row.day]) map[row.day][row.habit_name] = row.state as HabitState;
+        const rowYear = row.year ?? YEAR;
+        (iso[`${rowYear}-${row.day.slice(3)}-${row.day.slice(0, 2)}`] ??= {})[row.habit_name] = row.state as HabitState;
+        // DD/MM is ambiguous now that two years come back, so last year's rows
+        // must not land in this year's map and overwrite it.
+        if (rowYear === YEAR && map[row.day]) map[row.day][row.habit_name] = row.state as HabitState;
       });
+      setIsoHistory(iso);
       // Auto-mark mandatory habit done for today
       map[tod] = { ...map[tod], [MANDATORY_HABIT]: 'done' };
       api.toggleTrackerHabit(tod, MANDATORY_HABIT, 'done').catch(() => {});
@@ -1628,6 +1699,11 @@ const Habits: React.FC = () => {
       if ('vibrate' in navigator) navigator.vibrate([0, 45, 40, 55]);
     }
     setHt(prev => ({ ...prev, [dayKey]: { ...prev[dayKey], [habit]: state } }));
+    // The matrices read the date-keyed twin, so it has to move on the same tap or
+    // the cell you just filled stays empty until the next load. Writes are always
+    // against the current year: dayKey comes from today or a rewind inside it.
+    const isoKey = `${YEAR}-${dayKey.slice(3)}-${dayKey.slice(0, 2)}`;
+    setIsoHistory(prev => ({ ...prev, [isoKey]: { ...prev[isoKey], [habit]: state } }));
     // Refresh global XP/level once the write commits so the top-of-page level ring
     // updates on the same tap. (Deliberately NOT superdub:tracker-updated — that
     // event also re-opens the daily check-in overlay.)
@@ -1865,6 +1941,8 @@ const Habits: React.FC = () => {
         onToggleShare={handleToggleShare}
         dragHandle={handle}
         focused={habit === focusHabit}
+        history={isoHistory}
+        yearCounts={carryByYear[habit]}
       />
     );
     const cards = isQuit

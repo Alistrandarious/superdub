@@ -99,11 +99,17 @@ export interface TrackerHabitRow {
   // types this param as plain string and only ever does `=== 'done'`, so the null
   // case behaves identically either way.
   state: 'done' | 'failed' | 'na' | string;
+  /** Calendar year the DD/MM `day` belongs to. Only meaningful when the caller
+   *  asked for more than one year — `day` alone is ambiguous across years. */
+  year?: number;
 }
 export interface TrackerResponse {
   days: TrackerDayRow[];
   habits: TrackerHabitRow[];
   xpCarry?: Record<string, number>;
+  /** Done-days per habit per calendar year, all years. Feeds the yearly matrix's
+   *  decade cells, which only need to know whether a year saw anything. */
+  carryByYear?: Record<string, Record<number, number>>;
   year?: number;
 }
 
@@ -471,7 +477,12 @@ export const api = {
   getEntitlement: (): Promise<EntitlementResponse> => request('/entitlement'),
 
   // tracker
-  getTracker: (): Promise<TrackerResponse> => request('/tracker'),
+  // `years` = how many calendar years of habit rows to fetch, newest first.
+  // Omit it for the current year only, which is what every caller but the
+  // Habits page wants. Habits asks for 2 so its rolling six-month matrix can
+  // span a 1 January boundary.
+  getTracker: (years?: number): Promise<TrackerResponse> =>
+    request(years && years > 1 ? `/tracker?years=${years}` : '/tracker'),
   // A tracker day carries weight/steps, both of which feed the plan/stall engine.
   updateTrackerDay: (day: string, data: object): Promise<{ ok: true }> =>
     request<{ ok: true }>('/tracker', { method: 'PATCH', body: JSON.stringify({ day, ...data }) })

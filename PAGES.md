@@ -8,7 +8,7 @@
 
 | Route | Component | Role | Nav | Accent |
 |---|---|---|---|---|
-| `/` | `Habits.tsx` | **Habits** (home) — habit cards (star toggle + drag-to-reorder via `ReorderableList`/`reorder.ts`), week strip, Daily Log, streaks; cadence carousel **Quit** · Daily · Weekly · Monthly · Yearly (Quit leftmost — grey abstinence timers, `QuitCard` + `quit.ts`; carousel opens on Daily each day) | Habits | HEALTH green |
+| `/` | `Habits.tsx` | **Habits** (home) — habit cards (level left · name centred · streak right, over a `HabitMatrix` of the habit's whole history; tap to complete, hold for the cog tray of Favourite · Remind · Archive · More; drag-to-reorder via `ReorderableList`/`reorder.ts`), week strip, Daily Log, streaks; cadence carousel **Quit** · Daily · Weekly · Monthly · Yearly (Quit leftmost — grey abstinence timers, `QuitCard` + `quit.ts`; carousel opens on Daily each day) | Habits | HEALTH green |
 | `/dashboard` | `App.tsx` | **Progress** — Today = your Plan (`PlanGauge` semicircle + `WeightSparkline` weekly chart + step tile, folded in from `/diet`), Yesterday's Verdict, weight trend, safe-zone, sleep, chart carousel | Progress | GROWTH blue |
 | `/community` | `CommunityPage.tsx` | **Global & Friends** — shared Global habit (deed toggle) + Friends (coming soon) | Global | GOLD |
 | `/diet` | `Diet.tsx` | Plan cards — weight-journey gauge (`PlanGauge`), Weight This Week (`WeightSparkline`), adaptive plan, activity targets, Smart Adjust. Gauge + weekly chart now shared with Progress→Today; **off the nav**, reachable via cog | — | GROWTH blue |

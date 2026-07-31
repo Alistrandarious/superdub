@@ -19,27 +19,42 @@ const trackerYear = () => new Date().getFullYear();
 router.get('/', requireAuth as any, async (req: AuthRequest, res: Response) => {
   try {
     const year = trackerYear();
+    // How many calendar years of habit rows to return, newest first. Default 1
+    // keeps every existing caller byte-identical; the Habits page asks for 2 so
+    // its rolling six-month matrix can span a 1 January boundary. Capped at 3.
+    // ponytail: a year floor, not a date range, because `day` is DD/MM text —
+    // comparing integers beats to_date() parsing, and 2 years is all the matrix
+    // can show. Widen the cap if a matrix ever needs a longer window.
+    const span = Math.min(3, Math.max(1, Math.trunc(Number(req.query.years)) || 1));
     const [daysRes, habitsRes, carryRes] = await Promise.all([
       pool.query('SELECT day, weight, calories, protein, carbs, fats, steps FROM tracker WHERE user_id = $1 AND year = $2', [req.userId, year]),
-      pool.query('SELECT day, habit_name, done, state FROM tracker_habits WHERE user_id = $1 AND year = $2', [req.userId, year]),
-      // Lifetime XP must survive the year rollover: aggregate done-days per
-      // habit from PRIOR years so the frontend can add them to this year's.
+      pool.query('SELECT day, year, habit_name, done, state FROM tracker_habits WHERE user_id = $1 AND year <= $2 AND year > $2 - $3', [req.userId, year, span]),
+      // Done-days per habit per year, all years. Two things read it: xpCarry
+      // (prior years only, so lifetime XP survives the year rollover) and the
+      // yearly matrix, whose decade cells only need "did anything happen".
       pool.query(
-        `SELECT habit_name, COUNT(*)::int AS n FROM tracker_habits
-         WHERE user_id = $1 AND year < $2 AND (state = 'done' OR done = TRUE)
-         GROUP BY habit_name`,
-        [req.userId, year]
+        `SELECT habit_name, year, COUNT(*)::int AS n FROM tracker_habits
+         WHERE user_id = $1 AND (state = 'done' OR done = TRUE)
+         GROUP BY habit_name, year`,
+        [req.userId]
       ),
     ]);
     const days = daysRes.rows.map((r: any) => ({ ...r, day: dayToDDMM(String(r.day)) }));
     const habits = habitsRes.rows.map((r: any) => ({
       day: dayToDDMM(String(r.day)),
+      year: Number(r.year),
       habit_name: r.habit_name,
       state: (r.state as string | null) ?? (r.done ? 'done' : null),
     }));
     const xpCarry: Record<string, number> = {};
-    for (const r of carryRes.rows) xpCarry[r.habit_name] = Number(r.n);
-    res.json({ days, habits, xpCarry, year });
+    const carryByYear: Record<string, Record<number, number>> = {};
+    for (const r of carryRes.rows) {
+      const y = Number(r.year);
+      const n = Number(r.n);
+      (carryByYear[r.habit_name] ??= {})[y] = n;
+      if (y < year) xpCarry[r.habit_name] = (xpCarry[r.habit_name] ?? 0) + n;
+    }
+    res.json({ days, habits, xpCarry, carryByYear, year });
   } catch (err: any) {
     console.error('[tracker GET]', err?.message);
     res.status(500).json({ error: 'Server error' });

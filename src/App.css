@@ -6949,8 +6949,17 @@ h1, h2, h3, h4, .sora {
   box-shadow: var(--glass-shadow), 0 0 28px -8px var(--theme-glow);
 }
 
-/* Collapsible card spacing */
-.hcard { padding: 14px 16px; gap: 0; }
+/* Collapsible card spacing. Positioned so the tray's keyboard toggle can hide
+   inside it rather than against the viewport. */
+.hcard { padding: 14px 16px; gap: 0; position: relative; }
+/* The card carries its own inline --theme (its cadence), exactly like .app does
+   for the page, so it needs the same ink derivation. Custom properties inherit
+   their COMPUTED value, so without this the level chip and the collapsed rail
+   would both take the page's ink and every cadence would read the same colour. */
+.hcard { --theme-ink: var(--theme, #2FD27E); }
+:root[data-theme="light"] .hcard {
+  --theme-ink: color-mix(in srgb, var(--theme, #2FD27E) 62%, #000);
+}
 /* Collapsed card — left accent line in cadence colour */
 .hcard--collapsed { border-left-color: var(--theme-ink); }
 /* Deep-linked from Today: a one-shot accent pulse so the card is easy to spot. */
@@ -6961,27 +6970,93 @@ h1, h2, h3, h4, .sora {
   100% { box-shadow: 0 0 0 0 rgba(0,0,0,0); }
 }
 
-/* Collapsed summary row — name · streak · XP · chevron */
-.hcard-summary {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
+/* Collapsed summary — level left, name centred, streak right, the habit's whole
+   history underneath. The tap surface is a real button sitting BEHIND the
+   content, so the entire card completes on a tap while the drag grip on top of
+   it stays draggable. Holding it opens the cog tray. */
+.hcard-summary { position: relative; -webkit-tap-highlight-color: transparent; }
+.hcard-tapsurface {
+  position: absolute; inset: -14px -16px -2px; z-index: 0;
+  appearance: none; background: none; border: 0; padding: 0; cursor: pointer;
+  border-radius: var(--r-card);
   -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none; user-select: none;
 }
-/* Middle column: name on top, meta row (level · chevron · streak) underneath. */
-.hcard-head { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.hcard-head .hcard-name {
-  flex: none;
+.hcard-tapsurface:focus-visible { outline: 2px solid var(--theme); outline-offset: -3px; }
+.hcard-tapsurface:active { background: rgba(var(--fg-rgb),0.035); }
+/* Content paints above the tap surface but lets taps fall through to it. */
+.hcard-top, .hcard-mx { position: relative; z-index: 1; pointer-events: none; }
+.hcard-grip { pointer-events: auto; }
+
+/* Equal 1fr side columns are what actually centres the name, whatever the
+   level and streak either side of it happen to measure. */
+.hcard-top {
+  display: grid; grid-template-columns: 1fr minmax(0, auto) 1fr;
+  align-items: center; gap: 8px; margin-bottom: 9px;
+}
+.hcard-top-left { justify-self: start; display: flex; align-items: center; gap: 4px; min-width: 0; }
+.hcard-top .hcard-name {
+  text-align: center; line-height: 1.2;
   font-size: 0.95rem; font-weight: 700;
-  white-space: normal; overflow-wrap: anywhere; line-height: 1.2;
+  white-space: normal; overflow-wrap: anywhere;
 }
 /* Long names that wrap to a second line drop to a smaller size (set by JS measure). */
-.hcard-head .hcard-name--wrapped { font-size: 0.8rem; }
-.hcard-head-meta { display: flex; align-items: center; gap: 8px; }
-.hcard-head-meta .hcard-chevron { margin: 0; }
-.hcard-head-controls { flex-shrink: 0; display: flex; align-items: center; gap: 2px; align-self: flex-start; }
-.hcard-summary .hcard-icon.done { color: var(--theme-ink); }
+.hcard-top .hcard-name--wrapped { font-size: 0.8rem; }
+.hcard-lv, .hcard-strk {
+  display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0;
+  font-family: var(--font-data); font-size: 0.56rem; font-weight: 700; letter-spacing: 0.08em;
+}
+.hcard-lv b, .hcard-strk b { font-size: 0.72rem; letter-spacing: 0; }
+.hcard-lv { color: var(--theme-ink); }
+.hcard-strk { justify-self: end; color: var(--text-mute); }
+.hcard-strk.on { color: var(--flame-ink); }
+
+/* Cog tray — held open, not clicked open.
+   ponytail: a max-height slide, not the 0fr → 1fr grid trick the card body uses.
+   That trick needs overflow:hidden on the row's child to collapse, and the same
+   overflow then zeroes the child's contribution so 1fr never expands again. The
+   body gets away with it because its children carry their own heights. The cogs
+   are one fixed row, so a max-height ceiling is honest and has no circularity.
+   Ceiling: raise the 96px if the tray ever grows past one row of chips. */
+.hcard-tray {
+  overflow: hidden; max-height: 0; opacity: 0;
+  transition: max-height 0.26s cubic-bezier(0.22,1,0.36,1), opacity 0.18s ease;
+}
+.hcard-tray.open { max-height: 96px; opacity: 1; }
+.hcard-tray-in { display: flex; gap: 6px; padding-top: 10px; }
+/* Named -tray-cog, not -cog: .hcard-cog is already taken further down this file
+   by the 26px settings icon button, and it wins on source order. */
+.hcard-tray-cog {
+  flex: 1; min-width: 0; height: 56px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+  padding: 8px 4px;
+  background: rgba(var(--fg-rgb),0.045);
+  border: 1px solid var(--glass-border); border-radius: var(--r-sm);
+  color: var(--text-dim); cursor: pointer;
+  font-family: var(--font-data); font-size: 0.5rem; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+/* Without this the icon is a shrinkable flex item and collapses from 15px to 10. */
+.hcard-tray-cog svg { flex: none; }
+.hcard-tray-cog:hover { border-color: var(--theme-dim); color: var(--text); }
+.hcard-tray-cog.on { color: var(--gold-ink); border-color: rgba(255,185,40,0.4); }
+.hcard-tray-cog:active { transform: scale(0.94); }
+.hcard-tray-cog:focus-visible { outline: 2px solid var(--theme); outline-offset: 2px; }
+
+/* Hold is a touch gesture, so the keyboard needs its own way in. Hidden until
+   it takes focus, then it becomes a normal chip. */
+.hcard-tray-key {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+.hcard-tray-key:focus-visible {
+  position: static; width: auto; height: auto; margin: 8px auto 0; clip: auto;
+  overflow: visible; padding: 5px 10px; cursor: pointer;
+  border-radius: var(--r-pill); border: 1px solid var(--theme-dim);
+  background: var(--theme-glow); color: var(--theme-ink);
+  font-family: var(--font-data); font-size: 0.55rem; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
 
 /* Smooth expand/collapse via grid-template-rows (0fr → 1fr) */
 .hcard-body-wrap {
@@ -12187,36 +12262,50 @@ h3, h4,
   margin-bottom: 4px;
 }
 
-/* Year heatmap — granularity by cadence (daily grid / weekly / monthly / yearly). */
-.hy-grid { display: grid; gap: 2px; }
-.hy-grid--daily {
-  grid-template-rows: repeat(7, 8px); grid-auto-flow: column; grid-auto-columns: 8px;
+/* ══ HABIT MATRIX ══
+   One habit's history condensed to the card width, granularity by cadence.
+   Filled cells take var(--theme), the cadence accent the card already injects,
+   so daily reads green, weekly blue, monthly violet, yearly orange with no
+   extra colour system. Cell rows are fixed in px and columns are 1fr, so the
+   grid always fills the width exactly and cells land near enough to square. */
+.hmx { display: grid; gap: 2px; }
+
+/* Daily: 7 rows of weekdays, columns are weeks. 26 columns on a habit card
+   (a rolling six months, ~82px tall), 53 on Progress (a full year, scrolled). */
+.hmx--daily {
+  grid-template-rows: repeat(7, 10px);
+  grid-auto-flow: column; grid-auto-columns: 1fr;
+}
+.hmx--daily.hmx--span-year {
+  grid-template-rows: repeat(7, 8px); grid-auto-columns: 8px;
   overflow-x: auto; padding-bottom: 2px; scrollbar-width: none;
 }
-.hy-grid--daily::-webkit-scrollbar { display: none; }
-.hy-grid--weekly { grid-template-columns: repeat(26, 1fr); grid-auto-rows: 10px; }
-.hy-grid--monthly { grid-template-columns: repeat(12, 1fr); }
-.hy-grid--year { grid-template-columns: 1fr; }
-.hy-cell { border-radius: 2px; background: rgba(var(--fg-rgb),0.09); }
-.hy-grid--daily .hy-cell { width: 8px; height: 8px; }
-.hy-cell--labelled {
-  height: 20px; display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-data); font-size: 0.5rem; color: var(--text-dim);
+.hmx--daily.hmx--span-year::-webkit-scrollbar { display: none; }
+
+.hmx--weekly { grid-template-columns: repeat(52, 1fr); grid-auto-rows: 18px; gap: 1px; }
+.hmx--monthly { grid-template-columns: repeat(12, 1fr); grid-auto-rows: 26px; gap: 3px; }
+.hmx--yearly { grid-template-columns: repeat(10, 1fr); grid-auto-rows: 30px; gap: 4px; }
+
+.hmx-cell { border-radius: 2px; background: rgba(var(--fg-rgb),0.075); }
+.hmx--monthly .hmx-cell, .hmx--yearly .hmx-cell {
+  border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-data); font-weight: 700; color: rgba(var(--fg-rgb),0.34);
 }
-.hy-cell--wide {
-  height: 28px; display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-data); font-size: 0.7rem; font-weight: 700; color: var(--text-dim);
-}
-.hy-done { background: #2FD27E; }
-.hy-failed { background: var(--miss); }
-.hy-na { background: rgba(159,178,204,0.5); }
-.hy-off { background: rgba(var(--fg-rgb),0.09); }     /* on app, nothing logged — grey box */
-.hy-future { background: rgba(var(--fg-rgb),0.045); } /* the year ahead, waiting — faint grey box */
-.hy-pad { background: transparent; }                /* the few days before signup in week 1 */
-/* New-year divider — a thin grey tick on the 1 Jan cell so year boundaries read. */
-.hy-newyear { box-shadow: -2px 0 0 0 rgba(200,206,220,0.55); }
-.hy-cell--labelled.hy-newyear { box-shadow: inset 2px 0 0 0 rgba(200,206,220,0.55); }
-.hy-cell--labelled.hy-done, .hy-cell--wide.hy-done { color: #08110B; }
+.hmx--monthly .hmx-cell { font-size: 0.52rem; }
+.hmx--yearly .hmx-cell { font-size: 0.58rem; }
+
+.hmx-done { background: var(--theme, #2FD27E); }
+.hmx-failed { background: var(--miss); }                    /* a miss is slate, never red */
+.hmx-na { background: rgba(159,178,204,0.34); }             /* a deliberate skip */
+.hmx-undeclared { background: rgba(255,210,51,0.16); }      /* a due day you can still fix */
+.hmx-off { background: rgba(var(--fg-rgb),0.075); }         /* nothing logged */
+.hmx-future { background: transparent; box-shadow: inset 0 0 0 1px rgba(var(--fg-rgb),0.10); }
+.hmx-pad { background: transparent; }                       /* before the habit existed */
+/* Labelled cells need their text to survive the fill behind it. */
+.hmx--monthly .hmx-done, .hmx--yearly .hmx-done { color: #06210F; }
+.hmx--monthly .hmx-failed, .hmx--yearly .hmx-failed { color: #10161f; }
+.hmx--yearly .hmx-future { color: rgba(var(--fg-rgb),0.22); }
 
 /* ── Walking stats ── */
 .walk-card { margin-top: 12px; }
@@ -15016,8 +15105,9 @@ details[open] > .plan-collapse-summary::before { content: '▾'; }
 .chart-cog-check, .chart-cog-toggle, .checkin-tick, .checkin-toggle-pill,
 .diet-goal-delta, .diet-goal-label, .dl-row-val, .dub-gender-pick,
 .freq-main, .freq-sub, .global-milestone-node,
-.hcard-chevron--right, .hcard-day-tick, .hcard-icon, .hcard-share-text,
-.hcard-streak-mini, .hp-name, .hp-row, .hsm-ico, .hsp-stat-ico, .hsp-stat-val,
+.hcard-chevron--right, .hcard-day-tick, .hcard-icon, .hcard-lv,
+.hcard-share-text, .hcard-streak-mini, .hcard-strk, .hcard-tray-cog, .hmx-cell,
+.hp-name, .hp-row, .hsm-ico, .hsp-stat-ico, .hsp-stat-val,
 .ltm-focus-cta, .ltm-focus-tick, .lvl-collapse, .lvlg-dot, .lvlg-st,
 .profile-apply-delta, .profile-apply-label, .ringtheme-name, .shelf,
 .star-chip-ico, .step-perf-badge, .trend-chip {
