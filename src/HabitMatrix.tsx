@@ -25,6 +25,8 @@ export interface MatrixCell {
   state: CellState;
   /** Rendered inside the cell where there is room for it (monthly, yearly). */
   label?: string;
+  /** The period you are in right now: today, this week, this month, this year. */
+  current?: boolean;
 }
 
 export interface MatrixLayout {
@@ -61,6 +63,12 @@ const addDays = (d: Date, n: number) => {
 
 /** Monday on or before `d`, so every grid row is one weekday. */
 const mondayOf = (d: Date) => addDays(d, -((d.getDay() + 6) % 7));
+
+/** 'YYYY-MM-DD' to a local Date. Null for anything unparseable. */
+function parseISO(s: string): Date | null {
+  const [y, m, d] = s.slice(0, 10).split('-').map(Number);
+  return y && m && d ? new Date(y, m - 1, d) : null;
+}
 
 /** An unlogged past day only nags while you can still meaningfully act on it.
  *  Older blanks render as plain empty cells, otherwise a sporadically logged
@@ -109,10 +117,16 @@ export function matrixLayout(input: MatrixInput): MatrixLayout {
       // A due day you never marked, recent enough to still be worth fixing.
       return startISO && iso >= nagFrom ? 'undeclared' : 'off';
     };
-    const start = addDays(mondayOf(today), -7 * (cols - 1));
+    // Read left to right from day one. A habit younger than the window opens on
+    // its own first week, so the run of dots starts at the left edge and the days
+    // still to come sit grey after it. Once a habit outgrows the window the grid
+    // rolls instead, otherwise recent days would fall off the right.
+    const rolling = addDays(mondayOf(today), -7 * (cols - 1));
+    const begun = startISO ? parseISO(startISO) : null;
+    const start = begun && mondayOf(begun) > rolling ? mondayOf(begun) : rolling;
     const cells = Array.from({ length: cols * 7 }, (_, i) => {
       const iso = isoOf(addDays(start, i));
-      return { key: iso, state: dayCell(iso) };
+      return { key: iso, state: dayCell(iso), current: iso === todayISO };
     });
     return { cells, cols, rows: 7 };
   }
@@ -128,7 +142,7 @@ export function matrixLayout(input: MatrixInput): MatrixLayout {
         : y > year ? 'future'
         : (yearCounts?.[y] ?? 0) > 0 ? 'done'
         : 'off';
-      return { key: String(y), state, label: String(y).slice(2) };
+      return { key: String(y), state, label: String(y).slice(2), current: y === year };
     });
     return { cells, cols: 10, rows: 1 };
   }
@@ -143,7 +157,7 @@ export function matrixLayout(input: MatrixInput): MatrixLayout {
         before(last) ? 'pad'
         : first > todayISO ? 'future'
         : periodState(history, habit, days);
-      return { key: `${year}-${pad2(m + 1)}`, state, label: MONTH_INITIALS[m] };
+      return { key: `${year}-${pad2(m + 1)}`, state, label: MONTH_INITIALS[m], current: m === today.getMonth() };
     });
     return { cells, cols: 12, rows: 1 };
   }
@@ -157,7 +171,7 @@ export function matrixLayout(input: MatrixInput): MatrixLayout {
       before(days[6]) ? 'pad'
       : days[0] > todayISO ? 'future'
       : periodState(history, habit, days);
-    return { key: days[0], state };
+    return { key: days[0], state, current: days.includes(todayISO) };
   });
   return { cells, cols: 52, rows: 1 };
 }
@@ -173,7 +187,7 @@ const HabitMatrix: React.FC<MatrixInput & { className?: string }> = ({ className
       aria-hidden="true"
     >
       {cells.map(c => (
-        <span key={c.key} className={`hmx-cell hmx-${c.state}`}>{c.label}</span>
+        <span key={c.key} className={`hmx-cell hmx-${c.state}${c.current ? ' hmx-now' : ''}`}>{c.label}</span>
       ))}
     </div>
   );

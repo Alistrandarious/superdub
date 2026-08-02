@@ -72,10 +72,24 @@ const noStart = matrixLayout({ habit: H, cadence: 'daily', history: {}, today })
 assert(noStart.cells.every(c => c.state !== 'undeclared'),
   'with no start date nothing is undeclared, so a new habit is not a wall of yellow');
 
-// Anything before the habit existed is blank, not empty.
-const late = matrixLayout({ habit: H, cadence: 'daily', history: {}, today, startISO: '2026-07-01' });
-assert(at(late.cells, '2026-03-02')!.state === 'pad', 'before the start date renders blank');
-assert(at(late.cells, '2026-07-02')!.state !== 'pad', 'on or after it does not');
+// ── daily: a young habit reads from day one, left to right ───────────────────
+// The run of dots must START at the left edge with the days still to come grey
+// after it, not sit jammed against the right with six months of blank before it.
+const young = matrixLayout({ habit: H, cadence: 'daily', history: {}, today, startISO: '2026-07-01' });
+assert(young.cells[0].key === '2026-06-29', 'the grid opens on the Monday of the habit\'s own first week');
+assert(young.cells[0].state === 'pad', 'the couple of days before day one are blank');
+assert(at(young.cells, '2026-06-30')!.state === 'pad', 'still blank the day before');
+assert(at(young.cells, '2026-07-01')!.state !== 'pad', 'day one is live');
+assert(at(young.cells, '2026-11-02')!.state === 'future', 'the days still to come sit grey after the run');
+assert(young.cells[young.cells.length - 1].state === 'future', 'so the grid ends in the future, not on today');
+
+// ── daily: once a habit outgrows the window the grid rolls ───────────────────
+// Otherwise recent days would fall off the right and you could not log today.
+const old = matrixLayout({ habit: H, cadence: 'daily', history: {}, today, startISO: '2024-03-01' });
+const oldToday = old.cells.findIndex(c => c.key === '2026-07-31');
+assert(oldToday >= 175, 'an older habit keeps today in the last column');
+assert(old.cells.every(c => c.state !== 'pad'), 'and nothing in the window predates it');
+
 
 // ── weekly ───────────────────────────────────────────────────────────────────
 const weekly = matrixLayout({
@@ -131,5 +145,15 @@ assert(at(startedMid.cells, '2024')!.state === 'done', 'the year it started coun
 // A decade boundary: 2030 must roll to its own decade, not stay in the 2020s.
 const nextDecade = matrixLayout({ habit: H, cadence: 'yearly', history: {}, today: new Date(2030, 0, 5) });
 assert(nextDecade.cells[0].key === '2030' && nextDecade.cells[9].key === '2039', '2030 opens a new decade');
+
+// ── the period you are in is marked, exactly once, at every cadence ──────────
+const currents = (cells: { key: string; current?: boolean }[]) => cells.filter(c => c.current);
+assert(currents(daily.cells).length === 1 && currents(daily.cells)[0].key === '2026-07-31', 'today is marked');
+assert(currents(young.cells).length === 1, 'marked once on a young habit too');
+assert(currents(weekly.cells).length === 1 && currents(weekly.cells)[0].key === '2026-07-27', 'this week is marked');
+assert(currents(monthly.cells).length === 1 && currents(monthly.cells)[0].key === '2026-07', 'this month is marked');
+assert(currents(yearly.cells).length === 1 && currents(yearly.cells)[0].key === '2026', 'this year is marked');
+// A future decade has no "now" cell at all, so the marker must not be assumed.
+assert(currents(nextDecade.cells).length === 1, 'the decade you are in always has one');
 
 console.log('habitMatrix: all checks passed.');

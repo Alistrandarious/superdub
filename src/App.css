@@ -12300,8 +12300,21 @@ h3, h4,
 .hmx-na { background: rgba(159,178,204,0.34); }             /* a deliberate skip */
 .hmx-undeclared { background: rgba(255,210,51,0.16); }      /* a due day you can still fix */
 .hmx-off { background: rgba(var(--fg-rgb),0.075); }         /* nothing logged */
-.hmx-future { background: transparent; box-shadow: inset 0 0 0 1px rgba(var(--fg-rgb),0.10); }
+/* Days still to come: a fainter grey than an unlogged past day, so the run you
+   have built reads first and the road ahead sits quietly behind it. A young
+   habit is mostly future, and 160 hollow outlines would shout. */
+.hmx-future { background: rgba(var(--fg-rgb),0.04); }
+/* The decade is the exception: few enough cells that outlines read as "ahead"
+   rather than as noise, which is what makes the yearly card lean forward. */
+.hmx--yearly .hmx-future { background: transparent; box-shadow: inset 0 0 0 1px rgba(var(--fg-rgb),0.14); }
 .hmx-pad { background: transparent; }                       /* before the habit existed */
+/* Right now: today, this week, this month, this year. An outline rather than a
+   border so it costs no layout, and lifted so it draws over its neighbours
+   across the 2px gap instead of being clipped by them. */
+.hmx-now {
+  position: relative; z-index: 1;
+  outline: 2px solid var(--theme-ink); outline-offset: 1px;
+}
 /* Labelled cells need their text to survive the fill behind it. */
 .hmx--monthly .hmx-done, .hmx--yearly .hmx-done { color: #06210F; }
 .hmx--monthly .hmx-failed, .hmx--yearly .hmx-failed { color: #10161f; }
