@@ -29,6 +29,10 @@ export interface PromptShellProps {
   children?: React.ReactNode;
   /** Primary button. Optional — some prompts (e.g. Quick log) have no single CTA. */
   cta?: PromptShellCta;
+  /** Tertiary way out ("Ask me later"). Sits with the other actions, not in the
+      body: as a child it rendered as a full-width button ~190px above the real
+      CTA, reading as the primary choice. */
+  secondary?: PromptShellCta;
   onDismiss: () => void;
   dismissLabel?: string;
   /** Decorative art beside the title (e.g. GlobalPrompt's planet). */
@@ -46,6 +50,7 @@ const PromptShell: React.FC<PromptShellProps> = ({
   subtitle,
   children,
   cta,
+  secondary,
   onDismiss,
   dismissLabel = 'Not now',
   art,
@@ -113,6 +118,15 @@ const PromptShell: React.FC<PromptShellProps> = ({
               disabled={cta.disabled}
             >
               {cta.label}
+            </button>
+          )}
+          {secondary && (
+            <button
+              className="checkin-later-btn"
+              onClick={secondary.onClick}
+              disabled={secondary.disabled}
+            >
+              {secondary.label}
             </button>
           )}
           <button className="prompt-fs-dismiss" onClick={onDismiss}>

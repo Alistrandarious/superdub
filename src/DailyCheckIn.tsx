@@ -192,11 +192,11 @@ const DailyCheckIn: React.FC = () => {
         title="Weigh in today?"
         subtitle="Did you weigh yourself this morning? Before breakfast, after using the bathroom. That's the most consistent reading."
         cta={{ label: 'Yes, weigh in', onClick: () => setGate('input') }}
+        secondary={{ label: 'Ask me later', onClick: () => setGate('later') }}
         onDismiss={dismiss}
         dismissLabel="No, try tomorrow"
       >
         <WeightTrendStrip days={days} goalKg={goalKg} />
-        <button className="checkin-later-btn" onClick={() => setGate('later')}>Ask me later</button>
       </PromptShell>
     );
   }
@@ -210,6 +210,7 @@ const DailyCheckIn: React.FC = () => {
         eyebrow="Morning Check-in"
         title="Log it anyway?"
         subtitle="A missing day is a hole in your trend. An imperfect number is not. Tell us what's up and log it as it is."
+        secondary={{ label: 'Remind me in 2 hours', onClick: askLater }}
         onDismiss={dismiss}
         dismissLabel="Not today"
       >
@@ -220,7 +221,6 @@ const DailyCheckIn: React.FC = () => {
             </button>
           ))}
         </div>
-        <button className="checkin-later-btn" onClick={askLater}>Remind me in 2 hours</button>
       </PromptShell>
     );
   }
@@ -234,6 +234,7 @@ const DailyCheckIn: React.FC = () => {
       title="Log your weight"
       subtitle={reasonLine ?? 'No judgment, just data.'}
       cta={done ? undefined : { label: saving ? 'Saving…' : error ? 'Retry' : 'Log it', onClick: save, disabled: saving }}
+      secondary={done ? undefined : { label: 'Ask me later', onClick: askLater, disabled: saving }}
       onDismiss={dismiss}
       dismissLabel="Skip today"
     >
@@ -257,12 +258,7 @@ const DailyCheckIn: React.FC = () => {
       {done ? (
         <div className="checkin-done">{reason ? '✓ Logged anyway. That is the habit.' : '✓ Logged!'}</div>
       ) : (
-        <>
-          {error && <p className="checkin-error">{error}</p>}
-          <button className="checkin-later-btn" onClick={askLater} disabled={saving}>
-            Ask me later
-          </button>
-        </>
+        error && <p className="checkin-error">{error}</p>
       )}
     </PromptShell>
   );

@@ -99,9 +99,14 @@
    the same accent taken down toward black far enough to read, hue intact.
    It is declared on .app because that is the element carrying the inline
    --theme from pageTheme(), so var(--theme) resolves to the page's own accent.
-   In dark it is the accent unchanged — dark mode renders byte-identical. ── */
-.app { --theme-ink: var(--theme, #2FD27E); }
-:root[data-theme="light"] .app {
+   In dark it is the accent unchanged — dark mode renders byte-identical.
+   .prompt-fs is declared alongside it because the daily prompts mount OUTSIDE
+   .app (siblings, in index.tsx) while carrying their own inline --theme. Without
+   this they inherited no --theme-ink at all, so `color: var(--theme-ink)` was
+   invalid and the accent eyebrow fell back to plain body white. ── */
+.app, .prompt-fs { --theme-ink: var(--theme, #2FD27E); }
+:root[data-theme="light"] .app,
+:root[data-theme="light"] .prompt-fs {
   --theme-ink: color-mix(in srgb, var(--theme, #2FD27E) 62%, #000);
 }
 
@@ -2043,7 +2048,10 @@ h1, h2, h3, h4, .sora {
 .vitals-reveal.in { max-height: 130px; opacity: 1; margin: 16px 0 2px; }
 
 /* ── Exercise prompt — one-tap Yes/No ── */
-.exercise-modal .exercise-btns { display: flex; gap: 12px; margin: 18px 0 10px; }
+/* Not scoped to .exercise-modal: that sheet is gone (the prompt renders in
+   PromptShell now) and the orphaned prefix left the row un-flexed, so `flex: 1`
+   below did nothing and Yes/No shrank to 31px and 27px of text in the corner. */
+.exercise-btns { display: flex; gap: 12px; margin: 18px 0 10px; }
 .exercise-btn {
   flex: 1; min-height: 56px; border-radius: var(--r-md); cursor: pointer;
   font-family: var(--font-ui); font-size: 1rem; font-weight: 700;
@@ -10121,6 +10129,25 @@ h1, h2, h3, h4, .sora {
 }
 .checkin-skip-btn:hover { color: var(--text-mute); }
 
+/* The beat every prompt ends on (weigh-in, vitals, evening, workout). It had no
+   rule at all, so "✓ Logged! +5 XP" landed as left-aligned body text under a
+   centred hero. Accent-filled, centred, and on the same 14px radius as the CTA
+   it replaces, so the screen resolves instead of going blank. */
+.checkin-done {
+  text-align: center;
+  font-family: var(--font-ui, 'Sora', sans-serif);
+  font-size: 1rem; font-weight: 700; line-height: 1.35;
+  color: var(--theme-ink, #2FD27E);
+  padding: 15px 18px; border-radius: 14px;
+  background: var(--theme-glow, rgba(47,210,126,0.14));
+  border: 1px solid var(--theme-dim, rgba(47,210,126,0.4));
+  animation: checkin-done-in 0.32s cubic-bezier(0.22,1,0.36,1);
+}
+@keyframes checkin-done-in {
+  from { opacity: 0; transform: scale(0.94); }
+  to   { opacity: 1; transform: none; }
+}
+
 .checkin-later-btn {
   background: rgba(var(--fg-rgb),0.04);
   border: 1px solid var(--glass-border);
@@ -10141,6 +10168,8 @@ h1, h2, h3, h4, .sora {
   border-color: rgba(var(--fg-rgb),0.2);
 }
 .checkin-later-btn:disabled { opacity: 0.5; cursor: default; }
+/* In the prompt's action stack the 4px flex gap already spaces it. */
+.prompt-fs-actions .checkin-later-btn { margin-top: 0; }
 
 /* ── "Log it anyway" reasons (the nudge behind "Ask me later") ── */
 .checkin-reasons { display: flex; flex-direction: column; gap: 8px; }
@@ -14987,8 +15016,13 @@ details[open] > .plan-collapse-summary::before { content: '▾'; }
 .prompt-fs-body { display: flex; flex-direction: column; gap: 12px; }
 .prompt-fs-body .vitals-slider,
 .prompt-fs-body .checkin-weight-input-wrap { margin-left: auto; margin-right: auto; }
-/* Pushes the actions to the bottom of the full-height screen. */
-.prompt-fs-fill { flex: 1; min-height: 8px; }
+/* The hero + body sit optically centred in the space above the actions rather
+   than clumping under the top padding: one growing spacer left 356px of dead
+   void mid-screen on a 812px phone. Two auto margins split the slack evenly and
+   collapse to nothing when the content is tall (Global's ring + climb + deed),
+   so the actions stay bottom-pinned either way. */
+.prompt-fs-hero { margin-top: auto; }
+.prompt-fs-fill { flex: 0 0 auto; min-height: 8px; margin-bottom: auto; }
 .prompt-fs-actions { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 /* Mirrors .checkin-save-btn: full-width, --theme fill, dark text, weight 800. */
 .prompt-fs-cta {
@@ -15012,6 +15046,7 @@ details[open] > .plan-collapse-summary::before { content: '▾'; }
 @media (prefers-reduced-motion: reduce) {
   .prompt-fs-screen { animation: none; }
   .prompt-fs-motes i { animation: none; opacity: 0; }
+  .checkin-done { animation: none; }
 }
 
 /* ══ POP-UP LAW ══════════════════════════════════════════════════════════════
