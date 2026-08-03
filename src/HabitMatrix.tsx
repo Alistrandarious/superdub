@@ -29,10 +29,22 @@ export interface MatrixCell {
   current?: boolean;
 }
 
+/** A run of week columns belonging to one month, for the label strip above the grid. */
+export interface MatrixMonth {
+  label: string;
+  /** 0-based first column of the run. */
+  col: number;
+  /** How many columns the run covers. */
+  span: number;
+}
+
 export interface MatrixLayout {
   cells: MatrixCell[];
   cols: number;
   rows: number;
+  /** Month bands over the weekday grid. Only the daily/quit shapes have one —
+   *  the other cadences already label every cell. */
+  months?: MatrixMonth[];
 }
 
 export interface MatrixInput {
@@ -64,12 +76,6 @@ const addDays = (d: Date, n: number) => {
 /** Monday on or before `d`, so every grid row is one weekday. */
 const mondayOf = (d: Date) => addDays(d, -((d.getDay() + 6) % 7));
 
-/** 'YYYY-MM-DD' to a local Date. Null for anything unparseable. */
-function parseISO(s: string): Date | null {
-  const [y, m, d] = s.slice(0, 10).split('-').map(Number);
-  return y && m && d ? new Date(y, m - 1, d) : null;
-}
-
 /** An unlogged past day only nags while you can still meaningfully act on it.
  *  Older blanks render as plain empty cells, otherwise a sporadically logged
  *  habit paints six months of alarm yellow and the matrix stops being readable.
@@ -97,6 +103,26 @@ function daysInMonth(year: number, month: number): string[] {
 }
 
 const MONTH_INITIALS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
+const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** Group the week columns into month runs, so the grid has something to read
+ *  against instead of being an undifferentiated field of dots. A column belongs
+ *  to the month its Monday falls in. Runs narrower than MIN_LABEL_COLS are left
+ *  unlabelled rather than crushed — the gap still reads as a boundary. */
+const MIN_LABEL_COLS = 3;
+function monthBands(start: Date, cols: number): MatrixMonth[] {
+  // Keyed by year+month, not by label: a 53-week span is longer than a year, so
+  // two Januaries can appear and must not merge into one band.
+  const bands: { key: string; label: string; col: number; span: number }[] = [];
+  for (let c = 0; c < cols; c++) {
+    const d = addDays(start, c * 7);
+    const key = `${d.getFullYear()}-${d.getMonth()}`;
+    const last = bands[bands.length - 1];
+    if (last && last.key === key) last.span++;
+    else bands.push({ key, label: MONTH_SHORT[d.getMonth()], col: c, span: 1 });
+  }
+  return bands.map(({ key, ...b }) => (b.span >= MIN_LABEL_COLS ? b : { ...b, label: '' }));
+}
 
 /** The pure core: what cell goes where. Exported for habitMatrix.check.ts. */
 export function matrixLayout(input: MatrixInput): MatrixLayout {
@@ -117,18 +143,20 @@ export function matrixLayout(input: MatrixInput): MatrixLayout {
       // A due day you never marked, recent enough to still be worth fixing.
       return startISO && iso >= nagFrom ? 'undeclared' : 'off';
     };
-    // Read left to right from day one. A habit younger than the window opens on
-    // its own first week, so the run of dots starts at the left edge and the days
-    // still to come sit grey after it. Once a habit outgrows the window the grid
-    // rolls instead, otherwise recent days would fall off the right.
-    const rolling = addDays(mondayOf(today), -7 * (cols - 1));
-    const begun = startISO ? parseISO(startISO) : null;
-    const start = begun && mondayOf(begun) > rolling ? mondayOf(begun) : rolling;
+    // ONE origin for every habit: the window always ends on the column holding
+    // today and runs back a fixed number of weeks. A habit that did not exist yet
+    // simply starts as 'pad', it does not get its own left edge.
+    //
+    // It used to open on its own first week when it was younger than the window,
+    // which meant column N was a different date on every card and two habits could
+    // not be compared by eye at all. Reading down a column is the whole point of
+    // stacking these, so the shared axis wins over filling the row.
+    const start = addDays(mondayOf(today), -7 * (cols - 1));
     const cells = Array.from({ length: cols * 7 }, (_, i) => {
       const iso = isoOf(addDays(start, i));
       return { key: iso, state: dayCell(iso), current: iso === todayISO };
     });
-    return { cells, cols, rows: 7 };
+    return { cells, cols, rows: 7, months: monthBands(start, cols) };
   }
 
   // ── Yearly: the decade the current year sits in ──
@@ -177,18 +205,26 @@ export function matrixLayout(input: MatrixInput): MatrixLayout {
 }
 
 const HabitMatrix: React.FC<MatrixInput & { className?: string }> = ({ className, ...input }) => {
-  const { cells, cols, rows } = matrixLayout(input);
+  const { cells, cols, rows, months } = matrixLayout(input);
   const kind = input.cadence === 'quit' ? 'daily' : input.cadence;
   const span = input.span === 'year' ? ' hmx--span-year' : '';
+  const grid = { '--hmx-cols': cols, '--hmx-rows': rows } as React.CSSProperties;
   return (
-    <div
-      className={`hmx hmx--${kind}${span}${className ? ` ${className}` : ''}`}
-      style={{ '--hmx-cols': cols, '--hmx-rows': rows } as React.CSSProperties}
-      aria-hidden="true"
-    >
-      {cells.map(c => (
-        <span key={c.key} className={`hmx-cell hmx-${c.state}${c.current ? ' hmx-now' : ''}`}>{c.label}</span>
-      ))}
+    <div className={`hmx-wrap${className ? ` ${className}` : ''}`} aria-hidden="true">
+      {months && (
+        <div className={`hmx-months${span}`} style={grid}>
+          {months.map(m => (
+            <span key={m.col} className="hmx-month" style={{ gridColumn: `${m.col + 1} / span ${m.span}` }}>
+              {m.label}
+            </span>
+          ))}
+        </div>
+      )}
+      <div className={`hmx hmx--${kind}${span}`} style={grid}>
+        {cells.map(c => (
+          <span key={c.key} className={`hmx-cell hmx-${c.state}${c.current ? ' hmx-now' : ''}`}>{c.label}</span>
+        ))}
+      </div>
     </div>
   );
 };

@@ -24,6 +24,30 @@ Per-page theming: set the page-root style with `pageTheme(color)`, which emits
 `--theme`, `--theme-dim` (`+66` alpha), `--theme-glow` (`+14` alpha). Components
 read `var(--theme)` — never hardcode the accent inside a component.
 
+### Habit history is the one pass/fail surface
+
+The heatmaps (`.hmx`, `.mini-hm-cell`, `.cadence-cal-cell`) ask a single yes/no
+question, so they get their own two-colour pair rather than the page accent:
+
+| Token | Hex | Means |
+|---|---|---|
+| `--pass` | `#2FD27E` | you did it |
+| `--fail` | `#FF5470` | you marked it missed |
+
+Everything else — a rest day, a recent blank, an old blank — is one quiet
+`rgba(var(--fg-rgb),0.075)`. Three meanings, not nine.
+
+**`--fail` is red, and that is only safe because it is reserved for a DECLARED
+miss.** A day you simply never logged stays neutral. This is the same principle
+as the lapse protocol: absence is silence, not failure, and a sporadic logger
+must never open the page to a wall of red. Elsewhere in the app a miss is still
+slate `--miss` — the red is scoped to history grids, where pass/fail *is* the
+question being asked.
+
+Filled cells used to take `var(--theme)`, the cadence accent, so "done" was green
+on daily but blue/violet/orange elsewhere. Cadence identity is carried by the card
+border, the `LV` chip and the cadence tabs; it does not need restating per dot.
+
 ### Signature gradients (`App.css :root`)
 - `--grad-brand` green→blue `#2FD27E → #2E8BFF` (flagship / wordmark)
 - `--grad-health`, `--grad-growth`, `--grad-ascension` (gold `#FFB928 → #FFE08A`)

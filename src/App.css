@@ -136,6 +136,14 @@
      neutral --slate-ink used for 'na', so skipped and missed still read apart. */
   --miss:         #7C8AA0;
   --miss-fill:    rgba(124,138,160,0.20);
+  /* Habit history pass/fail. The heatmaps ask one question — did you do it? —
+     so they get their own two-colour pair rather than borrowing the cadence
+     accent, which made "done" a different colour on every card.
+     --fail is red because the user asked for red, and it is safe here ONLY
+     because it is reserved for a day you explicitly marked missed. An unlogged
+     day is grey (see .hmx-off), so silence never renders as failure. */
+  --pass:         #2FD27E;
+  --fail:         #FF5470;
 }
 :root[data-theme="light"] {
   --health-ink: color-mix(in srgb, #2FD27E 62%, #000);
@@ -155,6 +163,8 @@
   --alert-ink:    color-mix(in srgb, #ff453a 88%, #000);
   --miss:         color-mix(in srgb, #7C8AA0 68%, #000);
   --miss-fill:    rgba(124,138,160,0.22);
+  --pass:         color-mix(in srgb, #2FD27E 74%, #000);
+  --fail:         color-mix(in srgb, #FF5470 82%, #000);
 }
 
 /* Animatable CSS custom property for the ring */
@@ -5370,14 +5380,12 @@ h1, h2, h3, h4, .sora {
   font-weight: 700;
 }
 
-/* XP bar inside the cadence dock — it rides in .cadx-xp, the top row of the ONE
-   sticky glass capsule (.cadx--compact .cadx-header), above the dots. One element,
-   so there is no seam between the bar and the dots. */
-.cadx-xp { display: flex; align-items: center; margin-bottom: 13px; }
-.cadx-xp .hb-xp-bar { flex: 1; height: 22px; }
+/* XP bar inside the cadence dock — it rides in .cadt-xp, the top row of the ONE
+   sticky glass capsule (.cadt--compact .cadt-bar), above the tabs. One element,
+   so there is no seam between the bar and the tabs. */
 /* Entrance: the fill sweeps out to its true value each time the dock appears
    (the row only mounts in compact mode, so this replays on every re-dock). */
-.cadx--compact .cadx-xp .hb-xp-fill {
+.cadt--compact .cadt-xp .hb-xp-fill {
   animation: pxp-sweep 0.55s cubic-bezier(0.22,1,0.36,1) backwards;
   transform-origin: left;
 }
@@ -6157,146 +6165,72 @@ h1, h2, h3, h4, .sora {
   padding: 10px 18px 0;
 }
 
-/* ── Cadence switcher: title + little coloured carousel + content ── */
-.cadx { padding: 6px 0 0; }
-.cadx-header {
+/* ── Cadence tabs: a visible segmented control, one tab per cadence ──
+   Replaced the swipe carousel + dot row. The gesture worked but the cadence you
+   were on was only discoverable by trying it; a tab you can see is a tab you can
+   reach. Visual shape follows .freq-selector, ARIA follows .lists-chips. */
+.cadt { padding: 6px 0 0; }
+.cadt-bar {
   position: sticky; top: 0; z-index: 20;
   /* Mid-page: paint NOTHING — transparent matches every equipped background.
-     The glass surface only appears in compact mode below, once it's stuck. */
-  background: transparent;
-  padding: 4px 0 6px;
-  transition: padding 0.2s ease;
-}
-/* Stuck at the top: the whole dock — XP bar (.cadx-xp) + dots — becomes ONE
-   translucent glass capsule. A single element means there's no seam to open. */
-.cadx--compact .cadx-header {
-  margin: 0 12px;
-  padding: 14px 14px 15px;
-  background: rgba(var(--surface-rgb),0.62);
-  -webkit-backdrop-filter: blur(16px) saturate(160%); backdrop-filter: blur(16px) saturate(160%);
-  border: 1px solid var(--glass-border);
-  border-radius: 14px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.35);
-  animation: cadx-dock-in 0.25s ease backwards;
-  transition: border-radius 0.2s ease, border-color 0.2s ease;
-}
-@keyframes cadx-dock-in { from { opacity: 0; transform: translateY(-8px); } }
-.cadx--compact .cadx-title { display: none; }
-.cadx-dotrow { display: flex; gap: 18px; justify-content: center; align-items: center; }
-.cadx-dot2 {
-  position: relative;
-  width: 11px; height: 11px; border-radius: 50%; border: none; padding: 0; cursor: pointer;
-  background: color-mix(in srgb, var(--chip) 32%, transparent);
-  transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
-}
-/* The dot is 11px because that is how big it should LOOK. The tappable area is
-   a transparent box centred on it, so switching cadence on a phone does not
-   need a precise stab at an 11px circle. Pseudo-element rather than padding so
-   the dot size, the 18px gap and the active scale transform stay as drawn.
-   Width is the row pitch (11px dot + 18px gap), NOT the full 44px: at 44 the
-   neighbouring boxes overlap by 15px each side and the tap lands on the wrong
-   cadence. Height takes the full 44 — nothing sits above or below to collide
-   with. ponytail: a taller-than-wide target is the most reachable shape the
-   existing 18px spacing allows; widening it further means respacing the row. */
-.cadx-dot2::after {
-  content: '';
-  position: absolute;
-  left: 50%; top: 50%;
-  width: 29px; height: 44px;
-  transform: translate(-50%, -50%);
-}
-.cadx-dot2.active { background: var(--chip); transform: scale(1.4); box-shadow: 0 0 10px -1px var(--chip); }
-/* Dots (and the label, riding last) stagger in as the dock forms. `translate`
-   rather than transform so the active dot's scale transition isn't fought;
-   old engines without `translate` just get the opacity fade. */
-.cadx--compact .cadx-dot2,
-.cadx--compact .cadx-active-label {
-  animation: cadx-dot-in 0.3s ease backwards;
-  animation-delay: calc(var(--i, 0) * 45ms);
-}
-@keyframes cadx-dot-in {
-  from { opacity: 0; translate: 0 5px; }
-  to   { opacity: 1; translate: 0 0; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .cadx--compact .cadx-xp .hb-xp-fill,
-  .cadx--compact .cadx-header,
-  .cadx--compact .cadx-dot2,
-  .cadx--compact .cadx-active-label { animation: none; }
-}
-
-/* ── Once-a-day swipe hint — bottom-to-top wave nudging the daily cards toward
-   weekly, with the daily (green) + weekly (blue) dots lit together. ── */
-.cadx--hint .cadx-viewport .hcard { transition: transform 0.3s ease; transform: translateX(-16px); }
-.cadx--hint.cadx--hint-back .cadx-viewport .hcard { transform: translateX(0); }
-/* Reverse stagger: the add button is the last child, so the bottom card is
-   nth-last-child(2) and fires first — the wave then travels up. */
-.cadx--hint .cadx-viewport .hcard:nth-last-child(2) { transition-delay: 0s; }
-.cadx--hint .cadx-viewport .hcard:nth-last-child(3) { transition-delay: 0.05s; }
-.cadx--hint .cadx-viewport .hcard:nth-last-child(4) { transition-delay: 0.10s; }
-.cadx--hint .cadx-viewport .hcard:nth-last-child(5) { transition-delay: 0.15s; }
-.cadx--hint .cadx-viewport .hcard:nth-last-child(6) { transition-delay: 0.20s; }
-.cadx--hint .cadx-viewport .hcard:nth-last-child(7) { transition-delay: 0.25s; }
-.cadx--hint .cadx-viewport .hcard:nth-last-child(n+8) { transition-delay: 0.30s; }
-/* Light the daily (1st) + weekly (2nd) dots at the same time. */
-.cadx--hint .cadx-dot2:nth-child(1),
-.cadx--hint .cadx-dot2:nth-child(2) { background: var(--chip); transform: scale(1.4); box-shadow: 0 0 10px -1px var(--chip); }
-@media (prefers-reduced-motion: reduce) {
-  .cadx--hint .cadx-viewport .hcard { transition: none; transform: none; }
-}
-.cadx-active-label {
-  font-family: 'Sora', sans-serif;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  opacity: 0.85;
-  margin-left: 4px;
-  transition: color 0.25s;
-}
-.cadx-title {
-  font-family: 'Sora', sans-serif; font-weight: 800;
-  font-size: 1.18rem; letter-spacing: 0.02em; text-transform: uppercase;
-  text-align: center;
-  transition: color 0.3s ease;
-}
-.cadx-swipe { touch-action: pan-y; }
-.cadx-strip { overflow: hidden; position: relative; height: 42px; margin: 8px 0 2px; }
-.cadx-strip::before, .cadx-strip::after {
-  content: ''; position: absolute; top: 0; bottom: 0; width: 56px; z-index: 2; pointer-events: none;
-}
-.cadx-strip::before { left: 0; background: linear-gradient(90deg, var(--glass-bg), transparent); }
-.cadx-strip::after { right: 0; background: linear-gradient(-90deg, var(--glass-bg), transparent); }
-.cadx-strip-track {
-  position: absolute; left: 50%; top: 0; height: 100%;
-  display: flex; align-items: center; will-change: transform;
-}
-.cadx-chip {
-  flex-shrink: 0;
-  display: flex; flex-direction: row; align-items: center; gap: 6px;
-  justify-content: center;
-  background: none; border: none; cursor: pointer;
-  will-change: transform, opacity;
-}
-.cadx-chip-dot {
-  width: 13px; height: 13px; border-radius: 50%;
-  flex-shrink: 0;
-  background: color-mix(in srgb, var(--chip) 22%, transparent);
-  border: 2px solid color-mix(in srgb, var(--chip) 55%, transparent);
+     The glass surface only appears in compact mode, once it is stuck. */
+  padding: 6px 16px 10px;
   transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
-.cadx-chip.active .cadx-chip-dot {
-  background: var(--chip);
-  border-color: var(--chip);
-  box-shadow: 0 0 10px -1px var(--chip);
+.cadt--compact .cadt-bar {
+  background: rgba(var(--surface-rgb),0.92);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(160%);
+  border-bottom: 1px solid var(--glass-border);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.28);
 }
-.cadx-chip-label {
-  font-family: 'Sora', sans-serif; font-weight: 700; font-size: 0.62rem;
-  color: var(--text-mute); white-space: nowrap;
+.cadt-tabs {
+  display: flex; gap: 3px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-bg-strong);
+  border-radius: 14px;
+  padding: 4px;
 }
-.cadx-chip.active .cadx-chip-label { color: var(--text); }
-.cadx-viewport { position: relative; overflow: hidden; }
-.cadx-slide { width: 100%; box-sizing: border-box; will-change: transform; }
+.cadt-tab {
+  flex: 1; min-width: 0;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+  /* 44px tall: unlike the heatmap cells there is no tight pitch to respect here,
+     so the tab takes the full comfortable target. */
+  min-height: 44px; padding: 9px 2px;
+  border: none; background: transparent; cursor: pointer;
+  border-radius: 10px;
+  font-family: var(--font-ui); font-weight: 700;
+  font-size: 0.66rem; letter-spacing: 0.02em;
+  color: var(--text-mute);
+  transition: background 0.15s, color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  --chip-ink: var(--chip);
+}
+:root[data-theme="light"] .cadt-tab { --chip-ink: color-mix(in srgb, var(--chip) 62%, #000); }
+.cadt-tab-lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cadt-tab.active {
+  color: var(--chip-ink);
+  background: color-mix(in srgb, var(--chip) 14%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--chip) 42%, transparent);
+}
+.cadt-tab:focus-visible { outline: 2px solid var(--chip); outline-offset: -2px; }
+/* How many habits sit under each cadence — the shape of your habits reads
+   without having to switch tabs to find out. */
+.cadt-n {
+  font-family: var(--font-data); font-size: 0.58rem; font-weight: 700;
+  opacity: 0.7; flex-shrink: 0;
+}
+.cadt-xp { display: flex; align-items: center; margin-bottom: 10px; }
+.cadt-xp .hb-xp-bar { flex: 1; height: 22px; }
+/* Switching cadence replays the cards' entrance, which the swipe gave for free. */
+.cadt-panel { animation: cadt-in 0.26s ease both; }
+@keyframes cadt-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cadt-panel { animation: none; }
+}
 .cad-empty {
   text-align: center; color: var(--text-mute);
   font-size: 0.85rem; line-height: 1.7; padding: 44px 18px;
@@ -6996,13 +6930,16 @@ h1, h2, h3, h4, .sora {
 .hcard-top, .hcard-mx { position: relative; z-index: 1; pointer-events: none; }
 .hcard-grip { pointer-events: auto; }
 
-/* Equal 1fr side columns are what actually centres the name, whatever the
-   level and streak either side of it happen to measure. */
+/* Content-width side columns. Equal 1fr tracks centred the name perfectly, but
+   they were also always a third of the card each regardless of what was in
+   them, so LV and the flame got pinned to the far edges with big dead gutters
+   either side of the name. auto tracks let them sit next to their neighbour;
+   the name still centres in the space that is left. */
 .hcard-top {
-  display: grid; grid-template-columns: 1fr minmax(0, auto) 1fr;
-  align-items: center; gap: 8px; margin-bottom: 9px;
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center; gap: 6px; margin-bottom: 9px;
 }
-.hcard-top-left { justify-self: start; display: flex; align-items: center; gap: 4px; min-width: 0; }
+.hcard-top-left { display: flex; align-items: center; gap: 3px; min-width: 0; }
 .hcard-top .hcard-name {
   text-align: center; line-height: 1.2;
   font-size: 0.95rem; font-weight: 700;
@@ -7016,7 +6953,7 @@ h1, h2, h3, h4, .sora {
 }
 .hcard-lv b, .hcard-strk b { font-size: 0.72rem; letter-spacing: 0; }
 .hcard-lv { color: var(--theme-ink); }
-.hcard-strk { justify-self: end; color: var(--text-mute); }
+.hcard-strk { color: var(--text-mute); }
 .hcard-strk.on { color: var(--flame-ink); }
 
 /* Cog tray — held open, not clicked open.
@@ -8181,7 +8118,7 @@ h1, h2, h3, h4, .sora {
 }
 .hcard-grip {
   display: flex; align-items: center; justify-content: center;
-  width: 22px; height: 30px; padding: 0; margin-right: 2px; flex-shrink: 0;
+  width: 16px; height: 30px; padding: 0; margin-right: 0; flex-shrink: 0;
   border: none; background: transparent; color: var(--text-mute);
   cursor: grab; touch-action: none;
 }
@@ -8483,7 +8420,10 @@ h1, h2, h3, h4, .sora {
 /* Cadence calendar — one cell per period (weeks / months / year) for non-daily
    habits, shown in place of the daily month grid. */
 .cadence-cal { display: grid; gap: 6px; padding-top: 6px; }
-.cadence-cal--monthly, .cadence-cal--weekly { grid-template-columns: repeat(4, 1fr); }
+.cadence-cal--weekly { grid-template-columns: repeat(4, 1fr); }
+/* Monthly emits 12 cells (one per month), not 4 — it shared the weekly rule and
+   rendered as an unintended 4x3 block. Six across reads as half a year a row. */
+.cadence-cal--monthly { grid-template-columns: repeat(6, 1fr); }
 .cadence-cal--yearly { grid-template-columns: 1fr; }
 .cadence-cal-cell {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
@@ -8491,9 +8431,10 @@ h1, h2, h3, h4, .sora {
   background: rgba(var(--fg-rgb),0.04); border: 1px solid rgba(var(--fg-rgb),0.07);
   color: var(--text-dim);
 }
-.cadence-cal-cell.done { background: color-mix(in srgb, var(--theme) 22%, transparent); border-color: var(--theme-dim); color: var(--theme-ink); }
-.cadence-cal-cell.failed { background: var(--miss-fill); border-color: rgba(124,138,160,0.45); color: var(--miss); }
-.cadence-cal-cell.na { background: rgba(120,140,170,0.14); border-color: rgba(140,160,190,0.4); color: var(--slate-ink); }
+/* Same pass/fail pair as .hmx — see the HABIT MATRIX block. */
+.cadence-cal-cell.done { background: color-mix(in srgb, var(--pass) 22%, transparent); border-color: color-mix(in srgb, var(--pass) 55%, transparent); color: var(--pass); }
+.cadence-cal-cell.failed { background: color-mix(in srgb, var(--fail) 18%, transparent); border-color: color-mix(in srgb, var(--fail) 50%, transparent); color: var(--fail); }
+.cadence-cal-cell.na { background: rgba(var(--fg-rgb),0.05); border-color: rgba(var(--fg-rgb),0.10); color: var(--text-mute); }
 .cadence-cal-cell.future { opacity: 0.35; cursor: default; }
 .cadence-cal-tick { height: 14px; display: flex; align-items: center; }
 .cadence-cal-lbl { font-family: 'Space Mono', monospace; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.04em; }
@@ -12293,11 +12234,43 @@ h3, h4,
 
 /* ══ HABIT MATRIX ══
    One habit's history condensed to the card width, granularity by cadence.
-   Filled cells take var(--theme), the cadence accent the card already injects,
-   so daily reads green, weekly blue, monthly violet, yearly orange with no
-   extra colour system. Cell rows are fixed in px and columns are 1fr, so the
-   grid always fills the width exactly and cells land near enough to square. */
+
+   PASS/FAIL, ONE PALETTE. A cell says one of three things and nothing else:
+   green you did it, red you marked it missed, quiet grey nothing to report.
+   Filled cells used to take var(--theme) (the cadence accent), so "done" was
+   green on daily but blue/violet/orange elsewhere and the eye had to relearn
+   the colour per card. Cadence identity is already carried by the card border,
+   the LV chip and the cadence toggle; it does not need restating in every dot.
+
+   Red is reserved for a DECLARED miss. A day you simply never logged stays
+   grey, because a sporadic logger must not open the page to a wall of red —
+   that is the same reason the lapse protocol treats absence as silence rather
+   than failure. Only 'failed' is a statement; 'off' is the absence of one.
+
+   Cell rows are fixed in px and columns are 1fr, so the grid always fills the
+   width exactly and cells land near enough to square. */
 .hmx { display: grid; gap: 2px; }
+
+/* The grid plus its month strip. */
+.hmx-wrap { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+
+/* Month bands over the weekday grid — the thing that makes six months of dots
+   readable instead of an undifferentiated field. Same column geometry as the
+   cells, so a label sits over exactly the weeks it names. Runs too narrow to
+   letter are emitted empty (see MIN_LABEL_COLS): the gap still reads. */
+.hmx-months {
+  display: grid;
+  grid-template-columns: repeat(var(--hmx-cols), 1fr);
+  gap: 2px;
+  font-family: var(--font-data);
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+}
+.hmx-months.hmx--span-year { grid-template-columns: repeat(var(--hmx-cols), 8px); }
+.hmx-month { overflow: hidden; white-space: nowrap; }
 
 /* Daily: 7 rows of weekdays, columns are weeks. 26 columns on a habit card
    (a rolling six months, ~82px tall), 53 on Progress (a full year, scrolled). */
@@ -12324,11 +12297,14 @@ h3, h4,
 .hmx--monthly .hmx-cell { font-size: 0.52rem; }
 .hmx--yearly .hmx-cell { font-size: 0.58rem; }
 
-.hmx-done { background: var(--theme, #2FD27E); }
-.hmx-failed { background: var(--miss); }                    /* a miss is slate, never red */
-.hmx-na { background: rgba(159,178,204,0.34); }             /* a deliberate skip */
-.hmx-undeclared { background: rgba(255,210,51,0.16); }      /* a due day you can still fix */
-.hmx-off { background: rgba(var(--fg-rgb),0.075); }         /* nothing logged */
+.hmx-done { background: var(--pass); }
+.hmx-failed { background: var(--fail); }                    /* you said you missed it */
+/* Nothing to report: a rest day you marked 'na', a recent blank, an old blank.
+   Three different reasons, one appearance — none of them is a failure, and
+   drawing them apart was what made the grid unreadable. */
+.hmx-na,
+.hmx-undeclared,
+.hmx-off { background: rgba(var(--fg-rgb),0.075); }
 /* Days still to come: a fainter grey than an unlogged past day, so the run you
    have built reads first and the road ahead sits quietly behind it. A young
    habit is mostly future, and 160 hollow outlines would shout. */
@@ -12346,7 +12322,7 @@ h3, h4,
 }
 /* Labelled cells need their text to survive the fill behind it. */
 .hmx--monthly .hmx-done, .hmx--yearly .hmx-done { color: #06210F; }
-.hmx--monthly .hmx-failed, .hmx--yearly .hmx-failed { color: #10161f; }
+.hmx--monthly .hmx-failed, .hmx--yearly .hmx-failed { color: #2A0710; }
 .hmx--yearly .hmx-future { color: rgba(var(--fg-rgb),0.22); }
 
 /* ── Walking stats ── */
@@ -14489,15 +14465,6 @@ details[open] > .plan-collapse-summary::before { content: '▾'; }
   margin: 0 0 8px;
   text-align: center;
 }
-.mini-hm-title {
-  font-family: 'Space Mono', monospace;
-  font-size: 0.6rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-mute);
-  text-align: center;
-  margin-bottom: 5px;
-}
 .mini-hm {
   max-width: 280px;
   margin: 0 auto;
@@ -14514,6 +14481,7 @@ details[open] > .plan-collapse-summary::before { content: '▾'; }
   text-align: center;
 }
 .mini-hm-cell {
+  position: relative;
   aspect-ratio: 1;
   min-width: 18px;
   border: none;
@@ -14527,14 +14495,39 @@ details[open] > .plan-collapse-summary::before { content: '▾'; }
   align-items: center;
   justify-content: center;
   transition: transform 0.1s, background 0.18s ease, color 0.18s ease;
+  /* Held to set state, so kill the iOS grey flash and the selection callout —
+     same treatment .hcard-tapsurface already gets. */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+/* The cell is ~36px in a ~41px pitch. Grow the target to the pitch and no
+   further: the carousel-dot precedent warned that padding out to a full 44 in a
+   tight grid makes neighbours overlap and steal each other's taps.
+   Buttons only — the leading blanks in a month are spans, and a span cannot be
+   :disabled, so an unscoped rule gave them a hit box that overlapped the first
+   real day of the month and ate its taps. */
+button.mini-hm-cell:not(:disabled)::after {
+  content: '';
+  position: absolute;
+  left: 50%; top: 50%;
+  width: calc(100% + 4px); height: calc(100% + 4px);
+  transform: translate(-50%, -50%);
 }
 .mini-hm-cell:not(:disabled):active { transform: scale(0.88); }
+.mini-hm-cell:focus-visible { outline: 2px solid var(--theme); outline-offset: 2px; z-index: 1; }
+.cadence-cal-cell:focus-visible { outline: 2px solid var(--theme); outline-offset: 2px; }
+.cadence-cal-cell { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .mini-hm-cell.mini-hm-pad { background: none; cursor: default; }
-.mini-hm-cell.done { background: #2FD27E; color: #06210F; }
-.mini-hm-cell.failed { background: var(--miss); color: #10161f; }
-.mini-hm-cell.na { background: rgba(120,140,170,0.18); color: var(--slate-ink); }
-/* Not reported: a past day on/after the habit start you never logged. */
-.mini-hm-cell.undeclared { background: rgba(255,210,51,0.14); color: var(--goldtint-ink); }
+/* Same pass/fail pair as .hmx — see the HABIT MATRIX block. These three
+   calendars used to run three separate colour systems for the same three
+   states (literal green here, color-mix there, cadence accent in the matrix). */
+.mini-hm-cell.done { background: var(--pass); color: #06210F; }
+.mini-hm-cell.failed { background: var(--fail); color: #2A0710; }
+/* Nothing to report. 'na' keeps its number legible; an unlogged day stays as
+   the base cell so silence never reads as a miss. */
+.mini-hm-cell.na { background: rgba(var(--fg-rgb),0.075); color: var(--text-mute); }
 /* Steps calendar: logged but under goal (matches the chart's stepMiss flame). */
 .mini-hm-cell.miss { background: #FF8A00; color: #2a1400; }
 .mini-hm-cell.future { opacity: 0.25; cursor: default; }
@@ -15193,7 +15186,7 @@ details[open] > .plan-collapse-summary::before { content: '▾'; }
 :root { --switch-t: 0.18s; }
 
 .apb-label, .auth-goal-label, .bottom-nav-icon, .bottom-nav-label,
-.cadence-cal-cell, .cadence-habit-mark, .cadence-habit-status, .cadx-chip-label,
+.cadence-cal-cell, .cadence-habit-mark, .cadence-habit-status, .cadt-tab,
 .chart-cog-check, .chart-cog-toggle, .checkin-tick, .checkin-toggle-pill,
 .diet-goal-delta, .diet-goal-label, .dl-row-val, .dub-gender-pick,
 .freq-main, .freq-sub, .global-milestone-node,

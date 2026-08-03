@@ -8,7 +8,7 @@
 
 | Route | Component | Role | Nav | Accent |
 |---|---|---|---|---|
-| `/` | `Habits.tsx` | **Habits** (home) — habit cards (level left · name centred · streak right, over a `HabitMatrix` of the habit's whole history; tap to complete, hold for the cog tray of Favourite · Remind · Archive · More; drag-to-reorder via `ReorderableList`/`reorder.ts`), week strip, Daily Log, streaks; cadence carousel **Quit** · Daily · Weekly · Monthly · Yearly (Quit leftmost — grey abstinence timers, `QuitCard` + `quit.ts`; carousel opens on Daily each day) | Habits | HEALTH green |
+| `/` | `Habits.tsx` | **Habits** (home) — habit cards (level left · name centred · streak right, over a `HabitMatrix` of the habit's whole history; tap to complete, hold for the cog tray of Favourite · Remind · Archive · More; drag-to-reorder via `ReorderableList`/`reorder.ts`), week strip, streaks; cadence **tabs** **Quit** · Daily · Weekly · Monthly · Yearly, a visible segmented control with per-cadence counts (`CadenceTabs.tsx`, replaced the swipe carousel; Quit leftmost — grey abstinence timers, `QuitCard` + `quit.ts`; opens on Daily each day). The `HabitMatrix` runs on ONE shared time axis for every habit with a month-label strip, so cards stack and compare column for column | Habits | HEALTH green |
 | `/dashboard` | `App.tsx` | **Progress** — Today = your Plan (`PlanGauge` semicircle + `WeightSparkline` weekly chart + step tile, folded in from `/diet`), Yesterday's Verdict, weight trend, safe-zone, sleep, chart carousel | Progress | GROWTH blue |
 | `/community` | `CommunityPage.tsx` | **Global & Friends** — shared Global habit (deed toggle) + Friends (coming soon) | Global | GOLD |
 | `/diet` | `Diet.tsx` | Plan cards — weight-journey gauge (`PlanGauge`), Weight This Week (`WeightSparkline`), adaptive plan, activity targets, Smart Adjust. Gauge + weekly chart now shared with Progress→Today; **off the nav**, reachable via cog | — | GROWTH blue |
@@ -54,8 +54,13 @@ Progress + screen order are pure and covered by `onboarding.check.ts`.
 - `CogMenu.tsx` — unified per-page cog menu (settings, navigation, quick-log).
 - `LevelRing.tsx` / ring themes — XP ring, incl. the Liquid ring cosmetic.
 - `DubMascot.tsx` — the coach avatar (dog/cat).
-- `ChartCarousel.tsx` / `CadenceCarousel.tsx` — swipeable Progress charts. Chips
-  sit **under** the viz; pagination dots removed. First slide is the Today matrix.
+- `ChartCarousel.tsx` — swipeable Progress charts. Chips sit **under** the viz;
+  pagination dots removed. First slide is the Today matrix.
+- `CadenceTabs.tsx` — the Habits cadence switcher: a visible tablist, one tab per
+  cadence with its habit count. Replaced `CadenceCarousel.tsx` (deleted), whose
+  swipe made the other cadences discoverable only by trying the gesture.
+- `DailyLog.tsx` — the weigh-in / steps / check-in vitals strip. **No longer on
+  Habits**; the cog's Quick log still opens all three editors.
 - `YesterdayMatrix.tsx` — Progress "Yesterday" panel: 2×2 KPI grid that fills the
   locked height (Calories eaten · Steps · Sleep/Mood · Habits closed). Fed by
   `App.tsx`. The "Today" panel beside it now shows today's live targets (calorie

@@ -72,23 +72,43 @@ const noStart = matrixLayout({ habit: H, cadence: 'daily', history: {}, today })
 assert(noStart.cells.every(c => c.state !== 'undeclared'),
   'with no start date nothing is undeclared, so a new habit is not a wall of yellow');
 
-// ── daily: a young habit reads from day one, left to right ───────────────────
-// The run of dots must START at the left edge with the days still to come grey
-// after it, not sit jammed against the right with six months of blank before it.
+// ── daily: ONE shared axis, whatever the habit's own start date ──────────────
+// This is the point of the whole grid: stack two habits and read down a column.
+// A young habit used to open on its OWN first Monday, so column N was a different
+// date on every card and the cards could not be compared by eye at all.
 const young = matrixLayout({ habit: H, cadence: 'daily', history: {}, today, startISO: '2026-07-01' });
-assert(young.cells[0].key === '2026-06-29', 'the grid opens on the Monday of the habit\'s own first week');
-assert(young.cells[0].state === 'pad', 'the couple of days before day one are blank');
-assert(at(young.cells, '2026-06-30')!.state === 'pad', 'still blank the day before');
-assert(at(young.cells, '2026-07-01')!.state !== 'pad', 'day one is live');
-assert(at(young.cells, '2026-11-02')!.state === 'future', 'the days still to come sit grey after the run');
-assert(young.cells[young.cells.length - 1].state === 'future', 'so the grid ends in the future, not on today');
-
-// ── daily: once a habit outgrows the window the grid rolls ───────────────────
-// Otherwise recent days would fall off the right and you could not log today.
 const old = matrixLayout({ habit: H, cadence: 'daily', history: {}, today, startISO: '2024-03-01' });
-const oldToday = old.cells.findIndex(c => c.key === '2026-07-31');
-assert(oldToday >= 175, 'an older habit keeps today in the last column');
-assert(old.cells.every(c => c.state !== 'pad'), 'and nothing in the window predates it');
+assert(young.cells[0].key === daily.cells[0].key, 'a young habit starts on the same day as every other');
+assert(old.cells[0].key === daily.cells[0].key, 'and so does an old one');
+assert(young.cells.every((c, i) => c.key === old.cells[i].key),
+  'column for column, the two grids cover identical dates — the shared continuum');
+assert(young.cells[young.cells.length - 1].key === daily.cells[daily.cells.length - 1].key,
+  'and they end together, on the column holding today');
+
+// Before it existed is blank, not a miss: absence is silence, never failure.
+assert(at(young.cells, '2026-06-30')!.state === 'pad', 'the day before day one is blank');
+assert(at(young.cells, '2026-07-01')!.state !== 'pad', 'day one is live');
+assert(young.cells[0].state === 'pad', 'so a young habit opens with blanks, not with its own edge');
+assert(old.cells.every(c => c.state !== 'pad'), 'an older habit predates the whole window, so nothing is blank');
+
+// ── daily: month bands, the thing that makes six months readable ─────────────
+assert(daily.months && daily.months.length > 0, 'the daily grid carries month bands');
+const bands = daily.months!;
+assert(bands.every(b => b.col >= 0 && b.col + b.span <= daily.cols), 'every band sits inside the grid');
+assert(bands.reduce((n, b) => n + b.span, 0) === daily.cols, 'the bands tile the columns exactly, no overlap');
+assert(bands.every((b, i) => i === 0 || b.col === bands[i - 1].col + bands[i - 1].span), 'and run in order');
+assert(bands[bands.length - 1].label === 'Jul', 'the last band is the month today sits in');
+assert(bands.length === 6, 'a 26-week window spans six months');
+
+// A 53-column span is longer than a year, so the same month appears at both ends
+// and the two must not merge into one band — hence keying on year+month, not label.
+const yearSpan = matrixLayout({ habit: H, cadence: 'daily', history: {}, today, span: 'year' });
+const yb = yearSpan.months!;
+assert(yb.length === 13, 'a 53-week window holds 13 month runs, so the two Julys stayed apart');
+assert(yb[0].span === 1 && yb[0].label === '', 'a run too narrow to letter is left unlabelled rather than crushed');
+assert(yb[yb.length - 1].label === 'Jul' && yb[yb.length - 1].col > yb[0].col,
+  'the far July is its own band at the right edge');
+assert(yb.reduce((n, b) => n + b.span, 0) === yearSpan.cols, 'and they tile the full year exactly');
 
 
 // ── weekly ───────────────────────────────────────────────────────────────────

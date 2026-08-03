@@ -7,10 +7,9 @@ import { loggingNow, getLoggingDay } from './day';
 import { cycleState, type HabitState } from './habitState';
 import { scheduleLabel, scheduledDateInPeriod, scheduleDdmm, WEEKDAYS_FULL } from './habitSchedule';
 import WeeklyRecap from './WeeklyRecap';
-import CadenceCarousel from './CadenceCarousel';
+import CadenceTabs from './CadenceTabs';
 import { useUserStage } from './userStage';
 import SuperdubHeader from './SuperdubHeader';
-import DailyLog from './DailyLog';
 import LapseBanner, { lapsePending, useLapse, useSoftened } from './LapseBanner';
 import { isSoftened } from './lapse';
 import { computeDayStreak, dayWasMarked, todayProgress } from './dayStreak';
@@ -379,6 +378,9 @@ export const MiniMonthHeatmap: React.FC<{
               disabled={c.future || readOnly}
               onClick={() => { if (!c.future && !readOnly) onEdit?.(habit, c.ddmm, c.state); }}
               title={`${c.ddmm}: ${c.state ?? (c.undeclared ? 'not reported' : 'blank')}`}
+              // The accessible name was the bare day number ("17") — no date, no
+              // state, no hint. title is not announced reliably and never on touch.
+              aria-label={`${c.ddmm}: ${c.state ?? 'not logged'}${readOnly ? '' : ', tap to change'}`}
             >{c.d}</button>
           )
         )}
@@ -1221,6 +1223,14 @@ const WeekStrip: React.FC<{
 }> = ({ ht, rewindDay, onPick, perfectWeek, celebrating }) => {
   const [offset, setOffset] = useState(0); // 0 = this week, negative = weeks back
   const [dir, setDir] = useState(0);        // slide direction for the entrance anim
+
+  // "Back to today" clears rewindDay in the parent, but the offset lives here, so
+  // the page returned to today while the strip stayed parked on an old week.
+  // Only fires when rewindDay actually changes, so swiping back to browse
+  // (which never touches rewindDay) still leaves you where you scrolled to.
+  useEffect(() => {
+    if (!rewindDay) { setDir(0); setOffset(0); }
+  }, [rewindDay]);
   const startX = useRef(0);
   const dragging = useRef(false);
   const older = () => { setDir(-1); setOffset(o => o - 1); };
@@ -1715,9 +1725,13 @@ const Habits: React.FC = () => {
   // Backfill past days — gated by a one-time honesty declaration. Persisted in
   // localStorage so it's accepted once per device, not re-prompted every launch
   // (sessionStorage was cleared on each app open, so it kept reappearing).
+  // Today is not a backfill, so it is not gated — you are reporting, not
+  // rewriting. Progress already exempted today (App.tsx guardPastEdit); this
+  // page gated every cell, so the same tap raised the modal on one screen and
+  // not the other off the same localStorage key.
   const editPast = useCallback((habit: string, day: string, cur: HabitState) => {
     const next = cycleState(cur);
-    if (localStorage.getItem('superdub.honesty') === '1') {
+    if (day === todayKey() || localStorage.getItem('superdub.honesty') === '1') {
       handleToggleDay(habit, day, next);
     } else {
       setHonestyPending({ habit, day, next });
@@ -1979,7 +1993,7 @@ const Habits: React.FC = () => {
         {cards}
       </div>
     );
-    return { key: cad, label: meta.label, color: meta.color, icon: meta.icon, content };
+    return { key: cad, label: meta.label, color: meta.color, count: list.length, content };
   });
 
   return (
@@ -2248,16 +2262,17 @@ const Habits: React.FC = () => {
           </div>
         )}
 
-        {/* Today's log — the app's own inputs (weigh-in / steps / check-in), pulled up
-            with the ticks so your day sits together at the top. Follows the week strip's
-            selected day; check-in reuses the mandatory-habit signal. */}
-        <DailyLog day={rewindDay} checkedInDay={rewindDay ? ht[rewindDay]?.[MANDATORY_HABIT] === 'done' : undefined} />
-
-        {/* HABITS — the cadence carousel. Zero-height sentinel marks the carousel top
+        {/* HABITS — the cadence tabs. Zero-height sentinel marks the section top
             for the sticky-XP calc. PinnedXpBar + activeCadence kept from master
             (level chrome = Daily only). */}
         <div ref={cadTopRef} aria-hidden="true" style={{ height: 0 }} />
-        <CadenceCarousel panels={cadencePanels} startIndex={CADENCE_ORDER.indexOf(startCad)} compact={stuck} header={activeCadence === 'daily' ? <PinnedXpBar /> : null} onIndexChange={(i) => { setActiveCadence(CADENCE_ORDER[i]); setFeaturedSwipeKey(k => k + 1); }} />
+        <CadenceTabs
+          panels={cadencePanels}
+          active={activeCadence}
+          onSelect={(k) => { setActiveCadence(k as Cadence); setFeaturedSwipeKey(n => n + 1); }}
+          compact={stuck}
+          header={activeCadence === 'daily' ? <PinnedXpBar /> : null}
+        />
 
         {/* Featured banner, tap to open & join (below the user's habits). Swipes up
             from the bottom (0 → 100% opacity) each time you swipe the carousel above —
