@@ -15102,7 +15102,51 @@ details[open] > .plan-collapse-summary::before { content: '▾'; }
   box-shadow: none;
   padding-top: calc(env(safe-area-inset-top, 0px) + 26px);
   padding-bottom: calc(env(safe-area-inset-bottom, 16px) + 18px);
+  z-index: 1;                /* above the accent glow painted on the ground */
 }
+
+/* The law took the surfaces away and gave nothing back: card, border, radius and
+   shadow all went, leaving flat --void (#07090C) edge to edge with no light on
+   it. .prompt-fs got its hero glow, the older pop-ups got a grey slab. This is
+   that same glow, on the ground every pop-up now shares.
+   Built from --theme rather than --theme-glow on purpose: pages set their own
+   glow alpha for page use and Habits runs pageTheme(HEALTH, '0D'), a 5% tint
+   that vanishes at full-screen size. A fixed alpha keeps every pop-up equally
+   lit whichever page opened it. */
+.modal-overlay::before,
+.goal-reached-overlay::before,
+.honesty-overlay::before,
+.confirm-overlay::before,
+.checkin-overlay::before,
+.hb-sheet-overlay::before,
+.coach-overlay::before,
+.lvlup-overlay::before,
+.reader-overlay::before,
+.wx-scrim::before {
+  content: '';
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(125% 56% at 50% -8%,
+    color-mix(in srgb, var(--theme, #2FD27E) 18%, transparent), transparent 60%);
+}
+/* The accents are tuned to glow on near-black; on the light ground the same
+   alpha reads as a colour wash rather than light. */
+:root[data-theme="light"] .modal-overlay::before,
+:root[data-theme="light"] .goal-reached-overlay::before,
+:root[data-theme="light"] .honesty-overlay::before,
+:root[data-theme="light"] .confirm-overlay::before,
+:root[data-theme="light"] .checkin-overlay::before,
+:root[data-theme="light"] .hb-sheet-overlay::before,
+:root[data-theme="light"] .coach-overlay::before,
+:root[data-theme="light"] .lvlup-overlay::before,
+:root[data-theme="light"] .reader-overlay::before,
+:root[data-theme="light"] .wx-scrim::before {
+  background: radial-gradient(125% 56% at 50% -8%,
+    color-mix(in srgb, var(--theme, #2FD27E) 10%, transparent), transparent 60%);
+}
+/* A drag grip on a full screen is chrome for a gesture that no longer exists —
+   and it is a grey bar at the top of the first thing you look at. */
+.hb-sheet-grip { display: none; }
+
 /* Closes pinned to the top of a card now sit at the top of the screen, which on
    a notched phone is under the status bar. */
 .coach-close,
