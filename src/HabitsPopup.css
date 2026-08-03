@@ -17,6 +17,12 @@
      rows and made the whole pop-up look faded. */
   background: var(--void);
   display: flex; justify-content: center;
+  /* The screen scrolls as one, the way .prompt-fs does. The list used to be its
+     own 435px window inside a fixed screen: with 20 habits that showed 7 rows and
+     sliced the 8th to a 1px sliver, with no scrollbar, mask or fade to say more
+     existed. It read as content simply cut off. */
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
   animation: hp-fade 0.25s ease;
   transition: --hp-accent 0.7s ease;
 }
@@ -26,16 +32,21 @@
 .hp-overlay { --hp-ink: var(--hp-accent); }
 :root[data-theme="light"] .hp-overlay { --hp-ink: color-mix(in srgb, var(--hp-accent) 62%, #000); }
 
+/* fixed, not absolute: an absolute child of the scroller would scroll away with
+   the list and take the light off the screen after the first swipe. */
 .hp-glow {
-  position: absolute; inset: 0; pointer-events: none;
+  position: fixed; inset: 0; pointer-events: none;
   background: radial-gradient(125% 55% at 50% -6%, color-mix(in srgb, var(--hp-accent) 26%, transparent), transparent 62%);
   transition: background 0.7s ease;
 }
 
 .hp-screen {
   position: relative; z-index: 1; width: 100%; max-width: 480px;
+  min-height: 100dvh;   /* short days still push the footer to the bottom edge */
   display: flex; flex-direction: column;
-  padding: calc(env(safe-area-inset-top, 0px) + 26px) 18px calc(env(safe-area-inset-bottom, 16px) + 18px);
+  /* The bottom inset moves onto .hp-foot, which is what actually meets the
+     bottom edge now that it is sticky. */
+  padding: calc(env(safe-area-inset-top, 0px) + 26px) 18px 0;
   animation: hp-rise 0.32s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -74,7 +85,9 @@
   letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-mute, rgba(var(--fg-rgb),0.4)); margin-top: 2px;
 }
 
-.hp-rows { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; overflow-y: auto; }
+/* No inner window: the list is as tall as the list, and .hp-overlay does the
+   scrolling. Nothing gets sliced by a container edge. */
+.hp-rows { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
 .hp-row {
   display: flex; align-items: center; gap: 12px; text-align: left; cursor: pointer;
   /* Opaque raised surface — --card-bg is half-transparent, which read as washed-out
@@ -114,7 +127,22 @@
 .hp-row.done .hp-name { color: var(--text, #E0E0F0); }
 .hp-empty { text-align: center; color: var(--text-dim, rgba(var(--fg-rgb),0.62)); font-size: 0.9rem; margin: 30px 0; }
 
-.hp-foot { margin-top: auto; padding-top: 16px; display: flex; flex-direction: column; gap: 9px; }
+/* Pinned to the bottom edge, so the progress line and the way out never scroll
+   away on a long list. A solid --void bar is seamless here: the glow is a radial
+   centred at 50% -6% ending by 62%, so the foot of the screen is already --void. */
+.hp-foot {
+  position: sticky; bottom: 0; z-index: 2;
+  margin-top: auto; background: var(--void);
+  padding: 16px 0 calc(env(safe-area-inset-bottom, 16px) + 18px);
+  display: flex; flex-direction: column; gap: 9px;
+}
+/* Rows fade into the bar rather than vanishing under a hard line. A sticky strip,
+   never a mask on the scroller: Safari scrolls a mask away with the content. */
+.hp-foot::before {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 100%; height: 24px;
+  background: linear-gradient(to top, var(--void), transparent);
+  pointer-events: none;
+}
 .hp-msg { text-align: center; font-size: 0.84rem; color: var(--text-dim, rgba(var(--fg-rgb),0.62)); margin: 0; transition: color 0.7s ease; }
 .hp-overlay.all-done .hp-msg { color: var(--hp-ink); font-weight: 600; }
 .hp-dismiss {
