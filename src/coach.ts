@@ -154,13 +154,16 @@ function weightLine(weights: WeighIn[], goal: Goal | null, seed: number): CoachL
 }
 
 /* ── Habit adherence ──────────────────────────────────────────────────────── */
-interface HabitAnalysis {
+// Exported for the Return Review, which needs the same gap-safe adherence this
+// report is built on. `elapsed` counting only marked days is the whole reason:
+// it survives a three-week silence instead of reading it as three weeks of misses.
+export interface HabitAnalysis {
   name: string; adherence: number; streak: number; misses: number; doneDays: number; elapsed: number;
   done7: number;      // ticks in the trailing 7 days (incl. today)
   donePrev7: number;  // ticks in the 7 days before that
 }
 
-function analyseHabit(name: string, startDate: string | null, map: Record<string, Record<string, string | null>>, allDays: string[], todayIdx: number): HabitAnalysis {
+export function analyseHabit(name: string, startDate: string | null, map: Record<string, Record<string, string | null>>, allDays: string[], todayIdx: number): HabitAnalysis {
   let startIdx = 0;
   if (startDate) {
     const parts = startDate.split('-');

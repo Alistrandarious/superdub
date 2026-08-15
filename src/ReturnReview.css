@@ -1,0 +1,106 @@
+/* =====================================================================
+   SUPERDUB — the Return Review
+   Self-contained, the way Lists.css is. Nothing here leaks into App.css, so a
+   chat editing App.css and a chat editing this one cannot collide.
+   Every colour is a token: opacity-based values go through rgba(var(--fg-rgb),A)
+   so light mode flips with the rest of the app.
+   ===================================================================== */
+
+/* Step pips. Ride in PromptShell's `art` slot, which sits under the eyebrow. */
+.rv-dots { display: flex; gap: 5px; margin: 2px 0 4px; }
+.rv-dots i { width: 16px; height: 3px; border-radius: 2px; background: rgba(var(--fg-rgb), 0.16); }
+.rv-dots i.on { background: var(--theme); }
+
+/* ── What held ── */
+.rv-list { display: flex; flex-direction: column; }
+.rv-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 0; border-bottom: 1px solid rgba(var(--fg-rgb), 0.07);
+}
+.rv-row:last-child { border-bottom: 0; }
+.rv-lvl {
+  flex: 0 0 auto; width: 38px; height: 38px; border-radius: 11px;
+  background: rgba(var(--fg-rgb), 0.05); border: 1px solid rgba(var(--fg-rgb), 0.09);
+  display: grid; place-items: center;
+  font-family: var(--font-data); font-weight: 700; font-size: 0.95rem;
+  color: var(--gold-ink);
+}
+.rv-nm { flex: 1; font-family: var(--font-ui); font-weight: 600; font-size: 0.87rem; min-width: 0; }
+.rv-nm small {
+  display: block; margin-top: 2px; font-weight: 400;
+  font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.05em;
+  color: var(--text-mute);
+}
+.rv-tag {
+  flex: 0 0 auto;
+  font-family: var(--font-data); font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--gold-ink); border: 1px solid rgba(255, 185, 40, 0.3);
+  border-radius: 3px; padding: 2px 5px;
+}
+.rv-pct {
+  flex: 0 0 auto;
+  font-family: var(--font-data); font-weight: 700; font-size: 0.88rem;
+  color: var(--theme-ink); font-variant-numeric: tabular-nums;
+}
+
+/* ── One big number ── */
+.rv-big { text-align: center; padding: 12px 0 4px; }
+.rv-big-n {
+  font-family: var(--font-data); font-weight: 700; font-size: 2.5rem; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.rv-big-n small { font-size: 1rem; color: var(--text-mute); margin-left: 2px; }
+.rv-big-c { font-size: 0.8rem; color: var(--text-dim); margin-top: 8px; }
+
+/* ── Two numbers side by side ── */
+.rv-pair {
+  display: flex; gap: 1px; margin-top: 14px;
+  background: rgba(var(--fg-rgb), 0.08);
+  border-radius: var(--r-md); overflow: hidden;
+}
+.rv-pair > div { flex: 1; background: var(--glass-bg); padding: 13px; text-align: center; }
+.rv-v {
+  font-family: var(--font-data); font-weight: 700; font-size: 1.3rem;
+  font-variant-numeric: tabular-nums;
+}
+.rv-v.rv-good { color: var(--health-ink); }
+.rv-v.rv-warn { color: var(--gold-ink); }
+.rv-l {
+  margin-top: 4px;
+  font-family: var(--font-data); font-size: 0.52rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-mute);
+}
+
+/* ── The quit clock ── */
+.rv-clock { text-align: center; padding: 10px 0 2px; }
+.rv-clock-d {
+  font-family: var(--font-data); font-weight: 700; font-size: 2.9rem; line-height: 1;
+  color: var(--violet-ink); font-variant-numeric: tabular-nums;
+}
+
+.rv-ask {
+  margin-top: 16px; padding: 14px; border-radius: var(--r-md);
+  background: rgba(var(--fg-rgb), 0.03); border: 1px solid rgba(var(--fg-rgb), 0.08);
+}
+.rv-ask p { margin: 0 0 12px; font-size: 0.85rem; line-height: 1.45; }
+.rv-ask-btns { display: flex; gap: 8px; }
+.rv-ask-btns button {
+  flex: 1; padding: 11px; cursor: pointer;
+  border-radius: var(--r-sm); border: 1px solid var(--glass-border);
+  background: transparent; color: var(--text);
+  font-family: var(--font-ui); font-weight: 600; font-size: 0.82rem;
+}
+.rv-ask-btns button:active { transform: scale(0.98); }
+.rv-ask-btns .rv-yes { border-color: var(--theme); color: var(--theme-ink); }
+.rv-ask-btns button:focus-visible { outline: 2px solid var(--theme); outline-offset: 2px; }
+
+/* ── The closing line under every step ── */
+.rv-note {
+  margin: 16px 0 0; padding-top: 13px;
+  border-top: 1px solid rgba(var(--fg-rgb), 0.07);
+  font-size: 0.78rem; line-height: 1.5; color: var(--text-mute);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rv-ask-btns button:active { transform: none; }
+}
