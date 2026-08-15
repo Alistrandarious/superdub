@@ -32,7 +32,7 @@ import { quitProgress, quitElapsed, toLocalDatetimeValue } from './quit';
 import { moveItem, applyGroupReorder } from './reorder';
 import HabitMatrix, { type IsoHistory } from './HabitMatrix';
 import { useTapHold, HOLD_SLOP_PX } from './useTapHold';
-import { weekMonday, weekRangeLabel, weekTitle } from './weekRange';
+import { weekMonday } from './weekRange';
 import { RECENT_ADD_DAYS, daysSince } from './habitAdd';
 import {
   HABIT_LEVEL_TIERS as LEVEL_TIERS, HABIT_LEVEL_RATES as LEVEL_RATES,
@@ -1200,95 +1200,6 @@ const FeaturedSheet: React.FC<{
 
 const MANDATORY_HABIT = 'Logging into Superdub';
 
-// Title + date range for the swipeable week strip, e.g. { title: 'Last week',
-// range: '7–13 Jul' }. Pure formatting lives in weekRange.ts (unit-tested).
-function weekMeta(offset: number): { title: string; range: string } {
-  const mon = weekMonday(loggingNow(), offset);
-  const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
-  return { title: weekTitle(offset), range: weekRangeLabel(mon, sun) };
-}
-
-// The login-streak week strip — 7 day-circles for the mandatory check-in habit,
-// pulled up to the top of the page. Swipe (or the ‹ › arrows) pages back through
-// previous weeks; you can't go past the current week. Tapping a past/today circle
-// rewinds the page to that day (onPick), same as before.
-// ponytail: only the current calendar year is in `ht`, so weeks that fall in a
-// previous year read blank — fine until year-boundary history matters.
-const WeekStrip: React.FC<{
-  ht: HabitTracker;
-  rewindDay: string | null;
-  onPick: (key: string | null) => void;
-  perfectWeek: boolean;
-  celebrating: boolean;
-}> = ({ ht, rewindDay, onPick, perfectWeek, celebrating }) => {
-  const [offset, setOffset] = useState(0); // 0 = this week, negative = weeks back
-  const [dir, setDir] = useState(0);        // slide direction for the entrance anim
-
-  // "Back to today" clears rewindDay in the parent, but the offset lives here, so
-  // the page returned to today while the strip stayed parked on an old week.
-  // Only fires when rewindDay actually changes, so swiping back to browse
-  // (which never touches rewindDay) still leaves you where you scrolled to.
-  useEffect(() => {
-    if (!rewindDay) { setDir(0); setOffset(0); }
-  }, [rewindDay]);
-  const startX = useRef(0);
-  const dragging = useRef(false);
-  const older = () => { setDir(-1); setOffset(o => o - 1); };
-  const newer = () => { if (offset < 0) { setDir(1); setOffset(o => o + 1); } };
-  const onDown = (e: React.PointerEvent) => { startX.current = e.clientX; dragging.current = true; };
-  const onUp = (e: React.PointerEvent) => {
-    if (!dragging.current) return;
-    dragging.current = false;
-    const dx = e.clientX - startX.current;
-    if (dx < -40) older();          // swipe left → older weeks
-    else if (dx > 40) newer();      // swipe right → back toward this week
-  };
-  const days = getWeekDays(offset);
-  const meta = weekMeta(offset);
-  const isCurrent = offset === 0;
-  return (
-    <div className="hb-weekcard">
-      <div className="hb-weeknav">
-        <span className="hb-weeknav-lbl"><b>{meta.title}</b> · {meta.range}</span>
-        <span className="hb-weeknav-arrows">
-          <button type="button" onClick={older} aria-label="Previous week">‹</button>
-          <button type="button" onClick={newer} disabled={offset >= 0} aria-label="Next week">›</button>
-        </span>
-      </div>
-      <div className="hb-weekview" onPointerDown={onDown} onPointerUp={onUp} onPointerLeave={onUp}>
-        <div
-          key={offset}
-          className={`hb-week${isCurrent && perfectWeek ? ' hb-week-gold' : ''}${isCurrent && celebrating ? ' hb-week-celebrating' : ''}${dir < 0 ? ' hb-week-in-l' : dir > 0 ? ' hb-week-in-r' : ''}`}
-        >
-          {days.map(({ key, label, isFuture, isToday }) => {
-            const state = ht[key]?.[MANDATORY_HABIT] ?? null;
-            return (
-              <button
-                key={key}
-                type="button"
-                className="hb-week-col hb-week-col-btn"
-                disabled={isFuture}
-                onClick={() => { if (!isFuture) onPick(isToday ? null : key); }}
-                aria-label={`${label}: ${state ?? 'not logged'}, ${isToday ? 'go to today' : 'rewind to this day'}`}
-              >
-                <span className="hb-week-dow">{label}</span>
-                <div
-                  className={`hb-week-circle ${state === 'done' ? 'done' : ''} ${state === 'failed' ? 'failed' : ''} ${state === 'na' ? 'na' : ''} ${isToday ? 'today' : ''} ${key === rewindDay ? 'viewing' : ''} ${isFuture ? 'future' : ''}`}
-                  aria-hidden="true"
-                >
-                  {state === 'done' && <span className="hb-week-tick"><CheckSVG size={18} strokeWidth={2} /></span>}
-                  {state === 'failed' && <span className="hb-week-tick fail">✕</span>}
-                  {state === 'na' && <span className="hb-week-tick na">–</span>}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-};
-
 // Weather breakdown bottom-sheet — opens when the header weather chip is tapped.
 // Current conditions + a horizontal hourly strip + a 7-day forecast. Reuses the
 // WeatherIc mapping so every icon matches the header chip.
@@ -1451,8 +1362,6 @@ const Habits: React.FC = () => {
 
   // Week gold — purely derived: gold ONLY on Sunday when all 7 days are logged.
   // Resets to original colour automatically on Monday (no persisted state, no veteran ring).
-  const [weekCelebrating, setWeekCelebrating] = useState(false);
-  const prevPerfectRef = useRef(false);
   const [honestyPending, setHonestyPending] = useState<{ habit: string; day: string; next: HabitState } | null>(null);
 
   // Adapt the home surface to the user's stage: teach newcomers, stay out of veterans' way.
@@ -1509,6 +1418,7 @@ const Habits: React.FC = () => {
   // stay as-of-today; only the completion pointer/checkmarks follow activeDay.
   const activeDay = rewindDay ?? today;
   const weekDays = getWeekDays();
+  const isSunday = new Date().getDay() === 0;
   const { refresh: refreshXP } = useXP();
   // XP bar intro: start at 0 on mount, then let the CSS width transition rise it
   // up to the real value (never animate down from a stale/full width on login).
@@ -1864,21 +1774,6 @@ const Habits: React.FC = () => {
 
   // Perfect week — gold ONLY lands on Sunday once all 7 days are logged.
   // (Mid-week "all non-future days done" would otherwise trip gold on Monday.)
-  const nonFutureDays = weekDays.filter(d => !d.isFuture);
-  const isSunday = new Date().getDay() === 0;
-  const isPerfectWeek = isSunday && nonFutureDays.length === 7 &&
-    nonFutureDays.every(d => ht[d.key]?.[MANDATORY_HABIT] === 'done');
-
-  // Trigger the flip animation the moment the perfect (Sunday) week is achieved
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    if (isPerfectWeek && !prevPerfectRef.current) {
-      setWeekCelebrating(true);
-      setTimeout(() => setWeekCelebrating(false), 1800);
-    }
-    prevPerfectRef.current = isPerfectWeek;
-  });
-
   if (!loaded) {
     return (
       <div className="app" style={pageTheme(HEALTH)}>
@@ -2205,9 +2100,7 @@ const Habits: React.FC = () => {
         )}
 
         {!customizeOpen && <>
-        {/* Date + login-streak ticks — top of the page, under the wordmark. The ticks
-            swipe back through previous weeks (WeekStrip); tapping a day rewinds the page
-            to it. Shown on every cadence (it's your daily check-in, not level chrome). */}
+        {/* Date — top of the page, under the wordmark. */}
         {(() => {
           const d = loggingNow();
           return (
@@ -2244,8 +2137,6 @@ const Habits: React.FC = () => {
             </span>
           </div>
         )}
-
-        <WeekStrip ht={ht} rewindDay={rewindDay} onPick={setRewindDay} perfectWeek={isPerfectWeek} celebrating={weekCelebrating} />
 
         {/* Rewind banner — the page is showing a past day. It sits directly under the
             ticks that changed the day, so the "Viewing …/Back to today" read lands
