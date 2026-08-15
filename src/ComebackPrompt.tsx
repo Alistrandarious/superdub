@@ -107,11 +107,16 @@ const ComebackPrompt: React.FC = () => {
       accent={GROWTH}
       eyebrow="Welcome back"
       title={restored != null ? 'Streak picked back up' : headline}
+      // When the re-plan card is up it already explains itself, and a paragraph
+      // above it just pushes the buttons off the screen. The headline carries it.
       subtitle={restored != null
-        ? `${restored} ${restored === 1 ? 'day' : 'days'} marked as skipped, so the run holds. Nothing else changed.`
-        : 'Nothing is lost and nothing is counted against you. Mark one thing today and the run starts again.'}
+        ? `${restored} ${restored === 1 ? 'day' : 'days'} marked as skipped, so the run holds.`
+        : replan ? undefined : 'Mark one thing today and the run starts again.'}
       cta={cta}
-      secondary={{ label: 'Show me where I stand', onClick: () => setReviewing(true) }}
+      // No secondary here. With a re-plan on offer this screen already stacks
+      // four buttons, and a fifth turned the welcome into a menu — exactly what
+      // the one-action rule above exists to prevent. The Return Review needs an
+      // entry point that is not competing with the re-plan.
       onDismiss={close}
       dismissLabel="Not now"
     >

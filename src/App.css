@@ -14649,14 +14649,21 @@ button.mini-hm-cell:not(:disabled)::after {
   gap: 3px;
   padding: 10px 8px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--fg-rgb), 0.05);
 }
 .plan-replan-fig-val {
   font-family: 'Space Mono', monospace;
-  font-size: 0.95rem;
+  /* A date ("4 Dec 2026") is far wider than a weight ("6.2 kg"), but the three
+     figures share the row equally and min-width:0 lets each box shrink under its
+     own text. With `white-space: nowrap` that spilled the date clean out of the
+     card at 375px and worse at 320px. Shrinking the font alone only moves the
+     width it breaks at, so the value is allowed to wrap: a date on two lines is
+     ordinary, a date sitting outside its box is not. The clamp keeps it on one
+     line at every width that can fit it. */
+  font-size: clamp(0.78rem, 3.2vw, 0.95rem);
   font-weight: 700;
-  color: #FF8A00;
-  white-space: nowrap;
+  color: var(--flame-ink);
+  overflow-wrap: anywhere;
 }
 .plan-replan-fig-unit { font-size: 0.66rem; opacity: 0.75; }
 .plan-replan-fig-key {
@@ -14664,7 +14671,7 @@ button.mini-hm-cell:not(:disabled)::after {
   font-size: 0.58rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-mute);
 }
 .plan-replan-note {
   margin: 0;
