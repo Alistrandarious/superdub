@@ -10,7 +10,7 @@ import WeeklyRecap from './WeeklyRecap';
 import CadenceTabs from './CadenceTabs';
 import { useUserStage } from './userStage';
 import SuperdubHeader from './SuperdubHeader';
-import LapseBanner, { lapsePending, useLapse, useSoftened } from './LapseBanner';
+import LapseBanner, { useLapse, useSoftened } from './LapseBanner';
 import { isSoftened } from './lapse';
 import { computeDayStreak, dayWasMarked, todayProgress } from './dayStreak';
 import HomeOnTrack from './HomeOnTrack';
@@ -19,10 +19,8 @@ import LevelHeroRing from './LevelHeroRing';
 import PinnedXpBar from './PinnedXpBar';
 import LevelCustomizer from './LevelCustomizer';
 import LevelLadder from './LevelLadder';
-import { eveningPending } from './EveningPrompt';
 import { weatherEnabled } from './promptPrefs';
 import { hoursForDay, type WeatherHour } from './weatherHours';
-import './HabitsPopup.css';
 import {
   CalendarIc, TrophyIc, WalkIc, BookIc, NoSmokeIc, MealIc, MoneyIc, HealthIc,
   SunIc, CloudSunIc, CloudIc, RainIc, SnowIc, StormIc, type IconProps,
@@ -109,8 +107,6 @@ const isInStandaloneMode = ('standalone' in window.navigator) && (window.navigat
 
 const INSTALL_XP_KEY = 'superdub.installXP';
 
-const OVERLAY_REFRESH_KEY = 'superdub.overlay.refresh';
-const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
 
 /* ── helpers ─────────────────────────────────────────────── */
 
@@ -1356,8 +1352,6 @@ const Habits: React.FC = () => {
   // swipe-up-from-the-bottom animation.
   const [featuredSwipeKey, setFeaturedSwipeKey] = useState(0);
   const dismissFeatured = () => { setFeaturedDismissed(true); localStorage.setItem('superdub.featured.dismissed', '1'); };
-  const [showDayOverlay, setShowDayOverlay] = useState(false);
-  const [overlayDay, setOverlayDay] = useState<string | null>(null); // null = today; else a DD/MM key
   const [rewindDay, setRewindDay] = useState<string | null>(null); // null = today; else rewind cards to this DD/MM
 
   // Week gold — purely derived: gold ONLY on Sunday when all 7 days are logged.
@@ -1403,15 +1397,6 @@ const Habits: React.FC = () => {
   const dismissInstall = () => animateOutInstall(() => localStorage.setItem(pwaDayKey, todayStr));
   const neverShowInstall = () => animateOutInstall(() => localStorage.setItem(pwaKey, 'dismissed'));
 
-  const openDayOverlay = (dayKey?: string) => {
-    setOverlayDay(dayKey ?? null); // no arg (weigh-in / auto-refresh) = today
-    localStorage.setItem(OVERLAY_REFRESH_KEY, String(Date.now()));
-    setShowDayOverlay(true);
-  };
-  const shouldAutoRefresh = () => {
-    const last = parseInt(localStorage.getItem(OVERLAY_REFRESH_KEY) || '0', 10);
-    return Date.now() - last >= SIX_HOURS_MS;
-  };
 
   const today = todayKey();
   // Day the habit cards are "rewound" to (tap a past day in the week strip). Stats
@@ -1528,21 +1513,8 @@ const Habits: React.FC = () => {
   useEffect(() => {
     // ponytail: suppressed prompts do not re-fire later in this session, they
     // return tomorrow. Deliberate: the first open back gets one screen, not four.
-    if (loaded && shouldAutoRefresh() && !eveningPending() && !lapsePending()) openDayOverlay();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loaded]);
-
-  // The day overlay opens once on load (above). It no longer RE-fires on every
-  // superdub:checkin-done — that stacked it on the weigh-in + coach and made it
-  // reappear the instant you dismissed it. Only a SKIPPED evening reflection
-  // still hands the stage over (evening-closed), so the one deferred show that
-  // was suppressed on load isn't lost.
-  useEffect(() => {
-    const deferred = () => { if (shouldAutoRefresh()) openDayOverlay(); };
-    window.addEventListener('superdub:evening-closed', deferred);
-    return () => window.removeEventListener('superdub:evening-closed', deferred);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Open the add-habit sheet when triggered from the shared cog menu
   useEffect(() => {
@@ -1603,7 +1575,6 @@ const Habits: React.FC = () => {
   // Fallback: check every 5 minutes if 6 hours have passed
   useEffect(() => {
     const id = setInterval(() => {
-      if (shouldAutoRefresh() && !eveningPending() && !lapsePending()) openDayOverlay();
     }, 5 * 60 * 1000);
     return () => clearInterval(id);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2235,85 +2206,6 @@ const Habits: React.FC = () => {
       <WeatherSheet weather={weather} open={weatherOpen} onClose={() => setWeatherOpen(false)} />
 
       {/* ── Habit day overlay, triggered by weigh-in or 6-hour refresh ── */}
-      {showDayOverlay && loaded && (() => {
-        const viewingDay = overlayDay ?? today;
-        const isTodayView = viewingDay === today;
-        const todayHabits = ht[viewingDay] ?? {};
-        // Daily check-in popup only covers daily habits (weekly/monthly/yearly are
-        // completed via their swipe cards in the cadence carousel).
-        const displayHabits = yourHabits.filter(h => (habitCadence[h] ?? 'daily') === 'daily');
-        const doneCount = displayHabits.filter(h => todayHabits[h] === 'done').length;
-        const total = displayHabits.length;
-        const allDone = total > 0 && doneCount === total;
-        const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
-        const now = loggingNow();
-        const hour = now.getHours();
-        const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-        const viewDate = isTodayView ? now : new Date(now.getFullYear(), parseInt(viewingDay.slice(3), 10) - 1, parseInt(viewingDay.slice(0, 2), 10));
-        const dayLabel = viewDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
-        return (
-          <div className={`hp-overlay${allDone ? ' all-done' : ''}`} onClick={() => setShowDayOverlay(false)}>
-            <div className="hp-glow" aria-hidden="true" />
-            <div className="hp-screen" onClick={e => e.stopPropagation()}>
-              <div className="hp-top">
-                <span className="hp-eyebrow">{dayLabel}</span>
-                <button className="hp-close" onClick={() => setShowDayOverlay(false)} aria-label="Close">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" /></svg>
-                </button>
-              </div>
-
-              <div className="hp-hero">
-                <div className="hp-greet">
-                  <h2 className="hp-greeting">{isTodayView ? (allDone ? 'All done' : greeting) : 'Your log'}</h2>
-                  <p className="hp-sub">{isTodayView ? (allDone ? 'Every habit closed today. Nice work.' : "Here's your habit progress for today.") : 'Tap a habit to backfill this day.'}</p>
-                </div>
-                <div className="hp-ring" aria-label={`${doneCount} of ${total} habits done`}>
-                  <svg viewBox="0 0 88 88" aria-hidden="true">
-                    <circle cx="44" cy="44" r="39" fill="none" stroke="var(--glass-border, #252532)" strokeWidth="6" />
-                    <circle className="hp-ring-arc" cx="44" cy="44" r="39" fill="none" strokeWidth="6" strokeLinecap="round"
-                      strokeDasharray="245" strokeDashoffset={245 * (1 - pct / 100)} transform="rotate(-90 44 44)" />
-                  </svg>
-                  <div className="hp-ring-c"><b>{doneCount}<small>/{total}</small></b><span>done</span></div>
-                </div>
-              </div>
-
-              {total === 0 ? (
-                <p className="hp-empty">No habits yet, add some below.</p>
-              ) : (
-                <div className="hp-rows">
-                  {displayHabits.map(h => {
-                    const state = todayHabits[h] ?? null;
-                    const done = state === 'done';
-                    return (
-                      <button
-                        key={h}
-                        type="button"
-                        className={`hp-row ${done ? 'done' : ''} ${state === 'failed' ? 'failed' : ''} ${state === 'na' ? 'na' : ''}`}
-                        onClick={() => handleToggleDay(h, viewingDay, cycleState(state))}
-                        aria-pressed={done}
-                      >
-                        <span className="hp-chk">
-                          {done
-                            ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6" /></svg>
-                            : state === 'failed'
-                              ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" /></svg>
-                              : <span className="hp-plus">{state === 'na' ? '–' : '+'}</span>}
-                        </span>
-                        <span className="hp-name">{h}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-
-              <div className="hp-foot">
-                {total > 0 && <p className="hp-msg">{allDone ? 'All habits done, perfect day.' : 'Tap to check off habits.'}</p>}
-                <button type="button" className="hp-dismiss" onClick={() => setShowDayOverlay(false)}>{allDone ? 'Keep it up' : 'Close'}</button>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
     </div>
   );
 };

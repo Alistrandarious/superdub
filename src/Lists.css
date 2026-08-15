@@ -1,7 +1,7 @@
 /* =====================================================================
    LISTS (/tasks) — To-Do · Shopping · Goals · Journal
    Lifted out of App.css so the page owns its own sheet, the way Coach.css
-   and HabitsPopup.css do. Every colour here is a token: the page ships in
+   does. Every colour here is a token: the page ships in
    both themes, and the old hardcoded greys went white-on-white in light
    mode. --theme / --theme-dim / --theme-glow are set per tab by Tasks.tsx.
    ===================================================================== */
