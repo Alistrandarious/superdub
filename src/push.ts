@@ -1,5 +1,18 @@
-// Client-side Web Push: permission, subscribe, and persist to the server.
+// Reminders. Two delivery mechanisms behind one door:
+//
+//   web    → Web Push (VAPID), scheduled server-side by runReminders.
+//   native → local notifications scheduled on the device.
+//
+// The native branch exists because Web Push does not work inside a Capacitor
+// WKWebView: 'PushManager' in window is false there, so pushSupported() returned
+// false and the whole reminders block was hidden. Every daily reminder in
+// PROMPTS.md was silently missing from the iOS build — for a habit tracker, the
+// one feature it cannot do without.
+import { Capacitor } from '@capacitor/core';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import { api } from './api';
+
+const isNativeApp = () => Capacitor.isNativePlatform();
 
 const ENABLED_KEY = 'superdub.push.enabled';
 const REMINDER_HOUR_KEY = 'superdub.push.reminderHour';
@@ -25,16 +38,19 @@ export function getWorkoutHour(): number | null {
 export async function setReminderHour(hour: number): Promise<void> {
   localStorage.setItem(REMINDER_HOUR_KEY, String(hour));
   try { await api.pushSetReminderTime(hour); } catch { /* will apply on next subscribe */ }
+  await syncLocalReminders();
 }
 
 export async function setEveningHour(hour: number): Promise<void> {
   localStorage.setItem(EVENING_HOUR_KEY, String(hour));
   try { await api.pushSetPromptTimes({ eveningHour: hour }); } catch { /* applies on next subscribe */ }
+  await syncLocalReminders();
 }
 
 export async function setWorkoutHour(hour: number | null): Promise<void> {
   localStorage.setItem(WORKOUT_HOUR_KEY, hour == null ? 'off' : String(hour));
   try { await api.pushSetPromptTimes({ workoutHour: hour }); } catch { /* applies on next subscribe */ }
+  await syncLocalReminders();
 }
 
 function urlBase64ToUint8Array(base64: string): Uint8Array {
@@ -47,13 +63,71 @@ function urlBase64ToUint8Array(base64: string): Uint8Array {
 }
 
 export function pushSupported(): boolean {
+  if (isNativeApp()) return true; // local notifications, not Web Push
   return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 }
 
 export function pushIsEnabled(): boolean {
+  if (isNativeApp()) return localStorage.getItem(ENABLED_KEY) === '1';
   return localStorage.getItem(ENABLED_KEY) === '1'
     && typeof Notification !== 'undefined'
     && Notification.permission === 'granted';
+}
+
+/** Ask the OS for permission to post notifications. Safe to call before an account exists. */
+export async function requestNotificationPermission(): Promise<boolean> {
+  if (isNativeApp()) {
+    try {
+      const res = await LocalNotifications.requestPermissions();
+      return res.display === 'granted';
+    } catch { return false; }
+  }
+  if (typeof Notification === 'undefined') return false;
+  try { return (await Notification.requestPermission()) === 'granted'; } catch { return false; }
+}
+
+// The three daily reminders, matching the hours already in the cog menu. Fixed ids
+// so rescheduling replaces rather than stacks.
+const DAILY = [
+  { id: 1, hour: getReminderHour, title: 'Morning check-in', body: 'Weigh in and set up your day.' },
+  { id: 2, hour: getEveningHour, title: 'Evening check-in', body: 'How did today go?' },
+  { id: 3, hour: getWorkoutHour, title: 'Training', body: 'Time to move.' },
+];
+
+/** Reschedule the device's daily reminders from the stored hours. Native only. */
+export async function syncLocalReminders(): Promise<void> {
+  if (!isNativeApp()) return;
+  const ids = DAILY.map(d => ({ id: d.id }));
+  try { await LocalNotifications.cancel({ notifications: ids }); } catch { /* none pending */ }
+  if (localStorage.getItem(ENABLED_KEY) !== '1') return;
+  const notifications = DAILY
+    .map(d => ({ d, hour: d.hour() }))
+    .filter((x): x is { d: typeof DAILY[number]; hour: number } => x.hour != null)
+    .map(({ d, hour }) => ({
+      id: d.id,
+      title: d.title,
+      body: d.body,
+      schedule: { on: { hour, minute: 0 }, allowWhileIdle: true },
+    }));
+  if (notifications.length) await LocalNotifications.schedule({ notifications });
+}
+
+/** Turn reminders on through whichever mechanism this platform actually has. */
+export async function enableReminders(): Promise<{ ok: boolean; reason?: string }> {
+  if (!isNativeApp()) return enablePush();
+  if (!(await requestNotificationPermission())) {
+    return { ok: false, reason: 'Notifications are blocked. Turn them on for Superdub in Settings.' };
+  }
+  localStorage.setItem(ENABLED_KEY, '1');
+  await syncLocalReminders();
+  return { ok: true };
+}
+
+/** Turn reminders off through whichever mechanism this platform actually has. */
+export async function disableReminders(): Promise<void> {
+  if (!isNativeApp()) return disablePush();
+  localStorage.removeItem(ENABLED_KEY);
+  await syncLocalReminders();
 }
 
 export async function enablePush(): Promise<{ ok: boolean; reason?: string }> {

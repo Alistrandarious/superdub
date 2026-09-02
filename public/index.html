@@ -48,7 +48,9 @@
       <style>@keyframes sdboot{to{transform:rotate(360deg)}}</style>
     </div>
     <script>
-      if ('serviceWorker' in navigator) {
+      // Web only: inside the native shell the assets are already local, and the
+      // registration just rejects unhandled.
+      if ('serviceWorker' in navigator && !(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())) {
         window.addEventListener('load', function() {
           navigator.serviceWorker.register('/sw.js');
         });

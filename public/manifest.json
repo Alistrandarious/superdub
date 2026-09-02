@@ -6,7 +6,7 @@
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0E0E14",
-  "theme_color": "#7C3AED",
+  "theme_color": "#0E0E14",
   "icons": [
     {
       "src": "/superdub-icon-192.png",

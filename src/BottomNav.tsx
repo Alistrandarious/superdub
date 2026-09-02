@@ -3,6 +3,13 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 const DUB_FRESH_KEY = 'superdub.dub.fresh';
 
+// Lists (To-Do · Shopping · Goals · Journal) is hidden in the native app. It is the
+// one surface that isn't habits or weight coaching, and no comparable tracker ships
+// a shopping list — it widened what Superdub looked like without deepening it.
+// The /tasks route stays registered, so nothing 404s and the web app is unchanged;
+// flip this to true to bring the tab back everywhere.
+const SHOW_LISTS = !(window as any).Capacitor?.isNativePlatform?.();
+
 const BottomNav: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -50,7 +57,7 @@ const BottomNav: React.FC = () => {
   const goTo = (path: string) => navigate(path);
 
   return (
-    <nav className="bottom-nav bottom-nav--five" style={{ ['--nav-glow' as any]: navGlow, ['--habits-c' as any]: habitsColor, ['--habits-c-glow' as any]: habitsColor + '73' }}>
+    <nav className={`bottom-nav ${SHOW_LISTS ? 'bottom-nav--five' : 'bottom-nav--four'}`} style={{ ['--nav-glow' as any]: navGlow, ['--habits-c' as any]: habitsColor, ['--habits-c-glow' as any]: habitsColor + '73' }}>
       {/* Progress */}
       <button className={`bottom-nav-item${isActive('/dashboard') ? ' active' : ''}`} onClick={() => goTo('/dashboard')} aria-label="Progress">
         <span className="bottom-nav-icon">
@@ -102,7 +109,8 @@ const BottomNav: React.FC = () => {
         <span className="bottom-nav-label">Global</span>
       </button>
 
-      {/* Lists */}
+      {/* Lists — web only, see SHOW_LISTS */}
+      {SHOW_LISTS && (
       <button className={`bottom-nav-item${isActive('/tasks') ? ' active' : ''}`} onClick={() => goTo('/tasks')} aria-label="Lists">
         <span className="bottom-nav-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -112,6 +120,7 @@ const BottomNav: React.FC = () => {
         </span>
         <span className="bottom-nav-label">Lists</span>
       </button>
+      )}
     </nav>
   );
 };

@@ -14,12 +14,18 @@ function currentMainBundle(): string | null {
  * Polls the deployed index.html and compares its main-bundle hash to the one
  * we're running. When they differ, a new version has shipped — we surface a
  * banner that does a cache-busting reload so the user always lands on latest.
+ *
+ * Web only. In a store-shipped binary the bundle comes from the app package and
+ * updates arrive through the App Store, so the poll can never find anything: it
+ * was a network request every five minutes, forever, plus a cache-clearing reload
+ * path with nothing to clear.
  */
 const UpdateBanner: React.FC = () => {
   const [stale, setStale] = useState(false);
   const running = useRef<string | null>(currentMainBundle());
 
   useEffect(() => {
+    if ((window as any).Capacitor?.isNativePlatform?.()) return;
     let active = true;
 
     const check = async () => {
