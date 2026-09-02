@@ -3886,11 +3886,44 @@ h1, h2, h3, h4, .sora {
   to   { opacity: 1; transform: scale(1); }
 }
 
+/* The two optional asks on the finish screen. Each is a full-width card that
+   states what it does before the OS dialog appears, and reads as chosen once
+   granted. Tall enough to clear the 44px touch-target minimum by a distance. */
+.onb-asks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin: 4px 0 2px;
+}
+.onb-ask {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  width: 100%;
+  min-height: 60px;
+  padding: 12px 14px;
+  text-align: left;
+  border-radius: var(--r-card);
+  border: 1px solid var(--line);
+  background: var(--surface-raised);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+.onb-ask:hover { border-color: var(--theme-dim); }
+.onb-ask--on {
+  border-color: var(--theme);
+  background: var(--theme-glow);
+}
+.onb-ask-title { font-size: 0.95rem; font-weight: 700; }
+.onb-ask-sub { font-size: 0.78rem; color: var(--text-dim); line-height: 1.35; }
+.onb-finish-look { width: 100%; text-align: left; margin-top: 6px; }
+
 @media (prefers-reduced-motion: reduce) {
   .onb-screen { animation: none; }
   .onb-finish-badge { animation: none; }
-  .onb-day-row.done .onb-day-ring { transform: none; }
-  .dub-coach-pet, .dub-coach-bubble { animation: none; }
 }
 
 .auth-step-title {
@@ -8706,6 +8739,9 @@ h1, h2, h3, h4, .sora {
 .bottom-nav--six .bottom-nav-icon { width: 20px; height: 20px; }
 .bottom-nav--six .bottom-nav-label { font-size: 0.54rem; letter-spacing: 0.02em; }
 /* Five uniform tabs — a touch roomier now that "Kit" is gone. */
+.bottom-nav--four .bottom-nav-item { padding: 8px 6px 6px; gap: 4px; }
+.bottom-nav--four .bottom-nav-icon { width: 24px; height: 24px; }
+.bottom-nav--four .bottom-nav-label { font-size: 0.64rem; letter-spacing: 0.03em; }
 .bottom-nav--five .bottom-nav-item { padding: 8px 3px 6px; gap: 3px; }
 .bottom-nav--five .bottom-nav-icon { width: 22px; height: 22px; }
 .bottom-nav--five .bottom-nav-label { font-size: 0.58rem; letter-spacing: 0.02em; }

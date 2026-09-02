@@ -1,14 +1,16 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { api, setToken, isNative } from './api';
-import { OCCUPATIONS, ETHNICITIES, GENDER_IDENTITIES, COUNTRIES, RELATIONSHIP_STATUSES, RELIGIONS } from './demographics';
 import GoogleAuthButton from './GoogleAuthButton';
-import OnboardingDaily from './OnboardingDaily';
 import OnboardingCustomize from './OnboardingCustomize';
-import DubCoach from './DubCoach';
-import { onboardingScreens, onbProgressPct, dubLine } from './onboarding';
+import { onboardingScreens, onbProgressPct, screenPrompt } from './onboarding';
+import { planTargetDate } from './planBootstrap';
+import { markSignupDay } from './promptPrefs';
+import { getLoggingDay } from './day';
+import { requestNotificationPermission, enableReminders } from './push';
+import { healthAvailable, requestStepPermission } from './health';
 import { ageFromDob, isUnderMinAge, MIN_AGE_YEARS } from './age';
 import HealthDisclaimer from './HealthDisclaimer';
-import { setAnalyticsConsent, capture } from './analytics';
+import { capture } from './analytics';
 import './App.css';
 import { GROWTH } from './theme';
 import { nickToWordmark, setBrandNick } from './brand';
@@ -19,8 +21,11 @@ interface AuthProps {
 
 type Mode = 'landing' | 'login' | 'signup' | 'forgot' | 'reset';
 
-const DEFAULT_HABITS = ['Walking', 'Praying', 'Duolingo'];
-const EXTRA_HABITS = ['Reading', 'Meditation', 'Gym', 'Running', 'Cold shower', 'Journaling', 'No sugar', 'Sleep by 11pm'];
+// Only Walking is pre-checked. 'Praying' and 'Duolingo' used to arrive ticked for
+// every user on earth — a religious practice and a third-party brand. Both are still
+// offered, neither is assumed.
+const DEFAULT_HABITS = ['Walking'];
+const EXTRA_HABITS = ['Praying', 'Duolingo', 'Reading', 'Meditation', 'Gym', 'Running', 'Cold shower', 'Journaling', 'No sugar', 'Sleep by 11pm'];
 
 export const JOB_OPTS = [
   { id: 'desk',     label: '🪑 Desk',      desc: 'Sitting most of the day' },
@@ -86,13 +91,6 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
   const [lossPerWeek, setLossPerWeek] = useState('0.5');
   const [gainPerWeek, setGainPerWeek] = useState('0.25');
   const [jobType, setJobType] = useState('desk');
-  // Optional demographic / job / religion fields (signup step 5)
-  const [occupation, setOccupation] = useState('');
-  const [ethnicity, setEthnicity] = useState('');
-  const [genderIdentity, setGenderIdentity] = useState('');
-  const [country, setCountry] = useState('');
-  const [relationshipStatus, setRelationshipStatus] = useState('');
-  const [religion, setReligion] = useState('');
   const [gymFreq, setGymFreq] = useState('3-4');
   const [walkFreq, setWalkFreq] = useState('moderate');
   const activityLevel = String(computeActivity(jobType, gymFreq, walkFreq));
@@ -159,7 +157,8 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
     setGoalWeight('');
   };
 
-  const maxDob = new Date(new Date().setFullYear(new Date().getFullYear() - 10)).toISOString().split('T')[0];
+  // Matches MIN_AGE_YEARS — the picker must not offer an age the gate rejects.
+  const maxDob = new Date(new Date().setFullYear(new Date().getFullYear() - MIN_AGE_YEARS)).toISOString().split('T')[0];
 
   const clearError = () => setError('');
 
@@ -222,11 +221,70 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
         setError(`You need to be at least ${MIN_AGE_YEARS} to use Superdub`);
         return;
       }
+      // Height and weight drive the calorie target and the whole weight plan. Blank
+      // used to pass silently and land the user on a flat 2000 kcal with no plan.
+      if (!heightCm) { setError('Please enter your height'); return; }
+      if (!weightKg) { setError('Please enter your current weight'); return; }
     }
     if (cur === 'habits') {
       if (habits.length === 0) { setError('Pick at least one habit.'); return; }
     }
     setScreenIdx(i => Math.min(i + 1, scr.length - 1));
+  };
+
+  // The two optional asks on the finish screen. Permission is requested here, with
+  // the reason on screen, instead of firing OS dialogs unannounced at the home
+  // screen. The account doesn't exist yet, so anything needing a token (the push
+  // subscription) is finished off after signup in applyAsks().
+  const [wantsReminders, setWantsReminders] = useState(false);
+  const [wantsSteps, setWantsSteps] = useState(false);
+  const [canAskSteps, setCanAskSteps] = useState(false);
+
+  useEffect(() => { healthAvailable().then(setCanAskSteps).catch(() => setCanAskSteps(false)); }, []);
+
+  const askReminders = async () => {
+    if (wantsReminders) { setWantsReminders(false); return; }
+    const granted = await requestNotificationPermission();
+    setWantsReminders(granted);
+    if (!granted) setError('Notifications are blocked for Superdub. You can turn them on later in Settings.');
+  };
+
+  const askSteps = async () => {
+    if (wantsSteps) { setWantsSteps(false); return; }
+    const granted = await requestStepPermission();
+    setWantsSteps(granted);
+  };
+
+  // Finish the wiring that needed an account: the push subscription is saved
+  // server-side against the new user.
+  const applyAsks = async () => {
+    if (!wantsReminders) return;
+    try { await enableReminders(); } catch { /* the cog menu can turn them on later */ }
+  };
+
+  // Turn the goal answers into a live plan, so the weigh-in prompt is on and /plan
+  // works from day one. Reuses the real endpoints rather than a second copy of the
+  // calorie/cycle maths: POST /plan/goal needs a logged weigh-in, so the day-0
+  // weight goes in first. Best-effort — a failure here just leaves the account
+  // exactly where it landed before, with no plan.
+  const bootstrapPlan = async () => {
+    try {
+      const current = parseFloat(weightKg);
+      const goal = parseFloat(goalWeight);
+      const perWeek = dietGoal === 'cut' ? parseFloat(lossPerWeek)
+                    : dietGoal === 'bulk' ? parseFloat(gainPerWeek) : 0;
+      await api.updateTrackerDay(getLoggingDay(), { weight: weightKg });
+      const targetDate = planTargetDate(current, goal, perWeek);
+      if (!targetDate) return; // maintain, or no goal weight — the weigh-in still counts
+      const plan = await api.createPlanGoal(goal, targetDate);
+      // planActive() reads this badge, and it gates the morning weigh-in prompt.
+      // Writing it here means the prompt is live on day one instead of waiting for
+      // the first visit to Progress.
+      localStorage.setItem('superdub.plan.badge', JSON.stringify({
+        active: true, calories: plan.initialCalories ?? null, onTrack: null,
+      }));
+      window.dispatchEvent(new Event('superdub:plan-badge-updated'));
+    } catch { /* no plan today; the user can still set one on /plan */ }
   };
 
   const handleSignup = async () => {
@@ -241,25 +299,25 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
         email, name, nickname: nick, dob, sex, heightCm, weightKg,
         goalWeight, lossPerWeek, gainPerWeek, activityLevel, dietGoal, habits,
         jobType, gymFreq, walkFreq,
-        occupation, ethnicity, genderIdentity, country, relationshipStatus, religion,
         // Google accounts have no password; the server uses the verified token instead.
         ...(googleToken ? { googleToken } : { password }),
       });
       setToken(result.token);
-      // Creating an account accepts the Privacy Policy (linked on the finish screen),
-      // which now discloses privacy-first analytics, so record consent here. Existing
-      // users who predate analytics get the one-time ConsentGate instead.
-      setAnalyticsConsent(true);
       capture('signup_completed'); // funnel top — no-ops until analytics is live
       // Persist cohort onboarding message so the dashboard can display it on first load
       if (result.cohort?.onboardingMessage) {
         localStorage.setItem('superdub:cohort-msg', result.cohort.onboardingMessage);
         localStorage.setItem('superdub:cohort-name', result.cohort.cohortName);
       }
+      markSignupDay(new Date().toISOString().slice(0, 10));
+      await bootstrapPlan();
+      await applyAsks();
       onAuth();
     } catch (err: any) {
       setError(err.message);
-      setScreenIdx(0); // back to the start so they can fix the account details
+      // Stay on the screen they're on. This used to jump back to screen 0, so
+      // "email already exists" cost the user the whole flow again — and on the
+      // Google path landed them on a screen with no account fields at all.
     } finally {
       setLoading(false);
     }
@@ -474,9 +532,9 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
           {/* Each screen keys its own mount so it fades in and Dub hops back in */}
           <div className="onb-screen" key={screen}>
 
-          {/* Dub hosts the flow — he asks each question, hopping side to side */}
-          {screen !== 'dub' && screen !== 'finish' && (
-            <DubCoach line={dubLine(screen, greetName)} side={idx % 2 === 0 ? 'left' : 'right'} />
+          {/* Each screen asks its own question in its heading */}
+          {screen !== 'finish' && (
+            <h2 className="auth-step-title">{screenPrompt(screen, greetName)}</h2>
           )}
 
           {/* Account */}
@@ -781,54 +839,41 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
             </>
           )}
 
-          {/* Your day — the daily window, on its own */}
-          {screen === 'day' && (
-            <>
-              <p className="auth-step-sub">A taste of your daily rhythm. Give one a tap.</p>
-              <OnboardingDaily habits={habits} nickname={greetName} />
-            </>
-          )}
-
-          {/* Meet Dub + make it yours */}
-          {screen === 'dub' && (
-            <>
-              <h2 className="auth-step-title">Meet Dub</h2>
-              <p className="auth-step-sub">Say hi, then make superdub yours.</p>
-              <OnboardingCustomize nickname={greetName} />
-            </>
-          )}
-
-          {/* A little about you (optional) */}
-          {screen === 'more' && (
-            <>
-              <p className="auth-step-sub">All optional, it helps us tailor superdub. You can edit or skip any of these.</p>
-              <div className="auth-form">
-                {([
-                  { label: 'Occupation', value: occupation, set: setOccupation, opts: OCCUPATIONS },
-                  { label: 'Country', value: country, set: setCountry, opts: COUNTRIES },
-                  { label: 'Ethnicity', value: ethnicity, set: setEthnicity, opts: ETHNICITIES },
-                  { label: 'Gender identity', value: genderIdentity, set: setGenderIdentity, opts: GENDER_IDENTITIES },
-                  { label: 'Relationship status', value: relationshipStatus, set: setRelationshipStatus, opts: RELATIONSHIP_STATUSES },
-                  { label: 'Religion', value: religion, set: setReligion, opts: RELIGIONS },
-                ] as const).map(f => (
-                  <div className="auth-field" key={f.label}>
-                    <label>{f.label}</label>
-                    <select value={f.value} onChange={e => f.set(e.target.value)}>
-                      <option value="">Select…</option>
-                      {f.opts.map(o => <option key={o} value={o}>{o}</option>)}
-                    </select>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-
-          {/* Finish — the reveal that it's running */}
+          {/* Finish — the reveal that it's running, your look, and the two asks */}
           {screen === 'finish' && (
             <div className="onb-finish">
               <div className="onb-finish-badge">super<span className="hb-brand-dub">{nickToWordmark(greetName)}</span></div>
               <h2 className="auth-step-title">You're all set{greetName ? `, ${greetName}` : ''}</h2>
-              <p className="auth-step-sub">Your day, your Dub, your colours, all ready. Let's meet your future self.</p>
+              <p className="auth-step-sub">Your habits and your plan are ready. Two things Superdub can do for you, if you want them.</p>
+
+              {/* Asked here, with a reason, instead of firing an OS dialog at the
+                  home screen before the user has seen anything. Both are optional
+                  and the app works without either. */}
+              <div className="onb-asks">
+                <button
+                  type="button"
+                  className={`onb-ask${wantsReminders ? ' onb-ask--on' : ''}`}
+                  onClick={askReminders}
+                >
+                  <span className="onb-ask-title">Remind me{wantsReminders ? ' ✓' : ''}</span>
+                  <span className="onb-ask-sub">A morning nudge and an evening check-in, at hours you choose.</span>
+                </button>
+                {canAskSteps && (
+                  <button
+                    type="button"
+                    className={`onb-ask${wantsSteps ? ' onb-ask--on' : ''}`}
+                    onClick={askSteps}
+                  >
+                    <span className="onb-ask-title">Count my steps{wantsSteps ? ' ✓' : ''}</span>
+                    <span className="onb-ask-sub">Reads your daily step count from Health, so you never log it by hand.</span>
+                  </button>
+                )}
+              </div>
+
+              <div className="onb-finish-look">
+                <p className="auth-step-sub">Make it yours. You can change all of this later.</p>
+                <OnboardingCustomize />
+              </div>
             </div>
           )}
 
@@ -838,14 +883,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
 
           <div className="auth-actions">
             {screen !== 'finish' ? (
-              screen === 'more' ? (
-                <>
-                  <button className="auth-btn-primary" onClick={advance}>Continue →</button>
-                  <button className="auth-btn-ghost" onClick={advance}>Skip for now</button>
-                </>
-              ) : (
-                <button className="auth-btn-primary" onClick={advance}>Continue →</button>
-              )
+              <button className="auth-btn-primary" onClick={advance}>Continue →</button>
             ) : (
               <button
                 className="auth-btn-primary"

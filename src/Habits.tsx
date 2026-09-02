@@ -28,6 +28,7 @@ import {
 import { pageTheme, HEALTH } from './theme';
 import { quitProgress, quitElapsed, toLocalDatetimeValue } from './quit';
 import { moveItem, applyGroupReorder } from './reorder';
+import CohortBanner from './CohortBanner';
 import HabitMatrix, { type IsoHistory } from './HabitMatrix';
 import { useTapHold, HOLD_SLOP_PX } from './useTapHold';
 import { weekMonday } from './weekRange';
@@ -1321,7 +1322,11 @@ const Habits: React.FC = () => {
   const [carryByYear, setCarryByYear] = useState<Record<string, Record<number, number>>>({});
   const [weather, setWeather] = useState<WeatherState | null>(null);
   const [weatherOpen, setWeatherOpen] = useState(false); // weather breakdown sheet
-  const [weatherOn, setWeatherOn] = useState(weatherEnabled); // menu toggle: show the chip at all
+  // menu toggle: show the chip at all. Off by default in the native app — see the
+  // geolocation effect below.
+  const [weatherOn, setWeatherOn] = useState(
+    () => weatherEnabled() && !(window as any).Capacitor?.isNativePlatform?.()
+  );
   // `stuck` = the cadence section has reached the top and its header is pinned, so
   // the XP bar + dots show as one glass capsule. One sticky element, no seam.
   const [stuck, setStuck] = useState(false);
@@ -1481,7 +1486,12 @@ const Habits: React.FC = () => {
   // "we couldn't load your habits".
   useEffect(() => { api.getEntitlement().then(e => setHabitLimit(e.habitLimit)).catch(() => {}); }, []);
 
+  // Location is only ever asked for once the user has actually turned the weather
+  // chip on. This used to run on every first home render, so a brand new account
+  // met an OS location dialog for a decorative chip before it had seen anything —
+  // and the privacy policy said we never ask for location at all.
   useEffect(() => {
+    if (!weatherOn) return;
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       async pos => {
@@ -1505,7 +1515,7 @@ const Habits: React.FC = () => {
       },
       () => {}
     );
-  }, []);
+  }, [weatherOn]);
 
   // Show habit overlay when habits are first loaded + 6-hour threshold has passed.
   // If the evening reflection is about to auto-show, wait our turn — it hands over
@@ -1526,7 +1536,7 @@ const Habits: React.FC = () => {
   // The weather toggle lives in the cog menu, which sits in our own header — pick the
   // new value up live so the chip goes without waiting for a remount.
   useEffect(() => {
-    const handler = () => setWeatherOn(weatherEnabled());
+    const handler = () => setWeatherOn(weatherEnabled() && !(window as any).Capacitor?.isNativePlatform?.());
     window.addEventListener('superdub:weather-toggled', handler);
     return () => window.removeEventListener('superdub:weather-toggled', handler);
   }, []);
@@ -1889,7 +1899,7 @@ const Habits: React.FC = () => {
               <h3 className="hb-sheet-title">You're at {habitLimit} habits</h3>
               <button className="hb-sheet-close" onClick={() => setAddOpen(false)} aria-label="Close">✕</button>
             </div>
-            <p className="hb-sheet-sub">That's what Superdub Free keeps at once. Archive one to make room, or Superdub Pro takes the ceiling off.</p>
+            <p className="hb-sheet-sub">That's how many Superdub keeps going at once, so each one gets your attention. Archive one to make room.</p>
             <p className="hb-sheet-hint">Nothing you've built goes anywhere. An archived habit keeps its whole history in the Graveyard, and you can bring it back any time.</p>
           </div>
         </div>
@@ -2164,6 +2174,8 @@ const Habits: React.FC = () => {
             coming back is not new and does not need the how-it-works line: the
             comeback strip at the top of the page already speaks to them, and two
             coaching lines about the same thing is one too many. */}
+        {stage === 'new' && <CohortBanner />}
+
         {(stage === 'new' || (dayStreak < 1 && !softened)) && (
           <p className="hb-week-coach">Tick a habit each day to grow your streak. Dub coaches you as you go.</p>
         )}

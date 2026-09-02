@@ -1,19 +1,20 @@
 import React, { useState } from 'react';
-import DubMascot, { getMascot, MASCOT_KEY, type MascotSpecies } from './DubMascot';
-import { getDubGender, DUB_GENDER_KEY, type DubGender } from './dubPronouns';
 import {
   RING_THEMES, getSelectedThemeId, SELECTED_THEME_KEY, type RingTheme,
   isUnlocked, unlockLabel, EARLY_ADOPTER_BEFORE, type UnlockCtx,
-  DUB_COLORS, DUB_COLOR_KEY, getDubColor,
   HABIT_COLORS, GLOW_COLORS, HABITS_COLOR_KEY, NAV_GLOW_KEY, type AccentColor,
   BACKGROUNDS, BACKGROUND_KEY, getBackground, type Background,
 } from './levels';
 
-// Screen 7 of onboarding — "Meet Dub, then make it yours." Dub greets the user in
-// person, then the full cosmetic shelves sit below him. Every picker writes the
-// SAME localStorage key + dispatches the SAME CustomEvent as LevelCustomizer, so
+// "Make it yours" — the cosmetic shelves on the finish screen. Every picker writes
+// the SAME localStorage key + dispatches the SAME CustomEvent as LevelCustomizer, so
 // choices made here (before the account exists) are already applied the moment the
 // app boots, and Profile shows them as equipped.
+//
+// The Dub mascot shelves (species, pronouns, Dub colour) were removed with the
+// mascot itself (retired app-wide in v2.447) — they dressed a companion no other
+// screen shows. What is left drives live surfaces: the XP ring, the two accents
+// and the background.
 //
 // ponytail: this deliberately does NOT reuse LevelCustomizer — that component
 // calls useXP() + api.getProfile/getFriends, which have no token pre-account. We
@@ -22,7 +23,6 @@ import {
 
 // New accounts created before the early-adopter cutoff genuinely qualify, so we
 // unlock those cosmetics here too — accurate, and a generous welcome.
-const CAT_UNLOCK_LEVEL = 2;
 const ONB_CTX: UnlockCtx = {
   level: 1,
   streak: 0,
@@ -42,33 +42,12 @@ const Eyebrow: React.FC<{ children: React.ReactNode; sub?: string }> = ({ childr
   </div>
 );
 
-const OnboardingCustomize: React.FC<{ nickname: string }> = ({ nickname }) => {
-  const [species, setSpecies] = useState<MascotSpecies>(getMascot);
-  const [dubGender, setDubGender] = useState<DubGender>(getDubGender);
-  const [dubColorId, setDubColorId] = useState(() => getDubColor().id);
+const OnboardingCustomize: React.FC = () => {
   const [themeId, setThemeId] = useState(getSelectedThemeId);
   const [habitsColor, setHabitsColor] = useState(() => localStorage.getItem(HABITS_COLOR_KEY) || '#FFB300');
   const [navGlow, setNavGlow] = useState(() => localStorage.getItem(NAV_GLOW_KEY) || '#2FD27E');
   const [bgId, setBgId] = useState(() => getBackground().id);
 
-  // Cat is the only teased companion worth showing at signup; wizard needs
-  // referrals (no friends yet), so it stays on Profile.
-  const catUnlocked = false; // level 1
-  const pickSpecies = (s: MascotSpecies) => {
-    if (s === 'cat' && !catUnlocked) return;
-    setSpecies(s);
-    localStorage.setItem(MASCOT_KEY, s);
-    window.dispatchEvent(new CustomEvent('superdub:mascot-changed'));
-  };
-  const pickGender = (g: DubGender) => {
-    setDubGender(g);
-    localStorage.setItem(DUB_GENDER_KEY, g);
-    window.dispatchEvent(new CustomEvent('superdub:mascot-changed'));
-  };
-  const pickDubColor = (id: string) => {
-    localStorage.setItem(DUB_COLOR_KEY, id); setDubColorId(id);
-    window.dispatchEvent(new CustomEvent('superdub:mascot-changed'));
-  };
   const equipTheme = (t: RingTheme, locked: boolean) => {
     if (locked) return;
     localStorage.setItem(SELECTED_THEME_KEY, t.id); setThemeId(t.id);
@@ -92,51 +71,6 @@ const OnboardingCustomize: React.FC<{ nickname: string }> = ({ nickname }) => {
 
   return (
     <div className="onb-dub">
-      {/* Dub greets the user in person, recolouring live as they pick */}
-      <div className="onb-dub-hero">
-        <div className="onb-dub-bubble">Hi {nickname || 'there'}, I'm Dub. Let's make this yours.</div>
-        <DubMascot size={132} mood="happy" species={species} colorId={dubColorId} />
-      </div>
-
-      <section className="asc-section">
-        <Eyebrow sub="who walks with you">COMPANION</Eyebrow>
-        <div className="companion-grid">
-          <button className={`companion-card${species === 'dog' ? ' active' : ''}`} onClick={() => pickSpecies('dog')}>
-            <span className="companion-pet"><DubMascot size={66} mood="happy" species="dog" colorId={dubColorId} /></span>
-            <span className="companion-name">Dub the dog{species === 'dog' ? ' ✓' : ''}</span>
-          </button>
-          <button className="companion-card locked" onClick={() => pickSpecies('cat')} disabled>
-            <span className="companion-pet">
-              <DubMascot size={66} mood="happy" species="cat" colorId={dubColorId} />
-              <span className="companion-lock"><LockIc size={14} /></span>
-            </span>
-            <span className="companion-name">Cat · LV{CAT_UNLOCK_LEVEL}</span>
-          </button>
-        </div>
-        <div className="dub-gender-row">
-          <span className="dub-gender-label">Dub's pronouns</span>
-          <div className="dub-gender-seg">
-            {([['he', 'He'], ['she', 'She'], ['they', 'They']] as [DubGender, string][]).map(([g, label]) => (
-              <button key={g} className={`dub-gender-pick${dubGender === g ? ' active' : ''}`} onClick={() => pickGender(g)}>{label}</button>
-            ))}
-          </div>
-        </div>
-        <div className="asc-shelf" style={{ marginTop: 10 }}>
-          {/* Every colour is free to pick — Dub's look is personalisation, not a prize. */}
-          {DUB_COLORS.map(dc => {
-            const active = dc.id === dubColorId;
-            return (
-              <button key={dc.id} className={`ringtheme-chip${active ? ' active' : ''}`} onClick={() => pickDubColor(dc.id)} title={dc.name}>
-                <span className="ringtheme-swatch" style={{ background: `linear-gradient(135deg, ${dc.bodyFrom}, ${dc.bodyTo})`, boxShadow: active ? `0 0 12px ${dc.accent}66` : undefined }}>
-                  {active && <span className="ringtheme-check">✓</span>}
-                </span>
-                <span className="ringtheme-name">{dc.name}</span>
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
       <section className="asc-section">
         <Eyebrow sub="your XP ring">RING</Eyebrow>
         <div className="asc-shelf">

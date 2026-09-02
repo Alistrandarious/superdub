@@ -29,7 +29,6 @@ import { useWeightUnit, formatWeightKg, kgToUnitValue, unitLabel, WeightUnit } f
 import WeightInput from './WeightInput';
 import CogMenu from './CogMenu';
 import { useBrandNick, setBrandNick } from './brand';
-import { useUserStage } from './userStage';
 import PatternsCard, { PatternDay } from './PatternsCard';
 // DubProgressSummary retired from the Today panel — the live verdict text now carries Dub's read.
 import YesterdayMatrix, { KPI_ACCENT } from './YesterdayMatrix';
@@ -39,7 +38,7 @@ import { CADENCE_ORDER, CADENCE_META, type Cadence } from './Habits';
 import HabitMatrix, { IsoHistory, isoOf } from './HabitMatrix';
 import { isSystemHabit, DAILY_LOG_HABITS, FULL_DAILY_LOG } from './systemHabits';
 import { scheduledDateInPeriod } from './habitSchedule';
-import { UsersIc, AppleIc, CalendarIc } from './icons';
+import { AppleIc, CalendarIc } from './icons';
 
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -383,14 +382,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     advisableSteps?: number | null;
     workoutCalories?: number | null;
   } | null>(null);
-
-  // Stage adapts the dashboard: cold-start cohort framing for newcomers, out of veterans' way.
-  const stage = useUserStage();
-
-  // Cohort onboarding banner — shown once after signup, dismissed permanently
-  const [cohortMsg] = useState<string | null>(() => localStorage.getItem('superdub:cohort-msg'));
-  const [cohortName] = useState<string | null>(() => localStorage.getItem('superdub:cohort-name'));
-  const [cohortDismissed, setCohortDismissed] = useState(() => !!localStorage.getItem('superdub:cohort-dismissed'));
 
   // Plan engine state
   const [goalSheetOpen, setGoalSheetOpen] = useState(false);
@@ -2035,24 +2026,6 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         adherenceLevel={verdict?.adherenceLevel ?? null}
         onLogSteps={() => window.dispatchEvent(new CustomEvent('superdub:show-step-entry', { detail: { date: yesterdayISO } }))}
       />
-
-      {/* ── Cohort onboarding banner (cold-start framing — newcomers only) ── */}
-      {stage === 'new' && cohortMsg && !cohortDismissed && (
-        <div className="cohort-banner">
-          <div className="cohort-banner-inner">
-            <div className="cohort-banner-header">
-              <span className="cohort-banner-icon"><UsersIc size={16} /></span>
-              <span className="cohort-banner-label">Expert Coach · Community Cohort</span>
-              <button className="cohort-banner-dismiss" onClick={() => {
-                setCohortDismissed(true);
-                localStorage.setItem('superdub:cohort-dismissed', '1');
-              }}>✕</button>
-            </div>
-            {cohortName && <div className="cohort-banner-name">{cohortName}</div>}
-            <p className="cohort-banner-msg">{cohortMsg}</p>
-          </div>
-        </div>
-      )}
 
       </div>{/* /Yesterday panel */}
       </>)}

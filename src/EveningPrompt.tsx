@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import { api } from './api';
-import { promptEnabled } from './promptPrefs';
+import { promptEnabled, isSignupDay } from './promptPrefs';
 import { getLoggingDay } from './day';
 import { EVENING_REFLECTION } from './systemHabits';
 import PromptShell from './PromptShell';
@@ -60,7 +60,7 @@ const EveningPrompt: React.FC = () => {
     const alreadyDone = () => localStorage.getItem(EVENING_KEY) === todayISO();
     let t: ReturnType<typeof setTimeout> | undefined;
     // lapsePending: the return screen gets the first open back to itself.
-    if (isEnabled() && !alreadyDone() && new Date().getHours() >= 18 && !lapsePending()) {
+    if (isEnabled() && !alreadyDone() && new Date().getHours() >= 18 && !lapsePending() && !isSignupDay(todayISO())) {
       t = setTimeout(open, 1500);
     }
     return () => { window.removeEventListener('superdub:show-evening', open); if (t) clearTimeout(t); };

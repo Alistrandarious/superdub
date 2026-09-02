@@ -34,3 +34,15 @@ export const weatherEnabled = (): boolean => localStorage.getItem(WEATHER_KEY) !
 
 export const setWeatherEnabled = (on: boolean): void =>
   localStorage.setItem(WEATHER_KEY, on ? 'true' : 'false');
+
+// The day the account was created, as YYYY-MM-DD (written at signup in Auth.tsx).
+// A brand new account has nothing to reflect on yet, so the prompts that open
+// themselves stay quiet for the rest of signup day: finishing onboarding at 8pm
+// used to drop the evening reflection over a home screen the user had never seen.
+// Only auto-open is suppressed — the menu and any explicit trigger still work.
+const SIGNUP_DAY_KEY = 'superdub.signupDay';
+
+export const markSignupDay = (iso: string): void => localStorage.setItem(SIGNUP_DAY_KEY, iso);
+
+export const isSignupDay = (todayISO: string): boolean =>
+  localStorage.getItem(SIGNUP_DAY_KEY) === todayISO;

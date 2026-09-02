@@ -119,12 +119,24 @@ router.post('/signup', async (req: Request, res: Response) => {
     );
     const userId = user.id;
 
+    // Cohort assignment — immediate, no calibration window needed. Pure, so it runs
+    // here and its step baseline is stored with the rest of the profile: the
+    // onboarding message promises this number, and step_target used to keep its
+    // 10000 default, so the app contradicted the message it had just shown.
+    const cohort = assignCohort({
+      age: Math.max(18, parseInt(age) || 25),
+      sex: sex === 'female' ? 'female' : 'male',
+      activityMultiplier: parseFloat(activityLevel) || 1.55,
+      goalType: (dietGoal === 'bulk' ? 'bulk' : dietGoal === 'maintain' ? 'maintain' : 'cut'),
+    });
+
     await client.query(
       `INSERT INTO profile (user_id, name, nickname, dob, age, sex, height_cm, weight_kg, activity, job_type, gym_freq, walk_freq,
-                            occupation, ethnicity, gender_identity, country, relationship_status, religion)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
+                            occupation, ethnicity, gender_identity, country, relationship_status, religion, step_target)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)`,
       [userId, name, nickname || null, dob || null, age, sex, heightCm, weightKg, activityLevel, jobType, gymFreq, walkFreq,
-       occupation || null, ethnicity || null, genderIdentity || null, country || null, relationshipStatus || null, religion || null]
+       occupation || null, ethnicity || null, genderIdentity || null, country || null, relationshipStatus || null, religion || null,
+       cohort.baselineSteps]
     );
 
     await client.query(
@@ -171,14 +183,6 @@ router.post('/signup', async (req: Request, res: Response) => {
     }
 
     await client.query('COMMIT');
-
-    // Cohort assignment — immediate, no calibration window needed
-    const cohort = assignCohort({
-      age: Math.max(18, parseInt(age) || 25),
-      sex: sex === 'female' ? 'female' : 'male',
-      activityMultiplier: parseFloat(activityLevel) || 1.55,
-      goalType: (dietGoal === 'bulk' ? 'bulk' : dietGoal === 'maintain' ? 'maintain' : 'cut'),
-    });
 
     // Fire-and-forget welcome email — don't block the signup response
     sendWelcomeEmail(signupEmail, name).catch(err =>

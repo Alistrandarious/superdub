@@ -2,8 +2,10 @@
 // purpose so onboarding.check.ts can assert the order + progress without React.
 //
 // The flow is one gentle thing per screen: create the account, say your name,
-// your body, your goal, your first habits, a look at your day, meeting Dub (with
-// customization woven in), a little optional colour about you, then you're running.
+// your body, your goal, your first habits, then you're running. Each screen asks
+// its own question in its heading — the flow used to be hosted by the Dub mascot,
+// which was retired from the app in v2.447, so new users no longer meet a
+// companion the rest of the app never shows them.
 
 export type OnbScreen =
   | 'account'  // email + password (or Google)
@@ -11,12 +13,9 @@ export type OnbScreen =
   | 'body'     // dob · sex · height · weight
   | 'goal'     // diet goal + activity + live calorie hint
   | 'habits'   // pick starting habits
-  | 'day'      // preview of the daily window on its own
-  | 'dub'      // meet Dub + make it yours (cosmetics)
-  | 'more'     // optional demographics (skippable)
-  | 'finish';  // you're all set → create account
+  | 'finish';  // your plan, your look, reminders → create account
 
-const ALL_SCREENS: OnbScreen[] = ['account', 'name', 'body', 'goal', 'habits', 'day', 'dub', 'more', 'finish'];
+const ALL_SCREENS: OnbScreen[] = ['account', 'name', 'body', 'goal', 'habits', 'finish'];
 
 // Google signups arrive with a verified account already, so the email/password
 // screen is dropped and the flow opens on 'name'.
@@ -30,18 +29,15 @@ export function onbProgressPct(index: number, total: number): number {
   return Math.round(((index + 1) / total) * 100);
 }
 
-// What Dub says on each screen — he hosts the whole flow, Duolingo-style, asking
-// each question from his speech bubble. `finish` is the silent reveal (no line).
-export function dubLine(screen: OnbScreen, name: string): string {
+// The question each screen asks, as its heading. `finish` titles itself from the
+// user's name in Auth.tsx, so it has no prompt here.
+export function screenPrompt(screen: OnbScreen, name: string): string {
   switch (screen) {
-    case 'account': return "Hi, I'm Dub! Let's get you set up.";
-    case 'name':    return 'First up, what should I call you?';
-    case 'body':    return name ? `Nice to meet you, ${name}! Tell me a bit about your body.` : 'Tell me a bit about your body.';
+    case 'account': return "Let's get you set up";
+    case 'name':    return 'What should we call you?';
+    case 'body':    return name ? `Nice to meet you, ${name}. Tell us about your body` : 'Tell us about your body';
     case 'goal':    return 'What are we working towards?';
-    case 'habits':  return 'Which habits should we start together?';
-    case 'day':     return 'This is your day. Try closing one!';
-    case 'more':    return 'A few optional bits, or skip them.';
-    case 'dub':     return 'Now, make me yours.';
+    case 'habits':  return 'Which habits should we start with?';
     case 'finish':  return '';
   }
 }

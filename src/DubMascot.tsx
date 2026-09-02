@@ -1,3 +1,9 @@
+// NOTE: nothing imports this today. Dub was retired from the app in v2.447 and
+// from onboarding in v2.492 — the mascot now greeted new users and then never
+// appeared again. The artwork is kept on purpose: bringing Dub back as a real,
+// persistent companion is a considered bet for after launch (it is what makes
+// Finch work), not something to re-derive from scratch. It is not bundled while
+// unimported, so it costs nothing to keep.
 import React from 'react';
 import { getDubColor, DUB_COLORS } from './levels';
 
