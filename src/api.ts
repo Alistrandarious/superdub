@@ -123,26 +123,6 @@ export interface WeightSettingsResponse {
   activityLevel?: string;
 }
 
-export interface DietTargetResponse {
-  calories: number;
-  protein: number;
-  carbs: number;
-  fats: number;
-}
-export interface DietSettingsResponse {
-  lockProtein: boolean;
-  lockCarbs: boolean;
-  lockFats: boolean;
-  calorieLock: boolean;
-  goal: string;
-}
-export interface DietPlanRow {
-  id: string;
-  label: string;
-  meals: unknown;
-  totals: unknown;
-}
-
 export interface SmartGoal {
   id: string;
   title: string;
@@ -519,20 +499,6 @@ export const api = {
   createGoal: (goal: object): Promise<{ ok: true }> => request('/goals', { method: 'POST', body: JSON.stringify(goal) }),
   updateGoal: (id: string, data: object): Promise<{ ok: true }> => request(`/goals/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteGoal: (id: string): Promise<{ ok: true }> => request(`/goals/${id}`, { method: 'DELETE' }),
-
-  // diet
-  getDietTarget: (): Promise<DietTargetResponse> => request('/diet/target'),
-  updateDietTarget: (data: object): Promise<{ ok: true }> =>
-    request('/diet/target', { method: 'PUT', body: JSON.stringify(data) }),
-  getDietSettings: (): Promise<DietSettingsResponse> => request('/diet/settings'),
-  updateDietSettings: (data: object): Promise<{ ok: true }> =>
-    request('/diet/settings', { method: 'PUT', body: JSON.stringify(data) }),
-  getDietPlans: (): Promise<DietPlanRow[]> => request('/diet/plans'),
-  createDietPlan: (plan: object): Promise<{ ok: true }> =>
-    request('/diet/plans', { method: 'POST', body: JSON.stringify(plan) }),
-  deleteDietPlan: (id: string): Promise<{ ok: true }> => request(`/diet/plans/${id}`, { method: 'DELETE' }),
-  renameDietPlan: (id: string, label: string): Promise<{ ok: true }> =>
-    request(`/diet/plans/${id}`, { method: 'PATCH', body: JSON.stringify({ label }) }),
 
   // weight settings
   getWeightSettings: (): Promise<WeightSettingsResponse> => request('/weight-settings'),

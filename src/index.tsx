@@ -16,6 +16,7 @@ import DayBanner from './DayBanner';
 import { Auth } from './Auth';
 import { isLoggedIn, clearToken, api } from './api';
 import { initStepSync } from './stepSync';
+import { syncLocalReminders } from './push';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { XPProvider } from './XPContext';
 import { LapseProvider } from './LapseBanner';
@@ -35,7 +36,6 @@ initAnalytics();
 // Habits (home) stays eager for instant first paint; everything else splits
 // into its own chunk so recharts etc. load only when the page is visited.
 const App = lazy(() => import('./App'));
-const Diet = lazy(() => import('./Diet'));
 const Tasks = lazy(() => import('./Tasks'));
 const Profile = lazy(() => import('./Profile'));
 const DubPage = lazy(() => import('./DubPage'));
@@ -46,7 +46,6 @@ const LevelPage = lazy(() => import('./LevelPage'));
 const ArchivedHabits = lazy(() => import('./ArchivedHabits'));
 const PlanPage = lazy(() => import('./PlanPage'));
 const CommunityPage = lazy(() => import('./CommunityPage'));
-const StagesPreview = lazy(() => import('./StagesPreview'));
 
 const NO_NAV_PATHS = ['/privacy'];
 
@@ -87,6 +86,9 @@ function AppRouter() {
     ping(); // immediate on app open / login
 
     initStepSync(); // native-only: pull phone steps on launch/resume (no-op on web)
+    // Native reminders live on the device, so a reinstall or an OS-cleared schedule
+    // needs them re-armed. No-op on web, where the server sends them.
+    syncLocalReminders().catch(() => {});
 
     const onVisible = () => {
       if (document.visibilityState === 'visible') ping();
@@ -165,7 +167,6 @@ function AppRouter() {
       <Routes>
         <Route path="/" element={<Habits />} />
         <Route path="/dashboard" element={<App onLogout={handleLogout} />} />
-        <Route path="/diet" element={<Diet />} />
         <Route path="/tasks" element={<Tasks />} />
         <Route path="/profile" element={<Profile onLogout={handleLogout} />} />
         <Route path="/dub" element={<DubPage />} />
@@ -175,7 +176,6 @@ function AppRouter() {
         <Route path="/archived" element={<ArchivedHabits />} />
         <Route path="/plan" element={<PlanPage />} />
         <Route path="/community" element={<CommunityPage />} />
-        <Route path="/stages" element={<StagesPreview />} />
       </Routes>
       </Suspense>
       </main>
