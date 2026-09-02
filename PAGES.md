@@ -9,12 +9,9 @@
 | Route | Component | Role | Nav | Accent |
 |---|---|---|---|---|
 | `/` | `Habits.tsx` | **Habits** (home) — habit cards (level left · name centred · streak right, over a `HabitMatrix` of the habit's whole history; tap to complete, hold for the cog tray of Favourite · Remind · Archive · More; drag-to-reorder via `ReorderableList`/`reorder.ts`), week strip, streaks; cadence **tabs** **Quit** · Daily · Weekly · Monthly · Yearly, a visible segmented control with per-cadence counts (`CadenceTabs.tsx`, replaced the swipe carousel; Quit leftmost — grey abstinence timers, `QuitCard` + `quit.ts`; opens on Daily each day). The `HabitMatrix` runs on ONE shared time axis for every habit with a month-label strip, so cards stack and compare column for column | Habits | HEALTH green |
-| `/dashboard` | `App.tsx` | **Progress** — Today = your Plan (`PlanGauge` semicircle + `WeightSparkline` weekly chart + step tile, folded in from `/diet`), Yesterday's Verdict, weight trend, safe-zone, sleep, chart carousel | Progress | GROWTH blue |
+| `/dashboard` | `App.tsx` | **Progress** — Today = your Plan (`PlanGauge` semicircle + `WeightSparkline` weekly chart + step tile, folded in from the retired `/diet`), Yesterday's Verdict, weight trend, safe-zone, sleep, chart carousel | Progress | GROWTH blue |
 | `/community` | `CommunityPage.tsx` | **Global & Friends** — shared Global habit (deed toggle) + Friends (coming soon) | Global | GOLD |
-| `/diet` | `Diet.tsx` | Plan cards — weight-journey gauge (`PlanGauge`), Weight This Week (`WeightSparkline`), adaptive plan, activity targets, Smart Adjust. Gauge + weekly chart now shared with Progress→Today; **off the nav**, reachable via cog | — | GROWTH blue |
 | `/plan` | `PlanPage.tsx` | Weight-plan setup / adaptive plan detail | — | GROWTH blue |
-| `/food-log` | `FoodLog.tsx` | Daily food / calorie logging | — | HEALTH green |
-| `/meal-plans` | `MealPlans.tsx` | Meal plan browsing / assignment | — | HEALTH green |
 | `/tasks` | `Tasks.tsx` | **Lists** — To-Do · Shopping · Goals (`GoalsPanel`) · **Journal** (`JournalPanel`: free text + mood 1–5, feeds `dubInsights`) | Lists | — |
 | `/dub` | `DubPage.tsx` | **Dub** — coach home: check-in button (fires the Coach report), live read, and on-device data insights (`dubInsights`) | Dub | GROWTH blue |
 | `/level` | `LevelPage.tsx` | **The Ascension** — level ladder, badges, habit record (cosmetics moved to Profile) | — | GOLD / VIOLET |
@@ -26,13 +23,25 @@
 
 ## Onboarding (unauthed)
 `Auth.tsx` signup is a **soft walkthrough**, not a form: an ordered screen list
-(`onboarding.ts` — account · name · body · goal · habits · **day** · **dub** · more ·
-finish; Google drops `account`). Screen 6 (`OnboardingDaily.tsx`) previews the daily
-window from the chosen habits; screen 7 (`OnboardingCustomize.tsx`) is "meet Dub +
-make it yours" — it reuses the `levels.ts` cosmetic shelves + `DubMascot` with a fixed
-level-1 unlock context (locks shown as teasers) and writes the **same** localStorage
-keys + CustomEvents as `LevelCustomizer`, so picks apply the moment the app boots.
-Progress + screen order are pure and covered by `onboarding.check.ts`.
+(`onboarding.ts` — account · name · body · goal · habits · finish; Google drops
+`account`). Six screens as of v2.492, down from nine: the `day` preview and the
+`more` demographics screen are gone (Profile already collects demographics), and
+the Dub mascot no longer hosts the flow — each screen asks its own question in its
+heading (`screenPrompt`).
+
+`finish` carries three things: the "Make it yours" cosmetic shelves
+(`OnboardingCustomize.tsx` — `levels.ts` shelves at a fixed level-1 unlock context,
+writing the **same** localStorage keys + CustomEvents as `LevelCustomizer`, so picks
+apply the moment the app boots), and two **primed permission asks** (reminders,
+automatic steps) that replace the OS dialogs that used to fire unannounced on the
+first home render.
+
+On submit, signup logs the day-0 weigh-in and opens the Adaptive Weight Plan through
+the real endpoints (`planBootstrap.ts` → `PATCH /tracker` → `POST /plan/goal`), so the
+goal answers produce a live plan and the morning weigh-in prompt is on from day one.
+
+Progress + screen order are pure and covered by `onboarding.check.ts`; the plan
+bootstrap by `planBootstrap.check.ts`.
 
 ## Global overlays (mount above the router)
 
@@ -49,8 +58,8 @@ Progress + screen order are pure and covered by `onboarding.check.ts`.
 | `UpdateBanner.tsx` | New-version / What's-New prompt (see `BUILD_TAG` in `version.ts`) |
 
 ## Notable shared components
-- `BottomNav.tsx` — 6-item uniform fixed nav (Habits · Progress · Dub · Global · Lists · Kit); no raised centre button. Profile left the nav (now cog-only); Dub took its slot. Habits icon tints with the habits-colour cosmetic; active tint follows the nav-glow cosmetic.
-- `LevelCustomizer.tsx` — the level hero + all cosmetic/companion shelves (ring themes, Dub species/colour, **Dub pronouns** via `dubPronouns.ts`, accents, background); rendered on Profile.
+- `BottomNav.tsx` — 5 items on web (Progress · Coach · **Habits** · Global · Lists), with Habits as a raised centre circle. **4 in the native app**: Lists is hidden behind the `SHOW_LISTS` const, and the `/tasks` route stays registered. Profile left the nav (now cog-only). Habits icon tints with the habits-colour cosmetic; active tint follows the nav-glow cosmetic.
+- `LevelCustomizer.tsx` — the level hero + all cosmetic/companion shelves (ring themes, Dub species/colour, **Dub pronouns** via `dubPronouns.ts`, accents, background); rendered on Profile. Onboarding's copy of these shelves is mascot-free (ring, accents, background only) — Dub was retired from the app in v2.447 and from onboarding in v2.492.
 - `CogMenu.tsx` — unified per-page cog menu (settings, navigation, quick-log).
 - `LevelRing.tsx` / ring themes — XP ring, incl. the Liquid ring cosmetic.
 - `DubMascot.tsx` — the coach avatar (dog/cat).
@@ -72,10 +81,12 @@ Progress + screen order are pure and covered by `onboarding.check.ts`.
   Calories) that light gold as each is closed; sits under the ring on `/level`.
 
 ## Push reminders
-`CogMenu` exposes three per-user daily push times (morning weigh-in, evening
-nutrition, optional post-workout). The server scheduler (`server/index.ts`
-`runReminders`, gated by pure `server/reminderSchedule.ts`) fires each once/day,
-skipping loops already closed. Taps deep-link via `?prompt=weight|exercise` (see
-`AppRouter`) or straight to `/food-log`.
+`CogMenu` exposes three per-user daily reminder times (morning weigh-in, evening
+reflection, optional post-workout). Two delivery paths behind one door (`push.ts`):
+on **web** the server scheduler (`server/index.ts` `runReminders`, gated by pure
+`server/reminderSchedule.ts`) fires each once/day, skipping loops already closed;
+on **native** the same three hours are scheduled as local notifications on the
+device, re-armed on boot. Web taps deep-link via `?prompt=weight|exercise` (see
+`AppRouter`).
 
 See also: [APP_OVERVIEW.md](APP_OVERVIEW.md) · [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md)

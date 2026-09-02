@@ -33,9 +33,11 @@ Superdub is a **habit + weight + nutrition tracker** built around a single loop:
   (calorie target · step goal · habit count), then a "Yesterday's Verdict" hero
   (estimated intake vs target), weight trend (EMA + regression), safe-zone corridor,
   sleep chart, and a swipeable chart carousel. Calories-first — macros were removed.
-- **Plan / Diet** (`/diet`, `/plan`) — calorie target, training burn, activity
-  targets, Smart Adjust. Being folded into Progress; **off the bottom nav** (reached
-  via the cog → Adaptive Weight Plan). **Food Log** (`/food-log`) and **Meal Plans**.
+- **Plan** (`/plan`) — calorie target, training burn, activity targets, Smart
+  Adjust. **Off the bottom nav**, reached via the cog → Adaptive Weight Plan. The
+  plan is opened at signup from the onboarding goal answers (`planBootstrap.ts`).
+  `/diet`, Food Log and Meal Plans were removed (v2.492 and earlier); Progress
+  carries what survived.
 - All formulas are documented in [CALCULATIONS.md](CALCULATIONS.md) and mirrored
   live in the in-app **The Maths** page (`/maths`).
 
@@ -54,9 +56,16 @@ Superdub is a **habit + weight + nutrition tracker** built around a single loop:
   layer is built** (`FriendsPanel.tsx` + `server/routes/friends.ts`, rendered inside
   `CommunityPage`): add friends, see their streaks, nudge them, share habits.
 
-### 4. Dub — the coach
-- A small robotic Yorkie (cat at L2, wizard at 3 referred friends) and the app's
-  USP carrier. **Talking to Dub opens a chat** (`DubChat.tsx`, fires after each
+### 4. Coach (`/dub`)
+> **The Dub mascot is retired.** He was pulled from the app in v2.447 (`DubRoom.tsx`
+> and `DubProgressSummary.tsx` deleted, mascot removed from the customizer) and from
+> onboarding in v2.492, where he was the last thing still showing him: new users met
+> a companion the rest of the app never mentions again. `DubMascot.tsx` is kept,
+> unimported, because bringing him back as a real persistent companion is a
+> post-launch decision, not a deleted one. **The coaching below is all live** — it is
+> the mascot, his room and his cosmetics that are gone, not the coach.
+
+- The coach surface and the app's USP carrier. **Talking to the coach opens a chat** (`DubChat.tsx`, fires after each
   weigh-in and from every "Talk to Dub" button): his coach read arrives as bubbles,
   then tappable questions answered deterministically from the user's own data
   (`src/dubQuestions.ts` — pace + ETA, why-is-weight-up with the water/real-tissue
@@ -64,8 +73,7 @@ Superdub is a **habit + weight + nutrition tracker** built around a single loop:
   questions generated from spotted patterns). **Daily briefs** (`src/dubBrief.ts`):
   a morning brief / evening debrief / midday read composed sentence-by-sentence
   from available data, shown as a speech-bubble card on `/dub` and as a chat chip.
-  **His room is live** (`DubRoom.tsx` + `dubDayState`): mood, floor glow, a
-  tappable thought bubble, and sparkles on a clean sweep. Per-habit **data
+  Per-habit **data
   insights** (`src/dubInsights.ts`) — which weekday a habit slips, step/mood/weight
   links — feed both the page and the chat. All of it is on-device and rule-based
   (`coach.ts` `weekPace` is the single pace source); voice rules are enforced by

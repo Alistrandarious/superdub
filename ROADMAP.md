@@ -76,6 +76,21 @@ deterministic conversation over the user's own numbers, present morning and nigh
 | E5.2 | Morning brief + evening debrief: pure composer (dubBrief.ts), brief card under the room, "!" badge covers it, brief chip in the chat | src/dubBrief.ts, DubPage.tsx, DubChat.tsx, App.css, dubBrief.check.ts | M | sonnet | <12h morning, ≥18h evening, else day; missing data drops sentences; zero new fetches | [x] done v2.418 2026-07-14 |
 | E5.3 | Live room: dubDayState mapping drives mascot mood, a speech-bubble thought, and a sparkle celebrate state (no new mascot pose) | src/dubBrief.ts, DubRoom.tsx, DubPage.tsx, App.css | S/M | fable | Mood follows the mapping; clean sweep sparkles; bubble tappable to chat; reduced-motion safe | [x] done v2.419 2026-07-14 |
 
+## Epic 6 — App Store release
+
+Opened v2.492 alongside [APP_STORE_SUBMISSION.md](APP_STORE_SUBMISSION.md), which is
+the runbook. These are the code items the release surfaced but did not need.
+
+| ID | Task | Files | Size | Tier | Acceptance | Status |
+|---|---|---|---|---|---|---|
+| E6.1 | Support URL for the App Store listing (a page with a contact address; App Store Connect requires it) | server/, webroot | S | sonnet | A public URL that loads and gives a way to reach a human | [ ] blocks submission |
+| E6.2 | Seeded demo account for App Review: weeks of habits, weigh-ins and steps, so a reviewer sees a real app in 90 seconds instead of an empty one | server/scripts | S | sonnet | Named account whose credentials go in the review notes | [ ] blocks submission |
+| E6.3 | Google web users cannot sign in on iOS: no password, and `bcrypt.compare(pw, null)` throws a 500 instead of a clear message. Forgot-password does work but nothing signposts it | server/routes/auth.ts, src/Auth.tsx | S | fable | Wrong-provider login returns a clear message naming the reset path; no 500 | [ ] |
+| E6.4 | Offline habit ticks are lost silently: optimistic UI, `.catch(() => {})`, no write queue, and the SW never caches /api/. The most-repeated action in the app | src/Habits.tsx, api.ts, public/sw.js | M | fable | A tick made offline either syncs on reconnect or says it did not land | [ ] |
+| E6.5 | `pushIsEnabled()` on native reports ON from localStorage alone, so a user who revokes notifications in iOS Settings sees a toggle that lies | src/push.ts, CogMenu.tsx | S | sonnet | Toggle reflects the real OS permission | [ ] |
+| E6.6 | Doc reconciliation: SUPERDUB_SPEC.md (88KB) specs a localStorage-only 4-page app with macros and is called authoritative by DOCS.md; UPDATE_ARTICLES.md instructs writing into files deleted in 923fa8e | SUPERDUB_SPEC.md, DOCS.md, UPDATE_ARTICLES.md | M | sonnet | No doc claims a component or file that does not exist | [ ] |
+| E6.7 | Bring Dub back as a real persistent companion, or delete `DubMascot.tsx`. He is currently unimported and kept on purpose (see the file header). The pet loop is what makes Finch work; a half-present mascot is worse than either end | src/DubMascot.tsx, DubPage.tsx | L | fable | Dub is either present across the app or gone from the repo | [ ] post-launch decision |
+
 ## Icebox
 
 Unprioritized ideas — promote to an epic with an ID when ready.
