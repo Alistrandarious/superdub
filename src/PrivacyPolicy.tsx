@@ -34,13 +34,14 @@ const PrivacyPolicy: React.FC = () => {
               <li><strong style={{ color: 'var(--text)' }}>Account data:</strong> email address, hashed password</li>
               <li><strong style={{ color: 'var(--text)' }}>Profile data:</strong> first name, last name, date of birth, sex, height, weight</li>
               <li><strong style={{ color: 'var(--text)' }}>Optional background data:</strong> occupation, country, ethnicity, gender identity, relationship status, and religion. These are entirely optional, you may leave any of them blank or set them to "Prefer not to say", and are used only to understand our user base and tailor the experience. <strong style={{ color: 'var(--text)' }}>Ethnicity and religion are special category data</strong> (see Section 3).</li>
-              <li><strong style={{ color: 'var(--text)' }}>Health & activity data:</strong> daily weight logs, calorie and macro entries, step counts, habit completions, and optional energy / mood check-ins</li>
+              <li><strong style={{ color: 'var(--text)' }}>Health & activity data:</strong> daily weight logs, calorie estimates, step counts, habit completions, and optional energy / mood check-ins</li>
               <li><strong style={{ color: 'var(--text)' }}>Goal data:</strong> goal weight, loss targets, activity level, calorie targets</li>
-              <li><strong style={{ color: 'var(--text)' }}>Meal plans:</strong> any meal plans you create within the app</li>
               <li><strong style={{ color: 'var(--text)' }}>Tasks:</strong> to-do items you add</li>
               <li><strong style={{ color: 'var(--text)' }}>Push notification data:</strong> if you enable notifications, we store your browser's push subscription (a device-specific endpoint), your time-zone offset, and your chosen reminder time, solely to send the reminders you requested. You can disable this at any time, which deletes the subscription.</li>
             </ul>
-            <p style={{ marginTop: 12 }}>Your country is <strong style={{ color: 'var(--text)' }}>self-reported</strong>, we do not track your location, GPS, IP-based geolocation, or browsing history. Aside from the push subscription described above (only if you opt in), we do not collect device identifiers or any data beyond what you directly enter.</p>
+            <p style={{ marginTop: 12 }}>Your country is <strong style={{ color: 'var(--text)' }}>self-reported</strong>. We do not track your location in the background, and we do not use IP-based geolocation or browsing history.</p>
+            <p style={{ marginTop: 12 }}><strong style={{ color: 'var(--text)' }}>The weather chip is the one exception, and only if you turn it on.</strong> When enabled, your browser asks your permission and your approximate coordinates are sent directly to <strong style={{ color: 'var(--text)' }}>open-meteo.com</strong> (the forecast) and <strong style={{ color: 'var(--text)' }}>nominatim.openstreetmap.org</strong> (the place name). Those coordinates are never sent to us, and we never store them. The chip is off by default in the mobile app, and you can turn it off in the menu at any time.</p>
+            <p style={{ marginTop: 12 }}>Aside from the push subscription described above (only if you opt in), we do not collect device identifiers or any data beyond what you directly enter.</p>
           </Section>
 
           <Section title="3. Legal Basis for Processing">
@@ -56,7 +57,7 @@ const PrivacyPolicy: React.FC = () => {
           <Section title="4. How We Use Your Data">
             <ul style={{ paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 6 }}>
               <li>To provide and operate the Superdub service</li>
-              <li>To calculate personalised calorie and macro targets</li>
+              <li>To calculate personalised calorie and activity targets</li>
               <li>To display your progress charts and history</li>
               <li>To understand our user base and tailor the experience (using optional background data)</li>
               <li>To send the push reminders you opt into (e.g. your daily weigh-in nudge)</li>
