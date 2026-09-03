@@ -22,6 +22,7 @@ import lapseRoutes, { daysSinceLastLog } from './routes/lapse';
 import entitlementRoutes from './routes/entitlement';
 import { sendPush, pushEnabled } from './services/push';
 import { pushesAllowed, reminderDue, scheduleMatchesToday } from './reminderSchedule';
+import { streakAtRisk } from './streakRisk';
 import { pool } from './db';
 
 dotenv.config();
@@ -373,6 +374,8 @@ const migrations = [
   `ALTER TABLE profile ADD COLUMN IF NOT EXISTS last_streak_restore DATE`,
   // Local date of the last comeback push, so a lapse nudges once and then stops.
   `ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS last_lapse_push DATE`,
+  // The evening "your streak ends at midnight" push: once a local day.
+  `ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS last_streak_push DATE`,
   // ── Entitlement (server-side plan state) ───────────────────────────────────
   // What billing granted: 'free' | 'pro'. Only the server writes it. The trial
   // and the early-adopter grant need no columns — both derive from created_at
@@ -413,7 +416,7 @@ async function runReminders() {
     const { rows } = await pool.query(
       `SELECT ps.id, ps.user_id, ps.subscription, ps.tz_offset, ps.reminder_hour,
               ps.nutrition_hour, ps.workout_hour, ps.last_reminded, ps.last_nutrition,
-              ps.last_workout, ps.last_lapse_push, u.last_active_at
+              ps.last_workout, ps.last_lapse_push, ps.last_streak_push, u.last_active_at
          FROM push_subscriptions ps
          LEFT JOIN users u ON u.id = ps.user_id`
     );
@@ -481,6 +484,25 @@ async function runReminders() {
           if (!ok) { await prune(r.id); continue; }
         }
         await stamp('last_workout', r.id, localDate);
+      }
+
+      // 3a. Streak at risk. An hour after the evening reflection, if there is a
+      // run to lose and today has not yet earned its place in it, one push that
+      // names the number and exactly what saves it. Nothing to lose, no push:
+      // this is the one notification that only ever fires when it is true.
+      const streakHour = Math.min(eveningHour + 1, 23);
+      if (dailyOk && reminderDue(streakHour, hour, r.last_streak_push, localDate)) {
+        const risk = await streakAtRisk(r.user_id, local).catch(() => null);
+        if (risk) {
+          const ok = await sendPush(r.subscription, {
+            title: `superdub 🔥 ${risk.streak} day streak`,
+            body: `It ends at midnight. ${risk.needed} more habit${risk.needed === 1 ? ' keeps' : 's keep'} it.`,
+            url: '/',
+            tag: 'streak-reminder',
+          });
+          if (!ok) { await prune(r.id); continue; }
+        }
+        await stamp('last_streak_push', r.id, localDate);
       }
 
       // 3b. The comeback nudge — the one push a lapse gets. Fires at their morning

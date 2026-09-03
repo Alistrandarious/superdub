@@ -99,3 +99,20 @@ export function todayProgress(input: DayStreakInput): { done: number; due: numbe
   const target = Math.ceil(due * STREAK_THRESHOLD);
   return { done, due, needed: Math.max(0, target - done), kept: verdict === 'kept' };
 }
+
+// ── Milestones ───────────────────────────────────────────────────────────────
+// The day streak's landmarks. Crossing one earns a full-screen moment
+// (StreakMilestone.tsx) and the hero shows how far the next one is, so there is
+// always a near goal on the page, not just a number that grows by one.
+// Gold ring + gold accents already unlock at 7 (levels.ts); the rest are pride.
+export const STREAK_MILESTONES = [3, 7, 14, 21, 30, 50, 75, 100, 150, 200, 365];
+
+/** Where the streak sits between landmarks: the last one passed (0 before the
+ *  first) and the next one ahead (null past the last). */
+export function milestoneProgress(streak: number): { prev: number; next: number | null } {
+  let prev = 0;
+  for (const m of STREAK_MILESTONES) {
+    if (streak >= m) prev = m; else return { prev, next: m };
+  }
+  return { prev, next: null };
+}

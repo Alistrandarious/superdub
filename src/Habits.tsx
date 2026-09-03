@@ -12,7 +12,7 @@ import { useUserStage } from './userStage';
 import SuperdubHeader from './SuperdubHeader';
 import LapseBanner, { useLapse, useSoftened } from './LapseBanner';
 import { isSoftened } from './lapse';
-import { computeDayStreak, dayWasMarked, todayProgress } from './dayStreak';
+import { computeDayStreak, dayWasMarked, todayProgress, milestoneProgress } from './dayStreak';
 import HomeOnTrack from './HomeOnTrack';
 import AnimatedFlame from './AnimatedFlame';
 import LevelHeroRing from './LevelHeroRing';
@@ -1597,6 +1597,26 @@ const Habits: React.FC = () => {
   const dayStreak = useMemo(() => computeDayStreak(streakInput), [streakInput]);
   const streakToday = useMemo(() => todayProgress(streakInput), [streakInput]);
 
+  // The moment today tips over the line. Watching the kept flag (not the tick)
+  // means it fires exactly once per day, on whichever tap earned it, and never on
+  // load: the ref seeds from the first loaded value, so a day already in the bag
+  // at open does not replay its burst. A heavier haptic than a plain tick.
+  const [justKept, setJustKept] = useState(false);
+  const keptRef = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (!loaded) return;
+    if (keptRef.current === null) { keptRef.current = streakToday.kept; return; }
+    if (streakToday.kept && !keptRef.current) {
+      setJustKept(true);
+      if ('vibrate' in navigator) navigator.vibrate([0, 70, 60, 110]);
+      const t = setTimeout(() => setJustKept(false), 1400);
+      keptRef.current = true;
+      return () => clearTimeout(t);
+    }
+    keptRef.current = streakToday.kept;
+  }, [loaded, streakToday.kept]);
+  const milestone = milestoneProgress(dayStreak);
+
   // Cache the day streak so the flame badge can show it on every page.
   useEffect(() => {
     if (!loaded) return;
@@ -2089,16 +2109,35 @@ const Habits: React.FC = () => {
             version. A drifting user with a live streak keeps their flame. Gated on
             `lapse` rather than `softened` so it never flashes 0 before the fetch lands. */}
         {streakToday.due > 0 && lapse !== null && !(isSoftened(lapse.state) && dayStreak < 1) && (
-          <div className={`hb-streak${streakToday.kept ? ' hb-streak--kept' : ''}`}>
+          <div className={`hb-streak${streakToday.kept ? ' hb-streak--kept' : ''}${justKept ? ' hb-streak--pop' : ''}`}>
+            {justKept && (
+              <span className="hb-streak-burst" aria-hidden="true">
+                {Array.from({ length: 10 }).map((_, i) => (
+                  <span key={i} className="lvlup-spark smile-spark" style={{ ['--i' as any]: i * 1.4 } as React.CSSProperties} />
+                ))}
+              </span>
+            )}
             <span className="hb-streak-flame"><AnimatedFlame size={26} /></span>
             <span className="hb-streak-num">{dayStreak}</span>
             <span className="hb-streak-body">
               <span className="hb-streak-label">day streak</span>
               <span className="hb-streak-sub">
                 {streakToday.kept
-                  ? `Today is in the bag at ${streakToday.done} of ${streakToday.due}.`
+                  ? (streakToday.done === streakToday.due
+                      ? `Clean sweep. Every habit done, ${streakToday.done} of ${streakToday.due}.`
+                      : `Today is in the bag at ${streakToday.done} of ${streakToday.due}.`)
                   : `${streakToday.done} of ${streakToday.due} done. ${streakToday.needed} more keeps it.`}
               </span>
+              {/* The near goal. A streak that only ever grows by one has nothing to
+                  reach for; the next landmark gives every day a finish line. */}
+              {milestone.next && (
+                <span className="hb-streak-track" aria-label={`${milestone.next - dayStreak} days to ${milestone.next}`}>
+                  <span className="hb-streak-track-bar">
+                    <span className="hb-streak-track-fill" style={{ width: `${Math.max(3, ((dayStreak - milestone.prev) / (milestone.next - milestone.prev)) * 100)}%` }} />
+                  </span>
+                  <span className="hb-streak-track-lbl">{milestone.next - dayStreak === 1 ? 'tomorrow' : `${milestone.next - dayStreak} days`} to {milestone.next}</span>
+                </span>
+              )}
             </span>
           </div>
         )}

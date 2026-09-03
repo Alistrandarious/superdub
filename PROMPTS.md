@@ -30,6 +30,7 @@ the slider has no thumb until the user taps and slides to lock a value in.
 | 2 | **Vitals** | sleep (bed→wake) + energy | `superdub:show-vitals` | ❌ | mornings (`<12h`); chains in right after the weigh-in saves, or on app open if weight is already logged | `superdub.vitals.checkin` |
 | 3 | **Workout** | workout done + intensity | `superdub:show-exercise` | ✅ `?prompt=exercise`, "Workout" hour (opt-in, **off** by default) | fires at the Workout hour if set | `superdub.exercise.checkin` |
 | 4 | **Evening reflection** | mood + eating adherence | `superdub:show-evening` | ✅ `?prompt=evening`, "Evening" hour (default 8 PM) | evenings (`>=18h`), if Daily Check-in is on | `superdub.evening.checkin` |
+| 5 | **Streak at risk** (push only) | nothing, it opens the home screen | none | ✅ `/`, one hour after the Evening hour (default 9 PM), only when a day streak of 1+ would end at midnight and today is not yet at 75% | n/a | `push_subscriptions.last_streak_push` |
 
 **Reading the day:** morning weigh-in → Vitals (sleep + energy) → (optional Workout at the
 user's hour) → Evening reflection (mood + how eating landed).

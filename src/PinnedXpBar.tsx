@@ -19,12 +19,17 @@ const PinnedXpBar: React.FC = () => {
   const span = playerLevel.xpForNext != null ? playerLevel.xpForNext - playerLevel.xpForLevel : null;
 
   // Pulse when XP grows.
+  // `delta` is the last gain, keyed so consecutive ticks each get a fresh float
+  // rather than one that restarts mid-flight.
   const prev = useRef(totalXP);
   const [grew, setGrew] = useState(false);
+  const [delta, setDelta] = useState<{ n: number; key: number } | null>(null);
   useEffect(() => {
     if (totalXP > prev.current) {
       setGrew(true);
-      const t = setTimeout(() => setGrew(false), 900);
+      const n = totalXP - prev.current;   // read before prev moves on below
+      setDelta(d => ({ n, key: (d?.key ?? 0) + 1 }));
+      const t = setTimeout(() => { setGrew(false); setDelta(null); }, 1100);
       prev.current = totalXP;
       return () => clearTimeout(t);
     }
@@ -38,6 +43,7 @@ const PinnedXpBar: React.FC = () => {
     >
       <div className="hb-xp-fill" style={{ width: `${Math.max(2, playerLevel.progress * 100)}%`, background: `linear-gradient(90deg, ${theme.from}, ${theme.to})`, boxShadow: `0 0 10px ${theme.glow}` }} />
       <span className="hb-xp-inbar">{span != null ? `${into.toLocaleString()} / ${span.toLocaleString()} XP` : `${totalXP.toLocaleString()} XP`}</span>
+      {delta && <span key={delta.key} className="hb-xp-float" aria-hidden="true">+{delta.n} XP</span>}
     </div>
   );
 };

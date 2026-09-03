@@ -78,3 +78,12 @@ assert(dayWasMarked({ a: null, b: 'na' }) === true, 'a deliberate skip still mea
 assert(dayWasMarked({ a: 'failed' }) === true, 'an explicit miss means they were here');
 
 console.log('dayStreak.check.ts OK');
+
+// ── milestones ───────────────────────────────────────────────────────────────
+import { milestoneProgress, STREAK_MILESTONES } from './dayStreak';
+assert.deepStrictEqual(milestoneProgress(0), { prev: 0, next: 3 }, 'nothing yet: first landmark is 3');
+assert.deepStrictEqual(milestoneProgress(3), { prev: 3, next: 7 }, 'on a landmark it counts as passed');
+assert.deepStrictEqual(milestoneProgress(10), { prev: 7, next: 14 }, 'between 7 and 14');
+assert.deepStrictEqual(milestoneProgress(400), { prev: 365, next: null }, 'past the last there is no next');
+assert(STREAK_MILESTONES.every((m, i) => i === 0 || m > STREAK_MILESTONES[i - 1]), 'milestones ascend');
+console.log('dayStreak milestones ok');

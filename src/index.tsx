@@ -20,6 +20,7 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { XPProvider } from './XPContext';
 import { LapseProvider } from './LapseBanner';
 import LevelUpCelebration from './LevelUpCelebration';
+import StreakMilestone from './StreakMilestone';
 import DubChat from './DubChat';
 import TrendSheet from './TrendSheet';
 import BackgroundApplier from './BackgroundApplier';
@@ -231,6 +232,7 @@ function Root() {
         <UpdateBanner />
         <AppRouter />
         <LevelUpCelebration />
+        <StreakMilestone />
         <DubChat />
         <TrendSheet />
         </LapseProvider>
