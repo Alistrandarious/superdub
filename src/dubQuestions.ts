@@ -43,11 +43,11 @@ export interface DubQuestion {
 
 const fmt1 = (n: number) => (Math.round(n * 10) / 10).toFixed(1);
 
-// Insight chips get a question-shaped label from the insight's kind (its icon).
+// Insight chips get a question-shaped label from the insight's theme.
 function insightLabel(ins: DubInsight): string {
-  if (ins.icon === '📅') return `Why does ${ins.habit} slip?`;
-  if (ins.icon === '👟' || ins.icon === '🐢') return `What does ${ins.habit} do for my steps?`;
-  if (ins.icon === '😊' || ins.icon === '☁️') return `Does ${ins.habit} change my mood?`;
+  if (ins.theme === 'rhythm') return `Why does ${ins.habit} slip?`;
+  if (ins.theme === 'steps') return `What does ${ins.habit} do for my steps?`;
+  if (ins.theme === 'mood') return `Does ${ins.habit} change my mood?`;
   return `Is ${ins.habit} moving my weight?`;
 }
 
@@ -74,7 +74,7 @@ export function buildQuestionBank(d: DubData): DubQuestion[] {
 
   // ── Conditional insight questions float near the front ──
   d.insights.slice(0, 2).forEach((ins, i) => {
-    const extra = ins.icon === '📅' ? ` ${tipFor(ins.habit)}` : '';
+    const extra = ins.theme === 'rhythm' ? ` ${tipFor(ins.habit)}` : '';
     qs.push({ id: `insight:${i}`, label: insightLabel(ins), answer: `${ins.text}${extra}`, followUps: ['focus'] });
   });
 

@@ -119,6 +119,7 @@ const DubChat: React.FC = () => {
         trackerHabits: (tracker.habits ?? []) as any,
         stepsByDay, weightByDay, moodByDay,
         allDays: ALL_DAYS, today: todayKey(),
+        goalType: goal?.goalType ?? null,
       });
 
       const openingReport: Report = r ?? {

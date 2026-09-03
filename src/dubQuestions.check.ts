@@ -39,8 +39,8 @@ assert(report, 'fixture must produce a coach report');
 const target = new Date(); target.setDate(target.getDate() + 84);
 const full: DubData = {
   weights, report, insights: [
-    { habit: 'Reading', icon: '📅', text: 'You skip Reading most on Fridays (missed 3 of 4). Worth a plan for that day.', strength: 0.8 },
-    { habit: 'Walk', icon: '😊', text: 'You feel better on days you do Walk, 4.1 out of 5 against 3.2 when you skip it.', strength: 0.5 },
+    { habit: 'Reading', theme: 'rhythm', tone: 'warn', direction: null, signal: 'clear', text: 'You skip Reading most on Fridays (missed 3 of 4). Worth a plan for that day.', strength: 0.8 },
+    { habit: 'Walk', theme: 'mood', tone: 'good', direction: 'up', signal: 'clear', text: 'You feel better on days you do Walk, 4.1 out of 5 against 3.2 when you skip it.', strength: 0.5 },
   ],
   plan: {
     active: true, tdee: { observedTDEE: 2400, blendedTDEE: 2450, formulaTDEE: 2500, confidence: 0.62, intakeUsed: 2000, intakeIsLogged: false },
@@ -80,6 +80,10 @@ const sleepQ = bank.find(q => q.id === 'sleep')!;
 assert(sleepQ.answer.includes('6.4'), `sleep answer carries the average: ${sleepQ.answer}`);
 const focus = bank.find(q => q.id === 'focus');
 assert(focus && focus.answer.includes('Reading'), 'focus answer names the slipping habit');
+// insight chips take their question from the theme (a rhythm finding asks why it slips, not about weight)
+const chip0 = bank.find(q => q.id === 'insight:0')!;
+assert(chip0 && chip0.label === 'Why does Reading slip?', `rhythm chip label: ${chip0?.label}`);
+assert(bank.find(q => q.id === 'insight:1')!.label === 'Does Walk change my mood?', 'mood chip label');
 
 // 3) whyUp gating: only when the latest weigh-in rose
 const up = { ...full, weights: [...weights.slice(0, -1), { day: TODAY, weight: 86.9 }] };

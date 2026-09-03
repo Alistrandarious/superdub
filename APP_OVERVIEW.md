@@ -67,7 +67,10 @@ Superdub is a **habit + weight + nutrition tracker** built around a single loop:
   **His room is live** (`DubRoom.tsx` + `dubDayState`): mood, floor glow, a
   tappable thought bubble, and sparkles on a clean sweep. Per-habit **data
   insights** (`src/dubInsights.ts`) — which weekday a habit slips, step/mood/weight
-  links — feed both the page and the chat. All of it is on-device and rule-based
+  links — feed both the page and the chat. Each carries a theme (steps / mood /
+  weight / rhythm), a tone (a weight link is good news only if it runs the way the
+  goal wants) and a signal band (slight / clear / strong); the page groups them by
+  theme, the chat picks its chip question from the theme. All of it is on-device and rule-based
   (`coach.ts` `weekPace` is the single pace source); voice rules are enforced by
   assert in `dubQuestions.check.ts` / `dubBrief.check.ts`.
 

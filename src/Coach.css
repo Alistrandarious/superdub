@@ -89,6 +89,53 @@
 .coach-line-title { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 0.9rem; color: var(--text); }
 .coach-line-body { font-size: 0.82rem; line-height: 1.5; color: var(--text-dim); }
 
+/* Grouped insights — one card per theme. The theme colour (--ins, set inline)
+   lives on the header only; each line says good / heads up with its tone dot and
+   how sure the numbers are with a 3-bar signal meter. Light mode darkens the
+   theme colour for type and icons the same way --theme-ink does. */
+.coach-count {
+  font-family: 'Space Mono', monospace; font-size: 0.62rem; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-mute); white-space: nowrap;
+}
+.coach-group {
+  --ins-ink: var(--ins);
+  border: 1px solid var(--glass-border); border-radius: var(--r-lg);
+  background: rgba(var(--fg-rgb),0.03); overflow: hidden;
+}
+:root[data-theme="light"] .coach-group { --ins-ink: color-mix(in srgb, var(--ins) 62%, #000); }
+.coach-group-head {
+  display: flex; align-items: center; gap: 9px; padding: 10px 13px;
+  background: color-mix(in srgb, var(--ins) 9%, transparent);
+  border-bottom: 1px solid var(--glass-border);
+}
+.coach-group-ico {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 26px; height: 26px; border-radius: 8px; color: var(--ins-ink);
+  background: color-mix(in srgb, var(--ins) 18%, transparent);
+}
+.coach-group-title { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 0.86rem; color: var(--text); white-space: nowrap; }
+.coach-group-sub { font-size: 0.7rem; line-height: 1.3; color: var(--text-mute); margin-left: auto; text-align: right; }
+.coach-group .coach-line {
+  border: none; border-radius: 0; background: none;
+  border-top: 1px solid var(--glass-border); padding: 10px 13px;
+}
+.coach-group-head + .coach-line { border-top: none; }
+.coach-group .coach-line-title { display: flex; align-items: center; }
+.coach-line-dir { display: inline-flex; margin-left: 5px; color: var(--ins-ink); }
+.coach-signal { margin-left: auto; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; padding-top: 2px; }
+.coach-signal-bars { display: flex; align-items: flex-end; gap: 2px; height: 12px; }
+.coach-signal-bars i { width: 4px; border-radius: 1px; background: rgba(var(--fg-rgb),0.15); }
+.coach-signal-bars i:nth-child(1) { height: 5px; }
+.coach-signal-bars i:nth-child(2) { height: 8px; }
+.coach-signal-bars i:nth-child(3) { height: 12px; }
+.coach-signal--slight i:nth-child(1),
+.coach-signal--clear i:nth-child(-n+2),
+.coach-signal--strong i { background: var(--ins-ink); }
+.coach-signal-word {
+  font-family: 'Space Mono', monospace; font-size: 0.5rem; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text-mute);
+}
+
 /* Primary CTA — opens the full read (fires superdub:show-coach, marks seen) */
 .coach-open {
   width: 100%; padding: 13px; border: none; border-radius: var(--r-md);

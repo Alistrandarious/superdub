@@ -22,11 +22,15 @@ export function pearson(pairs: [number, number][]): number | null {
   return cov / Math.sqrt(vx * vy);
 }
 
-export function strengthWord(r: number): string {
-  const a = Math.abs(r);
-  if (a >= 0.5) return 'strong';
-  if (a >= 0.3) return 'clear';
-  return 'slight';
+// How sure the numbers are, in words. ponytail: fixed cut-offs per finding kind
+// rather than one shared statistic, because each kind's raw strength sits on its
+// own scale (a miss rate, a % step gap, a mood-point gap, a correlation).
+export type InsightSignal = 'slight' | 'clear' | 'strong';
+function band(x: number, clear: number, strong: number): InsightSignal {
+  return x >= strong ? 'strong' : x >= clear ? 'clear' : 'slight';
+}
+export function strengthWord(r: number): InsightSignal {
+  return band(Math.abs(r), 0.3, 0.5);
 }
 
 export interface InsightInput {
@@ -37,13 +41,29 @@ export interface InsightInput {
   moodByDay: Record<string, number>;                                  // 'DD/MM' -> mood 1..5
   allDays: string[];                                                  // ordered 'DD/MM' for the year
   today: string;                                                      // 'DD/MM'
+  goalType?: string | null;                                           // 'lose' | 'gain' | 'maintain'; decides whether a weight link is good news
 }
+
+// What a finding is about. The page groups on this; the chat picks its question from it.
+export type InsightTheme = 'steps' | 'mood' | 'weight' | 'rhythm';
+export type InsightTone = 'good' | 'warn' | 'neutral';
 
 export interface DubInsight {
   habit: string;
-  icon: string;
+  theme: InsightTheme;
+  tone: InsightTone;                 // good news, a heads up, or just a fact (weight with no goal)
+  direction: 'up' | 'down' | null;   // which way the number goes on habit days; null for rhythm
+  signal: InsightSignal;
   text: string;
   strength: number;   // 0..1-ish, for ranking
+}
+
+// Insights arrive ranked strongest-first, so the first theme seen holds the
+// strongest finding and Map insertion order gives strongest-theme-first for free.
+export function groupInsights(list: DubInsight[]): { theme: InsightTheme; items: DubInsight[] }[] {
+  const groups = new Map<InsightTheme, DubInsight[]>();
+  for (const ins of list) groups.set(ins.theme, [...(groups.get(ins.theme) ?? []), ins]);
+  return Array.from(groups, ([theme, items]) => ({ theme, items }));
 }
 
 const WEEKDAY = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -68,7 +88,7 @@ function mean(xs: number[]): number {
 
 // Build the full set of Dub insights, ranked strongest-first.
 export function buildHabitInsights(input: InsightInput): DubInsight[] {
-  const { habits, trackerHabits, stepsByDay, weightByDay, moodByDay, allDays, today } = input;
+  const { habits, trackerHabits, stepsByDay, weightByDay, moodByDay, allDays, today, goalType } = input;
   const todayIdx = allDays.indexOf(today);
   if (todayIdx < 0) return [];
 
@@ -110,7 +130,7 @@ export function buildHabitInsights(input: InsightInput): DubInsight[] {
     // Only nag if this weekday is clearly worse than the habit's own average.
     if (worst >= 0 && worstRate >= 0.5 && worstRate - overallMissRate >= 0.15) {
       out.push({
-        habit, icon: 'weekday', strength: worstRate,
+        habit, theme: 'rhythm', tone: 'warn', direction: null, signal: band(worstRate, 0.65, 0.85), strength: worstRate,
         text: `You skip ${habit} most on ${WEEKDAY[worst]}s (missed ${miss[worst]} of ${total[worst]}). Worth a plan for that day.`,
       });
     }
@@ -123,7 +143,8 @@ export function buildHabitInsights(input: InsightInput): DubInsight[] {
       const rel = (a - b) / b;
       if (Math.abs(rel) >= 0.12) {
         out.push({
-          habit, icon: rel > 0 ? 'up' : 'down', strength: Math.min(1, Math.abs(rel)),
+          habit, theme: 'steps', tone: rel > 0 ? 'good' : 'warn', direction: rel > 0 ? 'up' : 'down',
+          signal: band(Math.abs(rel), 0.2, 0.35), strength: Math.min(1, Math.abs(rel)),
           text: rel > 0
             ? `On days you do ${habit} you average ${fmtK(a)} steps, versus ${fmtK(b)} when you don't.`
             : `Your step count dips on ${habit} days (${fmtK(a)} vs ${fmtK(b)}).`,
@@ -138,7 +159,8 @@ export function buildHabitInsights(input: InsightInput): DubInsight[] {
       const a = mean(doneMood), b = mean(offMood);
       if (Math.abs(a - b) >= 0.4) {
         out.push({
-          habit, icon: a > b ? 'mood-up' : 'mood-down', strength: Math.min(1, Math.abs(a - b) / 4),
+          habit, theme: 'mood', tone: a > b ? 'good' : 'warn', direction: a > b ? 'up' : 'down',
+          signal: band(Math.abs(a - b), 0.6, 1), strength: Math.min(1, Math.abs(a - b) / 4),
           text: a > b
             ? `You feel better on days you do ${habit} (${a.toFixed(1)}/5 vs ${b.toFixed(1)}/5).`
             : `Your mood runs lower on ${habit} days (${a.toFixed(1)}/5 vs ${b.toFixed(1)}/5).`,
@@ -165,8 +187,12 @@ export function buildHabitInsights(input: InsightInput): DubInsight[] {
     }
     const r = pearson(pairs);
     if (r != null && Math.abs(r) >= 0.35) {
+      // Dropping is good news on a lose goal, climbing on a gain goal; no goal, no verdict.
+      const wants = goalType === 'lose' ? 'down' : goalType === 'gain' ? 'up' : null;
+      const direction = r < 0 ? 'down' : 'up';
       out.push({
-        habit, icon: r < 0 ? 'down' : 'up', strength: Math.abs(r),
+        habit, theme: 'weight', tone: wants ? (direction === wants ? 'good' : 'warn') : 'neutral', direction,
+        signal: strengthWord(r), strength: Math.abs(r),
         text: r < 0
           ? `Weeks you keep ${habit} up, your weight tends to drop (${strengthWord(r)} link).`
           : `Weeks you keep ${habit} up, your weight tends to climb (${strengthWord(r)} link).`,

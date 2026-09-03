@@ -16,7 +16,7 @@
 | `/food-log` | `FoodLog.tsx` | Daily food / calorie logging | — | HEALTH green |
 | `/meal-plans` | `MealPlans.tsx` | Meal plan browsing / assignment | — | HEALTH green |
 | `/tasks` | `Tasks.tsx` | **Lists** — To-Do · Shopping · Goals (`GoalsPanel`) · **Journal** (`JournalPanel`: free text + mood 1–5, feeds `dubInsights`) | Lists | — |
-| `/dub` | `DubPage.tsx` | **Dub** — coach home: check-in button (fires the Coach report), live read, and on-device data insights (`dubInsights`) | Dub | GROWTH blue |
+| `/dub` | `DubPage.tsx` | **Dub** — coach home: check-in button (fires the Coach report), live read, and on-device data insights (`dubInsights`) grouped into one card per theme (Movement · Mood · Weight · Rhythm), each line with a tone dot and a signal meter | Dub | GROWTH blue |
 | `/level` | `LevelPage.tsx` | **The Ascension** — level ladder, badges, habit record (cosmetics moved to Profile) | — | GOLD / VIOLET |
 | `/profile` | `Profile.tsx` | **Profile** — level ring + XP, all cosmetics + Dub customization (`LevelCustomizer`), identity, targets, settings (`onLogout`); off the nav, reachable via cog | — | GROWTH blue |
 | `/maths` | `MathsPage.tsx` | **The Maths** — live formulas w/ worked examples | — | GROWTH tint |

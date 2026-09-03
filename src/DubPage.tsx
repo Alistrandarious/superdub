@@ -4,21 +4,25 @@ import './Coach.css';
 import { api } from './api';
 import { buildCoachReport, type CoachReport as Report } from './coach';
 import { buildBrief, dubDayState, type DubDayState } from './dubBrief';
-import { buildHabitInsights, type DubInsight } from './dubInsights';
+import { buildHabitInsights, groupInsights, type DubInsight, type InsightTheme } from './dubInsights';
 import SuperdubHeader from './SuperdubHeader';
 import { pageTheme } from './theme';
 import { isSystemHabit } from './systemHabits';
 import { readStage } from './userStage';
 import { useXP } from './XPContext';
-import { CalendarIc, TrendUpIc, TrendDownIc, SmileIc, CloudIc } from './icons';
+import { CalendarIc, TrendUpIc, TrendDownIc, SmileIc, ScaleIc, WalkIc } from './icons';
 
 const YEAR = new Date().getFullYear();
 const DUB_SEEN_KEY = 'superdub.dubSeen';
 
-// Insight kinds → stroke icons (style guide: no emoji in UI chrome).
-const INSIGHT_ICON: Record<string, React.ReactNode> = {
-  weekday: <CalendarIc size={18} />, up: <TrendUpIc size={18} />, down: <TrendDownIc size={18} />,
-  'mood-up': <SmileIc size={18} />, 'mood-down': <CloudIc size={18} />,
+// One card per insight theme: its icon, its semantic colour (DESIGN_SYSTEM: HEALTH
+// for the body, TEAL for mood, GROWTH for trends, FLAME for consistency) and a
+// one-line subtitle. Stroke icons only (style guide: no emoji in UI chrome).
+const THEME: Record<InsightTheme, { label: string; sub: string; colour: string; icon: React.ReactNode }> = {
+  steps:  { label: 'Movement', sub: 'What your habits do to your steps', colour: '#2FD27E', icon: <WalkIc size={15} /> },
+  mood:   { label: 'Mood',     sub: 'How your habits sit with how you feel', colour: '#19C5B0', icon: <SmileIc size={15} /> },
+  weight: { label: 'Weight',   sub: 'Which habits track with the scale', colour: '#2E8BFF', icon: <ScaleIc size={15} /> },
+  rhythm: { label: 'Rhythm',   sub: 'The days a habit tends to slip', colour: '#FF8A00', icon: <CalendarIc size={15} /> },
 };
 
 function buildAllDays(): string[] {
@@ -158,6 +162,7 @@ const DubPage: React.FC = () => {
           trackerHabits: tracker.habits ?? [],
           stepsByDay, weightByDay, moodByDay,
           allDays: ALL_DAYS, today: todayKey(),
+          goalType: goal?.goalType ?? null,
         }));
 
         // ── Morning brief / evening debrief ──
@@ -250,22 +255,48 @@ const DubPage: React.FC = () => {
           </p>
         )}
 
-        {/* WHAT WE SPOTTED — the habit insights, neutral heading */}
+        {/* WHAT WE SPOTTED — the habit insights, one card per theme, strongest theme
+            first. Each line carries its tone dot (good / heads up) and a 3-bar signal
+            meter so the read says how sure it is, not just what it found. */}
         <div className="coach-spotted">
           <div className="coach-sec-head">
             <span className="coach-eyebrow">WHAT WE SPOTTED</span>
             <span className="coach-hairline" aria-hidden="true" />
+            {insights.length > 0 && (
+              <span className="coach-count">{insights.length} pattern{insights.length === 1 ? '' : 's'}</span>
+            )}
           </div>
           {insights.length > 0 ? (
             <div className="coach-lines">
-              {insights.map((ins, i) => (
-                <div key={i} className="coach-line coach-line--neutral">
-                  <span className="coach-line-ico">{INSIGHT_ICON[ins.icon] ?? <TrendUpIc size={18} />}</span>
-                  <div className="coach-line-text">
-                    <span className="coach-line-title">{ins.habit}</span>
-                    <span className="coach-line-body">{ins.text}</span>
+              {groupInsights(insights).map(g => (
+                <section key={g.theme} className="coach-group" aria-label={THEME[g.theme].label}
+                  style={{ ['--ins' as string]: THEME[g.theme].colour }}>
+                  <div className="coach-group-head">
+                    <span className="coach-group-ico" aria-hidden="true">{THEME[g.theme].icon}</span>
+                    <span className="coach-group-title">{THEME[g.theme].label}</span>
+                    <span className="coach-group-sub">{THEME[g.theme].sub}</span>
                   </div>
-                </div>
+                  {g.items.map((ins, i) => (
+                    <div key={i} className="coach-line">
+                      <div className="coach-line-text">
+                        <span className="coach-line-title">
+                          <span className={`dchat-dot dchat-dot--${ins.tone}`} aria-hidden="true" />
+                          {ins.habit}
+                          {ins.direction && (
+                            <span className="coach-line-dir" aria-hidden="true">
+                              {ins.direction === 'up' ? <TrendUpIc size={13} /> : <TrendDownIc size={13} />}
+                            </span>
+                          )}
+                        </span>
+                        <span className="coach-line-body">{ins.text}</span>
+                      </div>
+                      <span className={`coach-signal coach-signal--${ins.signal}`} role="img" aria-label={`${ins.signal} signal`}>
+                        <span className="coach-signal-bars" aria-hidden="true"><i /><i /><i /></span>
+                        <span className="coach-signal-word" aria-hidden="true">{ins.signal}</span>
+                      </span>
+                    </div>
+                  ))}
+                </section>
               ))}
             </div>
           ) : (
