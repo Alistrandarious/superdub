@@ -695,7 +695,7 @@ const Diet: React.FC = () => {
   if (!loaded) {
     return (
       <div className="app flush" style={pageTheme(GROWTH, '33')}>
-        <div className="sd-loader-wrap"><div className="sd-loader"><img className="sd-loader-logo" src="/superdub-logo.png" alt="" /></div></div>
+        <div className="sd-loader-wrap"><div className="sd-loader" /></div>
       </div>
     );
   }

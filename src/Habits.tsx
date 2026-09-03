@@ -1811,7 +1811,7 @@ const Habits: React.FC = () => {
   if (!loaded) {
     return (
       <div className="app" style={pageTheme(HEALTH)}>
-        <div className="sd-loader-wrap"><div className="sd-loader"><img className="sd-loader-logo" src="/superdub-logo.png" alt="" /></div></div>
+        <div className="sd-loader-wrap sd-loader-wrap--boot"><div className="sd-loader" /></div>
       </div>
     );
   }

@@ -191,7 +191,7 @@ export const NAV_GLOW_KEY = 'superdub.navGlow';
 // under its per-page glow. `swatch` is what the picker shows.
 export interface Background { id: string; name: string; grad: string; swatch: string; unlock?: Unlock; }
 export const BACKGROUNDS: Background[] = [
-  { id: 'midnight', name: 'Midnight', grad: 'linear-gradient(160deg, #0E0E14 0%, #0E0E14 100%)', swatch: '#0E0E14' },
+  { id: 'midnight', name: 'Midnight', grad: 'linear-gradient(160deg, #07090C 0%, #0A0B10 100%)', swatch: '#07090C' },
   // Two colourful backgrounds free out of the gate, so there's colour beyond grey/black from day one.
   { id: 'plum',     name: 'Plum',     grad: 'linear-gradient(160deg, #1A0E1E 0%, #2A1330 100%)', swatch: '#2A1330' },
   { id: 'teal',     name: 'Teal',     grad: 'linear-gradient(160deg, #071518 0%, #0C2429 100%)', swatch: '#0C2429' },

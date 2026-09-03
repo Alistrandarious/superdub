@@ -93,7 +93,7 @@ const ArchivedHabits: React.FC = () => {
         </div>
 
         {!loaded ? (
-          <div className="sd-loader-wrap"><div className="sd-loader"><img className="sd-loader-logo" src="/superdub-logo.png" alt="" /></div></div>
+          <div className="sd-loader-wrap"><div className="sd-loader" /></div>
         ) : error ? (
           <div className="archived-empty">
             <div className="archived-empty-icon"><AlertIc size={44} strokeWidth={1.6} /></div>

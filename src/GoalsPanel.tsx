@@ -91,7 +91,7 @@ const GoalsPanel: React.FC<{ onHero: (h: HeroData) => void }> = ({ onHero }) => 
   };
 
   if (!loaded) {
-    return <div className="sd-loader-wrap"><div className="sd-loader"><img className="sd-loader-logo" src="/superdub-logo.png" alt="" /></div></div>;
+    return <div className="sd-loader-wrap"><div className="sd-loader" /></div>;
   }
 
   const today = getLoggingISO();

@@ -58,23 +58,29 @@ border, the `LV` chip and the cadence tabs; it does not need restating per dot.
   Global habit's shared total hits 10k and the user has personally added ≥100 XP. It is
   made available in the Level-page swatch shelf, never auto-equipped.
 
-## Surfaces — dark, glass, navy-black
+## Surfaces — flat, dark, one step up from the ground
 
 Single source in `App.css :root`; prefer the semantic aliases going forward.
+**Flat, not glass** (2026-09-03): no drop shadows, no backdrop blur, no corner
+glows, no fixed-attachment backgrounds. A card is a fill one step lighter than
+the ground plus a hairline; depth comes from that step and from the accent rails,
+never from a blur. The glass look read as generic and cost scroll frames on
+mobile. `--glass-*` names are kept for the 400 call sites; they now mean flat.
 
 | Token | Value | Use |
 |---|---|---|
-| `--void` | `#07090C` | app background floor |
+| `--void` | `#07090C` | app ground (and the default Midnight background) |
 | `--glass-bg` / `--surface` | `#0E0E14` | base card / panel |
+| `--card-bg` | `rgba(surface, 0.92)` | content cards: near-opaque so an unlocked background only tints them |
 | `--glass-bg-strong` / `--surface-raised` | `#15151E` | modals, elevated |
 | `--glass-border` / `--line` | `#252532` | default hairline |
 | `--glass-border-strong` | `#16323E` | emphasised border |
-| `--glass-shadow` | `0 4px 24px rgba(0,0,0,0.5)` | card shadow |
+| `--glass-shadow` | `none` | kept as a token so nothing breaks; stays none |
 
 ## Radius scale
 
-`--r-xs 6` · `--r-sm 10` · `--r-md 12` · `--r-lg 16` · `--r-xl 20` ·
-**`--r-card 18`** (every page-level card/section) · `--r-pill 999px`.
+`--r-xs 6` · `--r-sm 10` · `--r-md 12` · `--r-lg 14` · `--r-xl 16` ·
+**`--r-card 14`** (every page-level card/section) · `--r-pill 999px`.
 Spacing gutter: `--gutter: 16px`.
 
 ## Typography
@@ -93,7 +99,8 @@ Section header pattern: Space Mono 700 caps eyebrow + hairline rule.
 - **No emoji in UI chrome** — menu items, section headers, badges, icons. Use
   ~15px stroke SVGs (feather-style, `stroke="currentColor"`, `strokeWidth` ~2).
   Emoji is OK *only* as content inside Dub's coach messages / articles.
-- No generic grey-glass tile grids ("cheapens the app").
+- No generic grey-glass tile grids ("cheapens the app"). No `backdrop-filter`,
+  no `box-shadow` on surfaces, no decorative radial glows: flat fills only.
 - Reward/theme references show the **actual gradient swatch**, not an icon.
 - Numbers are always Space Mono; accents always semantic.
 

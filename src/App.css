@@ -11,11 +11,13 @@
   --glass-bg-strong: #15151E;     /* elevated surface (modals, raised) */
   --glass-border: #252532;        /* default hairline border */
   --glass-border-strong: #16323E; /* emphasised border */
-  --glass-shadow: 0 4px 24px rgba(0,0,0,0.5);
+  /* Flat surfaces: no drop shadow anywhere. Depth is a hairline and a lighter
+     fill, not a blur. The glass look read as generic and cost scroll frames. */
+  --glass-shadow: none;
   --glass-blur: none;
-  /* Content-card surface — translucent so an unlocked coloured background shows
-     through (menus/overlays/topbar stay on the opaque --glass-bg). */
-  --card-bg: rgba(14,14,20,0.5);
+  /* Content-card surface — near-opaque so an unlocked coloured background tints
+     the card a touch instead of showing through it. */
+  --card-bg: rgba(var(--surface-rgb),0.92);
   /* Semantic aliases → prefer these going forward; they point at the canonical surfaces above */
   --surface: var(--glass-bg);
   --surface-2: var(--glass-bg);
@@ -53,9 +55,9 @@
   --r-xs: 6px;
   --r-sm: 10px;
   --r-md: 12px;
-  --r-lg: 16px;
-  --r-xl: 20px;
-  --r-card: 18px;   /* one radius for every page-level card/section */
+  --r-lg: 14px;
+  --r-xl: 16px;
+  --r-card: 14px;   /* one radius for every page-level card/section */
   --r-pill: 999px;
 
   /* ── Spacing ── */
@@ -75,10 +77,10 @@
   --glass-bg-strong: #FFFFFF;
   --glass-border: #E2E5EC;
   --glass-border-strong: #C7D2DC;
-  --glass-shadow: 0 4px 24px rgba(20,30,60,0.12);
+  --glass-shadow: none;
   /* Literal white on purpose: the card is a white pane over the light ground,
      not a mix of the (now dark) foreground. */
-  --card-bg: rgba(255,255,255,0.66);
+  --card-bg: rgba(255,255,255,0.92);
   --void: #ECEEF3;
   --text: #14161D;
   --text-dim: rgba(20,22,29,0.64);
@@ -243,12 +245,11 @@ h1, h2, h3, h4, .sora {
   display: flex;
   flex-direction: column;
   color: var(--theme-ink, #2FD27E);
-  background:
-    radial-gradient(900px 600px at 5% -5%, var(--theme-glow, rgba(0,255,65,0.1)), transparent 55%),
-    radial-gradient(800px 600px at 105% 5%, var(--theme-glow, rgba(0,255,65,0.08)), transparent 50%),
-    radial-gradient(700px 700px at 50% 110%, var(--theme-glow, rgba(0,255,65,0.07)), transparent 55%),
-    var(--app-bg-base, linear-gradient(160deg, var(--glass-bg) 0%, var(--glass-bg) 100%));
-  background-attachment: fixed;
+  /* One flat ground (the background cosmetic, else the void). The three corner
+     glows and background-attachment: fixed are gone: fixed attachment repaints
+     the whole viewport on every scroll frame on mobile, and the glows were the
+     "AI dashboard" look. */
+  background: var(--app-bg-base, var(--void));
 }
 
 /* Headerless pages: pad the top for the status-bar / notch safe area */
@@ -268,8 +269,6 @@ h1, h2, h3, h4, .sora {
   position: relative;
   z-index: 200;
   background: rgba(var(--surface-rgb),0.95);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  backdrop-filter: blur(20px) saturate(180%);
   border-bottom: 1px solid var(--glass-border);
   gap: 12px;
 }
@@ -620,8 +619,6 @@ h1, h2, h3, h4, .sora {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.4);
-  -webkit-backdrop-filter: blur(3px);
-  backdrop-filter: blur(3px);
   z-index: 1000;
   animation: menu-fade 0.2s ease;
 }
@@ -642,8 +639,6 @@ h1, h2, h3, h4, .sora {
   flex-direction: column;
   gap: 0;
   background: rgba(var(--surface-rgb),0.92);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  backdrop-filter: blur(24px) saturate(180%);
   border-right: 1px solid var(--glass-border);
   box-shadow: 8px 0 48px rgba(0,0,0,0.55);
   animation: menu-slide 0.22s ease;
@@ -1045,8 +1040,6 @@ h1, h2, h3, h4, .sora {
   cursor: pointer;
   width: 42px;
   font-size: 1rem;
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
   transition: background 0.15s, border-color 0.15s;
 }
 
@@ -1177,8 +1170,6 @@ h1, h2, h3, h4, .sora {
   font-size: 0.82rem;
   font-family: inherit;
   cursor: pointer;
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
   transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
   white-space: nowrap;
 }
@@ -1297,8 +1288,6 @@ h1, h2, h3, h4, .sora {
   font-family: inherit;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
 }
 
 .food-add input:focus {
@@ -1321,8 +1310,6 @@ h1, h2, h3, h4, .sora {
   color: #000;
   border: none;
   border-radius: 10px;
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
   width: 42px;
   font-size: 1.2rem;
   cursor: pointer;
@@ -1548,8 +1535,6 @@ h1, h2, h3, h4, .sora {
   align-items: flex-start;
   justify-content: center;
   z-index: 100;
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
   overflow-y: auto;
   padding: 24px 0 40px;
 }
@@ -1630,8 +1615,6 @@ h1, h2, h3, h4, .sora {
   padding: 7px 12px;
   border-radius: 10px;
   font-family: inherit;
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
   transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 
@@ -2353,9 +2336,7 @@ h1, h2, h3, h4, .sora {
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: rgba(var(--surface-rgb),0.72);
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
+  background: rgba(var(--surface-rgb),0.96);
   animation: fadeIn 0.2s ease;
 }
 .goal-reached-card {
@@ -3080,8 +3061,6 @@ h1, h2, h3, h4, .sora {
   padding: 7px 14px;
   border-radius: 11px;
   cursor: pointer;
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
   transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
 }
 
@@ -3200,8 +3179,6 @@ h1, h2, h3, h4, .sora {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.72);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3321,9 +3298,7 @@ h1, h2, h3, h4, .sora {
   width: 84px;
   height: 84px;
   border-radius: 50%;
-  background: rgba(var(--surface-rgb),0.85);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
+  background: rgba(var(--surface-rgb),0.96);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -3377,8 +3352,6 @@ h1, h2, h3, h4, .sora {
   font-size: 0.98rem;
   cursor: pointer;
   font-family: inherit;
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
   transition: background 0.18s, border-color 0.18s, color 0.18s, box-shadow 0.18s, transform 0.1s;
   animation: pillIn 0.4s cubic-bezier(0.22,1,0.36,1) both;
 }
@@ -3496,8 +3469,6 @@ h1, h2, h3, h4, .sora {
   font-weight: 600;
   letter-spacing: 0.03em;
   cursor: pointer;
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
   transition: background 0.18s, border-color 0.18s, box-shadow 0.18s;
 }
 
@@ -3647,8 +3618,6 @@ h1, h2, h3, h4, .sora {
   font-weight: 600;
   letter-spacing: 0.05em;
   cursor: pointer;
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
   transition: background 0.15s, border-color 0.15s;
 }
 
@@ -3956,8 +3925,6 @@ h1, h2, h3, h4, .sora {
   padding: 12px 14px;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
   width: 100%;
   box-sizing: border-box;
   min-width: 0;
@@ -4011,8 +3978,6 @@ h1, h2, h3, h4, .sora {
   font-size: 0.85rem;
   color: var(--text-dim);
   background: var(--glass-bg);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -4073,8 +4038,6 @@ h1, h2, h3, h4, .sora {
   font-family: inherit;
   font-size: 0.85rem;
   cursor: pointer;
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
   transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
 }
 
@@ -4126,8 +4089,6 @@ h1, h2, h3, h4, .sora {
   font-size: 1.2rem;
   cursor: pointer;
   font-family: inherit;
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
   transition: background 0.15s, border-color 0.15s;
 }
 
@@ -6247,8 +6208,6 @@ h1, h2, h3, h4, .sora {
 }
 .cadt--compact .cadt-bar {
   background: rgba(var(--surface-rgb),0.92);
-  -webkit-backdrop-filter: blur(18px) saturate(160%);
-  backdrop-filter: blur(18px) saturate(160%);
   border-bottom: 1px solid var(--glass-border);
   box-shadow: 0 6px 20px rgba(0,0,0,0.28);
 }
@@ -6437,8 +6396,6 @@ h1, h2, h3, h4, .sora {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.6);
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
   z-index: 700;
   display: flex;
   align-items: flex-end;
@@ -6797,8 +6754,6 @@ h1, h2, h3, h4, .sora {
   font-weight: 700;
   letter-spacing: 0.04em;
   cursor: pointer;
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
   transition: background 0.18s, box-shadow 0.18s, transform 0.1s;
 }
 
@@ -6902,15 +6857,16 @@ h1, h2, h3, h4, .sora {
   background: var(--card-bg);
   border: 1px solid var(--glass-border);
   border-left: 3px solid var(--theme-dim);
-  box-shadow: var(--glass-shadow);
-  transition: border-color 0.2s, border-left-color 0.2s, box-shadow 0.2s;
-  animation: pillIn 0.35s cubic-bezier(0.22,1,0.36,1) both;
+  transition: border-color 0.2s, border-left-color 0.2s;
+  /* A plain fade, no translate or scale: the cards mount together once the
+     tracker arrives, and a dozen of them popping and settling at once read as
+     jank rather than motion. */
+  animation: fadeIn 0.2s ease both;
 }
 
 .hcard:hover {
   border-color: var(--theme-dim);
   border-left-color: var(--theme-ink);
-  box-shadow: var(--glass-shadow), 0 0 28px -8px var(--theme-glow);
 }
 
 /* Collapsible card spacing. Positioned so the tray's keyboard toggle can hide
@@ -6968,10 +6924,6 @@ h1, h2, h3, h4, .sora {
 .hcard-stat-sub { margin-top: 9px; font-size: 0.72rem; color: var(--text-dim); }
 .hcard-stat-sub b { font-family: var(--font-data); font-weight: 700; color: var(--text); }
 /* The matrix reads as a layer behind the numbers: its left edge fades out. */
-.hcard-body-row .hcard-mx .hmx {
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 16%);
-  mask-image: linear-gradient(90deg, transparent, #000 16%);
-}
 .hcard-grip { pointer-events: auto; }
 
 /* Content-width side columns. Equal 1fr tracks centred the name perfectly, but
@@ -7009,7 +6961,6 @@ h1, h2, h3, h4, .sora {
 }
 .hcard-done-chip.done { background: var(--pass); border-color: var(--pass); animation: day-pop 0.32s cubic-bezier(0.22,1,0.36,1); }
 .hcard--done { border-left-color: var(--pass); }
-.hcard--done .hcard-summary { background: linear-gradient(90deg, rgba(47,210,126,0.07), transparent 55%); margin: -14px -16px 0; padding: 14px 16px 0; border-radius: var(--r-card) var(--r-card) 0 0; }
 
 /* Cog tray — held open, not clicked open.
    ponytail: a max-height slide, not the 0fr → 1fr grid trick the card body uses.
@@ -8757,8 +8708,6 @@ h1, h2, h3, h4, .sora {
   display: flex;
   align-items: flex-start;
   background: rgba(var(--surface-rgb),0.95);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  backdrop-filter: blur(24px) saturate(180%);
   border-top: 1px solid var(--glass-border);
   box-shadow: 0 -4px 24px rgba(0,0,0,0.5);
   z-index: 500;
@@ -8872,8 +8821,6 @@ h1, h2, h3, h4, .sora {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.6);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -9517,8 +9464,6 @@ h1, h2, h3, h4, .sora {
   transform: translateX(-50%);
   width: min(320px, calc(100vw - 32px));
   background: rgba(var(--surface-rgb),0.97);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid var(--glass-border-strong);
   border-radius: 20px;
   box-shadow: 0 -8px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(46,139,255,0.08);
@@ -9648,8 +9593,6 @@ h1, h2, h3, h4, .sora {
   right: 0;
   width: 200px;
   background: rgba(var(--surface-rgb),0.97);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid var(--glass-border-strong);
   border-radius: 16px;
   box-shadow: 0 8px 40px rgba(0,0,0,0.6);
@@ -12452,37 +12395,20 @@ h3, h4,
   min-height: 60vh;
   width: 100%;
 }
-/* Superdub superspinner — pulsing PNG logo inside a spinning brand ring */
+/* The first-load gate on Habits covers everything, nav included, so the boot ring
+   in index.html hands over to an identical ring in the same spot and the app then
+   appears once, whole. */
+.sd-loader-wrap--boot { position: fixed; inset: 0; z-index: 600; min-height: 0; background: var(--void); }
+/* Superdub loading ring — the same 56px ring as the pre-React boot spinner in
+   index.html (size, stroke, colours, speed), so the two are indistinguishable
+   when one replaces the other. */
 .sd-loader {
-  position: relative;
-  width: 78px;
-  height: 78px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.sd-loader::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: conic-gradient(from 0deg, transparent 0%, #2FD27E 35%, #2E8BFF 70%, transparent 100%);
-  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
-  mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
-  animation: sd-spin 0.9s linear infinite;
-}
-.sd-loader-logo {
-  width: 56%;
-  height: 56%;
-  object-fit: contain;
-  animation: sd-pulse 1.4s ease-in-out infinite;
-  filter: drop-shadow(0 0 12px rgba(47,210,126,0.45));
+  width: 56px; height: 56px; border-radius: 50%;
+  border: 4px solid rgba(var(--fg-rgb),0.08);
+  border-top-color: #2FD27E; border-right-color: #2E8BFF;
+  animation: sd-spin 0.8s linear infinite;
 }
 @keyframes sd-spin { to { transform: rotate(360deg); } }
-@keyframes sd-pulse {
-  0%, 100% { transform: scale(0.9); opacity: 0.85; }
-  50%      { transform: scale(1.05); opacity: 1; }
-}
 
 /* =====================================================================
    WEIGHT TREND — expand button + modal
@@ -13199,11 +13125,10 @@ h3, h4,
   align-items: center;
   gap: 12px;
   padding: 10px 10px 10px 16px;
-  background: rgba(var(--surface-rgb),0.72);
+  background: rgba(var(--surface-rgb),0.96);
   border: 1px solid rgba(139, 92, 246, 0.5);
   border-radius: 14px;
   box-shadow: 0 10px 34px rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(10px);
   animation: day-banner-in 0.3s ease;
 }
 @keyframes day-banner-in {
@@ -13712,7 +13637,6 @@ html.superdub-night .app {
   position: sticky;
   top: 0;
   background: rgba(var(--surface-rgb),0.96);
-  backdrop-filter: blur(10px);
   z-index: 10;
   border-bottom: 1px solid rgba(var(--fg-rgb),0.06);
 }
@@ -14608,7 +14532,6 @@ button.mini-hm-cell:not(:disabled)::after {
   background: rgba(0,0,0,0.7);
   display: flex; align-items: center; justify-content: center;
   padding: 24px;
-  backdrop-filter: blur(4px);
 }
 .honesty-modal {
   width: min(340px, 100%);

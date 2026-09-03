@@ -1544,7 +1544,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   if (!loaded) {
     return (
       <div className="app" style={pageTheme(GROWTH)}>
-        <div className="sd-loader-wrap"><div className="sd-loader"><img className="sd-loader-logo" src="/superdub-logo.png" alt="" /></div></div>
+        <div className="sd-loader-wrap"><div className="sd-loader" /></div>
       </div>
     );
   }
