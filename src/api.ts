@@ -1,6 +1,7 @@
 import { makeCache } from './apiCache';
 import { capture } from './analytics';
 import { enqueue, flush as flushOutbox, initOutbox, shouldQueue, type OutboxEntry } from './outbox';
+import { readPair, writeTracker, writeHabits, applyOutbox, clearReadCache, type HabitListRow } from './readCache';
 
 // Inside a Capacitor native shell the webview origin is capacitor://localhost, so the
 // relative '/api' + CRA dev proxy don't apply — point at the hosted backend directly.
@@ -329,6 +330,64 @@ function queueOrThrow(err: unknown, keep: () => void): { ok: true } {
   return { ok: true };
 }
 
+// ── The offline read model ─────────────────────────────────────────────────────
+//
+// The habits list and the tracker are fetched and cached as ONE pair, because
+// Habits.tsx does Promise.all([getHabits(), getTracker(2)]) and fails atomically on
+// purpose: habits without tracker renders an empty week, which its error branch calls
+// "indistinguishable from a wiped account". So either both come back or neither does.
+//
+// Every read is overlaid with the outbox, fresh reads included — a write that has not
+// reached the server yet is still what the user should see, or their tick appears to
+// revert the moment anything refetches.
+//
+// ponytail: on a captive portal navigator.onLine is true, so the fallback waits out
+// REQUEST_TIMEOUT_MS before serving cache. The common offline case costs nothing
+// (request() throws before fetch). Upgrade path is a cache-first revalidating read,
+// which needs the callers to re-render on the second result.
+const TRACKER_SPAN = (years?: number) => (years && years > 1 ? Math.min(3, Math.trunc(years)) : 1);
+const isOffline = () => typeof navigator !== 'undefined' && navigator.onLine === false;
+
+async function readTracker(years?: number): Promise<TrackerResponse> {
+  const span = TRACKER_SPAN(years);
+  const cached = () => {
+    const hit = readPair(span);
+    return hit ? applyOutbox(hit.tracker) : null;
+  };
+
+  if (isOffline()) {
+    const hit = cached();
+    if (hit) return hit;
+  }
+  try {
+    const fresh = await request<TrackerResponse>(span > 1 ? `/tracker?years=${span}` : '/tracker');
+    // Store the RAW response. Overlaying before storing would bake pending writes in
+    // and count them twice once they flush.
+    writeTracker(span, fresh);
+    return applyOutbox(fresh);
+  } catch (err) {
+    const hit = shouldQueue(err) ? cached() : null;
+    if (hit) return hit;
+    throw err;
+  }
+}
+
+async function readHabits(): Promise<HabitListRow[]> {
+  if (isOffline()) {
+    const hit = readPair(1);
+    if (hit) return hit.habits;
+  }
+  try {
+    const fresh = await request<HabitListRow[]>('/habits');
+    writeHabits(fresh);
+    return fresh;
+  } catch (err) {
+    const hit = shouldQueue(err) ? readPair(1) : null;
+    if (hit) return hit.habits;
+    throw err;
+  }
+}
+
 // Render's free tier cold-starts, so a request can hang for a minute with no
 // signal. 20s is past a normal cold start but short enough to still feel like
 // an answer rather than a freeze.
@@ -399,7 +458,18 @@ async function request<T = any>(path: string, options: RequestInit = {}): Promis
 // (login/logout) clear both so one user never reads another's cached data.
 const planStatusCache = makeCache<PlanStatusResponse>(() => request('/plan/status'), 60_000);
 const profileCache = makeCache<ProfileResponse>(() => request('/profile'), 60_000);
-export function clearApiCaches() { planStatusCache.invalidate(); profileCache.invalidate(); }
+export function clearApiCaches() {
+  planStatusCache.invalidate();
+  profileCache.invalidate();
+  // Everything below is a copy of one account's data on the device. clearToken() only
+  // ever removed the token, so these already leaked between users on a shared device;
+  // the read model would have leaked a whole habit history and weight log, and it
+  // renders before any fetch, so it would show it rather than flash it.
+  clearReadCache();
+  for (const k of ['superdub.xp.cache', 'superdub.dayStreak', 'superdub.plan.badge', 'superdub.accountCreatedAt']) {
+    try { localStorage.removeItem(k); } catch { /* nothing to do */ }
+  }
+}
 
 export const api = {
   // auth
@@ -447,7 +517,7 @@ export const api = {
   heartbeat: (): Promise<{ ok: true }> => request('/profile/heartbeat', { method: 'POST' }),
 
   // habits
-  getHabits: (): Promise<{ name: string; startDate: string | null; cadence?: string; quitStartedAt?: string | null; starred?: boolean; dueDate?: string | null; reminderHour?: number | null; schedule?: string | null; sharedWithFriends?: boolean }[]> => request('/habits'),
+  getHabits: (): Promise<HabitListRow[]> => readHabits(),
   updateHabits: (habits: (string | { name: string; cadence: string })[]): Promise<{ ok: true }> =>
     request('/habits', { method: 'PUT', body: JSON.stringify({ habits }) }),
   setQuitStart: (name: string, startedAt: string): Promise<{ ok: true }> =>
@@ -474,8 +544,7 @@ export const api = {
   // Omit it for the current year only, which is what every caller but the
   // Habits page wants. Habits asks for 2 so its rolling six-month matrix can
   // span a 1 January boundary.
-  getTracker: (years?: number): Promise<TrackerResponse> =>
-    request(years && years > 1 ? `/tracker?years=${years}` : '/tracker'),
+  getTracker: (years?: number): Promise<TrackerResponse> => readTracker(years),
   // A tracker day carries weight/steps, both of which feed the plan/stall engine.
   //
   // Both tracker writes are kept in the outbox when the network is the problem, so a

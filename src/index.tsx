@@ -12,7 +12,7 @@ import StepEntry from './StepEntry';
 import WeightEntry from './WeightEntry';
 import BottomNav from './BottomNav';
 import UpdateBanner from './UpdateBanner';
-import OutboxBanner from './OutboxBanner';
+import SyncBanner from './SyncBanner';
 import DayBanner from './DayBanner';
 import { Auth } from './Auth';
 import { isLoggedIn, clearToken, api } from './api';
@@ -208,7 +208,7 @@ function Root() {
         <BackgroundApplier />
         <NightSky />
         <UpdateBanner />
-        <OutboxBanner />
+        <SyncBanner />
         <DayBanner />
         <AppRouter />
         <LevelUpCelebration />

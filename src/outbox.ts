@@ -122,6 +122,11 @@ function write(queue: OutboxEntry[]): void {
 /** How many writes are waiting. Drives the pending pill. */
 export const outboxCount = (): number => read().length;
 
+/** The writes still waiting to be sent. The read model overlays these on top of
+ *  server data, so a tick that has not reached the server yet is still what the
+ *  user sees — otherwise it would appear to revert on the next read. */
+export const pendingWrites = (): OutboxEntry[] => read();
+
 export function enqueue(kind: OutboxKind, day: string, payload: Record<string, unknown>, habitName?: string): void {
   write(coalesce(read(), {
     key: entryKey(kind, day, habitName),

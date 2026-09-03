@@ -75,6 +75,7 @@ const PrivacyPolicy: React.FC = () => {
           <Section title="6. Cookies & Analytics">
             <p>Superdub uses <strong style={{ color: 'var(--text)' }}>privacy-first product analytics</strong> (PostHog, hosted in the EU) to understand which parts of the app help and which get in the way, so we can improve it. We do <strong style={{ color: 'var(--text)' }}>not</strong> use third-party advertising or cross-site tracking, and we never sell your data. Analytics is only switched on with your consent: you agree when you create your account, and existing users are asked once. You can decline, and Superdub works fully either way.</p>
             <p style={{ marginTop: 12 }}>We do not capture the values you type. We store a single authentication token in your browser's <strong style={{ color: 'var(--text)' }}>localStorage</strong> to keep you logged in; it is not shared with any third party and is removed when you log out.</p>
+            <p style={{ marginTop: 12 }}>Superdub also keeps a <strong style={{ color: 'var(--text)' }}>copy of your habits and daily log on your device</strong>, so the app still opens and works when you have no connection, and so a habit you tick offline is kept and sent once you are back online. This copy stays on your device, is never shared with anyone, and is <strong style={{ color: 'var(--text)' }}>erased when you log out</strong>.</p>
           </Section>
 
           <Section title="7. Third-Party Services">
