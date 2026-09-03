@@ -179,6 +179,8 @@ function AppRouter() {
       </Routes>
       </Suspense>
       </main>
+      {/* Inside the auth gate: the logged-out landing has no day to still be logging. */}
+      <DayBanner />
       {needConsent && <ConsentGate onDecided={() => setNeedConsent(false)} />}
       {/* First, and alone: someone back after a long gap gets one screen, not four. */}
       <ComebackPrompt />
@@ -202,7 +204,6 @@ function Root() {
         <BackgroundApplier />
         <NightSky />
         <UpdateBanner />
-        <DayBanner />
         <AppRouter />
         <LevelUpCelebration />
         <DubChat />

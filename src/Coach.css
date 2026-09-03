@@ -28,11 +28,14 @@
 
 /* Hero — today's read, anchored by the ambient wash + a level ring (no mascot) */
 .coach-hero {
-  position: relative; overflow: hidden;
+  position: relative; overflow: hidden; cursor: pointer;
+  transition: transform 0.12s, border-color 0.15s;
   border: 1px solid var(--glass-border); border-radius: var(--r-lg);
   background: var(--glass-bg-strong);
   padding: 16px 15px; margin-bottom: 14px;
 }
+.coach-hero:active { transform: scale(0.99); }
+.coach-hero:focus-visible { outline: 2px solid var(--theme); outline-offset: 2px; }
 .coach-hero-wash { position: absolute; inset: 0; pointer-events: none; }
 .coach-hero-body { position: relative; display: flex; gap: 14px; align-items: flex-start; }
 .coach-hero-ring {
@@ -74,7 +77,7 @@
 .coach-line--good { border-left-color: #2FD27E; }
 .coach-line--warn { border-left-color: #FFB928; }
 .coach-line--neutral { border-left-color: #6C8BFF; }
-.coach-line-ico { font-size: 1.2rem; flex-shrink: 0; line-height: 1.2; }
+.coach-line-ico { display: flex; flex-shrink: 0; color: var(--theme-ink); opacity: 0.9; }
 .coach-line-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .coach-line-title { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 0.9rem; color: var(--text); }
 .coach-line-body { font-size: 0.82rem; line-height: 1.5; color: var(--text-dim); }

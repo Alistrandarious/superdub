@@ -9,6 +9,7 @@ import { OCCUPATIONS, ETHNICITIES, GENDER_IDENTITIES, COUNTRIES, RELATIONSHIP_ST
 import { pageTheme, GROWTH } from './theme';
 import { setWeightUnit as persistWeightUnit } from './weightUnit';
 import { setBrandNick, nickToWordmark } from './brand';
+import { ClockIc, LockIc, CalendarIc, LogoutIc } from './icons';
 
 interface ProfileData {
   dob: string;
@@ -284,9 +285,9 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
 
         {(lastActiveAt || lastLoginAt || accountCreatedAt) && (
           <div className="profile-account-meta">
-            {lastActiveAt && <span className="pam-item"><span className="pam-icon">⏱</span>Last active: <strong>{formatRelativeTime(lastActiveAt)}</strong></span>}
-            {lastLoginAt && <span className="pam-item"><span className="pam-icon">🔐</span>Last login: <strong>{formatDate(lastLoginAt)}</strong></span>}
-            {accountCreatedAt && <span className="pam-item"><span className="pam-icon">📅</span>Member since <strong>{formatDate(accountCreatedAt)}</strong></span>}
+            {lastActiveAt && <span className="pam-item"><span className="pam-icon"><ClockIc size={13} /></span>Last active: <strong>{formatRelativeTime(lastActiveAt)}</strong></span>}
+            {lastLoginAt && <span className="pam-item"><span className="pam-icon"><LockIc size={13} /></span>Last login: <strong>{formatDate(lastLoginAt)}</strong></span>}
+            {accountCreatedAt && <span className="pam-item"><span className="pam-icon"><CalendarIc size={13} /></span>Member since <strong>{formatDate(accountCreatedAt)}</strong></span>}
           </div>
         )}
 
@@ -394,7 +395,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
               {JOB_OPTS.map((o: any) => (
                 <button key={o.id} type="button" className={`activity-pick-btn${jobType === o.id ? ' active' : ''}`}
                   onClick={() => { setJobType(o.id); updateActivityPicker(o.id, gymFreq, walkFreq); }}>
-                  <span className="apb-label">{o.label}</span>
+                  <span className="apb-label">{o.icon}{o.label}</span>
                   <span className="apb-desc">{o.desc}</span>
                 </button>
               ))}
@@ -478,7 +479,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
           </button>
           {onLogout && (
             <button className="more-menu-item" onClick={onLogout}>
-              <span className="more-menu-icon">🚪</span>
+              <span className="more-menu-icon"><LogoutIc size={16} /></span>
               <span className="more-menu-label">Log out</span>
               <span className="more-menu-arrow">›</span>
             </button>

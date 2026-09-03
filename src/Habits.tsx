@@ -23,7 +23,7 @@ import { weatherEnabled } from './promptPrefs';
 import { hoursForDay, type WeatherHour } from './weatherHours';
 import {
   CalendarIc, TrophyIc, WalkIc, BookIc, NoSmokeIc, MealIc, MoneyIc, HealthIc,
-  SunIc, CloudSunIc, CloudIc, RainIc, SnowIc, StormIc, type IconProps,
+  SunIc, CloudSunIc, CloudIc, RainIc, SnowIc, StormIc, ShieldIc, type IconProps,
 } from './icons';
 import { pageTheme, HEALTH } from './theme';
 import { quitProgress, quitElapsed, toLocalDatetimeValue } from './quit';
@@ -656,7 +656,7 @@ const HabitCard: React.FC<{
   return (
     <div
       ref={cardRef}
-      className={`hcard ${expanded ? 'hcard--expanded' : 'hcard--collapsed'} ${hasDanger ? 'hcard-danger' : hasWarning ? 'hcard-warning' : ''}${focused ? ' hcard--focused' : ''}`}
+      className={`hcard ${expanded ? 'hcard--expanded' : 'hcard--collapsed'} ${hasDanger ? 'hcard-danger' : hasWarning ? 'hcard-warning' : ''}${focused ? ' hcard--focused' : ''}${currentDone ? ' hcard--done' : ''}`}
       style={{ '--theme': accent, '--theme-dim': `${accent}66`, '--theme-glow': `${accent}22` } as React.CSSProperties}
     >
       {/* Level left, name centred, streak right, and the habit's whole history
@@ -675,9 +675,17 @@ const HabitCard: React.FC<{
             <span className="hcard-lv" title={`Level ${stats.level}, ${stats.totalDays} days logged, +${stats.xpPerDay} XP per day`}>LV<b>{stats.level}</b></span>
           </span>
           <span ref={nameRef} className={`hcard-name${nameWrapped ? ' hcard-name--wrapped' : ''}`}>{habit}</span>
-          <span className={`hcard-strk${stats.streak > 0 ? ' on' : ''}`} title={`${stats.streak} in a row`}>
-            <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" aria-hidden="true"><path d="M12 2c1 4-3 5-3 9a3 3 0 0 0 6 0c0-1-.4-2-1-3 2 1 4 3 4 6a6 6 0 0 1-12 0c0-5 6-6 6-12z"/></svg>
-            <b>{stats.streak}</b>
+          <span className="hcard-top-right">
+            <span className={`hcard-strk${stats.streak > 0 ? ' on' : ''}`} title={`${stats.streak} in a row`}>
+              <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" aria-hidden="true"><path d="M12 2c1 4-3 5-3 9a3 3 0 0 0 6 0c0-1-.4-2-1-3 2 1 4 3 4 6a6 6 0 0 1-12 0c0-5 6-6 6-12z"/></svg>
+              <b>{stats.streak}</b>
+            </span>
+            {/* The tap target is the whole card, so the card has to SAY it is one:
+                a hollow ring until you tap, a filled tick after. Before this the
+                only sign a habit was done was one 10px cell lighting up. */}
+            <span className={`hcard-done-chip${currentDone ? ' done' : ''}`} aria-hidden="true">
+              {currentDone && <CheckSVG size={11} strokeWidth={3.2} />}
+            </span>
           </span>
         </div>
         <HabitMatrix
@@ -1915,7 +1923,6 @@ const Habits: React.FC = () => {
                 onKeyDown={e => e.key === 'Enter' && addHabit()}
                 placeholder="Name your new habit…"
               />
-              <button className="habit-add-btn" onClick={addHabit}>+</button>
             </div>
             <p className="hb-sheet-sub" style={{ marginTop: 16, marginBottom: 8 }}>How often?</p>
             <div className="cadence-picker">
@@ -1983,6 +1990,9 @@ const Habits: React.FC = () => {
                 <p className="hb-sheet-hint">Your clock counts up from here. If you slip, tap Rewind to restart it.</p>
               </>
             )}
+            <button className="hb-sheet-cta" onClick={addHabit} disabled={!newHabit.trim()}>
+              {newHabitCadence === 'quit' ? 'Start the clock' : 'Add habit'}
+            </button>
           </div>
         </div>
       )}
@@ -1994,7 +2004,7 @@ const Habits: React.FC = () => {
       {honestyPending && (
         <div className="honesty-overlay" onClick={() => setHonestyPending(null)}>
           <div className="honesty-modal" onClick={e => e.stopPropagation()}>
-            <div className="honesty-icon">🤝</div>
+            <div className="honesty-icon"><ShieldIc size={34} /></div>
             <h3 className="honesty-title">Quick honesty check</h3>
             <p className="honesty-text">
               You're editing a past day. Only log what you <strong>genuinely did</strong> —
@@ -2022,53 +2032,6 @@ const Habits: React.FC = () => {
             </button>
           )}
         </SuperdubHeader>
-
-        {showInstall && stage !== 'super' && (
-          <div className={`pwa-banner${installClosing ? ' closing' : ''}`}>
-            <button className="pwa-banner-dismiss" onClick={dismissInstall} aria-label="Hide for today">✕</button>
-            <div className="pwa-banner-main">
-              <img className="pwa-banner-icon" src="/superdub-icon-512.png" alt="" />
-              <div className="pwa-banner-text">
-                {isIOS ? (
-                  <>
-                    <strong>Add to Home Screen</strong>
-                    <span>Tap <strong>Share</strong> → <strong>Add to Home Screen</strong></span>
-                  </>
-                ) : (
-                  <>
-                    <strong>Superdub for Android</strong>
-                    <span>The Android app is here. Download it now.</span>
-                  </>
-                )}
-              </div>
-            </div>
-            {isIOS ? (
-              <>
-                <div className="pwa-banner-foot">
-                  <span className="pwa-reward"><span className="pwa-reward-plus">+</span>100 XP</span>
-                  <button className="pwa-banner-never" onClick={neverShowInstall}>Don't show again</button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="pwa-banner-foot">
-                  <a
-                    className="pwa-banner-btn"
-                    href="/downloads/superdub.apk"
-                    download="superdub.apk"
-                    onClick={dismissInstall}
-                  >
-                    Download APK
-                  </a>
-                </div>
-                <p className="pwa-banner-note">
-                  Not from the Play Store, so Android will ask you to allow “install from unknown sources”. That’s expected, not a problem.
-                </p>
-                <button className="pwa-banner-never pwa-banner-never--row" onClick={neverShowInstall}>Don't show again</button>
-              </>
-            )}
-          </div>
-        )}
 
         {!customizeOpen && <>
         {/* Date — top of the page, under the wordmark. */}
@@ -2135,6 +2098,26 @@ const Habits: React.FC = () => {
           compact={stuck}
           header={activeCadence === 'daily' ? <PinnedXpBar /> : null}
         />
+
+        {/* Get-the-app nudge. One quiet row, and it sits UNDER the habits rather
+            than leading the page: the first thing you meet on your home screen is
+            your day, not a download button. The X is permanent, a promo you closed
+            should not come back tomorrow. Native builds never see it. */}
+        {showInstall && stage !== 'super' && (
+          <div className={`pwa-banner${installClosing ? ' closing' : ''}`}>
+            <img className="pwa-banner-icon" src="/superdub-icon-512.png" alt="" />
+            <div className="pwa-banner-text">
+              <strong>{isIOS ? 'Add to Home Screen' : 'Superdub for Android'}</strong>
+              <span>{isIOS ? <>Tap <b>Share</b>, then <b>Add to Home Screen</b>. Earns 100 XP.</> : 'Not on the Play Store yet, so Android asks once to allow it.'}</span>
+            </div>
+            {!isIOS && (
+              <a className="pwa-banner-btn" href="/downloads/superdub.apk" download="superdub.apk" onClick={dismissInstall}>Get it</a>
+            )}
+            <button className="pwa-banner-dismiss" onClick={neverShowInstall} aria-label="Don't show again">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+            </button>
+          </div>
+        )}
 
         {/* Featured banner, tap to open & join (below the user's habits). Swipes up
             from the bottom (0 → 100% opacity) each time you swipe the carousel above —

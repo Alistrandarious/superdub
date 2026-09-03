@@ -6,6 +6,7 @@ import { BUILD_TAG } from './version';
 import CogMenu from './CogMenu';
 import { pageTheme, HEALTH } from './theme';
 import { useBrandNick } from './brand';
+import { AlertIc, BoxIc } from './icons';
 
 const ArchivedHabits: React.FC = () => {
   const navigate = useNavigate();
@@ -86,7 +87,7 @@ const ArchivedHabits: React.FC = () => {
 
       <div className="archived-scroll">
         <div className="archived-head">
-          <h1 className="archived-title">📦 Archived Habits</h1>
+          <h1 className="archived-title">Archived Habits</h1>
           <p className="archived-sub">Restore one to start it fresh from today, or delete it forever.</p>
           {restoreError && <p className="archived-sub archived-sub--warn">{restoreError}</p>}
         </div>
@@ -95,14 +96,14 @@ const ArchivedHabits: React.FC = () => {
           <div className="sd-loader-wrap"><div className="sd-loader"><img className="sd-loader-logo" src="/superdub-logo.png" alt="" /></div></div>
         ) : error ? (
           <div className="archived-empty">
-            <div className="archived-empty-icon">⚠️</div>
+            <div className="archived-empty-icon"><AlertIc size={44} strokeWidth={1.6} /></div>
             <p className="archived-empty-title">Couldn't load</p>
             <p className="archived-empty-sub">Check your connection and try again.</p>
             <button className="archived-back-btn" onClick={load}>Retry</button>
           </div>
         ) : graveyard.length === 0 ? (
           <div className="archived-empty">
-            <div className="archived-empty-icon">🗂️</div>
+            <div className="archived-empty-icon"><BoxIc size={44} strokeWidth={1.6} /></div>
             <p className="archived-empty-title">Nothing archived</p>
             <p className="archived-empty-sub">When you archive a habit it'll wait here for you.</p>
             <button className="archived-back-btn" onClick={() => navigate('/')}>Back to habits</button>
@@ -113,14 +114,14 @@ const ArchivedHabits: React.FC = () => {
               const busy = restoring === h.name || deleting === h.name;
               return (
                 <div key={h.name} className={`graveyard-card ${restoring === h.name ? 'rising' : ''}`}>
-                  <span className="graveyard-card-name">📁 {h.name}</span>
+                  <span className="graveyard-card-name"><BoxIc size={14} /> {h.name}</span>
                   <div className="graveyard-card-actions">
                     <button
                       className="graveyard-restore-btn"
                       onClick={() => restore(h.name)}
                       disabled={busy}
                     >
-                      {restoring === h.name ? '✨ Restoring…' : 'Restore'}
+                      {restoring === h.name ? 'Restoring…' : 'Restore'}
                     </button>
                     <button
                       className="graveyard-delete-btn"

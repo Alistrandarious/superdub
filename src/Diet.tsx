@@ -10,6 +10,7 @@ import { kcalPerStep } from './energy';
 import { pageTheme, GROWTH, HEALTH } from './theme';
 import { linearReg, localYMD, isoToDDMM, emaStep, sinceLastGap } from './weightMath';
 import { useSoftened } from './LapseBanner';
+import { DumbbellIc, SlidersIc, RunIc } from './icons';
 
 interface ProfileData {
   dob: string;
@@ -264,7 +265,7 @@ const PlanSummaryCard: React.FC<{
           padding: '10px 20px 16px', borderTop: '1px solid #2A2D3A',
           fontSize: '0.72rem', color: '#555',
         }}>
-          <span style={{ fontSize: '0.9rem' }}>🏋️</span>
+          <DumbbellIc size={14} />
           <span>{trainingParts.join(' · ')}</span>
         </div>
       )}
@@ -341,7 +342,7 @@ const SmartAdjustCard: React.FC<{
     <div className="diet-section sa-card">
       <div className="sa-header">
         <div className="sa-icon-wrap">
-          <span className="sa-icon">🤖</span>
+          <span className="sa-icon"><SlidersIc size={16} /></span>
         </div>
         <div className="sa-titles">
           <span className="sa-title">Adjust your target</span>
@@ -445,7 +446,7 @@ const ActivityTargetsCard: React.FC<{
           {gymSessionsPerWeek > 0 && (
             <div className="atc-burn-row">
               <div className="atc-burn-left">
-                <span className="atc-burn-icon">🏋️</span>
+                <span className="atc-burn-icon"><DumbbellIc size={16} /></span>
                 <div>
                   <div className="atc-burn-name">Gym</div>
                   <div className="atc-burn-detail">{gymSessionsPerWeek}×/week · {gymMinutes} min · {gymIntensity}</div>
@@ -464,7 +465,7 @@ const ActivityTargetsCard: React.FC<{
             return (
               <div key={a.id} className="atc-burn-row">
                 <div className="atc-burn-left">
-                  <span className="atc-burn-icon">🏃</span>
+                  <span className="atc-burn-icon"><RunIc size={16} /></span>
                   <div>
                     <div className="atc-burn-name">{a.name}</div>
                     <div className="atc-burn-detail">{a.sessionsPerWeek}×/week · {a.minutesPerSession} min · {a.intensity}</div>
@@ -508,7 +509,7 @@ const ActivityTargetsCard: React.FC<{
             </div>
             <div className="atc-step-context">
               {alreadyCovered
-                ? `Food${hasTraining ? ' + training' : ''} already covers your ${goal} target, these steps are bonus burn. 💪`
+                ? `Food${hasTraining ? ' + training' : ''} already covers your ${goal} target, these steps are bonus burn.`
                 : `You're ~${Math.round(Math.abs(gapKcal)).toLocaleString()} kcal short of today's ${goal} target, moving more helps close the gap.`}
             </div>
           </>

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useXP } from './XPContext';
 import { getRingTheme, SELECTED_THEME_KEY } from './levels';
 import LevelGlance from './LevelGlance';
+import { SparkIc, MedalIc } from './icons';
 
 const LAST_LEVEL_KEY = 'superdub.lastSeenLevel';
 
@@ -63,7 +64,12 @@ const LevelUpCelebration: React.FC = () => {
         <h2 className="lvlup-title">{playerLevel.title}</h2>
 
         <div className="lvlup-reward lvlup-reward--compact">
-          <span className="lvlup-reward-icon">{playerLevel.reward.icon}</span>
+          {/* Theme rewards show the actual swatch (design rule), the rest a stroke mark. */}
+          <span className="lvlup-reward-icon">
+            {playerLevel.reward.kind === 'theme' && playerLevel.reward.themeId
+              ? <span className="asc-swatch" style={{ background: `linear-gradient(135deg, ${getRingTheme(playerLevel.reward.themeId).from}, ${getRingTheme(playerLevel.reward.themeId).to})` }} />
+              : playerLevel.reward.kind === 'flair' ? <SparkIc size={20} /> : <MedalIc size={20} />}
+          </span>
           <span className="lvlup-reward-label">{playerLevel.reward.label} unlocked</span>
         </div>
 

@@ -2,6 +2,7 @@ import React, { useRef, useCallback, useState, useEffect, useMemo } from 'react'
 import { api } from './api';
 import { stepsToKm } from './energy';
 import { useWeightUnit, kgToUnitValue, unitLabel } from './weightUnit';
+import { EyeIc, EyeOffIc } from './icons';
 
 const XP_GATES: [number, number][] = [
   [0, 10], [7, 15], [14, 20], [30, 25], [60, 30], [100, 35], [200, 40], [365, 50],
@@ -441,7 +442,7 @@ const WeeklyRecap: React.FC = () => {
               className="wr-btn-secondary"
               onClick={() => setHideWeight(h => !h)}
             >
-              {hideWeight ? '👁 Show weight' : '🙈 Hide weight'}
+              {hideWeight ? <><EyeIc size={14} /> Show weight</> : <><EyeOffIc size={14} /> Hide weight</>}
             </button>
             {isSunday ? (
               <button

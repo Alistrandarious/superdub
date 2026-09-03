@@ -4,6 +4,10 @@ import { isNative } from './api';
 const CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
 const GIS_SRC = 'https://accounts.google.com/gsi/client';
 
+// True when the Google button will actually render, so callers can drop the
+// "or" divider that otherwise dangles above nothing.
+export const googleAuthAvailable = !!CLIENT_ID && !isNative;
+
 // Loads Google Identity Services once and resolves when window.google is ready.
 let gisPromise: Promise<void> | null = null;
 function loadGis(): Promise<void> {

@@ -88,3 +88,82 @@ export const MoneyIc: React.FC<IconProps> = (p) => (  // budget (was 💰)
 export const HealthIc: React.FC<IconProps> = (p) => ( // check-up (was 🩺)
   <S {...p}><path d="M5 3v5a4 4 0 0 0 8 0V3" /><path d="M9 12v3a5 5 0 0 0 10 0v-1" /><circle cx="19" cy="12" r="2" /></S>
 );
+
+// ── Onboarding + Profile pickers (were emoji labels) ────────────────────────
+export const FlameIc: React.FC<IconProps> = (p) => (   // lose weight (was 🔥)
+  <S {...p}><path d="M12 2c1 4-3 5.5-3 9.5a3 3 0 0 0 6 0c0-1-.4-2-1-3 2 1 4 3 4 6a6 6 0 0 1-12 0c0-5 6-6 6-12.5z" /></S>
+);
+export const ScaleIc: React.FC<IconProps> = (p) => (   // maintain (was ⚖️)
+  <S {...p}><path d="M12 3v18M5 21h14M3 8l9-3 9 3" /><path d="M6 8l-3 7a3 3 0 0 0 6 0zM18 8l-3 7a3 3 0 0 0 6 0z" /></S>
+);
+export const DumbbellIc: React.FC<IconProps> = (p) => ( // build / gym (was 💪 🏋️)
+  <S {...p}><path d="M6.5 6.5v11M17.5 6.5v11M3 9v6M21 9v6M6.5 12h11" /></S>
+);
+export const MonitorIc: React.FC<IconProps> = (p) => (  // desk job (was 🪑)
+  <S {...p}><rect x="2" y="4" width="20" height="13" rx="2" /><path d="M8 21h8M12 17v4" /></S>
+);
+export const ActivityIc: React.FC<IconProps> = (p) => ( // mixed job (was 🚶)
+  <S {...p}><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></S>
+);
+export const StoreIc: React.FC<IconProps> = (p) => (    // on your feet (was 🏪)
+  <S {...p}><path d="M3 9l1.5-5h15L21 9" /><path d="M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0" /><path d="M5 12v9h14v-9M10 21v-6h4v6" /></S>
+);
+export const HammerIc: React.FC<IconProps> = (p) => (   // physical job (was 🔨)
+  <S {...p}><path d="M14 4l6 6-2 2-6-6z" /><path d="M12 8 4 16l4 4 8-8" /></S>
+);
+export const CarIc: React.FC<IconProps> = (p) => (      // barely walks (was 🚗)
+  <S {...p}><path d="M5 17H3v-5l2-5h14l2 5v5h-2" /><circle cx="7.5" cy="17" r="2" /><circle cx="16.5" cy="17" r="2" /><path d="M9.5 17h5M3 12h18" /></S>
+);
+export const FootIc: React.FC<IconProps> = (p) => (     // a little walking (was 🦶)
+  <S {...p}><path d="M9 21a4 4 0 0 1-4-4v-2a5 5 0 0 1 10 0v2a4 4 0 0 1-4 4z" /><path d="M6 8V6M9 7V4M12 7V5M15 9V7" /></S>
+);
+export const RunIc: React.FC<IconProps> = (p) => (      // a lot of walking (was 🏃)
+  <S {...p}><circle cx="15" cy="4" r="2" /><path d="M13 8l-4 4 3 3-3 6M13 8l3 3 4-1M9 12l-4 1M12 15l4 2 2 4" /></S>
+);
+
+// ── Small chrome marks (were emoji) ─────────────────────────────────────────
+export const ClockIc: React.FC<IconProps> = (p) => (     // last active (was ⏱)
+  <S {...p}><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></S>
+);
+export const LockIc: React.FC<IconProps> = (p) => (      // last login (was 🔐)
+  <S {...p}><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></S>
+);
+export const LogoutIc: React.FC<IconProps> = (p) => (    // log out (was 🚪)
+  <S {...p}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></S>
+);
+export const BoxIc: React.FC<IconProps> = (p) => (       // archive (was 📦 🗂️ 📁)
+  <S {...p}><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4" /></S>
+);
+export const AlertIc: React.FC<IconProps> = (p) => (     // warning (was ⚠️ 🟠 🟡)
+  <S {...p}><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /><path d="M12 9v4M12 17h.01" /></S>
+);
+export const ZapIc: React.FC<IconProps> = (p) => (       // metabolic protection (was ⚡)
+  <S {...p}><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z" /></S>
+);
+export const SlidersIc: React.FC<IconProps> = (p) => (   // smart adjust (was 🤖)
+  <S {...p}><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" /></S>
+);
+export const ShieldIc: React.FC<IconProps> = (p) => (    // honesty (was 🤝)
+  <S {...p}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="m9 12 2 2 4-4" /></S>
+);
+export const EyeIc: React.FC<IconProps> = (p) => (       // show (was 👁)
+  <S {...p}><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" /><circle cx="12" cy="12" r="3" /></S>
+);
+export const EyeOffIc: React.FC<IconProps> = (p) => (    // hide (was 🙈)
+  <S {...p}><path d="M17.9 17.9A10 10 0 0 1 12 19c-7 0-11-7-11-7a18 18 0 0 1 5.1-5.9M9.9 4.2A9 9 0 0 1 12 4c7 0 11 8 11 8a18 18 0 0 1-2.2 3.2M14.1 14.1a3 3 0 1 1-4.2-4.2" /><path d="m1 1 22 22" /></S>
+);
+export const SparkIc: React.FC<IconProps> = (p) => (     // flair reward (was ✨)
+  <S {...p}><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8" /></S>
+);
+export const TargetIc: React.FC<IconProps> = (p) => (    // set a goal (was 🎯)
+  <S {...p}><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1" /></S>
+);
+export const SmileIc: React.FC<IconProps> = (p) => (     // mood up (was 😊)
+  <S {...p}><circle cx="12" cy="12" r="10" /><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01" /></S>
+);
+export const TrendUpIc: React.FC<IconProps> = (p) => (   // rising link (was 📈 👟)
+  <S {...p}><path d="M3 17l6-6 4 4 8-8" /><path d="M14 7h7v7" /></S>
+);
+export const TrendDownIc: React.FC<IconProps> = (p) => ( // falling link (was 📉 🐢)
+  <S {...p}><path d="M3 7l6 6 4-4 8 8" /><path d="M14 17h7v-7" /></S>
+);

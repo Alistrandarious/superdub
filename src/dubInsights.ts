@@ -110,7 +110,7 @@ export function buildHabitInsights(input: InsightInput): DubInsight[] {
     // Only nag if this weekday is clearly worse than the habit's own average.
     if (worst >= 0 && worstRate >= 0.5 && worstRate - overallMissRate >= 0.15) {
       out.push({
-        habit, icon: '📅', strength: worstRate,
+        habit, icon: 'weekday', strength: worstRate,
         text: `You skip ${habit} most on ${WEEKDAY[worst]}s (missed ${miss[worst]} of ${total[worst]}). Worth a plan for that day.`,
       });
     }
@@ -123,7 +123,7 @@ export function buildHabitInsights(input: InsightInput): DubInsight[] {
       const rel = (a - b) / b;
       if (Math.abs(rel) >= 0.12) {
         out.push({
-          habit, icon: rel > 0 ? '👟' : '🐢', strength: Math.min(1, Math.abs(rel)),
+          habit, icon: rel > 0 ? 'up' : 'down', strength: Math.min(1, Math.abs(rel)),
           text: rel > 0
             ? `On days you do ${habit} you average ${fmtK(a)} steps, versus ${fmtK(b)} when you don't.`
             : `Your step count dips on ${habit} days (${fmtK(a)} vs ${fmtK(b)}).`,
@@ -138,7 +138,7 @@ export function buildHabitInsights(input: InsightInput): DubInsight[] {
       const a = mean(doneMood), b = mean(offMood);
       if (Math.abs(a - b) >= 0.4) {
         out.push({
-          habit, icon: a > b ? '😊' : '☁️', strength: Math.min(1, Math.abs(a - b) / 4),
+          habit, icon: a > b ? 'mood-up' : 'mood-down', strength: Math.min(1, Math.abs(a - b) / 4),
           text: a > b
             ? `You feel better on days you do ${habit} (${a.toFixed(1)}/5 vs ${b.toFixed(1)}/5).`
             : `Your mood runs lower on ${habit} days (${a.toFixed(1)}/5 vs ${b.toFixed(1)}/5).`,
@@ -166,7 +166,7 @@ export function buildHabitInsights(input: InsightInput): DubInsight[] {
     const r = pearson(pairs);
     if (r != null && Math.abs(r) >= 0.35) {
       out.push({
-        habit, icon: r < 0 ? '📉' : '📈', strength: Math.abs(r),
+        habit, icon: r < 0 ? 'down' : 'up', strength: Math.abs(r),
         text: r < 0
           ? `Weeks you keep ${habit} up, your weight tends to drop (${strengthWord(r)} link).`
           : `Weeks you keep ${habit} up, your weight tends to climb (${strengthWord(r)} link).`,

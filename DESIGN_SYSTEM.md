@@ -99,8 +99,8 @@ Section header pattern: Space Mono 700 caps eyebrow + hairline rule.
 
 ## Layout constraints
 
-- Mobile-first single column; fixed **`BottomNav`** (5 items: Progress · Plan ·
-  Habits[center] · Success Kit · Lists). Nav glow + center-button colour are
+- Mobile-first single column; fixed **`BottomNav`** (5 items: Progress · Coach ·
+  Habits[raised centre] · Global · Lists). Nav glow + centre-button colour are
   user-customisable via `superdub.navGlow` / `superdub.habitsColor`.
 - **Flex-collapse pitfall:** column-flex scroll shells crush `overflow:hidden`
   children — add `flex-shrink: 0` guards. Empty preview data can mask this.

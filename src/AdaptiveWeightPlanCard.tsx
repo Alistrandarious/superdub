@@ -1,5 +1,6 @@
 import React from 'react';
 import { useWeightUnit, formatWeightKg } from './weightUnit';
+import { ZapIc, AlertIc } from './icons';
 
 // Adaptive Weight Plan engine card — pure render.
 // Its data (plan status, weekly cycle, coaching signal, weight EMA) is fetched
@@ -117,7 +118,7 @@ const AdaptiveWeightPlanCard: React.FC<{
       {/* Metabolic Protection alert */}
       {planCycle?.metabolicProtection && (
         <div className="plan-engine-metabolic-warning">
-          <span className="plan-engine-metabolic-icon">⚡</span>
+          <span className="plan-engine-metabolic-icon"><ZapIc size={14} /></span>
           <span className="plan-engine-metabolic-text">
             <strong>Protecting muscle.</strong> You've been losing weight fast for two weeks running, so your target is nudging up a little to keep the loss coming from fat, not muscle.
           </span>
@@ -141,7 +142,7 @@ const AdaptiveWeightPlanCard: React.FC<{
       {/* Plateau / stall prediction + the one thing to do about it */}
       {planStatus.stall && planStatus.stall.risk !== 'none' && (
         <div className={`plan-engine-stall stall-${planStatus.stall.risk}`}>
-          <span className="plan-engine-stall-icon">{planStatus.stall.risk === 'high' ? '🟠' : '🟡'}</span>
+          <span className="plan-engine-stall-icon"><AlertIc size={16} /></span>
           <span className="plan-engine-stall-body">
             <span className="plan-engine-stall-text">{planStatus.stall.message}</span>
             {planStatus.stall.action && (

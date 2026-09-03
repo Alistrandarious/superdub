@@ -149,7 +149,6 @@ const CogMenu: React.FC = () => {
 
             <div className="cog-menu-sep" />
             <div className="cog-menu-label">Settings</div>
-            <button className="cog-menu-item" onClick={() => go('/profile')}><span className="cog-mi-ico"><Ic><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" /></Ic></span> Personalise</button>
             <button className="cog-menu-item" onClick={toggleCheckin}>
               <span className="cog-mi-ico"><Ic><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" /></Ic></span> Daily Check-in
               <span className={`checkin-toggle-pill ${checkinEnabled ? 'on' : 'off'}`} style={{ marginLeft: 'auto' }}>{checkinEnabled ? 'ON' : 'OFF'}</span>

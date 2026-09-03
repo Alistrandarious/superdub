@@ -58,7 +58,7 @@ const OnboardingDaily: React.FC<{ habits: string[]; nickname: string }> = ({ hab
         })}
       </ul>
 
-      <p className="onb-day-hint">{allDone ? 'This is what a perfect day looks like.' : 'Tap a ring to close it — try it out.'}</p>
+      <p className="onb-day-hint">{allDone ? 'This is what a perfect day looks like.' : 'Tap a ring to close it. Try it out.'}</p>
     </div>
   );
 };

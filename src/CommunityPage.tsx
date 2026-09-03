@@ -99,7 +99,7 @@ const CommunityPage: React.FC = () => {
                 </span>
                 <p className="community-sub">The world is climbing <b>{d.habit}</b> this month</p>
                 <div className="community-climbers">
-                  <span className="community-avatars" aria-hidden="true"><i /><i /><i /><i /></span>
+                  {d.contributors > 0 && <span className="community-avatars" aria-hidden="true"><i /><i /><i /><i /></span>}
                   <small>{d.contributors.toLocaleString()} climbing</small>
                 </div>
               </>
@@ -138,7 +138,8 @@ const CommunityPage: React.FC = () => {
             <div className="global-you">
               <span className="global-you-badge"><small>LEVEL</small><strong>{level}</strong></span>
               <div className="global-you-text">
-                <b>{d.mine > 0 ? `+${d.mine.toLocaleString()} XP this month` : 'Log your first deed to join the climb'}</b>
+                {/* A number in the data face; a sentence in the UI face. */}
+                <b className={d.mine > 0 ? undefined : 'is-copy'}>{d.mine > 0 ? `+${d.mine.toLocaleString()} XP this month` : 'Log your first deed to join the climb'}</b>
                 <small>
                   {d.mine > 0
                     ? `Your deeds are worth ${perDeed} XP each at Level ${level}`

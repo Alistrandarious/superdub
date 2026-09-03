@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
-import { api, setToken, isNative } from './api';
+import { api, setToken } from './api';
 import { OCCUPATIONS, ETHNICITIES, GENDER_IDENTITIES, COUNTRIES, RELATIONSHIP_STATUSES, RELIGIONS } from './demographics';
-import GoogleAuthButton from './GoogleAuthButton';
+import GoogleAuthButton, { googleAuthAvailable } from './GoogleAuthButton';
 import OnboardingDaily from './OnboardingDaily';
 import OnboardingCustomize from './OnboardingCustomize';
 import DubCoach from './DubCoach';
@@ -11,6 +11,7 @@ import HealthDisclaimer from './HealthDisclaimer';
 import { setAnalyticsConsent, capture } from './analytics';
 import './App.css';
 import { GROWTH } from './theme';
+import { FlameIc, ScaleIc, DumbbellIc, MonitorIc, ActivityIc, StoreIc, HammerIc, CarIc, FootIc, RunIc } from './icons';
 import { nickToWordmark, setBrandNick } from './brand';
 
 interface AuthProps {
@@ -22,11 +23,12 @@ type Mode = 'landing' | 'login' | 'signup' | 'forgot' | 'reset';
 const DEFAULT_HABITS = ['Walking', 'Praying', 'Duolingo'];
 const EXTRA_HABITS = ['Reading', 'Meditation', 'Gym', 'Running', 'Cold shower', 'Journaling', 'No sugar', 'Sleep by 11pm'];
 
+// Stroke icons, not emoji: the style guide keeps emoji out of UI chrome.
 export const JOB_OPTS = [
-  { id: 'desk',     label: '🪑 Desk',      desc: 'Sitting most of the day' },
-  { id: 'mixed',    label: '🚶 Mixed',     desc: 'Sit and move around' },
-  { id: 'standing', label: '🏪 On feet',   desc: 'Retail, teaching, waiting' },
-  { id: 'physical', label: '🔨 Physical',  desc: 'Labour, construction, farming' },
+  { id: 'desk',     label: 'Desk',      desc: 'Sitting most of the day',         icon: <MonitorIc size={14} /> },
+  { id: 'mixed',    label: 'Mixed',     desc: 'Sit and move around',             icon: <ActivityIc size={14} /> },
+  { id: 'standing', label: 'On feet',   desc: 'Retail, teaching, waiting',       icon: <StoreIc size={14} /> },
+  { id: 'physical', label: 'Physical',  desc: 'Labour, construction, farming',   icon: <HammerIc size={14} /> },
 ];
 export const GYM_OPTS = [
   { id: 'never', label: 'Never' },
@@ -36,10 +38,10 @@ export const GYM_OPTS = [
   { id: 'daily', label: 'Daily+' },
 ];
 export const WALK_OPTS = [
-  { id: 'barely',   label: '🚗 Barely',   desc: 'Drive everywhere, <3k steps' },
-  { id: 'little',   label: '🦶 A little', desc: 'Short walks, ~3–5k steps' },
-  { id: 'moderate', label: '🚶 Moderate', desc: '5–10k steps/day' },
-  { id: 'alot',     label: '🏃 A lot',    desc: '10k+ steps, very active' },
+  { id: 'barely',   label: 'Barely',   desc: 'Drive everywhere, <3k steps', icon: <CarIc size={14} /> },
+  { id: 'little',   label: 'A little', desc: 'Short walks, ~3–5k steps',    icon: <FootIc size={14} /> },
+  { id: 'moderate', label: 'Moderate', desc: '5–10k steps/day',             icon: <ActivityIc size={14} /> },
+  { id: 'alot',     label: 'A lot',    desc: '10k+ steps, very active',     icon: <RunIc size={14} /> },
 ];
 const JOB_FACTOR:  Record<string, number> = { desk: 0, mixed: 0.05, standing: 0.1, physical: 0.3 };
 const GYM_FACTOR:  Record<string, number> = { never: 0, '1-2': 0.1, '3-4': 0.175, '5-6': 0.25, daily: 0.35 };
@@ -366,7 +368,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
                 {loading ? 'Logging in…' : 'Log in'}
               </button>
             </form>
-            {!isNative && <div className="auth-or"><span>or</span></div>}
+            {googleAuthAvailable && <div className="auth-or"><span>or</span></div>}
             <GoogleAuthButton onCredential={handleGoogle} text="signin_with" />
             <p className="auth-switch">No account? <button className="auth-link" onClick={() => { setMode('signup'); clearError(); }}>Sign up</button></p>
             <p className="auth-switch"><button className="auth-link" onClick={() => { setResetEmail(loginEmail); setMode('forgot'); clearError(); }}>Forgot password?</button></p>
@@ -504,7 +506,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
                     onKeyDown={e => e.key === 'Enter' && advance()} />
                 </div>
               </div>
-              {!isNative && <div className="auth-or"><span>or</span></div>}
+              {googleAuthAvailable && <div className="auth-or"><span>or</span></div>}
               <GoogleAuthButton onCredential={handleGoogle} text="signup_with" />
             </>
           )}
@@ -612,9 +614,9 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
             const weeksToGain = dietGoal === 'bulk' && w > 0 && gw > 0 && gw > w && gpw > 0
               ? Math.ceil((gw - w) / gpw) : 0;
             const GOAL_OPTIONS = [
-              { id: 'cut' as const, icon: '🔥', label: 'Lose weight', desc: 'Eat in a calorie deficit to lean down' },
-              { id: 'maintain' as const, icon: '⚖️', label: 'Stay healthy', desc: 'Maintain current weight and feel great' },
-              { id: 'bulk' as const, icon: '💪', label: 'Build & Grow', desc: 'Gain muscle with a calorie surplus' },
+              { id: 'cut' as const, icon: <FlameIc size={22} />, label: 'Lose weight', desc: 'Eat in a calorie deficit to lean down' },
+              { id: 'maintain' as const, icon: <ScaleIc size={22} />, label: 'Stay healthy', desc: 'Maintain current weight and feel great' },
+              { id: 'bulk' as const, icon: <DumbbellIc size={22} />, label: 'Build & Grow', desc: 'Gain muscle with a calorie surplus' },
             ];
             return (
               <>
@@ -676,7 +678,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
                     <div className="activity-picker">
                       {JOB_OPTS.map(o => (
                         <button key={o.id} type="button" className={`activity-pick-btn${jobType === o.id ? ' active' : ''}`} onClick={() => setJobType(o.id)}>
-                          <span className="apb-label">{o.label}</span>
+                          <span className="apb-label">{o.icon}{o.label}</span>
                           <span className="apb-desc">{o.desc}</span>
                         </button>
                       ))}
@@ -705,7 +707,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuth }) => {
                     <div className="activity-picker">
                       {WALK_OPTS.map(o => (
                         <button key={o.id} type="button" className={`activity-pick-btn${walkFreq === o.id ? ' active' : ''}`} onClick={() => setWalkFreq(o.id)}>
-                          <span className="apb-label">{o.label}</span>
+                          <span className="apb-label">{o.icon}{o.label}</span>
                           <span className="apb-desc">{o.desc}</span>
                         </button>
                       ))}

@@ -39,7 +39,7 @@ import { CADENCE_ORDER, CADENCE_META, type Cadence } from './Habits';
 import HabitMatrix, { IsoHistory, isoOf } from './HabitMatrix';
 import { isSystemHabit, DAILY_LOG_HABITS, FULL_DAILY_LOG } from './systemHabits';
 import { scheduledDateInPeriod } from './habitSchedule';
-import { UsersIc, AppleIc, CalendarIc } from './icons';
+import { UsersIc, AppleIc, CalendarIc, TrophyIc, ScaleIc, TargetIc, DumbbellIc, ShieldIc } from './icons';
 
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -1671,7 +1671,10 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       const done = last14.filter(k => tracker[k]?.habits[h] === true).length;
       if (done < worstDone) { worstDone = done; worst = h; }
     }
-    return { name: worst, done14: worstDone };
+    // A habit with no history at all is new, not neglected: "you haven't hit it
+    // in two weeks" on an account created this morning reads as a telling-off.
+    const everDone = ALL_DAYS.some(k => tracker[k]?.habits[worst] === true);
+    return { name: worst, done14: everDone ? worstDone : Infinity };
   })();
   // Recommended bedtime = 8h before the recent average wake time (fallback 07:00),
   // matching the sleep chart's 8h goal line.
@@ -1816,7 +1819,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       {goalReached && (
         <div className="goal-reached-overlay" onClick={() => !goalReachedBusy && setGoalReached(null)}>
           <div className="goal-reached-card" onClick={e => e.stopPropagation()}>
-            <div className="goal-reached-burst">🎉</div>
+            <div className="goal-reached-burst"><TrophyIc size={40} /></div>
             <h3 className="goal-reached-title">You hit your goal weight!</h3>
             <p className="goal-reached-sub">
               You're at <strong>{formatWeightKg(goalReached.latestWeight, unit)}</strong>, your target was{' '}
@@ -1834,14 +1837,14 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                   setGoalReached(null);
                 }}
               >
-                ⚖️ Switch to maintenance
+                <ScaleIc size={15} /> Switch to maintenance
               </button>
               <button
                 className="goal-reached-btn"
                 disabled={goalReachedBusy}
                 onClick={() => { setGoalReached(null); setGoalSheetOpen(true); }}
               >
-                🎯 Set a new goal
+                <TargetIc size={15} /> Set a new goal
               </button>
               <button
                 className="goal-reached-btn ghost"
@@ -1853,7 +1856,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                   setGoalReached(null);
                 }}
               >
-                💪 Keep going
+                <DumbbellIc size={15} /> Keep going
               </button>
             </div>
           </div>
@@ -2934,7 +2937,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       {honestyPending && (
         <div className="honesty-overlay" onClick={() => setHonestyPending(null)}>
           <div className="honesty-modal" onClick={e => e.stopPropagation()}>
-            <div className="honesty-icon">🤝</div>
+            <div className="honesty-icon"><ShieldIc size={34} /></div>
             <h3 className="honesty-title">Quick honesty check</h3>
             <p className="honesty-text">
               You're editing a past day. Only log what you <strong>genuinely did</strong> —

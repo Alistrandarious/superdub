@@ -10,9 +10,16 @@ import { pageTheme } from './theme';
 import { isSystemHabit } from './systemHabits';
 import { readStage } from './userStage';
 import { useXP } from './XPContext';
+import { CalendarIc, TrendUpIc, TrendDownIc, SmileIc, CloudIc } from './icons';
 
 const YEAR = new Date().getFullYear();
 const DUB_SEEN_KEY = 'superdub.dubSeen';
+
+// Insight kinds → stroke icons (style guide: no emoji in UI chrome).
+const INSIGHT_ICON: Record<string, React.ReactNode> = {
+  weekday: <CalendarIc size={18} />, up: <TrendUpIc size={18} />, down: <TrendDownIc size={18} />,
+  'mood-up': <SmileIc size={18} />, 'mood-down': <CloudIc size={18} />,
+};
 
 function buildAllDays(): string[] {
   const d: string[] = [];
@@ -203,7 +210,16 @@ const DubPage: React.FC = () => {
         </div>
 
         {/* HERO — today's read, anchored by an ambient time-of-day wash + level ring */}
-        <section className="coach-hero">
+        {/* The hero says "tap me", so the whole card opens the read, not only the
+            button below the insights. */}
+        <section
+          className="coach-hero"
+          role="button"
+          tabIndex={0}
+          aria-label="Open today's full read"
+          onClick={chatToDub}
+          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); chatToDub(); } }}
+        >
           <div className="coach-hero-wash" aria-hidden="true" style={{ background: WASH[phase] }} />
           <div className="coach-hero-body">
             <span className="coach-hero-ring" role="img" aria-label={`Level ${playerLevel.level}, ${playerLevel.title}`}>
@@ -246,7 +262,7 @@ const DubPage: React.FC = () => {
             <div className="coach-lines">
               {insights.map((ins, i) => (
                 <div key={i} className="coach-line coach-line--neutral">
-                  <span className="coach-line-ico">{ins.icon}</span>
+                  <span className="coach-line-ico">{INSIGHT_ICON[ins.icon] ?? <TrendUpIc size={18} />}</span>
                   <div className="coach-line-text">
                     <span className="coach-line-title">{ins.habit}</span>
                     <span className="coach-line-body">{ins.text}</span>

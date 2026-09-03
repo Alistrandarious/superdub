@@ -49,7 +49,7 @@ Progress + screen order are pure and covered by `onboarding.check.ts`.
 | `UpdateBanner.tsx` | New-version / What's-New prompt (see `BUILD_TAG` in `version.ts`) |
 
 ## Notable shared components
-- `BottomNav.tsx` — 6-item uniform fixed nav (Habits · Progress · Dub · Global · Lists · Kit); no raised centre button. Profile left the nav (now cog-only); Dub took its slot. Habits icon tints with the habits-colour cosmetic; active tint follows the nav-glow cosmetic.
+- `BottomNav.tsx` — 5-item fixed nav (Progress · Coach · **Habits** · Global · Lists) with Habits as the raised centre circle (E4.7). Profile is cog-only. The centre circle tints with the habits-colour cosmetic; active tint follows the nav-glow cosmetic.
 - `LevelCustomizer.tsx` — the level hero + all cosmetic/companion shelves (ring themes, Dub species/colour, **Dub pronouns** via `dubPronouns.ts`, accents, background); rendered on Profile.
 - `CogMenu.tsx` — unified per-page cog menu (settings, navigation, quick-log).
 - `LevelRing.tsx` / ring themes — XP ring, incl. the Liquid ring cosmetic.

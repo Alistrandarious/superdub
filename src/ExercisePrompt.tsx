@@ -57,7 +57,7 @@ const ExercisePrompt: React.FC = () => {
       dismissLabel="Ask me later"
     >
       {result ? (
-        <div className="checkin-done">{result === 'yes' ? '💪 Nice, logged!' : 'No worries, tomorrow.'}</div>
+        <div className="checkin-done">{result === 'yes' ? 'Nice, logged!' : 'No worries, tomorrow.'}</div>
       ) : (
         <div className="exercise-btns">
           <button className="exercise-btn yes" onClick={() => answer(true)} disabled={saving}>Yes</button>
