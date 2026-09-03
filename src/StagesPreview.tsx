@@ -14,7 +14,7 @@ import { readStage, type UserStage } from './userStage';
 type Stage = { id: UserStage; name: string; who: string; rule: React.ReactNode };
 const STAGES: Stage[] = [
   { id: 'new', name: 'New', who: 'day 3 · level 1', rule: <>joined <b>&lt; 7 days</b>, or level <b>≤ 2</b></> },
-  { id: 'regular', name: 'Regular', who: 'wk 5 · level 4', rule: <>the broad middle — <b>momentum, not mastery</b></> },
+  { id: 'regular', name: 'Regular', who: 'wk 5 · level 4', rule: <>the broad middle: <b>momentum, not mastery</b></> },
   { id: 'super', name: 'Super', who: '212-day streak · lvl 9', rule: <>level <b>≥ 7</b> and a live <b>21-day</b> streak</> },
 ];
 
@@ -32,7 +32,7 @@ const StagesPreview: React.FC = () => {
         <div className="stages-preview">
           <p className="sp-lede">
             The same three surfaces, read by <span className="sp-brand">super</span>dub for who's looking.
-            Your stage comes from one blend of signals you already track — tenure, level, and your live check-in streak.
+            Your stage comes from one blend of signals you already track: tenure, level, and your live check-in streak.
           </p>
 
           <div className="sp-rules">
@@ -64,7 +64,7 @@ const StagesPreview: React.FC = () => {
                 </div>
                 <div className="sp-card">
                   <div className="sp-lbl"><span className="t">Progress</span><span className="sp-flag">cohort framing</span></div>
-                  <div className="sp-cohort"><span className="t">Expert Coach · Community Cohort</span><div className="cn">Steady starters, losing gently</div><div className="cm">Your day-one targets come from people who started where you are — no 2-week wait to calibrate.</div></div>
+                  <div className="sp-cohort"><span className="t">Expert Coach · Community Cohort</span><div className="cn">Steady starters, losing gently</div><div className="cm">Your day-one targets come from people who started where you are, no 2-week wait to calibrate.</div></div>
                 </div>
               </div>
             </div>
@@ -86,7 +86,7 @@ const StagesPreview: React.FC = () => {
                 </div>
                 <div className="sp-card">
                   <div className="sp-lbl"><span className="t">Progress</span></div>
-                  <div className="sp-absent">no cohort banner — past cold start</div>
+                  <div className="sp-absent">no cohort banner, past cold start</div>
                 </div>
               </div>
             </div>
@@ -99,7 +99,7 @@ const StagesPreview: React.FC = () => {
                   <div className="sp-lbl"><span className="t">Home · Habits</span><span className="sp-flag">denser</span></div>
                   <div className="sp-week"><div className="sp-day done">M</div><div className="sp-day done">T</div><div className="sp-day done">W</div><div className="sp-day today done">T</div><div className="sp-day done">F</div><div className="sp-day done">S</div><div className="sp-day done">S</div></div>
                   <div className="sp-cap"><span className="n">212</span>-day check-in streak · keep it alive</div>
-                  <div className="sp-absent">install nudge hidden — already installed</div>
+                  <div className="sp-absent">install nudge hidden, already installed</div>
                 </div>
                 <div className="sp-card">
                   <div className="sp-lbl"><span className="t">Dub · morning brief</span><span className="sp-flag">terser</span></div>
@@ -108,7 +108,7 @@ const StagesPreview: React.FC = () => {
                 </div>
                 <div className="sp-card">
                   <div className="sp-lbl"><span className="t">Progress</span></div>
-                  <div className="sp-absent">no cohort framing — veteran</div>
+                  <div className="sp-absent">no cohort framing, veteran</div>
                 </div>
               </div>
             </div>

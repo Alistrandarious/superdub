@@ -5266,7 +5266,17 @@ h1, h2, h3, h4, .sora {
 .smile-overlay { background: radial-gradient(120% 80% at 50% 12%, rgba(255,138,0,0.14), rgba(var(--surface-rgb),0.98) 55%); }
 .smile-eyebrow { color: var(--flame-ink); }
 .smile-spark { background: #FF8A00; }
-.smile-flame { position: relative; display: flex; justify-content: center; margin: 0 auto 4px; filter: drop-shadow(0 0 22px rgba(255,138,0,0.55)); }
+/* The milestone has a third of the level-up's content, so it centres on the
+   ground instead of hugging the top: the eyebrow's auto top margin splits the
+   free space with the chevron's (pop-up law: short ones centre). */
+.smile-overlay .smile-eyebrow { margin-top: auto; }
+/* Glow drawn behind the flame as a gradient. A drop-shadow filter on an element
+   that animates every frame is the same per-frame repaint the Global planet had. */
+.smile-flame { position: relative; display: flex; justify-content: center; margin: 0 auto 4px; }
+.smile-flame::before {
+  content: ''; position: absolute; inset: -30%; border-radius: 50%; z-index: -1;
+  background: radial-gradient(circle, rgba(255,138,0,0.42), rgba(255,138,0,0) 68%);
+}
 .smile-num {
   position: relative;
   font-family: var(--font-display); font-style: italic; font-weight: 800;

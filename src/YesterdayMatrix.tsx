@@ -146,7 +146,7 @@ const YesterdayMatrix: React.FC<YesterdayMatrixProps> = ({
                 Burned ~{(maintenance + (stepBurnKcal ?? 0) + (gymBurnKcal ?? 0)).toLocaleString()} kcal
                 (maintenance {maintenance.toLocaleString()}{stepBurnKcal ? `, steps ${signed(stepBurnKcal)}` : ''}{gymBurnKcal ? `, gym +${gymBurnKcal.toLocaleString()}` : ''}),
                 set against your weigh-in and evening “eating vs target”.
-                {wide ? ' Your scale jumped overnight — mostly water — so the band is wide.' : ' One day’s scale move is mostly water, so it’s a band, not a single number.'}
+                {wide ? ' Your scale jumped overnight, mostly water, so the band is wide.' : ' One day’s scale move is mostly water, so it’s a band, not a single number.'}
               </>
             ) : (
               <>A range from your body’s burn set against your weigh-in and evening “eating vs target”. One day’s scale move is mostly water, so it’s a band, not a single number.</>

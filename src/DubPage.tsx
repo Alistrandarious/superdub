@@ -237,7 +237,9 @@ const DubPage: React.FC = () => {
             </span>
             <div className="coach-hero-text">
               <span className="coach-eyebrow">TODAY&rsquo;S READ</span>
-              {dayState?.thought && <p className="coach-hero-thought">{dayState.thought}</p>}
+              {dayState?.thought
+                ? <p className="coach-hero-thought">{dayState.thought}</p>
+                : !loaded && <p className="coach-hero-thought coach-hero-thought--wait">Reading your day.</p>}
               {/* Full paragraph brief lives behind "Open the full read" — the hero stays
                   a single punchy verdict so the page is scannable, not a wall of text. */}
             </div>

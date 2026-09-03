@@ -6,6 +6,7 @@ import SuperdubHeader from './SuperdubHeader';
 import { pageTheme, GOLD } from './theme';
 import { habitXPForDoneDays } from './levels';
 import LevelLadder from './LevelLadder';
+import { isSystemHabit } from './systemHabits';
 
 const YEAR = new Date().getFullYear();
 
@@ -85,7 +86,9 @@ function computeBadges(
   totalXP: number,
   playerLevel: number,
 ): BadgeDef[] {
-  const allStats = habits.map(h => computeHabitXP(h.name, ht, today, h.startDate));
+  // The login habit is the app's, not yours: it has no place in your record or
+  // in the streak badges.
+  const allStats = habits.filter(h => !isSystemHabit(h.name)).map(h => computeHabitXP(h.name, ht, today, h.startDate));
   const maxStreak = allStats.reduce((m, s) => Math.max(m, s.streak), 0);
   const maxBestStreak = allStats.reduce((m, s) => Math.max(m, s.bestStreak), 0);
   const totalDaysAllHabits = allStats.reduce((m, s) => m + s.totalDays, 0);

@@ -126,7 +126,7 @@ const PatternsCard: React.FC<{ days: PatternDay[] }> = ({ days }) => {
         <div className="patterns-head">
           <h3 className="chart-title"><span className="chart-title-dot" style={{ background: active.color }} />Your Patterns</h3>
         </div>
-        <p className="patterns-empty">Keep logging — your patterns unlock at 10 days of data ({days.length}/10 so far).</p>
+        <p className="patterns-empty">Keep logging. Your patterns unlock at 10 days of data ({days.length}/10 so far).</p>
       </section>
     );
   }

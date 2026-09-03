@@ -2058,8 +2058,8 @@ const Habits: React.FC = () => {
             <div className="honesty-icon"><ShieldIc size={34} /></div>
             <h3 className="honesty-title">Quick honesty check</h3>
             <p className="honesty-text">
-              You're editing a past day. Only log what you <strong>genuinely did</strong> —
-              your streaks, XP and trends are only worth something if they're real. No one's watching but you.
+              You're editing a past day. Only log what you <strong>genuinely did</strong>.
+              Your streaks, XP and trends are only worth something if they're real. No one's watching but you.
             </p>
             <button className="honesty-confirm" onClick={confirmHonesty}>I'll be honest, let me edit</button>
             <button className="honesty-cancel" onClick={() => setHonestyPending(null)}>Cancel</button>
@@ -2130,7 +2130,8 @@ const Habits: React.FC = () => {
               </span>
               {/* The near goal. A streak that only ever grows by one has nothing to
                   reach for; the next landmark gives every day a finish line. */}
-              {milestone.next && (
+              {/* Only once there is a run: at zero it read "3 days to 3". */}
+              {milestone.next && dayStreak > 0 && (
                 <span className="hb-streak-track" aria-label={`${milestone.next - dayStreak} days to ${milestone.next}`}>
                   <span className="hb-streak-track-bar">
                     <span className="hb-streak-track-fill" style={{ width: `${Math.max(3, ((dayStreak - milestone.prev) / (milestone.next - milestone.prev)) * 100)}%` }} />

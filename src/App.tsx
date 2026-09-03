@@ -272,6 +272,12 @@ const INITIAL_TRACKER = initData([]);
 interface AppProps { onLogout?: () => void; }
 
 const App: React.FC<AppProps> = ({ onLogout }) => {
+  // Chart ink follows the theme. recharts takes literal colours, so the white the
+  // dark charts draw with is chosen here per render; in light it is the text ink.
+  const light = document.documentElement.getAttribute('data-theme') === 'light';
+  const INK = light ? '#14161D' : '#FFFFFF';
+  const SURF = light ? '#F5F6FA' : '#0E0E14';
+  const wa = (a: number) => (light ? `rgba(20,22,29,${a})` : `rgba(255,255,255,${a})`);
   const navigate = useNavigate();
   const unit = useWeightUnit();
   const trackerBodyRef = useRef<HTMLDivElement>(null);
@@ -1111,10 +1117,10 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
     const dd = parseInt((payload.value as string).split('/')[0]);
     return (
       <g transform={`translate(${x},${y + 4})`}>
-        <text textAnchor="middle" fill="rgba(255,255,255,0.6)" fontSize={9} fontFamily="'Space Mono',monospace">{dd}</text>
+        <text textAnchor="middle" fill={wa(0.6)} fontSize={9} fontFamily="'Space Mono',monospace">{dd}</text>
       </g>
     );
-  }, []);
+  }, [light]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Month boundaries — the first day of each month visible (incl. the very first), with its name
   const monthBoundaryDays = useMemo(() => {
@@ -1132,7 +1138,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   // Deliberately NOT green — habit Done bars are green and the EMA would be invisible
   const emaColor = planStatus?.active
     ? (planCycle?.onTrack === false ? '#FF5470' : '#00D4FF')
-    : '#FFFFFF';
+    : INK;
 
   // Tooltip render function (colour-matched per series)
   const renderTooltip = makeChartTooltip(emaColor, todayKey, unit);
@@ -1576,7 +1582,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   const activeMetric = shownMetricNames.includes(trendMetric) ? trendMetric : 'Weight';
   const activeMeta = chartMeta.find(m => m.name === activeMetric) ?? null;
   const METRIC_DOT: Record<string, string> = {
-    Weight: '#FFFFFF', Habits: '#2FD27E', Steps: '#2FD27E', Intake: '#FF8A00', Sleep: '#8B5CF6', Mood: TEAL,
+    Weight: INK, Habits: '#2FD27E', Steps: '#2FD27E', Intake: '#FF8A00', Sleep: '#8B5CF6', Mood: TEAL,
   };
 
   // ── Yesterday Matrix inputs (yesterday's closing KPIs) ──────────────────────
@@ -2146,7 +2152,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
       {progressView === 'main' && activeMetric === 'Weight' && (
       <section className="chart-section chart-section--weight">
         <div className="chart-title-row">
-          <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#FFFFFF' }} />Weight Trend</h3>
+          <h3 className="chart-title"><span className="chart-title-dot" style={{ background: INK }} />Weight Trend</h3>
           <div className="chart-range-group">
             {RANGE_ORDER.map(r => {
               const enabled = rangeAvailable(r);
@@ -2167,8 +2173,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         {renderChartPager()}
         {/* Inline legend, always visible so users know what each line is */}
         <div className="chart-inline-legend">
-          <span className="cil-item"><span className="cil-line" style={{ background: '#fff' }} />Weight</span>
-          <span className="cil-item"><span className="cil-line cil-line--dash" style={{ background: 'rgba(255,255,255,0.55)' }} />Smoothed</span>
+          <span className="cil-item"><span className="cil-line" style={{ background: INK }} />Weight</span>
+          <span className="cil-item"><span className="cil-line cil-line--dash" style={{ background: wa(0.55) }} />Smoothed</span>
           {hasTrend && <span className="cil-item"><span className="cil-line cil-line--dash" style={{ background: '#B79CFF' }} />Trend</span>}
           {projectionLen > 0 && <span className="cil-item"><span className="cil-line cil-line--dash" style={{ background: '#4DA3FF' }} />Projection</span>}
           {zoneActive && <span className="cil-item"><span className="cil-swatch" style={{ background: 'rgba(255,190,30,0.5)' }} />Safe zone</span>}
@@ -2198,8 +2204,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 label={{ value: mb.month, fill: 'rgba(170,185,255,0.9)', fontSize: 9, fontWeight: 700, position: 'insideTopLeft' }}
               />
             ))}
-            <XAxis dataKey="day" stroke="rgba(255,255,255,0.1)" tick={chartXTick} interval={displayInterval} tickLine={false} height={36} padding={{ left: 10 }} />
-            <YAxis yAxisId="right" orientation="left" stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} allowDecimals={false} tickCount={5} allowDataOverflow={true} domain={(() => {
+            <XAxis dataKey="day" stroke={wa(0.1)} tick={chartXTick} interval={displayInterval} tickLine={false} height={36} padding={{ left: 10 }} />
+            <YAxis yAxisId="right" orientation="left" stroke={wa(0.1)} tick={{ fill: wa(0.5), fontSize: 9, fontFamily: "'Space Mono',monospace" }} allowDecimals={false} tickCount={5} allowDataOverflow={true} domain={(() => {
               const weights = chartData.map(d => d.weight).filter(Boolean) as number[];
               const emas    = chartData.map((d: any) => d.ema).filter(Boolean) as number[];
               const projs   = chartData.map((d: any) => d.projection).filter(Boolean) as number[];
@@ -2212,7 +2218,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               return [Math.floor(lo), hi] as [number, number];
             })()} width={42} axisLine={false} tickLine={false} tickFormatter={(v: number) => String(Math.round(kgToUnitValue(v, unit) * 10) / 10)} />
             <Tooltip
-              cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+              cursor={{ fill: wa(0.05) }}
               content={renderTooltip}
             />
             {(() => {
@@ -2274,7 +2280,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               yAxisId="right"
               type="monotone"
               dataKey="weightLine"
-              stroke="#FFFFFF"
+              stroke={INK}
               strokeWidth={3}
               dot={false}
               activeDot={false}
@@ -2292,7 +2298,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               dot={(props: any) => {
                 const { cx, cy, payload, index } = props;
                 if (payload.weight == null) return <g key={`dot-empty-${index}`} />;
-                return <circle key={`dot-${index}`} cx={cx} cy={cy} r={5} fill="#0E0E14" stroke="#FFFFFF" strokeWidth={2} />;
+                return <circle key={`dot-${index}`} cx={cx} cy={cy} r={5} fill={SURF} stroke={INK} strokeWidth={2} />;
               }}
               name="Weight"
               connectNulls={false}
@@ -2305,7 +2311,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 yAxisId="right"
                 type="monotone"
                 dataKey="ema"
-                stroke="rgba(255,255,255,0.65)"
+                stroke={wa(0.65)}
                 strokeWidth={5}
                 dot={false}
                 connectNulls={false}
@@ -2333,7 +2339,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                 key={`adj-${ddmm}`}
                 yAxisId="right"
                 x={ddmm}
-                stroke="rgba(255,255,255,0.18)"
+                stroke={wa(0.18)}
                 strokeDasharray="3 3"
                 label={{ value: '⟳', fill: '#9aa0a6', position: 'insideTop', fontSize: 10 }}
               />
@@ -2398,11 +2404,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
               <DraggableChart disabled onPage={pageBy}>
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={chartData} margin={{ left: 0, right: 10, top: 10, bottom: 8 }}>
-                  <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
-                  <XAxis dataKey="day" stroke="rgba(255,255,255,0.1)" tick={chartXTick} interval={displayInterval} tickLine={false} height={36} padding={{ left: 6, right: 6 }} />
-                  <YAxis stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} allowDecimals={false} width={26} axisLine={false} tickLine={false} domain={[0, habitAxisMax]} ticks={habitTicks} />
+                  <CartesianGrid stroke={wa(0.06)} strokeDasharray="3 3" />
+                  <XAxis dataKey="day" stroke={wa(0.1)} tick={chartXTick} interval={displayInterval} tickLine={false} height={36} padding={{ left: 6, right: 6 }} />
+                  <YAxis stroke={wa(0.1)} tick={{ fill: wa(0.5), fontSize: 9, fontFamily: "'Space Mono',monospace" }} allowDecimals={false} width={26} axisLine={false} tickLine={false} domain={[0, habitAxisMax]} ticks={habitTicks} />
                   <Tooltip
-                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                    cursor={{ fill: wa(0.05) }}
                     contentStyle={{ background: '#0E1510', border: '1px solid #1f3a2a', borderRadius: 10, fontSize: 12 }}
                     labelStyle={{ color: '#9ac' }}
                     itemStyle={{ color: '#E8ECF4' }}
@@ -2457,11 +2463,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                       <stop offset="100%" stopColor="#FF4D6E" />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
-                  <XAxis dataKey="day" stroke="rgba(255,255,255,0.1)" tick={chartXTick} interval={displayInterval} tickLine={false} height={36} padding={{ left: 6, right: 6 }} />
-                  <YAxis stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} width={36} axisLine={false} tickLine={false} tickFormatter={(v: number) => v >= 1000 ? `${Math.round(v / 1000)}k` : String(v)} />
+                  <CartesianGrid stroke={wa(0.06)} strokeDasharray="3 3" />
+                  <XAxis dataKey="day" stroke={wa(0.1)} tick={chartXTick} interval={displayInterval} tickLine={false} height={36} padding={{ left: 6, right: 6 }} />
+                  <YAxis stroke={wa(0.1)} tick={{ fill: wa(0.5), fontSize: 9, fontFamily: "'Space Mono',monospace" }} width={36} axisLine={false} tickLine={false} tickFormatter={(v: number) => v >= 1000 ? `${Math.round(v / 1000)}k` : String(v)} />
                   <Tooltip
-                    cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                    cursor={{ fill: wa(0.04) }}
                     contentStyle={{ background: '#0E1418', border: '1px solid #132820', borderRadius: 10, fontSize: 12 }}
                     labelStyle={{ color: '#9aa' }}
                     itemStyle={{ color: '#E8ECF4' }}
@@ -2480,7 +2486,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                   }} />
                   <Bar dataKey="steps" radius={[6, 6, 0, 0]} isAnimationActive={false}>
                     {stepChartData.map((d, i) => (
-                      <Cell key={i} fill={d.steps == null ? 'rgba(255,255,255,0.05)' : d.hit ? 'url(#stepHit)' : 'url(#stepMiss)'} />
+                      <Cell key={i} fill={d.steps == null ? wa(0.05) : d.hit ? 'url(#stepHit)' : 'url(#stepMiss)'} />
                     ))}
                   </Bar>
                 </ComposedChart>
@@ -2525,11 +2531,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                       <stop offset="100%" stopColor="#FF8A0005" />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
-                  <XAxis dataKey="day" stroke="rgba(255,255,255,0.1)" tick={chartXTick} interval={displayInterval} tickLine={false} height={36} padding={{ left: 6, right: 6 }} />
-                  <YAxis stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} width={40} axisLine={false} tickLine={false} domain={['dataMin - 200', 'dataMax + 200']} tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v)} />
+                  <CartesianGrid stroke={wa(0.06)} strokeDasharray="3 3" />
+                  <XAxis dataKey="day" stroke={wa(0.1)} tick={chartXTick} interval={displayInterval} tickLine={false} height={36} padding={{ left: 6, right: 6 }} />
+                  <YAxis stroke={wa(0.1)} tick={{ fill: wa(0.5), fontSize: 9, fontFamily: "'Space Mono',monospace" }} width={40} axisLine={false} tickLine={false} domain={['dataMin - 200', 'dataMax + 200']} tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v)} />
                   <Tooltip
-                    cursor={{ stroke: 'rgba(255,255,255,0.15)' }}
+                    cursor={{ stroke: wa(0.15) }}
                     contentStyle={{ background: '#160E06', border: '1px solid #3a2a14', borderRadius: 10, fontSize: 12 }}
                     labelStyle={{ color: '#caa' }}
                     itemStyle={{ color: '#E8ECF4' }}
@@ -2575,7 +2581,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         <section className="chart-section chart-section--sleep">
           <div className="chart-title-row" style={{ padding: '4px 16px 0' }}>
             <h3 className="chart-title"><span className="chart-title-dot" style={{ background: '#8B5CF6' }} />Sleep</h3>
-            <span className="chart-sub" style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>{sleepUseCandle ? 'bed to wake' : 'hours a night'}</span>
+            <span className="chart-sub" style={{ marginLeft: 'auto', fontSize: 10, color: wa(0.4) }}>{sleepUseCandle ? 'bed to wake' : 'hours a night'}</span>
           </div>
           {renderRangeGroup()}
           {renderChartPager()}
@@ -2596,11 +2602,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                   <stop offset="100%" stopColor="#8B5CF605" />
                 </linearGradient>
               </defs>
-              <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
-              <XAxis dataKey="day" stroke="rgba(255,255,255,0.1)" tick={chartXTick} interval={displayInterval} tickLine={false} height={36} padding={{ left: 6, right: 6 }} />
-              <YAxis stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} width={34} axisLine={false} tickLine={false} domain={[0, 12]} ticks={[0, 4, 8, 12]} />
+              <CartesianGrid stroke={wa(0.06)} strokeDasharray="3 3" />
+              <XAxis dataKey="day" stroke={wa(0.1)} tick={chartXTick} interval={displayInterval} tickLine={false} height={36} padding={{ left: 6, right: 6 }} />
+              <YAxis stroke={wa(0.1)} tick={{ fill: wa(0.5), fontSize: 9, fontFamily: "'Space Mono',monospace" }} width={34} axisLine={false} tickLine={false} domain={[0, 12]} ticks={[0, 4, 8, 12]} />
               <Tooltip
-                cursor={{ stroke: 'rgba(255,255,255,0.15)' }}
+                cursor={{ stroke: wa(0.15) }}
                 contentStyle={{ background: '#100E16', border: '1px solid #2c2440', borderRadius: 10, fontSize: 12 }}
                 labelStyle={{ color: '#ac9' }}
                 itemStyle={{ color: '#E8ECF4' }}
@@ -2627,7 +2633,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
         <section className="chart-section chart-section--mood">
           <div className="chart-title-row" style={{ padding: '4px 16px 0' }}>
             <h3 className="chart-title"><span className="chart-title-dot" style={{ background: TEAL }} />Mood</h3>
-            <span className="chart-sub" style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>how you felt</span>
+            <span className="chart-sub" style={{ marginLeft: 'auto', fontSize: 10, color: wa(0.4) }}>how you felt</span>
           </div>
           {renderRangeGroup()}
           {renderChartPager()}
@@ -2640,11 +2646,11 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
                   <stop offset="100%" stopColor={TEAL + '05'} />
                 </linearGradient>
               </defs>
-              <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
-              <XAxis dataKey="day" stroke="rgba(255,255,255,0.1)" tick={chartXTick} interval={displayInterval} tickLine={false} height={36} padding={{ left: 6, right: 6 }} />
-              <YAxis stroke="rgba(255,255,255,0.1)" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 9, fontFamily: "'Space Mono',monospace" }} width={34} axisLine={false} tickLine={false} domain={[1, 10]} ticks={[2, 4, 6, 8, 10]} />
+              <CartesianGrid stroke={wa(0.06)} strokeDasharray="3 3" />
+              <XAxis dataKey="day" stroke={wa(0.1)} tick={chartXTick} interval={displayInterval} tickLine={false} height={36} padding={{ left: 6, right: 6 }} />
+              <YAxis stroke={wa(0.1)} tick={{ fill: wa(0.5), fontSize: 9, fontFamily: "'Space Mono',monospace" }} width={34} axisLine={false} tickLine={false} domain={[1, 10]} ticks={[2, 4, 6, 8, 10]} />
               <Tooltip
-                cursor={{ stroke: 'rgba(255,255,255,0.15)' }}
+                cursor={{ stroke: wa(0.15) }}
                 contentStyle={{ background: '#161006', border: '1px solid #3a2f14', borderRadius: 10, fontSize: 12 }}
                 labelStyle={{ color: '#caa' }}
                 itemStyle={{ color: '#E8ECF4' }}
@@ -2817,7 +2823,7 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
           )}
         </div>
         {trackerTab === 'nutrition' && (
-          <p className="tracker-note">Logging food is optional. Superdub already estimates your calories from your weight and steps — logging just sharpens that estimate.</p>
+          <p className="tracker-note">Logging food is optional. Superdub already estimates your calories from your weight and steps. Logging just sharpens that estimate.</p>
         )}
         <div className="tracker-body" ref={trackerBodyRef}>
         <div className="tracker-grid" style={{ gridTemplateColumns: `148px repeat(${visibleDays.length}, 56px)` }}>
@@ -2940,8 +2946,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
             <div className="honesty-icon"><ShieldIc size={34} /></div>
             <h3 className="honesty-title">Quick honesty check</h3>
             <p className="honesty-text">
-              You're editing a past day. Only log what you <strong>genuinely did</strong> —
-              your streaks, XP and trends are only worth something if they're real. No one's watching but you.
+              You're editing a past day. Only log what you <strong>genuinely did</strong>.
+              Your streaks, XP and trends are only worth something if they're real. No one's watching but you.
             </p>
             <button className="honesty-confirm" onClick={confirmHonesty}>I'll be honest, let me edit</button>
             <button className="honesty-cancel" onClick={() => setHonestyPending(null)}>Cancel</button>

@@ -387,7 +387,7 @@ const Profile: React.FC<ProfileProps> = ({ onLogout }) => {
         {/* ── Activity ── */}
         <div className="diet-section">
           <h2 className="diet-heading">Activity</h2>
-          <p className="diet-hint" style={{ marginBottom: 14 }}>These three factors feed your maintenance calorie calculation.</p>
+          <p className="diet-hint" style={{ marginBottom: 14 }}>Your job and any regular training feed your maintenance calorie calculation.</p>
 
           <div className="bio-field">
             <label className="bio-label">Job type</label>

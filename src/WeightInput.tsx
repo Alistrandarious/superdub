@@ -51,7 +51,7 @@ export default function WeightInput({
         aria-label={ariaLabel ?? 'Weight'}
         onChange={e => onChange(e.target.value)}
         onKeyDown={e => { if (e.key === 'Enter') { (e.target as HTMLInputElement).blur(); onEnter?.(); } }}
-        placeholder="0" />
+        placeholder={unit === 'lbs' ? 'e.g. 165' : unit === 'st' ? 'e.g. 11.8' : 'e.g. 75'} />
       {!hideUnit && <span className="weight-input-unit">{unitLabel(unit)}</span>}
     </span>
   );

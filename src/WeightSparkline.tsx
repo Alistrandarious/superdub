@@ -13,8 +13,10 @@ const DayCircleTick = (props: any) => {
   const done = Array.isArray(doneFlags) ? !!doneFlags[payload.index] : false;
   return (
     <g transform={`translate(${x},${y + 16})`}>
-      <circle r={10} fill={done ? '#2FD27E' : '#2A2D3A'} stroke={done ? '#2FD27E' : '#252532'} strokeWidth={1} />
-      <text textAnchor="middle" dominantBaseline="central" fill={done ? '#06210F' : '#555'} fontSize={10} fontWeight={700}>
+      {/* Tokens for the unlogged days so they follow the theme: a navy disc with
+          dark type was unreadable on the light ground. */}
+      <circle r={10} strokeWidth={1} style={{ fill: done ? '#2FD27E' : 'var(--glass-border)', stroke: done ? '#2FD27E' : 'var(--glass-border-strong)' }} />
+      <text textAnchor="middle" dominantBaseline="central" fontSize={10} fontWeight={700} style={{ fill: done ? '#06210F' : 'var(--text-mute)' }}>
         {letter}
       </text>
     </g>
