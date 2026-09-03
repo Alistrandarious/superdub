@@ -28,7 +28,12 @@ export const MAX_ATTEMPTS = 5;
 /** A long offline stretch must not grow localStorage without bound. */
 export const MAX_ENTRIES = 200;
 
-export type OutboxKind = 'habit' | 'day';
+// 'steps' is a manual step entry. The native health sync (bulkSteps) is
+// deliberately NOT queued: it re-reads from the device store on every launch and
+// resume, so it heals itself, and queueing it would bank up to seven entries per
+// sync for data that is already on the phone. A typed step count is the opposite —
+// nothing can regenerate it.
+export type OutboxKind = 'habit' | 'day' | 'steps';
 
 export interface OutboxEntry {
   /** Coalescing identity: one entry per habit-cell, or per tracker day. */
@@ -45,8 +50,10 @@ export interface OutboxEntry {
  *  wrapper in api.ts — otherwise a failed replay would enqueue itself again. */
 export type OutboxSender = (entry: OutboxEntry) => Promise<unknown>;
 
-export const entryKey = (kind: OutboxKind, day: string, habitName?: string): string =>
-  kind === 'habit' ? `habit:${day}:${habitName}` : `day:${day}`;
+/** Coalescing identity. `sub` is the habit name for a tick, the source for a step
+ *  entry; a tracker day needs no discriminator. */
+export const entryKey = (kind: OutboxKind, day: string, sub?: string): string =>
+  kind === 'day' ? `day:${day}` : `${kind}:${day}:${sub}`;
 
 /**
  * Is this failure worth keeping the write for?
@@ -127,12 +134,14 @@ export const outboxCount = (): number => read().length;
  *  user sees — otherwise it would appear to revert on the next read. */
 export const pendingWrites = (): OutboxEntry[] => read();
 
-export function enqueue(kind: OutboxKind, day: string, payload: Record<string, unknown>, habitName?: string): void {
+export function enqueue(kind: OutboxKind, day: string, payload: Record<string, unknown>, sub?: string): void {
   write(coalesce(read(), {
-    key: entryKey(kind, day, habitName),
+    key: entryKey(kind, day, sub),
     kind,
     day,
-    habitName,
+    // Only a habit tick carries a name; a step entry keeps its source in the
+    // payload, where the sender and the read overlay both need it.
+    habitName: kind === 'habit' ? sub : undefined,
     payload,
     attempts: 0,
     queuedAt: Date.now(),

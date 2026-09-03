@@ -177,6 +177,19 @@ const pending = (over: Partial<OutboxEntry>): OutboxEntry =>
   assert(n.weight === '80' && n.calories === '' && n.steps === '', 'a new day row is blank except the write');
 }
 
+// ── The overlay: a queued step count shows on the day it was typed for ────────
+{
+  const base = twoYear();
+  const stepped = applyOutbox(base, [
+    { key: 'steps:02/09:manual', kind: 'steps', day: '02/09',
+      payload: { steps: 9021, source: 'manual' }, attempts: 0, queuedAt: 0 },
+  ], YEAR);
+  const d = stepped.days.find(r => r.day === '02/09')!;
+  assert(d.steps === '9021', 'the typed count is what the day shows');
+  assert(d.weight === '82.4', 'and the rest of the day is untouched');
+  assert(!('source' in d), 'source is routing, not a tracker column');
+}
+
 // An empty queue is the identity.
 {
   const base = twoYear();

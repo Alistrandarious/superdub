@@ -24,7 +24,7 @@ import {
   MAX_ATTEMPTS, MAX_ENTRIES, type OutboxEntry,
 } from './outbox';
 
-const mk = (kind: 'habit' | 'day', day: string, payload: Record<string, unknown>, habitName?: string): OutboxEntry => ({
+const mk = (kind: 'habit' | 'day' | 'steps', day: string, payload: Record<string, unknown>, habitName?: string): OutboxEntry => ({
   key: entryKey(kind, day, habitName), kind, day, habitName, payload, attempts: 0, queuedAt: Date.now(),
 });
 const reset = () => { delete store['superdub.outbox']; };
@@ -70,6 +70,25 @@ assert(!shouldQueue({ kind: 'server', status: 400 }), 'retryable is not the pred
   // Same field twice: the newer value wins.
   q = coalesce(q, mk('day', '02/09', { weight: '82.1' }));
   assert(q[0].payload.weight === '82.1', 'a corrected weight replaces the old one');
+}
+
+// ── Step entries coalesce per source ──────────────────────────────────────────
+// A typed step count is not regenerable, so it is queued. The native health sync
+// is not — it re-reads from the device on every launch.
+{
+  let q: OutboxEntry[] = [];
+  q = coalesce(q, mk('steps', '02/09', { steps: 8000, source: 'manual' }, 'manual'));
+  q = coalesce(q, mk('steps', '02/09', { steps: 9021, source: 'manual' }, 'manual'));
+  assert(q.length === 1, 'correcting a typed step count stays one write');
+  assert(q[0].payload.steps === 9021, 'and the number that replays is the last one typed');
+
+  // A device row for the same day is a different entry — the server keeps both
+  // sources and picks a winner.
+  q = coalesce(q, mk('steps', '02/09', { steps: 8800, source: 'healthkit' }, 'healthkit'));
+  assert(q.length === 2, 'each source is its own entry');
+  // And a habit tick on the same day never collides with either.
+  q = coalesce(q, mk('habit', '02/09', { state: 'done' }, 'Walking'));
+  assert(q.length === 3, 'kinds do not share keys');
 }
 
 // ── Coalescing keeps position, resets attempts, keeps the original queue time ──

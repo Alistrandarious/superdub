@@ -202,8 +202,16 @@ export function applyOutbox(
       // Merge only the keys present — an absent field means "leave alone", matching
       // the server's `CASE WHEN $n IS NOT NULL`. Values are String()-coerced because
       // callers send mixed types and the server stores text.
+      //
+      // A queued step entry lands here too: the server mirrors the winning source
+      // into tracker.steps (recomputeActive), and a step count typed just now is the
+      // most recent entry, so it is the one that wins. `source` is routing, not a
+      // tracker column, so it never reaches the row.
       const patch: Record<string, string> = {};
-      for (const [k, v] of Object.entries(e.payload)) if (v != null) patch[k] = String(v);
+      for (const [k, v] of Object.entries(e.payload)) {
+        if (v == null || k === 'source') continue;
+        patch[k] = String(v);
+      }
       const at = days.findIndex(r => r.day === e.day);
       if (at >= 0) {
         days[at] = { ...days[at], ...patch };

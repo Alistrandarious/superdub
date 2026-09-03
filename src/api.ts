@@ -565,8 +565,19 @@ export const api = {
   // steps (provenance-aware)
   getSteps: (day?: string): Promise<{ entries: StepEntry[] }> =>
     request(`/steps${day ? `?day=${encodeURIComponent(day)}` : ''}`),
+  // A typed step count is kept if the network is the problem, like the tracker
+  // writes. POST /steps upserts on (user, day, source) and sets `steps` absolutely,
+  // so a replay of one that already landed is a no-op.
+  //
+  // bulkSteps below is deliberately NOT queued — see the note on OutboxKind.
   addSteps: (day: string, steps: number, source: StepSource = 'manual'): Promise<{ ok: true; day: string }> =>
-    request('/steps', { method: 'POST', body: JSON.stringify({ day, steps, source }) }),
+    request<{ ok: true; day: string }>('/steps', { method: 'POST', body: JSON.stringify({ day, steps, source }) })
+      .then(r => { planStatusCache.invalidate(); void flushOutbox(); return r; })
+      .catch(err => {
+        if (!shouldQueue(err)) throw err;
+        enqueue('steps', day, { steps, source }, source);
+        return { ok: true as const, day };
+      }),
   bulkSteps: (entries: { day: string; source: StepSource; steps: number }[]): Promise<{ ok: true; written: number }> =>
     request('/steps/bulk', { method: 'POST', body: JSON.stringify({ entries }) }),
 
@@ -695,15 +706,28 @@ export const api = {
 // than the api.* wrappers above: those enqueue on failure, so replaying through them
 // would put a failed replay straight back in the queue.
 initOutbox({
-  send: (e: OutboxEntry) =>
-    e.kind === 'habit'
-      ? request('/tracker/habit', {
-          method: 'PATCH',
-          body: JSON.stringify({ day: e.day, habitName: e.habitName, ...e.payload }),
-        })
-      : request('/tracker', {
-          method: 'PATCH',
-          body: JSON.stringify({ day: e.day, ...e.payload }),
-        }).then(r => { planStatusCache.invalidate(); return r; }),
+  send: (e: OutboxEntry) => {
+    if (e.kind === 'habit') {
+      return request('/tracker/habit', {
+        method: 'PATCH',
+        body: JSON.stringify({ day: e.day, habitName: e.habitName, ...e.payload }),
+      });
+    }
+    if (e.kind === 'steps') {
+      // ponytail: the server stamps recorded_at = NOW() on replay, and manual only
+      // beats a device sync when it is the more recent of the two. So a step count
+      // typed offline wins over syncs that happened while it waited — which is what
+      // a manual override should do, just time-shifted. Preserving the original
+      // moment would mean trusting a client timestamp at the write boundary.
+      return request('/steps', {
+        method: 'POST',
+        body: JSON.stringify({ day: e.day, ...e.payload }),
+      }).then(r => { planStatusCache.invalidate(); return r; });
+    }
+    return request('/tracker', {
+      method: 'PATCH',
+      body: JSON.stringify({ day: e.day, ...e.payload }),
+    }).then(r => { planStatusCache.invalidate(); return r; });
+  },
   isReady: isLoggedIn,
 });
