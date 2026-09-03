@@ -48,11 +48,9 @@ function timePhase(hour: number): Phase {
   if (hour >= 17 && hour < 20) return 'dusk';
   return 'night';
 }
-const WASH: Record<Phase, string> = {
-  day:   'radial-gradient(120% 90% at 50% 0%, rgba(70,194,255,0.28), rgba(46,139,255,0.10) 45%, transparent 72%)',
-  dusk:  'radial-gradient(120% 90% at 50% 0%, rgba(255,158,77,0.26), rgba(139,92,246,0.14) 50%, transparent 74%)',
-  night: 'radial-gradient(120% 90% at 50% 0%, rgba(70,110,220,0.22), rgba(20,26,51,0.28) 48%, transparent 76%)',
-};
+// The wash colours live in Coach.css (.coach-hero-wash--day/dusk/night) so the
+// light theme can swap them: the night navy that reads as mood on the dark ground
+// read as a grey smear on white.
 
 // The coach's home — mascot-less. All the data intelligence stays (coach report,
 // habit insights, brief + day-state, step nudge). The freshness dot lights when
@@ -220,7 +218,7 @@ const DubPage: React.FC = () => {
           onClick={chatToDub}
           onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); chatToDub(); } }}
         >
-          <div className="coach-hero-wash" aria-hidden="true" style={{ background: WASH[phase] }} />
+          <div className={`coach-hero-wash coach-hero-wash--${phase}`} aria-hidden="true" />
           <div className="coach-hero-body">
             <span className="coach-hero-ring" role="img" aria-label={`Level ${playerLevel.level}, ${playerLevel.title}`}>
               <svg width={RING} height={RING} aria-hidden="true">

@@ -50,6 +50,27 @@ const StagesPreview = lazy(() => import('./StagesPreview'));
 
 const NO_NAV_PATHS = ['/privacy'];
 
+// One page throwing must not blank the whole app: the nav stays, the page
+// says what happened, and Habits is one tap away. Keyed on the path by the
+// caller so moving to another page clears the error.
+class RouteErrorBoundary extends React.Component<{ children: React.ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  componentDidCatch(err: unknown) { console.error('[route]', err); }
+  render() {
+    if (!this.state.failed) return this.props.children;
+    return (
+      <div className="app" style={{ ['--theme' as any]: '#2FD27E' }}>
+        <div className="load-error" role="alert">
+          <h2 className="load-error-title">This page hit a snag</h2>
+          <p className="load-error-msg">Something went wrong drawing it. Your data is untouched.</p>
+          <button className="load-error-retry" onClick={() => { window.location.href = '/'; }}>Back to habits</button>
+        </div>
+      </div>
+    );
+  }
+}
+
 const HEARTBEAT_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
 function AppRouter() {
@@ -160,7 +181,12 @@ function AppRouter() {
           page content past the header/nav. A real flex box (not display:contents,
           which some screen readers drop from the a11y tree) so the landmark is
           guaranteed while the existing full-height layout is preserved. */}
+      {/* In flow, above the page, so it pushes the header down instead of sitting
+          on top of it. Inside the auth gate: the logged-out landing has no day to
+          still be logging. */}
+      <DayBanner />
       <main className="route-main">
+      <RouteErrorBoundary key={location.pathname}>
       <Suspense fallback={null}>
       <Routes>
         <Route path="/" element={<Habits />} />
@@ -178,9 +204,8 @@ function AppRouter() {
         <Route path="/stages" element={<StagesPreview />} />
       </Routes>
       </Suspense>
+      </RouteErrorBoundary>
       </main>
-      {/* Inside the auth gate: the logged-out landing has no day to still be logging. */}
-      <DayBanner />
       {needConsent && <ConsentGate onDecided={() => setNeedConsent(false)} />}
       {/* First, and alone: someone back after a long gap gets one screen, not four. */}
       <ComebackPrompt />

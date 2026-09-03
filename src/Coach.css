@@ -37,6 +37,13 @@
 .coach-hero:active { transform: scale(0.99); }
 .coach-hero:focus-visible { outline: 2px solid var(--theme); outline-offset: 2px; }
 .coach-hero-wash { position: absolute; inset: 0; pointer-events: none; }
+.coach-hero-wash--day   { background: radial-gradient(120% 90% at 50% 0%, rgba(70,194,255,0.28), rgba(46,139,255,0.10) 45%, transparent 72%); }
+.coach-hero-wash--dusk  { background: radial-gradient(120% 90% at 50% 0%, rgba(255,158,77,0.26), rgba(139,92,246,0.14) 50%, transparent 74%); }
+.coach-hero-wash--night { background: radial-gradient(120% 90% at 50% 0%, rgba(70,110,220,0.22), rgba(20,26,51,0.28) 48%, transparent 76%); }
+/* Light: the same three moods as tints of colour, never of grey. */
+:root[data-theme="light"] .coach-hero-wash--day   { background: radial-gradient(120% 90% at 50% 0%, rgba(70,194,255,0.30), rgba(46,139,255,0.10) 45%, transparent 72%); }
+:root[data-theme="light"] .coach-hero-wash--dusk  { background: radial-gradient(120% 90% at 50% 0%, rgba(255,158,77,0.30), rgba(139,92,246,0.12) 50%, transparent 74%); }
+:root[data-theme="light"] .coach-hero-wash--night { background: radial-gradient(120% 90% at 50% 0%, rgba(99,120,255,0.22), rgba(139,92,246,0.08) 48%, transparent 76%); }
 .coach-hero-body { position: relative; display: flex; gap: 14px; align-items: flex-start; }
 .coach-hero-ring {
   position: relative; flex: 0 0 auto; width: 64px; height: 64px;

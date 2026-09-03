@@ -22,6 +22,8 @@ assert(daily.cells.length === 182, 'six months is 26 columns of 7');
 assert(daily.cols === 26 && daily.rows === 7, '26 x 7');
 assert(matrixLayout({ habit: H, cadence: 'daily', history: {}, today, span: 'year' }).cells.length === 371,
   'the full-year span is 53 columns of 7');
+assert(matrixLayout({ habit: H, cadence: 'daily', history: {}, today, span: '3m' }).cells.length === 91,
+  'the quarter span is 13 columns of 7');
 assert(matrixLayout({ habit: H, cadence: 'quit', history: {}, today }).cells.length === 182,
   'quit uses the daily grid');
 

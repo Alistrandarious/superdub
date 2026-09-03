@@ -91,7 +91,13 @@
      text on white cards. */
   --fg-rgb: 20,22,29;
   --surface-rgb: 245,246,250;
+  --ring-track: #D9DDE6;
+  --ring-inner: #FFFFFF;
 }
+/* The ring's type carried a dark halo for the black disc; on the white disc it
+   just smudges. */
+:root[data-theme="light"] .lvl-ring-num,
+:root[data-theme="light"] .lvl-ring-title { text-shadow: none; }
 
 /* ── Accent as TYPE ────────────────────────────────────────────────────────
    The accents are tuned to glow on near-black. As type on the light ground
@@ -134,6 +140,9 @@
      alarm, and a rough week should not look like a fire. Red now means only
      "something is wrong you need to act on". Sits a step brighter than the
      neutral --slate-ink used for 'na', so skipped and missed still read apart. */
+  /* Level ring chrome: the track behind the arc and the disc inside it. */
+  --ring-track:   #33333D;
+  --ring-inner:   #0B0B11;
   --miss:         #7C8AA0;
   --miss-fill:    rgba(124,138,160,0.20);
   /* Habit history pass/fail. The heatmaps ask one question — did you do it? —
@@ -5774,7 +5783,10 @@ h1, h2, h3, h4, .sora {
 }
 .community-hero-orb .gp-svg {
   width: 66%; height: 66%; position: relative; z-index: 1;
-  filter: drop-shadow(0 10px 28px rgba(46,139,255,0.55));
+  /* No filter here, on purpose. The globe spins via SMIL, and a drop-shadow on
+     an animating SVG re-rasterises the whole filter region every frame. On a
+     phone WebView that is a stalled tab, not a glow. The blue aura behind the
+     orb (::before) carries the light instead, as a plain gradient. */
 }
 /* Gold community-progress ring wrapping the planet (one hero graphic) */
 .community-ring { position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -5788,9 +5800,11 @@ h1, h2, h3, h4, .sora {
 }
 /* Pulsing blue atmosphere behind the globe */
 .community-hero-orb::before {
-  content: ''; position: absolute; inset: 14%; border-radius: 50%;
-  background: radial-gradient(circle, rgba(46,139,255,0.55) 28%, rgba(46,139,255,0) 70%);
-  filter: blur(10px); z-index: 0;
+  content: ''; position: absolute; inset: 8%; border-radius: 50%;
+  /* The soft edge is drawn into the gradient itself. The old blur(10px) on an
+     element that scales every frame re-blurred it every frame. */
+  background: radial-gradient(circle, rgba(46,139,255,0.55) 22%, rgba(46,139,255,0.22) 42%, rgba(46,139,255,0) 66%);
+  z-index: 0; will-change: transform, opacity;
   animation: community-aura 5s ease-in-out infinite;
 }
 @keyframes community-aura {
@@ -6045,7 +6059,7 @@ h1, h2, h3, h4, .sora {
 }
 .global-milestone-togo {
   font-family: var(--font-data); font-size: 0.56rem; font-weight: 700;
-  letter-spacing: 0.08em; color: rgba(255,224,138,0.72);
+  letter-spacing: 0.08em; color: var(--goldtint-ink);
 }
 .global-milestone-track {
   position: relative; height: 8px; margin: 14px 0 0;
@@ -6075,7 +6089,7 @@ h1, h2, h3, h4, .sora {
   color: var(--text-dim);
 }
 .global-milestone-note b { color: var(--text); font-weight: 600; }
-.global-milestone-you { color: rgba(255,224,138,0.85); font-weight: 600; }
+.global-milestone-you { color: var(--goldtint-ink); font-weight: 600; }
 
 /* ── Your contribution: a stat row under the collective climb ── */
 .global-you { display: flex; align-items: center; gap: 12px; margin: 0 4px; }
@@ -6888,7 +6902,29 @@ h1, h2, h3, h4, .sora {
 .hcard-tapsurface:focus-visible { outline: 2px solid var(--theme); outline-offset: -3px; }
 .hcard-tapsurface:active { background: rgba(var(--fg-rgb),0.035); }
 /* Content paints above the tap surface but lets taps fall through to it. */
-.hcard-top, .hcard-mx { position: relative; z-index: 1; pointer-events: none; }
+.hcard-top, .hcard-mx, .hcard-body-row { position: relative; z-index: 1; pointer-events: none; }
+/* Daily card body: numbers left, the quarter matrix right. */
+.hcard-body-row { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 14px; align-items: center; }
+.hcard-stats { display: flex; flex-direction: column; min-width: 0; }
+.hcard-stat-big {
+  display: flex; align-items: center; gap: 5px;
+  font-family: var(--font-data); font-size: 1.85rem; font-weight: 700; line-height: 1;
+  color: var(--text-dim); letter-spacing: -0.02em;
+}
+.hcard-stat-big.on { color: var(--flame-ink); }
+.hcard-stat-big svg { flex-shrink: 0; opacity: 0.9; }
+.hcard-stat-lbl {
+  margin-top: 4px;
+  font-family: var(--font-data); font-size: 0.54rem; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-mute);
+}
+.hcard-stat-sub { margin-top: 9px; font-size: 0.72rem; color: var(--text-dim); }
+.hcard-stat-sub b { font-family: var(--font-data); font-weight: 700; color: var(--text); }
+/* The matrix reads as a layer behind the numbers: its left edge fades out. */
+.hcard-body-row .hcard-mx .hmx {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 16%);
+  mask-image: linear-gradient(90deg, transparent, #000 16%);
+}
 .hcard-grip { pointer-events: auto; }
 
 /* Content-width side columns. Equal 1fr tracks centred the name perfectly, but
@@ -7343,7 +7379,7 @@ h1, h2, h3, h4, .sora {
   font-family: var(--font-data); font-size: 0.66rem; font-weight: 700;
   letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim);
 }
-.gp-svg { display: block; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.4)); }
+.gp-svg { display: block; } /* no filters on the spinning globe, see .community-hero-orb .gp-svg */
 /* The globe's axial spin is done with SVG <animateTransform> in GlobalPlanet.tsx
    (user-unit precise, size-independent) and JS-gated for reduced motion. */
 
@@ -7363,7 +7399,7 @@ h1, h2, h3, h4, .sora {
   filter: drop-shadow(0 0 6px rgba(255,185,40,0.5));
 }
 .gp-ring-core { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
-.gp-ring-core .gp-svg { filter: drop-shadow(0 2px 10px rgba(0,0,0,0.5)); }
+.gp-ring-core .gp-svg { }
 
 /* The shared climb, front and centre */
 .gp-climb { text-align: center; margin-bottom: 12px; }
@@ -12259,6 +12295,8 @@ h3, h4,
   grid-template-rows: repeat(7, 10px);
   grid-auto-flow: column; grid-auto-columns: 1fr;
 }
+.hmx--daily.hmx--span-3m { grid-template-rows: repeat(7, 13px); gap: 3px; }
+.hmx-months.hmx--span-3m { gap: 3px; }
 .hmx--daily.hmx--span-year {
   grid-template-rows: repeat(7, 8px); grid-auto-columns: 8px;
   overflow-x: auto; padding-bottom: 2px; scrollbar-width: none;
@@ -13063,32 +13101,29 @@ h3, h4,
 .color-danger { color: var(--danger-ink); }
 .color-cal { color: var(--flame-ink); }
 .update-banner {
-  position: fixed;
-  left: 50%;
-  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
-  transform: translateX(-50%);
-  z-index: 9999;
+  /* In flow at the top of #root (a flex column), so it pushes the page down
+     rather than floating over whatever happens to be at the bottom. */
+  flex-shrink: 0;
+  margin: calc(8px + env(safe-area-inset-top, 0px)) 12px 0;
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 10px 12px 10px 16px;
   background: rgba(var(--surface-rgb),0.97);
   border: 1px solid rgba(46, 139, 255, 0.5);
-  border-radius: 999px;
-  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(10px);
+  border-radius: 14px;
   animation: update-banner-in 0.3s ease;
 }
 @keyframes update-banner-in {
-  from { opacity: 0; transform: translate(-50%, 10px); }
-  to   { opacity: 1; transform: translate(-50%, 0); }
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
 }
 .update-banner-text {
+  flex: 1;
   color: var(--text);
   font-family: 'Sora', sans-serif;
   font-size: 13px;
   font-weight: 600;
-  white-space: nowrap;
 }
 .update-banner-btn {
   border: none;
@@ -13106,13 +13141,9 @@ h3, h4,
 /* Day banner — "Superdub time" grace notice, anchored to the very top so it sits
    above the per-page headers during the 00:00–02:00 window. */
 .day-banner {
-  position: fixed;
-  left: 50%;
-  top: calc(8px + env(safe-area-inset-top, 0px));
-  transform: translateX(-50%);
-  z-index: 9999;
-  width: calc(100% - 24px);
-  max-width: 520px;
+  /* In flow above the page (see index.tsx), same idea as .update-banner. */
+  flex-shrink: 0;
+  margin: calc(8px + env(safe-area-inset-top, 0px)) 12px 0;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -13125,8 +13156,8 @@ h3, h4,
   animation: day-banner-in 0.3s ease;
 }
 @keyframes day-banner-in {
-  from { opacity: 0; transform: translate(-50%, -10px); }
-  to   { opacity: 1; transform: translate(-50%, 0); }
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
 }
 .day-banner-text {
   flex: 1;
@@ -15217,7 +15248,7 @@ button.mini-hm-cell:not(:disabled)::after {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin: 0 0 14px;
+  margin: 6px 18px 16px; /* the same gutter as every card, it used to run edge to edge */
   padding: 14px 40px 14px 15px;
   border-radius: 16px;
   border: 1px solid rgba(124,138,160,0.3);

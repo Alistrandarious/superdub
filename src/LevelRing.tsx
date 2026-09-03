@@ -134,7 +134,7 @@ const LevelRing: React.FC<{
         ) : (
           <>
             {/* ARC THEME, track + progress arc around a dark inner disc */}
-            <circle cx={cx} cy={cy} r={r} fill="none" stroke="#33333D" strokeWidth={stroke} />
+            <circle cx={cx} cy={cy} r={r} fill="none" strokeWidth={stroke} style={{ stroke: 'var(--ring-track, #33333D)' }} />
             <circle
               className={`lvl-ring-arc${theme.animated ? ' animated' : ''}`}
               cx={cx} cy={cy} r={r} fill="none"
@@ -143,7 +143,9 @@ const LevelRing: React.FC<{
               transform={`rotate(-90 ${cx} ${cy})`}
               style={{ filter: `drop-shadow(0 0 4px ${theme.glow})` }}
             />
-            <circle cx={cx} cy={cy} r={innerR} fill="#0B0B11" />
+            {/* Tokens, not literals: on the light ground a black disc with dark type
+                inside was an unreadable hole. Dark stays byte-identical. */}
+            <circle cx={cx} cy={cy} r={innerR} style={{ fill: 'var(--ring-inner, #0B0B11)' }} />
           </>
         )}
 

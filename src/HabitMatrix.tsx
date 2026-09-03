@@ -3,8 +3,9 @@ import type { Cadence } from './Habits';
 import type { HabitState } from './habitState';
 
 // One habit's whole history as a condensed matrix, its granularity set by cadence:
-//   daily / quit = a weekday grid, 7 rows. 26 week columns for the rolling six
-//                  months on a habit card, 53 for the full year on Progress.
+//   daily / quit = a weekday grid, 7 rows. 13 week columns for the rolling
+//                  quarter on a habit card (beside its numbers), 26 for six
+//                  months, 53 for the full year on Progress.
 //   weekly       = 52 cells, one per Mon-anchored week of the calendar year
 //   monthly      = 12 cells, one per month
 //   yearly       = 10 cells, the decade the current year sits in. Years still to
@@ -53,8 +54,8 @@ export interface MatrixInput {
   history: IsoHistory;
   /** The day to anchor on. Injected rather than read from the clock so the check can pin it. */
   today: Date;
-  /** Daily width: six rolling months (habit card) or a full year (Progress). */
-  span?: '6m' | 'year';
+  /** Daily width: a rolling quarter (habit card), six months, or a full year (Progress). */
+  span?: '3m' | '6m' | 'year';
   /** The habit's start date, 'YYYY-MM-DD'. Anything earlier renders blank. */
   startISO?: string | null;
   /** Done-days per calendar year, for the yearly decade. From the tracker's carryByYear. */
@@ -133,7 +134,7 @@ export function matrixLayout(input: MatrixInput): MatrixLayout {
 
   // ── Daily / quit: a weekday grid ending on the column that holds today ──
   if (cadence === 'daily' || cadence === 'quit') {
-    const cols = span === 'year' ? 53 : 26;
+    const cols = span === 'year' ? 53 : span === '3m' ? 13 : 26;
     const nagFrom = isoOf(addDays(today, -UNDECLARED_DAYS));
     const dayCell = (iso: string): CellState => {
       if (before(iso)) return 'pad';
@@ -207,7 +208,7 @@ export function matrixLayout(input: MatrixInput): MatrixLayout {
 const HabitMatrix: React.FC<MatrixInput & { className?: string }> = ({ className, ...input }) => {
   const { cells, cols, rows, months } = matrixLayout(input);
   const kind = input.cadence === 'quit' ? 'daily' : input.cadence;
-  const span = input.span === 'year' ? ' hmx--span-year' : '';
+  const span = input.span === 'year' ? ' hmx--span-year' : input.span === '3m' ? ' hmx--span-3m' : '';
   const grid = { '--hmx-cols': cols, '--hmx-rows': rows } as React.CSSProperties;
   return (
     <div className={`hmx-wrap${className ? ` ${className}` : ''}`} aria-hidden="true">

@@ -29,6 +29,18 @@ html, body, #root {
   flex-direction: column;
 }
 
+/* Route change: the incoming page rises in over ~220ms. The page root remounts
+   on every navigation (the error boundary is keyed on the path), so the
+   animation replays for free. Off under reduced motion. */
+.route-main > .app { animation: route-in 0.22s cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes route-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .route-main > .app { animation: none; }
+}
+
 body {
   background: var(--void, #070810);
   color: var(--text, #e2e8f0);

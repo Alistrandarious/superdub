@@ -676,10 +676,13 @@ const HabitCard: React.FC<{
           </span>
           <span ref={nameRef} className={`hcard-name${nameWrapped ? ' hcard-name--wrapped' : ''}`}>{habit}</span>
           <span className="hcard-top-right">
-            <span className={`hcard-strk${stats.streak > 0 ? ' on' : ''}`} title={`${stats.streak} in a row`}>
-              <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" aria-hidden="true"><path d="M12 2c1 4-3 5-3 9a3 3 0 0 0 6 0c0-1-.4-2-1-3 2 1 4 3 4 6a6 6 0 0 1-12 0c0-5 6-6 6-12z"/></svg>
-              <b>{stats.streak}</b>
-            </span>
+            {/* Daily cards carry the streak as the big number beside the matrix. */}
+            {!isDaily && (
+              <span className={`hcard-strk${stats.streak > 0 ? ' on' : ''}`} title={`${stats.streak} in a row`}>
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" aria-hidden="true"><path d="M12 2c1 4-3 5-3 9a3 3 0 0 0 6 0c0-1-.4-2-1-3 2 1 4 3 4 6a6 6 0 0 1-12 0c0-5 6-6 6-12z"/></svg>
+                <b>{stats.streak}</b>
+              </span>
+            )}
             {/* The tap target is the whole card, so the card has to SAY it is one:
                 a hollow ring until you tap, a filled tick after. Before this the
                 only sign a habit was done was one 10px cell lighting up. */}
@@ -688,15 +691,43 @@ const HabitCard: React.FC<{
             </span>
           </span>
         </div>
-        <HabitMatrix
-          className="hcard-mx"
-          habit={habit}
-          cadence={cadence}
-          history={history}
-          today={nowD}
-          startISO={startDate ? startDate.slice(0, 10) : null}
-          yearCounts={yearCounts}
-        />
+        {/* Daily: the numbers on the left, a rolling quarter of history on the
+            right. Six months of 10px dots across the full width was mostly empty
+            for any habit younger than a season; the quarter beside two figures
+            reads at a glance and the streak has a home. Other cadences keep the
+            full-width strip, their cells are already few and labelled. */}
+        {isDaily ? (
+          <div className="hcard-body-row">
+            <div className="hcard-stats">
+              <span className={`hcard-stat-big${stats.streak > 0 ? ' on' : ''}`}>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M12 2c1 4-3 5-3 9a3 3 0 0 0 6 0c0-1-.4-2-1-3 2 1 4 3 4 6a6 6 0 0 1-12 0c0-5 6-6 6-12z"/></svg>
+                {stats.streak}
+              </span>
+              <span className="hcard-stat-lbl">day streak</span>
+              <span className="hcard-stat-sub"><b>{stats.totalDays}</b> {stats.totalDays === 1 ? 'day' : 'days'} done</span>
+            </div>
+            <HabitMatrix
+              className="hcard-mx"
+              habit={habit}
+              cadence={cadence}
+              history={history}
+              today={nowD}
+              span="3m"
+              startISO={startDate ? startDate.slice(0, 10) : null}
+              yearCounts={yearCounts}
+            />
+          </div>
+        ) : (
+          <HabitMatrix
+            className="hcard-mx"
+            habit={habit}
+            cadence={cadence}
+            history={history}
+            today={nowD}
+            startISO={startDate ? startDate.slice(0, 10) : null}
+            yearCounts={yearCounts}
+          />
+        )}
       </div>
 
       {/* Holding the card opens the cogs. Touch only reaches that gesture, so the
