@@ -12,11 +12,13 @@ import StepEntry from './StepEntry';
 import WeightEntry from './WeightEntry';
 import BottomNav from './BottomNav';
 import UpdateBanner from './UpdateBanner';
+import OutboxBanner from './OutboxBanner';
 import DayBanner from './DayBanner';
 import { Auth } from './Auth';
 import { isLoggedIn, clearToken, api } from './api';
 import { initStepSync } from './stepSync';
 import { syncLocalReminders } from './push';
+import { flush as flushOutbox } from './outbox';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { XPProvider } from './XPContext';
 import { LapseProvider } from './LapseBanner';
@@ -89,6 +91,10 @@ function AppRouter() {
     // Native reminders live on the device, so a reinstall or an OS-cleared schedule
     // needs them re-armed. No-op on web, where the server sends them.
     syncLocalReminders().catch(() => {});
+
+    // Anything held back while offline goes out now. The outbox also flushes on the
+    // 'online' event, but a session can start already connected.
+    flushOutbox();
 
     const onVisible = () => {
       if (document.visibilityState === 'visible') ping();
@@ -202,6 +208,7 @@ function Root() {
         <BackgroundApplier />
         <NightSky />
         <UpdateBanner />
+        <OutboxBanner />
         <DayBanner />
         <AppRouter />
         <LevelUpCelebration />

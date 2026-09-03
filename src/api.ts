@@ -1,5 +1,6 @@
 import { makeCache } from './apiCache';
 import { capture } from './analytics';
+import { enqueue, flush as flushOutbox, initOutbox, shouldQueue, type OutboxEntry } from './outbox';
 
 // Inside a Capacitor native shell the webview origin is capacitor://localhost, so the
 // relative '/api' + CRA dev proxy don't apply — point at the hosted backend directly.
@@ -316,6 +317,18 @@ export function apiErrorMessage(err: unknown): string {
   return 'Something went wrong.';
 }
 
+/**
+ * A tracker write that failed for a network reason is kept and replayed later, and
+ * the promise resolves as if it had landed — the data really is safe, and a caller
+ * that showed an error for it would be telling the user the opposite of the truth.
+ * Anything the server actually refused still throws.
+ */
+function queueOrThrow(err: unknown, keep: () => void): { ok: true } {
+  if (!shouldQueue(err)) throw err;
+  keep();
+  return { ok: true };
+}
+
 // Render's free tier cold-starts, so a request can hang for a minute with no
 // signal. 20s is past a normal cold start but short enough to still feel like
 // an answer rather than a freeze.
@@ -464,11 +477,21 @@ export const api = {
   getTracker: (years?: number): Promise<TrackerResponse> =>
     request(years && years > 1 ? `/tracker?years=${years}` : '/tracker'),
   // A tracker day carries weight/steps, both of which feed the plan/stall engine.
+  //
+  // Both tracker writes are kept in the outbox when the network is the problem, so a
+  // habit ticked on a train is replayed rather than silently dropped. They RESOLVE in
+  // that case rather than rejecting: the write really is safe, so a caller should
+  // carry on exactly as if it had landed — which is also what makes apiErrorMessage's
+  // "You're offline. Your saved data is safe." true rather than a lie. A refusal
+  // (4xx) or an expired session still throws, exactly as before.
   updateTrackerDay: (day: string, data: object): Promise<{ ok: true }> =>
     request<{ ok: true }>('/tracker', { method: 'PATCH', body: JSON.stringify({ day, ...data }) })
-      .then(r => { planStatusCache.invalidate(); return r; }),
+      .then(r => { planStatusCache.invalidate(); void flushOutbox(); return r; })
+      .catch(err => queueOrThrow(err, () => enqueue('day', day, data as Record<string, unknown>))),
   toggleTrackerHabit: (day: string, habitName: string, state: 'done' | 'failed' | 'na' | null): Promise<{ ok: true }> =>
-    request('/tracker/habit', { method: 'PATCH', body: JSON.stringify({ day, habitName, state }) }),
+    request<{ ok: true }>('/tracker/habit', { method: 'PATCH', body: JSON.stringify({ day, habitName, state }) })
+      .then(r => { void flushOutbox(); return r; })
+      .catch(err => queueOrThrow(err, () => enqueue('habit', day, { state }, habitName))),
 
   // steps (provenance-aware)
   getSteps: (day?: string): Promise<{ entries: StepEntry[] }> =>
@@ -598,3 +621,20 @@ export const api = {
   nudgeFriend: (userId: number): Promise<{ ok: true; delivered: boolean }> =>
     request(`/friends/${userId}/nudge`, { method: 'POST' }),
 };
+
+// Teach the outbox how to send a held write. This calls request() directly rather
+// than the api.* wrappers above: those enqueue on failure, so replaying through them
+// would put a failed replay straight back in the queue.
+initOutbox({
+  send: (e: OutboxEntry) =>
+    e.kind === 'habit'
+      ? request('/tracker/habit', {
+          method: 'PATCH',
+          body: JSON.stringify({ day: e.day, habitName: e.habitName, ...e.payload }),
+        })
+      : request('/tracker', {
+          method: 'PATCH',
+          body: JSON.stringify({ day: e.day, ...e.payload }),
+        }).then(r => { planStatusCache.invalidate(); return r; }),
+  isReady: isLoggedIn,
+});

@@ -70,11 +70,19 @@ export function XPProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => { load(); }, [load]);
 
-  // Re-load when tracker data changes (habit toggles, step syncs, etc.)
+  // Re-load when tracker data changes (habit toggles, step syncs, etc.), and when
+  // held-back writes finally land — a tick that was queued offline earns its XP on
+  // the flush, not on the tap. 'outbox-flushed' is separate from 'tracker-updated'
+  // on purpose: the latter also re-opens the daily check-in overlay, which must not
+  // pop out of a background sync.
   useEffect(() => {
     const handler = () => load();
     window.addEventListener('superdub:tracker-updated', handler);
-    return () => window.removeEventListener('superdub:tracker-updated', handler);
+    window.addEventListener('superdub:outbox-flushed', handler);
+    return () => {
+      window.removeEventListener('superdub:tracker-updated', handler);
+      window.removeEventListener('superdub:outbox-flushed', handler);
+    };
   }, [load]);
 
   const playerLevel = computePlayerLevel(totalXP);

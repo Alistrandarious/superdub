@@ -13153,6 +13153,29 @@ h3, h4,
 }
 .update-banner-btn:active { transform: scale(0.96); }
 
+/* Pending-writes pill. Same shape as the update banner, but it is a status line
+   rather than an offer: no action, no dismiss, and it leaves on its own when the
+   queue drains. Green because nothing is wrong — the data is held, not lost. */
+.outbox-banner {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: 9px 18px;
+  border-color: rgba(47, 210, 126, 0.45);
+}
+.outbox-banner-sub {
+  color: var(--text-dim);
+  font-family: 'Sora', sans-serif;
+  font-size: 11.5px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+/* Both pills anchor to the same spot above the nav, and both can be up at once
+   (offline with a deploy already flagged). Stack rather than overlap. */
+.update-banner + .outbox-banner {
+  bottom: calc(72px + 58px + env(safe-area-inset-bottom, 0px));
+}
+
 /* Day banner — "Superdub time" grace notice, anchored to the very top so it sits
    above the per-page headers during the 00:00–02:00 window. */
 .day-banner {

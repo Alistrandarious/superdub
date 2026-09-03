@@ -29,6 +29,7 @@ import { pageTheme, HEALTH } from './theme';
 import { quitProgress, quitElapsed, toLocalDatetimeValue } from './quit';
 import { moveItem, applyGroupReorder } from './reorder';
 import CohortBanner from './CohortBanner';
+import { outboxCount } from './outbox';
 import HabitMatrix, { type IsoHistory } from './HabitMatrix';
 import { useTapHold, HOLD_SLOP_PX } from './useTapHold';
 import { weekMonday } from './weekRange';
@@ -1778,7 +1779,11 @@ const Habits: React.FC = () => {
           </svg>
           <h2 className="load-error-title">Couldn't load your habits</h2>
           <p className="load-error-msg">{loadError}</p>
-          <p className="load-error-reassure">Nothing has been lost. Your streaks are on the server.</p>
+          <p className="load-error-reassure">
+            {outboxCount() > 0
+              ? "Nothing has been lost. Your streaks are on the server, and today's changes are saved on this device until it can reach it."
+              : 'Nothing has been lost. Your streaks are on the server.'}
+          </p>
           <button className="load-error-retry" onClick={() => { setLoaded(false); loadHabits(); }}>
             Try again
           </button>
