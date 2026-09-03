@@ -11440,7 +11440,7 @@ h1, h2, h3, h4, .sora {
 
 /* Training burns */
 .atc-training {
-  background: rgba(0,0,0,0.2); border: 1px solid var(--glass-bg-strong); border-radius: 12px;
+  background: rgba(var(--fg-rgb),0.04); border: 1px solid var(--glass-border); border-radius: 12px;
   padding: 12px 14px; margin-bottom: 14px;
 }
 .atc-burn-row {
@@ -11473,7 +11473,7 @@ h1, h2, h3, h4, .sora {
 
 /* Steps section */
 .atc-steps {
-  background: rgba(0,0,0,0.2); border: 1px solid var(--glass-bg-strong); border-radius: 12px;
+  background: rgba(var(--fg-rgb),0.04); border: 1px solid var(--glass-border); border-radius: 12px;
   padding: 14px; margin-bottom: 14px;
 }
 .atc-steps-needed {
@@ -12344,11 +12344,15 @@ h3, h4,
 }
 .hmx--daily.hmx--span-3m { grid-template-rows: repeat(7, 13px); gap: 3px; }
 .hmx-months.hmx--span-3m { gap: 3px; }
-.hmx--daily.hmx--span-year {
-  grid-template-rows: repeat(7, 8px); grid-auto-columns: 8px;
-  overflow-x: auto; padding-bottom: 2px; scrollbar-width: none;
-}
-.hmx--daily.hmx--span-year::-webkit-scrollbar { display: none; }
+.hmx--daily.hmx--span-year { grid-template-rows: repeat(7, 8px); grid-auto-columns: 8px; }
+/* One scroller for the month strip AND the grid, opened on today (HabitMatrix
+   sets scrollLeft on mount). The grid used to scroll alone, so the months stayed
+   put and named the wrong weeks the moment you dragged. */
+.hmx-scroll { display: flex; flex-direction: column; gap: 3px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.hmx-scroll::-webkit-scrollbar { display: none; }
+/* Only the fixed-8px daily grid needs its natural width; the weekly and
+   monthly strips keep 1fr columns and fill the card. */
+.hmx-scroll > .hmx-months, .hmx-scroll > .hmx--daily { width: max-content; }
 
 .hmx--weekly { grid-template-columns: repeat(52, 1fr); grid-auto-rows: 18px; gap: 1px; }
 .hmx--monthly { grid-template-columns: repeat(12, 1fr); grid-auto-rows: 26px; gap: 3px; }

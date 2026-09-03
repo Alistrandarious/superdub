@@ -814,6 +814,9 @@ const HabitCard: React.FC<{
             <span className="hsp-stat-val">{stats.totalDays}</span>
             <span className="hsp-stat-lbl">days done</span>
           </div>
+          {/* Misses are counted day by day, so a weekly habit read as "2 misses" every
+              Wednesday. Only a daily habit has a day-by-day story to tell. */}
+          {isDaily && (
           <div className={`hsp-stat${stats.misses > 0 ? ' miss' : ''}`}>
             <span className="hsp-stat-ico">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
@@ -821,6 +824,7 @@ const HabitCard: React.FC<{
             <span className="hsp-stat-val">{stats.misses}</span>
             <span className="hsp-stat-lbl">recent {stats.misses === 1 ? 'miss' : 'misses'}</span>
           </div>
+          )}
         </div>
       </div>
 

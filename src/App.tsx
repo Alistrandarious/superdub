@@ -844,7 +844,8 @@ const App: React.FC<AppProps> = ({ onLogout }) => {
   // rendered as a full-year HabitMatrix at the right granularity.
   const habitsByCadence = useMemo(() => {
     const g: Record<Cadence, string[]> = { quit: [], daily: [], weekly: [], monthly: [], yearly: [] };
-    for (const h of habits) g[habitCadence[h] ?? 'daily'].push(h);
+    // The login habit is the app's, not yours: it has no heatmap and no chart row.
+    for (const h of habits) if (!isSystemHabit(h)) g[habitCadence[h] ?? 'daily'].push(h);
     return g;
   }, [habits, habitCadence]);
   const hmYear = now.getFullYear();

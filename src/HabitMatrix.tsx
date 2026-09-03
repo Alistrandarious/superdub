@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useLayoutEffect, useRef } from 'react';
 import type { Cadence } from './Habits';
 import type { HabitState } from './habitState';
 
@@ -210,8 +210,16 @@ const HabitMatrix: React.FC<MatrixInput & { className?: string }> = ({ className
   const kind = input.cadence === 'quit' ? 'daily' : input.cadence;
   const span = input.span === 'year' ? ' hmx--span-year' : input.span === '3m' ? ' hmx--span-3m' : '';
   const grid = { '--hmx-cols': cols, '--hmx-rows': rows } as React.CSSProperties;
-  return (
-    <div className={`hmx-wrap${className ? ` ${className}` : ''}`} aria-hidden="true">
+  // The year grid is wider than the phone and scrolls sideways. It has to open
+  // on today, not on last September: opened at the left it showed the empty
+  // months before the account existed and every habit read as blank.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollLeft = el.scrollWidth;
+  }, [cols]);
+  const body = (
+    <>
       {months && (
         <div className={`hmx-months${span}`} style={grid}>
           {months.map(m => (
@@ -226,6 +234,13 @@ const HabitMatrix: React.FC<MatrixInput & { className?: string }> = ({ className
           <span key={c.key} className={`hmx-cell hmx-${c.state}${c.current ? ' hmx-now' : ''}`}>{c.label}</span>
         ))}
       </div>
+    </>
+  );
+  return (
+    <div className={`hmx-wrap${className ? ` ${className}` : ''}`} aria-hidden="true">
+      {/* The year grid scrolls sideways; the month strip rides inside the same
+          scroller so its labels stay over the weeks they name. */}
+      {input.span === 'year' ? <div ref={scrollRef} className="hmx-scroll">{body}</div> : body}
     </div>
   );
 };
