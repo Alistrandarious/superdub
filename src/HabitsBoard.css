@@ -1,0 +1,99 @@
+/* Habits — the scoreboard.
+   The page's identity pass (v2.499). One idea: a scoreboard, not a dashboard.
+   Flat blocks of colour, big italic Kanit numerals, Space Mono labels, hard
+   rules, everything left-aligned, and the pass/fail grid as the signature.
+   Own file (like Coach.css) so it never collides with parallel edits to App.css;
+   it loads after App.css and overrides by the same selectors. */
+
+/* ── Date: the masthead line ─────────────────────────────────────────────── */
+.hb-datehead { align-items: baseline; gap: 10px; padding: 6px 16px 0; }
+.hb-datehead-dow {
+  font-size: 2.1rem; line-height: 1; letter-spacing: -0.02em; text-transform: uppercase;
+}
+.hb-datehead-dm { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; color: var(--theme-ink); }
+
+/* ── Streak: a solid green block with the number as the headline ─────────── */
+.hb-streak {
+  margin: 10px 16px 0; padding: 14px 16px 15px; gap: 14px;
+  border: none; border-radius: 8px;
+  background: var(--theme);
+  color: #06210F;
+}
+.hb-streak--kept { border: none; background: var(--theme); }
+.hb-streak-flame { opacity: 0.85; }
+.hb-streak-num { font-size: 3.2rem; letter-spacing: -0.03em; color: #06210F; }
+.hb-streak--kept .hb-streak-num { color: #06210F; }
+.hb-streak-label { font-weight: 700; font-size: 0.6rem; letter-spacing: 0.14em; color: rgba(6,33,15,0.72); }
+.hb-streak-sub { font-weight: 600; font-size: 0.82rem; color: #06210F; }
+.hb-streak-track-bar { background: rgba(6,33,15,0.18); border-radius: 2px; }
+.hb-streak-track-fill { background: #06210F; }
+.hb-streak-track-lbl { color: rgba(6,33,15,0.72); }
+
+/* ── Cadence tabs: an underline bar, not pills in a tray ─────────────────── */
+.cadt { padding-top: 12px; }
+.cadt-bar { padding: 0 16px 12px; }
+/* Stuck to the top while you scroll: opaque on the ground, so the cards passing
+   underneath never show through the tab labels. */
+.cadt--compact .cadt-bar { padding-top: 6px; box-shadow: none; background: var(--void); border-bottom: none; }
+.cadt-tabs {
+  gap: 0; padding: 0; border: none; border-radius: 0;
+  background: transparent; border-bottom: 1px solid var(--glass-border);
+}
+.cadt-tab {
+  min-height: 42px; padding: 10px 0 8px; gap: 5px;
+  border-radius: 0; border-bottom: 3px solid transparent; margin-bottom: -1px;
+  font-family: var(--font-data); font-weight: 700; font-size: 0.62rem;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  transition: color 0.15s, border-color 0.15s;
+}
+.cadt-tab.active { background: none; box-shadow: none; color: var(--text); border-bottom-color: var(--chip); }
+.cadt-tab:focus-visible { outline-offset: -3px; }
+.cadt-n { opacity: 1; color: var(--chip-ink); }
+
+/* ── The habit card: a raised block with a thick cadence rail ────────────── */
+.hcard, .hcard.hcard--collapsed, .hcard.hcard--expanded {
+  padding: 12px 14px 14px 16px;
+  border: none; border-left: 4px solid var(--theme-ink); border-radius: 8px;
+  background: var(--surface-raised);
+}
+.hcard:hover { border-color: transparent; border-left-color: var(--theme-ink); }
+.hcard--done, .hcard--collapsed.hcard--done { border-left-color: var(--pass); }
+.hcard-tapsurface { inset: -12px -14px -2px -16px; border-radius: 8px; }
+/* Level and tick on the first row, the name on its own line underneath. */
+.hcard-top {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: "left . right" "name name name";
+  row-gap: 6px; margin-bottom: 10px;
+}
+.hcard-top-left { grid-area: left; }
+.hcard-top-right { grid-area: right; }
+.hcard-top .hcard-name, .hcard-top .hcard-name--wrapped {
+  grid-area: name; text-align: left;
+  font-family: var(--font-display); font-style: italic; font-weight: 800;
+  font-size: 1.35rem; line-height: 1.05; letter-spacing: -0.01em; text-transform: uppercase;
+}
+.hcard-grip { width: 14px; }
+.hcard-lv {
+  padding: 3px 6px 2px; border-radius: 4px;
+  background: var(--theme-ink); color: #06101F;
+  font-size: 0.56rem; letter-spacing: 0.1em;
+}
+.hcard-lv b { font-size: 0.7rem; }
+.hcard-strk { font-size: 0.6rem; }
+.hcard-done-chip { width: 26px; height: 26px; border-radius: 7px; border-width: 2px; }
+.hcard-done-chip.done { border-color: var(--pass); }
+
+/* The streak beside the grid: the number is the headline, in the display face. */
+.hcard-stat-big {
+  font-family: var(--font-display); font-style: italic; font-weight: 800;
+  font-size: 2.5rem; letter-spacing: -0.03em;
+}
+.hcard-stat-big svg { width: 14px; height: 14px; }
+.hcard-stat-lbl { font-size: 0.56rem; letter-spacing: 0.14em; }
+.hcard-stat-sub { margin-top: 8px; }
+
+/* The grid: tighter and squarer, an LED board rather than rounded pebbles. */
+.hcard .hmx-cell { border-radius: 1px; }
+.hcard .hmx--daily.hmx--span-3m { gap: 2px; grid-template-rows: repeat(7, 12px); }
+.hcard .hmx-months.hmx--span-3m { gap: 2px; }
+.hcard .hmx-now { outline-width: 2px; outline-offset: 1px; }

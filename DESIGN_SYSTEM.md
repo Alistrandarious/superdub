@@ -134,6 +134,31 @@ a dimmed page. Nothing behind it reads through.
 
 ## Components
 
+### Habits: the scoreboard (`src/HabitsBoard.css`)
+
+The home page's identity, added 2026-09-04. One idea: a scoreboard, not a
+dashboard. Flat blocks of colour, big italic Kanit numerals, Space Mono labels,
+hard rules, everything left-aligned, and the pass/fail grid as the signature.
+It lives in its own stylesheet, loaded after `App.css`, and overrides by the same
+selectors, so parallel edits to `App.css` never collide with it.
+
+- **Masthead**: the weekday in Kanit italic 800 at 2.1rem, uppercase; the date in
+  Space Mono caps in the page ink.
+- **Streak block**: a solid `HEALTH` green block, 8px radius, dark ink
+  (`#06210F`), the streak as a 3.2rem italic numeral, the "N of M done" line in
+  Sora 600. No border, no gradient, in either state.
+- **Cadence tabs**: an underline bar. Space Mono 700 caps, 0.1em tracking, a 3px
+  underline in the cadence colour under the active tab, one hairline under the
+  row. Stuck to the top it goes opaque on the ground (`--void`), no shadow.
+- **Habit card**: `--surface-raised` block, 8px radius, no border, a 4px rail in
+  the cadence colour (pass green once done). First row: level chip (solid cadence
+  fill, dark ink) and the tick (26px, 7px radius). Second row: the habit name in
+  Kanit italic 800 caps at 1.35rem. The streak beside the grid is the same face at
+  2.5rem in `FLAME` ink. The grid is 2px gaps and 1px corners: an LED board.
+- Light mode needs nothing extra: the block is the same green, the ink is already
+  dark, cards go white on the light ground.
+
+
 ### Ring-flanking circle buttons (the "Dub circle" pattern)
 
 The two round buttons that flank the level ring on the Habits page — the **Dub**

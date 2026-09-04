@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 import { useXP } from './XPContext';
 import './App.css';
+import './HabitsBoard.css';
 import { api, apiErrorMessage } from './api';
 import { capture } from './analytics';
 import { loggingNow, getLoggingDay } from './day';
